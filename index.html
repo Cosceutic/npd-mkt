@@ -463,12 +463,11 @@
         </div>
         <div class="npd-guide-track">
           <div class="npd-guide-track-name">Packaging <span style="font-weight:400; color:var(--ink-soft);">(รวม Graphic/ดีไซน์)</span></div>
-          <div class="npd-guide-sub"><strong>Primary Packaging</strong> → สั่ง RD PKG ทดสอบ Functional · ทดสอบ Decoration · ส่ง RA ตรวจ สคบ. · Standard Max-Min</div>
-          <div class="npd-guide-sub"><strong>Box</strong></div>
-          <div class="npd-guide-sub"><strong>Sticker</strong> → Standard Max-Min</div>
-          <div class="npd-guide-sub"><strong>Shrink Film</strong></div>
-          <div class="npd-guide-sub"><strong>Graphic Design</strong> → งานออกแบบที่รอจากทีม Graphic</div>
-          <div class="npd-guide-sub"><strong>Design Approved</strong> → ยืนยัน/อนุมัติงานออกแบบที่ Graphic ส่งมา</div>
+          <div class="npd-guide-sub">ระบุขั้นตอนย่อยในคอลัมน์ <strong>Stage</strong> (คนละคอลัมน์กับ Detail) — แต่ละ SubCategory มีขั้นตอนของตัวเอง:</div>
+          <div class="npd-guide-sub" style="margin-left:14px;"><strong>Primary Packaging</strong> → Graphic Design · Design Approved · Functional Test · Decoration Test · Standard Max-Min</div>
+          <div class="npd-guide-sub" style="margin-left:14px;"><strong>Box</strong> / <strong>Sticker</strong> → Graphic Design · Design Approved · Standard Max-Min</div>
+          <div class="npd-guide-sub" style="margin-left:14px;"><strong>Shrink Film</strong> → ส่ง รง. Test</div>
+          <div class="npd-guide-sub" style="margin-top:4px;">คอลัมน์ <strong>Detail</strong> ใช้พิมพ์ข้อความอิสระได้ตามใจ ไม่กระทบตาราง Checklist</div>
         </div>
         <div class="npd-guide-note">ไม่แน่ใจก็เว้นว่างได้ ระบบจับคำแบบหลวมๆ อยู่แล้ว (เช่น พิมพ์ "ทดสอบเสถียรภาพ" หรือ "ขึ้นทะเบียน อย." ก็รู้ว่าเป็น R&D) · เพิ่มคอลัมน์ <strong>Risk</strong> ใน Sheet เพื่ออัปเดตช่องนั้นในตาราง Current Status</div>
         <div class="npd-guide-note">รูปมากกว่า 1 รูปในช่อง Images ให้คั่นด้วย <strong>เซมิโคลอน ( ; )</strong> ไม่ใช่จุลภาค</div>
@@ -789,6 +788,7 @@ async function loadUpdatesFromSheet(){
       track: normalizeTrack(r.Track),
       trackRaw: (r.Track||'').trim(),
       subCategory: (r.SubCategory||'').trim(),
+      stage: (r.Stage||'').trim(),
       detail: (r.Detail||'').trim(),
       note: (r.Note||'').trim(),
       images: resolveImageList(r.Images),
@@ -1429,7 +1429,7 @@ function trackCellSummary(sku, track){
   const entries = logsFor(sku, track);
   if(!entries.length) return '<span class="dash">-</span>';
   const latest = entries[0];
-  const label = [latest.subCategory, latest.detail].filter(Boolean).join(' — ') || latest.note || '(update logged)';
+  const label = [latest.subCategory, latest.stage, latest.detail].filter(Boolean).join(' — ') || latest.note || '(update logged)';
   return `<button class="link-btn" style="font-size:12.5px; text-align:left;" onclick="openTrackLog('${esc(sku)}','${track}')">${esc(label)}</button>`;
 }
 /* Falls back to the name recorded on an Updates Log row when the SKU hasn't
@@ -1493,7 +1493,7 @@ function renderTeamUpdates(){
   // Activity feed: Updates Log entries only, newest first
   const feed = UPDATE_LOGS.map(l=>{
     const product = PRODUCTS.find(p=>p.sku===l.sku);
-    const label = [l.subCategory, l.detail].filter(Boolean).join(' — ');
+    const label = [l.subCategory, l.stage, l.detail].filter(Boolean).join(' — ');
     const noteText = [label, l.note].filter(Boolean).join(': ');
     return {date:l.date, note:noteText || '(update logged)', product, sku:l.sku,
       productName:l.productName,
@@ -1536,8 +1536,20 @@ function renderTeamUpdates(){
    as a sub-topic of R&D now, not as its own track. */
 const TRACK_STEPS = {
   rd:  ['พัฒนาสูตร','Test Stability','FDA'],
-  pkg: ['Primary Packaging','Box','Sticker','Shrink Film','Graphic Design','Design Approved'],
+  pkg: ['Primary Packaging','Box','Sticker','Shrink Film'],
 };
+/* Graphic Design / Design Approved are sub-phases *within* each packaging type
+   above, not their own top-level columns — tracked via the Detail field. */
+const PKG_SUBPHASE_DEFAULT = ['Graphic Design','Design Approved'];
+const PKG_SUBPHASES_BY_COL = {
+  'primary packaging': [...PKG_SUBPHASE_DEFAULT, 'Functional Test', 'Decoration Test', 'Standard Max-Min'],
+  'box':               [...PKG_SUBPHASE_DEFAULT, 'Standard Max-Min'],
+  'sticker':           [...PKG_SUBPHASE_DEFAULT, 'Standard Max-Min'],
+  'shrink film':       ['ส่ง รง. Test'],
+};
+function phasesForCol(colName){
+  return PKG_SUBPHASES_BY_COL[stepKey(colName)] || PKG_SUBPHASE_DEFAULT;
+}
 function stepKey(s){
   return String(s||'').toLowerCase().replace(/^สั่ง\s*/,'').replace(/\s+/g,' ').trim();
 }
@@ -1560,7 +1572,36 @@ function openTrackLog(sku, track){
   });
 
   let matrixHtml = '';
-  if(cols.length){
+  if(track === 'pkg' && cols.length){
+    // One mini-checklist per SubCategory (Primary Packaging/Box/...), since each
+    // now has its own set of sub-phases (Primary Packaging has more steps than Box/Sticker).
+    const sections = cols.map(cn=>{
+      const phases = phasesForCol(cn);
+      const rows = phases.map(phase=>{
+        const hits = entries.filter(e=>stepKey(e.subCategory)===stepKey(cn) && stepKey(e.stage)===stepKey(phase))
+                            .sort((a,b)=>b.date.localeCompare(a.date));
+        if(!hits.length){
+          return `<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px;">
+            <span style="color:var(--ink-soft);">${esc(phase)}</span>
+            <span style="color:var(--gray);">– ยังไม่เริ่ม</span>
+          </div>`;
+        }
+        const latest = hits[0];
+        const dateTxt = latest.date ? formatDate(new Date(latest.date+"T00:00:00")) : '';
+        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:12px;">
+          <span>${esc(phase)}</span>
+          <span style="color:var(--green-deep); font-weight:600;">✓ ${dateTxt}</span>
+        </div>`;
+      }).join('');
+      return `<div style="background:var(--bg); border-radius:8px; padding:8px 12px; min-width:150px; flex:1;">
+        <div style="font-family:'Prompt'; font-weight:600; font-size:12.5px; margin-bottom:4px;">${esc(cn)}</div>
+        ${rows}
+      </div>`;
+    }).join('');
+    matrixHtml = `
+      <div class="tl-section-label">ความคืบหน้าแต่ละขั้นตอน</div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">${sections}</div>`;
+  } else if(cols.length){
     const headCells = cols.map(cn=>`<th style="text-align:center; font-size:11px;">${esc(cn)}</th>`).join('');
     const bodyCells = cols.map(cn=>{
       const hits = entries.filter(e=>stepKey(e.subCategory)===stepKey(cn))
@@ -1592,7 +1633,7 @@ function openTrackLog(sku, track){
   }
 
   const timelineHtml = entries.length ? entries.map(e=>{
-    const sub = [e.subCategory, e.detail].filter(Boolean).join(' — ');
+    const sub = [e.subCategory, e.stage, e.detail].filter(Boolean).join(' — ');
     const imgHtml = e.images.length
       ? `<div class="tl-img-row">${e.images.map(src=>`<img src="${esc(src)}" onclick="openLightbox('${esc(src)}',event)">`).join('')}</div>`
       : '';
