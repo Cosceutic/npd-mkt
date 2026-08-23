@@ -703,7 +703,14 @@ function parseCsvByHeader(csvText, requiredCols){
   const header = rows[headerIdx].map(c=>String(c||'').trim());
   return rows.slice(headerIdx+1).map(r=>{
     const obj = {};
-    header.forEach((h,i)=>{ if(h) obj[h] = String(r[i] ?? '').trim(); });
+    // If a header name appears more than once (e.g. a duplicate "Risk" column),
+    // keep the first non-empty value instead of letting a later empty column
+    // silently overwrite good data.
+    header.forEach((h,i)=>{
+      if(!h) return;
+      const val = String(r[i] ?? '').trim();
+      if(!(h in obj) || !obj[h]) obj[h] = val;
+    });
     return obj;
   });
 }
@@ -758,7 +765,7 @@ async function loadUpdatesFromSheet(){
       images: resolveImageList(r.Images),
       updatedBy: (r.UpdatedBy||'').trim(),
       risk: (r.Risk||'').trim(),
-      nextDue: parseSheetDate(r.NextDue||''),
+      nextDue: parseSheetDate(r.NextDue || r['Next Due'] || ''),
     }));
   }catch(err){
     console.error('Updates Log load failed', err);
