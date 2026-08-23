@@ -463,12 +463,14 @@
         </div>
         <div class="npd-guide-track">
           <div class="npd-guide-track-name">Packaging <span style="font-weight:400; color:var(--ink-soft);">(รวม Graphic/ดีไซน์)</span></div>
-          <div class="npd-guide-sub"><strong>Primary Packaging</strong> → สั่ง Graphic ออกแบบ · สั่ง RD PKG ทดสอบ Functional · ทดสอบ Decoration · ส่ง RA ตรวจ สคบ. · Standard Max-Min</div>
+          <div class="npd-guide-sub"><strong>Primary Packaging</strong> → สั่ง RD PKG ทดสอบ Functional · ทดสอบ Decoration · ส่ง RA ตรวจ สคบ. · Standard Max-Min</div>
           <div class="npd-guide-sub"><strong>Box</strong></div>
-          <div class="npd-guide-sub"><strong>Sticker</strong> → Standard Max-Min · สั่ง Graphic</div>
+          <div class="npd-guide-sub"><strong>Sticker</strong> → Standard Max-Min</div>
           <div class="npd-guide-sub"><strong>Shrink Film</strong></div>
+          <div class="npd-guide-sub"><strong>Graphic Design</strong> → งานออกแบบที่รอจากทีม Graphic</div>
+          <div class="npd-guide-sub"><strong>Design Approved</strong> → ยืนยัน/อนุมัติงานออกแบบที่ Graphic ส่งมา</div>
         </div>
-        <div class="npd-guide-note">ไม่แน่ใจก็เว้นว่างได้ ระบบจับคำแบบหลวมๆ อยู่แล้ว (เช่น พิมพ์ "ทดสอบเสถียรภาพ" หรือ "ขึ้นทะเบียน อย." ก็รู้ว่าเป็น R&D) · เพิ่มคอลัมน์ <strong>Risk</strong> และ <strong>NextDue</strong> ใน Sheet เพื่ออัปเดตช่องนั้นในตาราง Current Status</div>
+        <div class="npd-guide-note">ไม่แน่ใจก็เว้นว่างได้ ระบบจับคำแบบหลวมๆ อยู่แล้ว (เช่น พิมพ์ "ทดสอบเสถียรภาพ" หรือ "ขึ้นทะเบียน อย." ก็รู้ว่าเป็น R&D) · เพิ่มคอลัมน์ <strong>Risk</strong> ใน Sheet เพื่ออัปเดตช่องนั้นในตาราง Current Status</div>
         <div class="npd-guide-note">รูปมากกว่า 1 รูปในช่อง Images ให้คั่นด้วย <strong>เซมิโคลอน ( ; )</strong> ไม่ใช่จุลภาค</div>
       </div>
     </details>
@@ -480,11 +482,10 @@
         <table>
           <thead>
             <tr>
-              <th style="width:22%;">Product<span class="th-info" data-tip="ชื่อสินค้า">&#9432;</span></th>
-              <th style="width:32%;">Formulation (R&D)<span class="th-info" data-tip="สูตร + อย.">&#9432;</span></th>
-              <th style="width:32%;">Packaging<span class="th-info" data-tip="บรรจุภัณฑ์ / กราฟิก">&#9432;</span></th>
-              <th style="width:7%;">Risk<span class="th-info" data-tip="ความเสี่ยง">&#9432;</span></th>
-              <th style="width:7%;">Next Due<span class="th-info" data-tip="กำหนดถัดไป">&#9432;</span></th>
+              <th style="width:24%;">Product<span class="th-info" data-tip="ชื่อสินค้า">&#9432;</span></th>
+              <th style="width:35%;">Formulation (R&D)<span class="th-info" data-tip="สูตร + อย.">&#9432;</span></th>
+              <th style="width:35%;">Packaging<span class="th-info" data-tip="บรรจุภัณฑ์ / กราฟิก">&#9432;</span></th>
+              <th style="width:6%;">Risk<span class="th-info" data-tip="ความเสี่ยง">&#9432;</span></th>
             </tr>
           </thead>
           <tbody id="team-status-tbody"></tbody>
@@ -580,7 +581,7 @@
 
 <script>
 /* ===== DATA — Claude updates this array directly when Ploy sends new info in chat ===== */
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=0";
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=1762470958";
 const UPDATES_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=327758317";
 const NOTICE_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=Notice";
 
@@ -1475,7 +1476,6 @@ function renderTeamUpdates(){
         <td>${trackCellSummary(p.sku,'rd')}</td>
         <td>${trackCellSummary(p.sku,'pkg')}</td>
         <td>${riskBadge(riskForSku(p.sku))}</td>
-        <td style="font-size:12.5px;">${nextDueForSku(p.sku)||'<span class="dash">-</span>'}</td>
       </tr>`;
     }).join('');
     const pendingRows = pendingSkus.map(sku=>{
@@ -1485,7 +1485,6 @@ function renderTeamUpdates(){
         <td>${trackCellSummary(sku,'rd')}</td>
         <td>${trackCellSummary(sku,'pkg')}</td>
         <td>${riskBadge(riskForSku(sku))}</td>
-        <td style="font-size:12.5px;">${nextDueForSku(sku)||'<span class="dash">-</span>'}</td>
       </tr>`;
     }).join('');
     tbody.innerHTML = knownRows + pendingRows;
@@ -1537,7 +1536,7 @@ function renderTeamUpdates(){
    as a sub-topic of R&D now, not as its own track. */
 const TRACK_STEPS = {
   rd:  ['พัฒนาสูตร','Test Stability','FDA'],
-  pkg: ['Primary Packaging','Box','Sticker','Shrink Film'],
+  pkg: ['Primary Packaging','Box','Sticker','Shrink Film','Graphic Design','Design Approved'],
 };
 function stepKey(s){
   return String(s||'').toLowerCase().replace(/^สั่ง\s*/,'').replace(/\s+/g,' ').trim();
