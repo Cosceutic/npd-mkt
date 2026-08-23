@@ -431,8 +431,8 @@
       <summary>วิธีกรอก Track / SubCategory / Detail ใน Sheet (คลิกเพื่อดู)</summary>
       <div class="npd-guide-body">
         <div class="npd-guide-track">
-          <div class="npd-guide-track-name">R&D</div>
-          <div class="npd-guide-sub">พัฒนาสูตร &nbsp;·&nbsp; สั่ง Test Stability</div>
+          <div class="npd-guide-track-name">R&D <span style="font-weight:400; color:var(--ink-soft);">(รวม FDA)</span></div>
+          <div class="npd-guide-sub">พัฒนาสูตร &nbsp;·&nbsp; สั่ง Test Stability &nbsp;·&nbsp; <strong>FDA</strong> (ขึ้นทะเบียน/จดแจ้ง — ไม่มี SubCategory ย่อย เขียนรายละเอียดใน Note ได้เลย)</div>
         </div>
         <div class="npd-guide-track">
           <div class="npd-guide-track-name">Packaging <span style="font-weight:400; color:var(--ink-soft);">(รวม Graphic/ดีไซน์)</span></div>
@@ -441,11 +441,7 @@
           <div class="npd-guide-sub"><strong>Sticker</strong> → Standard Max-Min · สั่ง Graphic</div>
           <div class="npd-guide-sub"><strong>Shrink Film</strong></div>
         </div>
-        <div class="npd-guide-track">
-          <div class="npd-guide-track-name">FDA</div>
-          <div class="npd-guide-sub">ไม่มี SubCategory ย่อย — เขียนรายละเอียดในช่อง Note ได้เลย</div>
-        </div>
-        <div class="npd-guide-note">ไม่แน่ใจก็เว้นว่างได้ ระบบจับคำแบบหลวมๆ อยู่แล้ว (เช่น พิมพ์ "ทดสอบเสถียรภาพ" ก็รู้ว่าเป็น R&D)</div>
+        <div class="npd-guide-note">ไม่แน่ใจก็เว้นว่างได้ ระบบจับคำแบบหลวมๆ อยู่แล้ว (เช่น พิมพ์ "ทดสอบเสถียรภาพ" หรือ "ขึ้นทะเบียน อย." ก็รู้ว่าเป็น R&D) · เพิ่มคอลัมน์ <strong>Risk</strong> และ <strong>NextDue</strong> ใน Sheet เพื่ออัปเดตช่องนั้นในตาราง Current Status</div>
         <div class="npd-guide-note">รูปมากกว่า 1 รูปในช่อง Images ให้คั่นด้วย <strong>เซมิโคลอน ( ; )</strong> ไม่ใช่จุลภาค</div>
       </div>
     </details>
@@ -458,9 +454,8 @@
           <thead>
             <tr>
               <th style="width:22%;">Product<span class="th-info" data-tip="ชื่อสินค้า">&#9432;</span></th>
-              <th style="width:24%;">Formulation (R&D)<span class="th-info" data-tip="สูตร">&#9432;</span></th>
-              <th style="width:24%;">Packaging<span class="th-info" data-tip="บรรจุภัณฑ์ / กราฟิก">&#9432;</span></th>
-              <th style="width:16%;">FDA<span class="th-info" data-tip="อย.">&#9432;</span></th>
+              <th style="width:32%;">Formulation (R&D)<span class="th-info" data-tip="สูตร + อย.">&#9432;</span></th>
+              <th style="width:32%;">Packaging<span class="th-info" data-tip="บรรจุภัณฑ์ / กราฟิก">&#9432;</span></th>
               <th style="width:7%;">Risk<span class="th-info" data-tip="ความเสี่ยง">&#9432;</span></th>
               <th style="width:7%;">Next Due<span class="th-info" data-tip="กำหนดถัดไป">&#9432;</span></th>
             </tr>
@@ -671,13 +666,13 @@ function normalizeTrack(raw){
   const s = (raw||'').trim().toLowerCase();
   const has = (...words) => words.some(w=>s.includes(w));
 
-  if(has('fda','อย','อ.ย','ราชกิจ','ขึ้นทะเบียน','จดแจ้ง')) return 'fda';
-
   if(has('pack','บรรจุ','กล่อง','box','sticker','สติ๊กเกอร์','สติกเกอร์',
          'graphic','กราฟิก','กราฟฟิค','design','ดีไซน์','ออกแบบ',
          'shrink','ฟิล์ม','primary','ปฐมภูมิ','ขวด','หลอด','ฉลาก','ปรับ pkg','pkg')) return 'pkg';
 
-  if(has('r&d','rd','formulation','สูตร','พัฒนาสูตร','เสถียรภาพ','stability',
+  // FDA now lives as a sub-topic under Formulation (R&D), not its own track
+  if(has('fda','อย','อ.ย','ราชกิจ','ขึ้นทะเบียน','จดแจ้ง',
+         'r&d','rd','formulation','สูตร','พัฒนาสูตร','เสถียรภาพ','stability',
          'ทดสอบ','วิจัย','ผสม','เนื้อ','กลิ่น','สารสกัด')) return 'rd';
 
   return s;
@@ -762,6 +757,8 @@ async function loadUpdatesFromSheet(){
       note: (r.Note||'').trim(),
       images: resolveImageList(r.Images),
       updatedBy: (r.UpdatedBy||'').trim(),
+      risk: (r.Risk||'').trim(),
+      nextDue: parseSheetDate(r.NextDue||''),
     }));
   }catch(err){
     console.error('Updates Log load failed', err);
@@ -817,8 +814,8 @@ function deptBadge(p){
   const d = DEPT_DEFS[p.waitingOnDept];
   return d ? `<span class="pill-soft" style="background:${d.color}">${d.label}</span>` : '<span class="dash">-</span>';
 }
-function riskBadge(p){
-  const r = (p.risk||'').trim();
+function riskBadge(r){
+  r = (r||'').trim();
   if(!r) return '<span class="dash">-</span>';
   const color = /high/i.test(r) ? 'var(--danger)' : /med/i.test(r) ? 'var(--warn)' : 'var(--ok)';
   return `<span class="pill" style="background:${color}">${esc(r)}</span>`;
@@ -1344,15 +1341,29 @@ function nameForSku(sku){
   const withName = UPDATE_LOGS.find(l=>l.sku===sku && l.productName);
   return withName ? withName.productName : sku;
 }
+/* Risk and Next Due now come from the Updates Log (whichever entry is most
+   recent, across any track), not from the product Sheet — the team updates
+   these as work progresses, not when the product record was first created. */
+function latestLogsForSku(sku){
+  return UPDATE_LOGS.filter(l=>l.sku===sku).sort((a,b)=>b.date.localeCompare(a.date));
+}
+function riskForSku(sku){
+  const hit = latestLogsForSku(sku).find(l=>l.risk);
+  return hit ? hit.risk : '';
+}
+function nextDueForSku(sku){
+  const hit = latestLogsForSku(sku).find(l=>l.nextDue);
+  return hit ? hit.nextDue : '';
+}
 
 function renderTeamUpdates(){
-  // Current Status table — R&D / Packaging (incl. Graphic) / FDA shown side by side,
+  // Current Status table — R&D (incl. FDA) / Packaging (incl. Graphic) shown side by side,
   // summarized from the Updates Log's most recent entry per track.
   const tbody = document.getElementById('team-status-tbody');
   const skusWithLogs = new Set(UPDATE_LOGS.map(l=>l.sku));
   const knownSkus = new Set(PRODUCTS.map(p=>p.sku));
   const pendingSkus = [...skusWithLogs].filter(sku=>!knownSkus.has(sku));
-  const relevant = PRODUCTS.filter(p=>skusWithLogs.has(p.sku) || p.risk || p.nextDue);
+  const relevant = PRODUCTS.filter(p=>skusWithLogs.has(p.sku));
 
   if(!relevant.length && !pendingSkus.length){
     tbody.innerHTML = '';
@@ -1365,9 +1376,8 @@ function renderTeamUpdates(){
         <td><button class="link-btn" onclick="openTimeline(${idx})">${esc(p.name)}</button></td>
         <td>${trackCellSummary(p.sku,'rd')}</td>
         <td>${trackCellSummary(p.sku,'pkg')}</td>
-        <td>${trackCellSummary(p.sku,'fda')}</td>
-        <td>${riskBadge(p)}</td>
-        <td style="font-size:12.5px;">${p.nextDue||'<span class="dash">-</span>'}</td>
+        <td>${riskBadge(riskForSku(p.sku))}</td>
+        <td style="font-size:12.5px;">${nextDueForSku(p.sku)||'<span class="dash">-</span>'}</td>
       </tr>`;
     }).join('');
     const pendingRows = pendingSkus.map(sku=>{
@@ -1376,9 +1386,8 @@ function renderTeamUpdates(){
         <td><strong style="font-size:13px;">${esc(name)}</strong><br><span class="sku" style="display:inline;">${esc(sku)} · ยังไม่มีในระบบสินค้า</span></td>
         <td>${trackCellSummary(sku,'rd')}</td>
         <td>${trackCellSummary(sku,'pkg')}</td>
-        <td>${trackCellSummary(sku,'fda')}</td>
-        <td><span class="dash">-</span></td>
-        <td><span class="dash">-</span></td>
+        <td>${riskBadge(riskForSku(sku))}</td>
+        <td style="font-size:12.5px;">${nextDueForSku(sku)||'<span class="dash">-</span>'}</td>
       </tr>`;
     }).join('');
     tbody.innerHTML = knownRows + pendingRows;
@@ -1426,11 +1435,11 @@ function renderTeamUpdates(){
 }
 
 /* Canonical sub-steps per track, so steps that haven't started yet still show up
-   as columns (that's the whole point — seeing what's NOT done). */
+   as columns (that's the whole point — seeing what's NOT done). FDA lives here
+   as a sub-topic of R&D now, not as its own track. */
 const TRACK_STEPS = {
-  rd:  ['พัฒนาสูตร','Test Stability'],
+  rd:  ['พัฒนาสูตร','Test Stability','FDA'],
   pkg: ['Primary Packaging','Box','Sticker','Shrink Film'],
-  fda: [],
 };
 function stepKey(s){
   return String(s||'').toLowerCase().replace(/^สั่ง\s*/,'').replace(/\s+/g,' ').trim();
@@ -1439,7 +1448,7 @@ function stepKey(s){
 function openTrackLog(sku, track){
   const entries = logsFor(sku, track);
   const product = PRODUCTS.find(p=>p.sku===sku);
-  const trackLabel = {rd:'Formulation (R&D)', pkg:'Packaging / Graphic', fda:'FDA'}[track] || track;
+  const trackLabel = {rd:'Formulation (R&D)', pkg:'Packaging / Graphic'}[track] || track;
   document.getElementById('tl-title').textContent = nameForSku(sku);
   document.getElementById('tl-subtitle').textContent = `${trackLabel}${sku ? ' · '+sku : ''}`;
 
