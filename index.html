@@ -173,6 +173,23 @@
   .cal-avatar.is-actual{border-radius:50%;}
   .cal-avatar.is-deadline{border-radius:7px;}
   .cal-avatar.is-deadline img, .cal-avatar.is-deadline .fallback{filter:grayscale(1);}
+  .cal-note-box{
+    display:flex; align-items:center; flex-wrap:wrap; gap:8px;
+    background:var(--blue-pale); border:1px solid #C9DCF0; border-radius:10px;
+    padding:10px 14px; margin:2px 0 14px; font-size:12.5px; color:var(--ink);
+  }
+  .cal-note-sample{display:inline-block; width:16px; height:16px; vertical-align:middle; flex-shrink:0;}
+  .cal-note-actual{border-radius:50%; background:var(--blue-deep);}
+  .cal-note-deadline{border-radius:4px; background:#AEB6C2;}
+  .cal-note-sep{color:var(--ink-soft); margin:0 2px;}
+  .notice-banner{
+    display:flex; align-items:flex-start; gap:10px;
+    background:#FFF3D6; border-bottom:1px solid #F0D28A;
+    padding:10px 24px; font-size:13px; color:#5A4A1F;
+  }
+  .notice-banner .icon{font-size:16px; line-height:1.4; flex-shrink:0;}
+  .notice-banner .msg{flex:1; line-height:1.5;}
+  .notice-banner .close-btn{background:none; border:none; cursor:pointer; font-size:16px; color:#8A7238; line-height:1; padding:0 2px; flex-shrink:0;}
   .cal-avatar img{width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;}
   .cal-avatar .fallback{width:100%; height:100%; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-family:'Prompt'; font-weight:700; font-size:10px;}
   .cal-avatar .badge{position:absolute; top:-3px; right:-3px; background:var(--danger); color:#fff; font-size:8px; font-weight:700; border-radius:999px; width:13px; height:13px; display:flex; align-items:center; justify-content:center; border:1.5px solid #fff;}
@@ -281,6 +298,8 @@
   </div>
 </header>
 
+<div id="notice-container"></div>
+
 <main>
 
   <div class="view active" id="view-calendar">
@@ -325,7 +344,11 @@
         </div>
       </div>
       <div id="cal-legend" class="cal-legend"></div>
-      <div style="font-size:11px; color:var(--ink-soft); margin:2px 0 8px;">รูปวงกลมสี = เกิดขึ้นจริงแล้ว (actual) · รูปสี่เหลี่ยมขาวดำ = ยังเป็นแค่กำหนดการ (deadline)</div>
+      <div class="cal-note-box">
+        <span class="cal-note-sample cal-note-actual"></span> <strong>วงกลมสี</strong> = เกิดขึ้นจริงแล้ว (actual)
+        <span class="cal-note-sep">·</span>
+        <span class="cal-note-sample cal-note-deadline"></span> <strong>สี่เหลี่ยมขาวดำ</strong> = ยังเป็นแค่กำหนดการ (deadline)
+      </div>
       <div id="stock-calendar-grid"></div>
     </div>
 
@@ -559,6 +582,7 @@
 /* ===== DATA — Claude updates this array directly when Ploy sends new info in chat ===== */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=0";
 const UPDATES_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=327758317";
+const NOTICE_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=Notice";
 
 /* Product photos stay embedded in the code (Sheet cells are too small for full images).
    Keyed by SKU. When a product's Sheet row has its own "image" column (a Drive share link),
@@ -777,6 +801,48 @@ async function loadUpdatesFromSheet(){
   }
 }
 
+let NOTICES = [];
+async function loadNoticesFromSheet(){
+  try{
+    const res = await fetch(NOTICE_CSV_URL + '&_cb=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) throw new Error('fetch failed: '+res.status);
+    const csvText = await res.text();
+    const rows = parseCsvByHeader(csvText, ['Message']);
+    NOTICES = rows
+      .filter(r=>toBool(r.Active) && (r.Message||'').trim())
+      .map(r=>({message:(r.Message||'').trim()}));
+  }catch(err){
+    console.error('Notice load failed (this is fine if the Notice tab does not exist yet)', err);
+    NOTICES = [];
+  }
+}
+
+function noticeDismissKey(msg){
+  // Simple hash so a new/changed message always shows again even if an old one was dismissed
+  let h = 0;
+  for(let i=0;i<msg.length;i++){ h = ((h<<5)-h + msg.charCodeAt(i))|0; }
+  return 'noticeDismissed_' + h;
+}
+function renderNotices(){
+  const container = document.getElementById('notice-container');
+  if(!container) return;
+  const visible = NOTICES.filter(n=>{
+    try{ return localStorage.getItem(noticeDismissKey(n.message)) !== '1'; }catch(e){ return true; }
+  });
+  container.innerHTML = visible.map(n=>{
+    const key = noticeDismissKey(n.message);
+    return `<div class="notice-banner">
+      <span class="icon">📢</span>
+      <span class="msg">${esc(n.message)}</span>
+      <button class="close-btn" onclick="dismissNotice('${key}')" title="ปิด">✕</button>
+    </div>`;
+  }).join('');
+}
+function dismissNotice(key){
+  try{ localStorage.setItem(key, '1'); }catch(e){}
+  renderNotices();
+}
+
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
 const BRAND_DEFS = {
@@ -892,7 +958,8 @@ document.querySelectorAll('#nav .tab').forEach(t=>{
 
 async function init(){
   document.getElementById('updated-badge').textContent = 'Loading data…';
-  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet()]);
+  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet()]);
+  renderNotices();
 
   const years = Array.from(new Set(PRODUCTS.map(getYear)));
   const thisYear = new Date().getFullYear();
