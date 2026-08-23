@@ -59,7 +59,7 @@
 
   table{width:100%; border-collapse:collapse; table-layout:fixed;}
   .table-scroll{overflow-x:auto;}
-  thead th{background:var(--bg); text-align:left; padding:10px 8px; font-size:11.5px; color:var(--ink-soft); font-weight:600; border-bottom:1px solid var(--line); word-wrap:break-word;}
+  thead th{background:var(--bg); text-align:left; padding:10px 8px; font-size:11.5px; color:var(--ink-soft); font-weight:600; border-bottom:1px solid var(--line); word-wrap:break-word; position:sticky; top:0; z-index:8;}
   thead th .th-info{display:inline-block; margin-left:4px; color:var(--ink-soft); cursor:help; font-size:11px; opacity:.75; position:relative;}
   thead th .th-info:hover{opacity:1; color:var(--blue-deep);}
   thead th .th-info::after{
@@ -322,6 +322,7 @@
         </div>
       </div>
       <div id="cal-legend" class="cal-legend"></div>
+      <div style="font-size:11px; color:var(--ink-soft); margin:2px 0 8px;">รูปทึบ = เกิดขึ้นจริงแล้ว (actual) · รูปจาง = ยังเป็นแค่กำหนดการ (deadline)</div>
       <div id="stock-calendar-grid"></div>
     </div>
 
@@ -782,7 +783,10 @@ const BRAND_DEFS = {
 function brandBadge(p, heightPx){
   const b = BRAND_DEFS[p.brand];
   if(!b) return '<span class="dash">-</span>';
-  return `<img src="${b.logo}" alt="${b.label}" title="${b.label}" style="max-height:${heightPx||18}px; max-width:100%; width:auto; height:auto; display:block;">`;
+  // Glimmer's logo is squarish/stacked (tall), Godmami's is a wide wordmark —
+  // matching them on height alone makes Glimmer look tiny, so give it more height.
+  const h = (p.brand === 'glimmer') ? (heightPx||18) * 1.8 : (heightPx||18);
+  return `<img src="${b.logo}" alt="${b.label}" title="${b.label}" style="max-height:${h}px; max-width:100%; width:auto; height:auto; display:block;">`;
 }
 
 const TYPE_DEFS = {
@@ -861,7 +865,7 @@ function computeStatus(p){
   const cutoff = new Date(arrival); cutoff.setDate(cutoff.getDate()+120);
   const today = new Date(); today.setHours(0,0,0,0);
   const diff = daysBetween(arrival, today);
-  if(diff < 0) return {label:'Not yet in stock', color:'var(--gray)'};
+  if(diff < 0) return {label:'Pending Arrival', color:'var(--gray)'};
   if(diff <= 120) return {label:`New (Day ${diff}/120) · until ${formatDate(cutoff)}`, color:'var(--ok)'};
   return {label:`Established (since ${formatDate(cutoff)})`, color:'var(--gray)'};
 }
@@ -1118,10 +1122,16 @@ function shiftCalMonth(delta){
 }
 
 const CAL_LEGEND = {
-  stock:  {label:'Product on Stock', th:'สินค้าเข้าคลัง', color:'#4C6FA5', field:'arrival'},
-  basket: {label:'Basket Open',      th:'เปิดตะกร้า',     color:'#8E6FC6', field:'basketOpen'},
-  pr:     {label:'PR Marketing',     th:'ประชาสัมพันธ์',   color:'#E67E4D', field:'prDate'},
-  launch: {label:'Official Launch Date', th:'เปิดตัวอย่างเป็นทางการ', color:'#2E9E6D', field:'launch'},
+  stock:        {label:'Product on Stock',        th:'สินค้าเข้าคลัง',                  color:'#4C6FA5', field:'arrival'},
+  refPhoto:     {label:'Ref Photo Due',            th:'วันที่ต้องได้ Ref ถ่ายรูป',        color:'#2FA8A0', field:'refPhoto'},
+  photoShoot:   {label:'Photo Shoot',              th:'วันถ่ายงาน',                      color:'#6B7C93', field:'photoShoot'},
+  productMedia: {label:'Product Media',            th:'ภาพ/วิดีโอสินค้าเสร็จ',            color:'#B85C9E', field:'productMedia'},
+  dataReady:    {label:'E-Commerce Content',       th:'ข้อมูลขายออนไลน์พร้อม',           color:'#1FA8C9', field:'dataReady'},
+  platformDone: {label:'Marketplace Listing',      th:'ลงข้อมูล Platform ครบ',            color:'#8C6B4F', field:'platformDone'},
+  sampleToMkt:  {label:'Sample to Marketing',      th:'ส่งตัวอย่างให้ MKT',               color:'#D9738F', field:'sampleToMkt'},
+  basket:       {label:'Basket Open',              th:'เปิดตะกร้า',                      color:'#8E6FC6', field:'basketOpen'},
+  pr:           {label:'PR Marketing',             th:'ประชาสัมพันธ์',                    color:'#E67E4D', field:'prDate'},
+  launch:       {label:'Official Launch Date',     th:'เปิดตัวอย่างเป็นทางการ',           color:'#2E9E6D', field:'launch'},
 };
 
 function renderCalLegend(){
@@ -1153,16 +1163,23 @@ function renderStockCalendarGrid(){
   const daysInMonth = new Date(calDisplayYear, calMonthIndex+1, 0).getDate();
   const today = new Date(); today.setHours(0,0,0,0);
 
-  // byDay[day][typeKey] = [products]
+  // byDay[day][typeKey] = [products]; actualFlag[day][typeKey][sku] = true if the
+  // plotted date came from the "actual" field rather than just a deadline.
   const byDay = {};
+  const actualFlag = {};
   Object.entries(CAL_LEGEND).forEach(([typeKey, def])=>{
     PRODUCTS.forEach(p=>{
-      const val = effectiveDate(p, def.field);
+      const md = milestoneDate(p, def.field);
+      const val = md.actual || md.deadline;
       if(!val) return;
       const d = new Date(val+"T00:00:00");
       if(d.getFullYear()===calDisplayYear && d.getMonth()===calMonthIndex){
-        byDay[d.getDate()] = byDay[d.getDate()] || {};
-        (byDay[d.getDate()][typeKey] = byDay[d.getDate()][typeKey] || []).push(p);
+        const day = d.getDate();
+        byDay[day] = byDay[day] || {};
+        (byDay[day][typeKey] = byDay[day][typeKey] || []).push(p);
+        actualFlag[day] = actualFlag[day] || {};
+        actualFlag[day][typeKey] = actualFlag[day][typeKey] || {};
+        actualFlag[day][typeKey][p.sku] = !!md.actual;
       }
     });
   });
@@ -1187,20 +1204,24 @@ function renderStockCalendarGrid(){
       return `openTimeline(${PRODUCTS.indexOf(members[0])})`;
     }
 
-    // Every milestone type renders as a product photo; the ring colour says which type it is
+    // Every milestone type renders as a product photo; the ring colour says which type it
+    // is, and full vs. dimmed opacity says whether that date actually happened yet.
     const avatars = Object.keys(CAL_LEGEND).flatMap(typeKey=>{
       const list = dayData[typeKey];
       if(!list) return [];
       const ring = CAL_LEGEND[typeKey].color;
       return groupByBaseName(list).map(g=>{
         const rep = g.members[0];
+        const isActual = !!(actualFlag[day] && actualFlag[day][typeKey] && actualFlag[day][typeKey][rep.sku]);
+        const opacity = isActual ? 1 : 0.55;
         const inner = rep.image
           ? `<img src="${esc(rep.image)}" alt="">`
           : `<div class="fallback" style="background:${ring};">${esc((g.base||'?').charAt(0).toUpperCase())}</div>`;
         const badge = g.members.length>1 ? `<div class="badge" style="background:${ring};">${g.members.length}</div>` : '';
         const click = registerClick(g.base, g.members);
-        const title = `${CAL_LEGEND[typeKey].label}: ${g.base}${g.members.length>1 ? ' ×'+g.members.length : ''}`;
-        return `<div class="cal-avatar" style="--dot-color:${ring};" title="${esc(title)}" onclick="${click}">${inner}${badge}</div>`;
+        const statusTxt = isActual ? 'actual' : 'deadline — not yet';
+        const title = `${CAL_LEGEND[typeKey].label} (${statusTxt}): ${g.base}${g.members.length>1 ? ' ×'+g.members.length : ''}`;
+        return `<div class="cal-avatar" style="--dot-color:${ring}; opacity:${opacity};" title="${esc(title)}" onclick="${click}">${inner}${badge}</div>`;
       });
     }).join('');
 
