@@ -58,7 +58,7 @@
   .section-sub{color:var(--ink-soft); font-size:13px; margin:0 0 16px;}
 
   table{width:100%; border-collapse:collapse; table-layout:fixed;}
-  .table-scroll{overflow-x:auto;}
+  .table-scroll{overflow-x:auto; overflow-y:auto; max-height:65vh;}
   thead th{background:var(--bg); text-align:left; padding:10px 8px; font-size:11.5px; color:var(--ink-soft); font-weight:600; border-bottom:1px solid var(--line); word-wrap:break-word; position:sticky; top:0; z-index:8;}
   thead th .th-info{display:inline-block; margin-left:4px; color:var(--ink-soft); cursor:help; font-size:11px; opacity:.75; position:relative;}
   thead th .th-info:hover{opacity:1; color:var(--blue-deep);}
@@ -170,6 +170,9 @@
   .cal-daynum{font-size:11px; color:var(--ink-soft); font-weight:600;}
   .cal-avatars{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;}
   .cal-avatar{position:relative; width:24px; height:24px; border-radius:50%; cursor:pointer; box-shadow:0 0 0 1.5px #fff, 0 0 0 3.5px var(--dot-color,var(--blue));}
+  .cal-avatar.is-actual{border-radius:50%;}
+  .cal-avatar.is-deadline{border-radius:7px;}
+  .cal-avatar.is-deadline img, .cal-avatar.is-deadline .fallback{filter:grayscale(1);}
   .cal-avatar img{width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;}
   .cal-avatar .fallback{width:100%; height:100%; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-family:'Prompt'; font-weight:700; font-size:10px;}
   .cal-avatar .badge{position:absolute; top:-3px; right:-3px; background:var(--danger); color:#fff; font-size:8px; font-weight:700; border-radius:999px; width:13px; height:13px; display:flex; align-items:center; justify-content:center; border:1.5px solid #fff;}
@@ -322,7 +325,7 @@
         </div>
       </div>
       <div id="cal-legend" class="cal-legend"></div>
-      <div style="font-size:11px; color:var(--ink-soft); margin:2px 0 8px;">รูปทึบ = เกิดขึ้นจริงแล้ว (actual) · รูปจาง = ยังเป็นแค่กำหนดการ (deadline)</div>
+      <div style="font-size:11px; color:var(--ink-soft); margin:2px 0 8px;">รูปวงกลมสี = เกิดขึ้นจริงแล้ว (actual) · รูปสี่เหลี่ยมขาวดำ = ยังเป็นแค่กำหนดการ (deadline)</div>
       <div id="stock-calendar-grid"></div>
     </div>
 
@@ -1213,15 +1216,15 @@ function renderStockCalendarGrid(){
       return groupByBaseName(list).map(g=>{
         const rep = g.members[0];
         const isActual = !!(actualFlag[day] && actualFlag[day][typeKey] && actualFlag[day][typeKey][rep.sku]);
-        const opacity = isActual ? 1 : 0.55;
+        const shapeClass = isActual ? 'is-actual' : 'is-deadline';
         const inner = rep.image
           ? `<img src="${esc(rep.image)}" alt="">`
           : `<div class="fallback" style="background:${ring};">${esc((g.base||'?').charAt(0).toUpperCase())}</div>`;
         const badge = g.members.length>1 ? `<div class="badge" style="background:${ring};">${g.members.length}</div>` : '';
         const click = registerClick(g.base, g.members);
-        const statusTxt = isActual ? 'actual' : 'deadline — not yet';
+        const statusTxt = isActual ? 'actual — done' : 'deadline — not yet';
         const title = `${CAL_LEGEND[typeKey].label} (${statusTxt}): ${g.base}${g.members.length>1 ? ' ×'+g.members.length : ''}`;
-        return `<div class="cal-avatar" style="--dot-color:${ring}; opacity:${opacity};" title="${esc(title)}" onclick="${click}">${inner}${badge}</div>`;
+        return `<div class="cal-avatar ${shapeClass}" style="--dot-color:${ring};" title="${esc(title)}" onclick="${click}">${inner}${badge}</div>`;
       });
     }).join('');
 
