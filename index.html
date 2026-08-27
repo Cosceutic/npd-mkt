@@ -116,6 +116,8 @@
   .btn-sm.ghost{background:var(--blue-pale); color:var(--blue-ink);}
   .btn-sm.ghost:hover{background:#DCE8F7;}
   .btn-sm.disabled{background:var(--bg); color:var(--gray); pointer-events:none;}
+  #subnav-status, #subnav-nprsummary{flex:none; background:var(--bg); color:var(--ink-soft); border:1px solid var(--line);}
+  #subnav-status.subnav-active, #subnav-nprsummary.subnav-active{background:var(--accent); color:#fff; border-color:var(--accent);}
 
   /* Timeline modal */
   .modal-overlay{position:fixed; inset:0; background:rgba(34,48,58,.55); display:none; align-items:center; justify-content:center; z-index:50; padding:20px;}
@@ -190,6 +192,40 @@
   .notice-banner .icon{font-size:16px; line-height:1.4; flex-shrink:0;}
   .notice-banner .msg{flex:1; line-height:1.5;}
   .notice-banner .close-btn{background:none; border:none; cursor:pointer; font-size:16px; color:#8A7238; line-height:1; padding:0 2px; flex-shrink:0;}
+
+  .brief-part{border:1px solid var(--line); border-radius:12px; margin-bottom:14px; overflow:hidden;}
+  .brief-part-head{display:flex; align-items:center; justify-content:space-between; background:var(--bg); padding:12px 16px; cursor:pointer;}
+  .brief-part-title{font-family:'Prompt'; font-weight:700; font-size:14px; color:var(--accent-deep);}
+  .brief-part-body{padding:16px; display:none;}
+  .brief-part.open .brief-part-body{display:block;}
+  .brief-part.open .brief-part-head{border-bottom:1px solid var(--line);}
+  .brief-chevron{transition:transform .15s;}
+  .brief-part.open .brief-chevron{transform:rotate(90deg);}
+  .brief-section-h{font-family:'Prompt'; font-weight:600; font-size:13px; color:var(--ink); margin:14px 0 8px;}
+  .brief-section-h:first-child{margin-top:0;}
+  .brief-field-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px 14px;}
+  .brief-field label{display:block; font-size:11.5px; color:var(--ink-soft); margin-bottom:3px;}
+  .brief-field input, .brief-field textarea, .brief-field select{
+    width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:7px;
+    font-family:'Sarabun',sans-serif; font-size:13px; background:#fff; box-sizing:border-box;
+  }
+  .brief-field textarea{min-height:52px; resize:vertical;}
+  .brief-field input:focus, .brief-field textarea:focus, .brief-field select:focus{outline:none; border-color:var(--accent-deep);}
+  .brief-full{grid-column:1/-1;}
+  .brief-table{width:100%; border-collapse:collapse; margin-bottom:6px;}
+  .brief-table th{background:var(--bg); font-size:11px; padding:6px; text-align:left; border:1px solid var(--line);}
+  .brief-table td{border:1px solid var(--line); padding:4px;}
+  .brief-table td.label-cell{font-size:12px; font-weight:600; background:var(--bg); white-space:nowrap; padding:6px 8px;}
+  .brief-table input, .brief-table select{width:100%; border:none; padding:6px; font-family:'Sarabun',sans-serif; font-size:12.5px; box-sizing:border-box;}
+  .brief-table input:focus, .brief-table select:focus{outline:2px solid var(--accent-deep); outline-offset:-2px;}
+  .brief-check-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px;}
+  .brief-check-item{display:flex; align-items:center; gap:7px; font-size:12.5px;}
+  .brief-note-box{background:var(--accent-pale); border-left:3px solid var(--accent); border-radius:8px; padding:10px 14px; font-size:12px; margin:10px 0; line-height:1.5;}
+  .brief-print-btn{background:none; border:1px solid var(--accent); color:var(--accent-deep); border-radius:7px; padding:5px 12px; font-size:12px; cursor:pointer; font-family:'Sarabun',sans-serif;}
+  .brief-print-btn:hover{background:var(--accent-pale);}
+  .brief-repeat-del{background:none; border:1px solid var(--line); border-radius:7px; padding:5px 10px; cursor:pointer; font-size:13px; flex-shrink:0;}
+  .brief-repeat-del:hover{background:#FDEAEA; border-color:var(--danger);}
+
   .cal-avatar img{width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;}
   .cal-avatar .fallback{width:100%; height:100%; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-family:'Prompt'; font-weight:700; font-size:10px;}
   .cal-avatar .badge{position:absolute; top:-3px; right:-3px; background:var(--danger); color:#fff; font-size:8px; font-weight:700; border-radius:999px; width:13px; height:13px; display:flex; align-items:center; justify-content:center; border:1.5px solid #fff;}
@@ -451,7 +487,53 @@
           <span class="lib-text"><strong>FDA</strong><small>โฟลเดอร์เอกสาร อย.</small></span>
           <span class="lib-arrow">↗</span>
         </a>
+        <a class="lib-btn" href="https://cosceutic.github.io/npd-Sales-Report/" target="_blank" rel="noopener">
+          <span class="lib-icon">📈</span>
+          <span class="lib-text"><strong>NPD Sales Report</strong><small>ยอดขายสินค้าใหม่</small></span>
+          <span class="lib-arrow">↗</span>
+        </a>
       </div>
+    </div>
+
+    <p class="section-title">NPD Brief Form</p>
+    <p class="section-sub">แบบฟอร์มบรีฟโรงงาน — กรอกแล้วพิมพ์/บันทึกเป็น PDF แยกทีละ Part เพื่อส่งบรีฟแต่ละแผนกได้เลย ข้อมูลที่กรอกจะถูกจำไว้ในเครื่องนี้อัตโนมัติ</p>
+    <div class="panel" style="padding:16px 20px;">
+      <button class="btn-sm primary" onclick="toggleBriefForm()" id="brief-toggle-btn">📋 เปิดฟอร์ม NPD Brief</button>
+      <button class="btn-sm ghost" onclick="saveToNPRSummary()" style="margin-left:8px;">💾 Save to NPR Summary</button>
+      <div id="brief-form-container" style="display:none; margin-top:16px;"></div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <button class="btn-sm subnav-active" id="subnav-status" onclick="switchTeamSubview('status')">Current Status</button>
+      <button class="btn-sm" id="subnav-nprsummary" onclick="switchTeamSubview('nprsummary')">📊 NPR Summary</button>
+    </div>
+
+    <div id="team-subview-status">
+    <p class="section-title" style="margin-top:0;">Current Status</p>
+    <p class="section-sub">Formulation, Packaging, and FDA move in parallel — click a cell to see its full history.</p>
+    <div class="panel">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:8%;">Image<span class="th-info" data-tip="รูปสินค้า">&#9432;</span></th>
+              <th style="width:18%;">Product<span class="th-info" data-tip="ชื่อสินค้า">&#9432;</span></th>
+              <th style="width:33%;">Formulation (R&D)<span class="th-info" data-tip="สูตร + อย.">&#9432;</span></th>
+              <th style="width:33%;">Packaging<span class="th-info" data-tip="บรรจุภัณฑ์ / กราฟิก">&#9432;</span></th>
+              <th style="width:6%;">Risk<span class="th-info" data-tip="ความเสี่ยง">&#9432;</span></th>
+            </tr>
+          </thead>
+          <tbody id="team-status-tbody"></tbody>
+        </table>
+      </div>
+      <div id="team-status-empty" class="empty" style="display:none;">No status updates logged yet.</div>
+    </div>
+
+    <p class="section-title">Recent Activity</p>
+    <p class="section-sub">Every update across every product and track, newest first.</p>
+    <div class="panel">
+      <div id="team-feed"></div>
+      <div id="team-feed-empty" class="empty" style="display:none;">No activity logged yet.</div>
     </div>
 
     <details class="npd-guide">
@@ -473,31 +555,27 @@
         <div class="npd-guide-note">รูปมากกว่า 1 รูปในช่อง Images ให้คั่นด้วย <strong>เซมิโคลอน ( ; )</strong> ไม่ใช่จุลภาค</div>
       </div>
     </details>
+    </div>
 
-    <p class="section-title" style="margin-top:0;">Current Status</p>
-    <p class="section-sub">Formulation, Packaging, and FDA move in parallel — click a cell to see its full history.</p>
+    <div id="team-subview-nprsummary" style="display:none;">
+    <p class="section-title" style="margin-top:0;">NPR Summary</p>
+    <p class="section-sub">รายการโครงการที่กด "Save to NPR Summary" จากฟอร์ม NPD Brief</p>
     <div class="panel">
       <div class="table-scroll">
         <table>
           <thead>
             <tr>
-              <th style="width:24%;">Product<span class="th-info" data-tip="ชื่อสินค้า">&#9432;</span></th>
-              <th style="width:35%;">Formulation (R&D)<span class="th-info" data-tip="สูตร + อย.">&#9432;</span></th>
-              <th style="width:35%;">Packaging<span class="th-info" data-tip="บรรจุภัณฑ์ / กราฟิก">&#9432;</span></th>
-              <th style="width:6%;">Risk<span class="th-info" data-tip="ความเสี่ยง">&#9432;</span></th>
+              <th>NPR No.</th>
+              <th>Project Name</th>
+              <th>Start Project Date</th>
+              <th>Launch Plan</th>
+              <th>NPD Owner</th>
             </tr>
           </thead>
-          <tbody id="team-status-tbody"></tbody>
+          <tbody id="npr-summary-tbody"></tbody>
         </table>
       </div>
-      <div id="team-status-empty" class="empty" style="display:none;">No status updates logged yet.</div>
-    </div>
-
-    <p class="section-title">Recent Activity</p>
-    <p class="section-sub">Every update across every product and track, newest first.</p>
-    <div class="panel">
-      <div id="team-feed"></div>
-      <div id="team-feed-empty" class="empty" style="display:none;">No activity logged yet.</div>
+      <div id="npr-summary-empty" class="empty" style="display:none;">ยังไม่มีข้อมูล — กรอก Part A ในฟอร์ม NPD Brief ด้านล่าง แล้วกด "Save to NPR Summary"</div>
     </div>
     </div>
   </div>
@@ -583,6 +661,18 @@
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=1762470958";
 const UPDATES_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=327758317";
 const NOTICE_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=Notice";
+
+/* ===== NPR Summary — Google Form + Sheet (same pattern as the Task board) =====
+   PLACEHOLDERS: swap these once the actual Form exists — see chat instructions. */
+const NPR_FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSc-KudwW8jx3EfbqQo7R0gauHG0vgfGKO0u1vJtxzyggYQEvA/viewform";
+const NPR_FORM_ENTRIES = {
+  nprNo:       "entry.2099135622",
+  projectName: "entry.1320229274",
+  startDate:   "entry.122433018",
+  launchPlan:  "entry.1803533697",
+  owner:       "entry.1007106572",
+};
+const NPR_SUMMARY_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=936411881";
 
 /* Product photos stay embedded in the code (Sheet cells are too small for full images).
    Keyed by SKU. When a product's Sheet row has its own "image" column (a Drive share link),
@@ -959,7 +1049,7 @@ document.querySelectorAll('#nav .tab').forEach(t=>{
 
 async function init(){
   document.getElementById('updated-badge').textContent = 'Loading data…';
-  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet()]);
+  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet(), loadNPRSummaryFromSheet()]);
   renderNotices();
 
   const years = Array.from(new Set(PRODUCTS.map(getYear)));
@@ -1455,6 +1545,56 @@ function nextDueForSku(sku){
   return hit ? hit.nextDue : '';
 }
 
+function switchTeamSubview(key){
+  document.getElementById('team-subview-status').style.display = key==='status' ? 'block' : 'none';
+  document.getElementById('team-subview-nprsummary').style.display = key==='nprsummary' ? 'block' : 'none';
+  document.getElementById('subnav-status').classList.toggle('subnav-active', key==='status');
+  document.getElementById('subnav-nprsummary').classList.toggle('subnav-active', key==='nprsummary');
+  if(key==='nprsummary') renderNPRSummary();
+}
+
+function saveToNPRSummary(){
+  const params = new URLSearchParams();
+  params.set(NPR_FORM_ENTRIES.nprNo, bfGet('a_nprNo'));
+  params.set(NPR_FORM_ENTRIES.projectName, bfGet('a_projectName'));
+  params.set(NPR_FORM_ENTRIES.startDate, bfGet('a_briefDate'));
+  params.set(NPR_FORM_ENTRIES.launchPlan, bfGet('a_fgLaunch'));
+  params.set(NPR_FORM_ENTRIES.owner, bfGet('a_owner'));
+  params.set('usp', 'pp_url');
+  window.open(NPR_FORM_BASE + '?' + params.toString(), '_blank');
+}
+
+let NPR_SUMMARY_ROWS = [];
+async function loadNPRSummaryFromSheet(){
+  try{
+    const res = await fetch(NPR_SUMMARY_CSV_URL + '&_cb=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) throw new Error('fetch failed: '+res.status);
+    const csvText = await res.text();
+    const rows = parseCsvByHeader(csvText, ['Project Name']);
+    NPR_SUMMARY_ROWS = rows.filter(r=>(r['Project Name']||'').trim());
+  }catch(err){
+    console.error('NPR Summary load failed (fine if the Form/Sheet is not set up yet)', err);
+    NPR_SUMMARY_ROWS = [];
+  }
+}
+function renderNPRSummary(){
+  const tbody = document.getElementById('npr-summary-tbody');
+  const empty = document.getElementById('npr-summary-empty');
+  if(!NPR_SUMMARY_ROWS.length){
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = NPR_SUMMARY_ROWS.map(r=>`<tr>
+    <td>${esc(r['NPR No.']||'-')}</td>
+    <td>${esc(r['Project Name']||'-')}</td>
+    <td>${esc(r['Start Project Date']||'-')}</td>
+    <td>${esc(r['Launch Planning Date']||'-')}</td>
+    <td>${esc(r['NPD Owner']||'-')}</td>
+  </tr>`).join('');
+}
+
 function renderTeamUpdates(){
   // Current Status table — R&D (incl. FDA) / Packaging (incl. Graphic) shown side by side,
   // summarized from the Updates Log's most recent entry per track.
@@ -1471,7 +1611,11 @@ function renderTeamUpdates(){
     document.getElementById('team-status-empty').style.display = 'none';
     const knownRows = relevant.map(p=>{
       const idx = PRODUCTS.indexOf(p);
+      const imgCell = p.image
+        ? `<img src="${esc(p.image)}" alt="" style="width:36px; height:36px; border-radius:8px; object-fit:cover; cursor:pointer;" onclick="openLightbox('${esc(p.image)}',event)">`
+        : '<span class="dash">-</span>';
       return `<tr>
+        <td>${imgCell}</td>
         <td><button class="link-btn" onclick="openTimeline(${idx})">${esc(p.name)}</button></td>
         <td>${trackCellSummary(p.sku,'rd')}</td>
         <td>${trackCellSummary(p.sku,'pkg')}</td>
@@ -1481,6 +1625,7 @@ function renderTeamUpdates(){
     const pendingRows = pendingSkus.map(sku=>{
       const name = nameForSku(sku);
       return `<tr style="background:var(--bg);">
+        <td><span class="dash">-</span></td>
         <td><strong style="font-size:13px;">${esc(name)}</strong><br><span class="sku" style="display:inline;">${esc(sku)} · ยังไม่มีในระบบสินค้า</span></td>
         <td>${trackCellSummary(sku,'rd')}</td>
         <td>${trackCellSummary(sku,'pkg')}</td>
@@ -1886,6 +2031,363 @@ function closeLightbox(){
 
 function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function esc(s){ const d=document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+
+/* ================= NPD Brief Form (Part A–E) =================
+   Data-driven from the factory brief template. Every field auto-saves to
+   localStorage as the user types, and each Part can be printed/saved as PDF
+   on its own so it can be sent to just the relevant department. */
+
+const BRIEF_PARTS = {
+  a: { title:'A. Project & Product Brief', th:'ข้อมูลโครงการ + ทิศทางสินค้า' },
+  b: { title:'B. Formula Brief — โจทย์พัฒนาสูตร', th:'บรีฟให้ R&D' },
+  c: { title:'C. Packaging Brief (PKG) — โจทย์บรรจุภัณฑ์', th:'บรีฟให้ Packaging' },
+  d: { title:'D. Timeline & Project Follow-up', th:'ไทม์ไลน์และประเด็นที่ต้องติดตาม' },
+  e: { title:'E. Approval & Sign-off', th:'จุดอนุมัติ / ลงนาม' },
+};
+
+const B1_ROWS = ['Product Form','วิธีใช้ / ปริมาณ','Shade / SKU','Hero Ingredient','Required Claims','Benchmark','สี / Appearance','กลิ่น','เนื้อสัมผัส / Finish'];
+const B2_CHECKS = ['Stability Test','Compatibility Test','Microbial Test','Challenge Test','Dermatological Test','Efficacy / Claim Test','HRIPT / Patch Test'];
+const C2_CHECKS = ['Dieline / Artwork Size','Print Proof / Color Proof','Barcode Zone','Lot Code Zone','MFG / EXP Zone','Net Content','เลขจดแจ้ง','คำเตือน / วิธีใช้ / ส่วนประกอบ'];
+const D1_MILESTONES = [
+  {m:'Brief Clarification', owner:'Brand + Factory'},
+  {m:'Formula Sample V1', owner:'Factory'},
+  {m:'Formula Lock', owner:'Brand'},
+  {m:'Packaging Sample', owner:'Factory / Supplier'},
+  {m:'Packaging Lock', owner:'Brand'},
+  {m:'Compatibility / Testing', owner:'Factory / QA'},
+  {m:'Artwork Final / Regulatory', owner:'Brand + Factory'},
+  {m:'Pilot / Golden Sample', owner:'Factory'},
+  {m:'Mass Production', owner:'Factory'},
+  {m:'Batch Release / Delivery', owner:'Factory QA'},
+];
+const E_ROWS = ['Product Brief','Concept & Target Cost','Formula Lock','Packaging Lock','Compatibility Approval','Artwork Final','Golden / Pre-production Sample','Production Approval'];
+
+function bfGet(id){ try{ return localStorage.getItem('brief_'+id) || ''; }catch(e){ return ''; } }
+function bfSet(id, val){ try{ localStorage.setItem('brief_'+id, val); }catch(e){} }
+function bfOnChange(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  bfSet(id, el.type==='checkbox' ? (el.checked?'1':'') : el.value);
+}
+
+function bfField(id, label, type, opts){
+  opts = opts||{};
+  const saved = esc(bfGet(id));
+  let input;
+  if(type==='textarea'){
+    input = `<textarea id="${id}" onchange="bfOnChange('${id}')" placeholder="${esc(opts.placeholder||'')}">${saved}</textarea>`;
+  } else if(type==='select'){
+    const options = (opts.options||[]).map(o=>`<option value="${esc(o)}" ${bfGet(id)===o?'selected':''}>${esc(o)}</option>`).join('');
+    input = `<select id="${id}" onchange="bfOnChange('${id}')"><option value="">— เลือก —</option>${options}</select>`;
+  } else {
+    input = `<input type="${type||'text'}" id="${id}" value="${saved}" placeholder="${esc(opts.placeholder||'')}" onchange="bfOnChange('${id}')">`;
+  }
+  return `<div class="brief-field ${opts.full?'brief-full':''}"><label>${esc(label)}</label>${input}</div>`;
+}
+function bfTableInput(id, placeholder){
+  const saved = esc(bfGet(id));
+  return `<input type="text" id="${id}" value="${saved}" placeholder="${esc(placeholder||'')}" onchange="bfOnChange('${id}')">`;
+}
+function bfTableDate(id){
+  const saved = esc(bfGet(id));
+  return `<input type="date" id="${id}" value="${saved}" onchange="bfOnChange('${id}')">`;
+}
+function bfTableSelect(id, options){
+  const cur = bfGet(id);
+  const opts = options.map(o=>`<option value="${esc(o)}" ${cur===o?'selected':''}>${esc(o)}</option>`).join('');
+  return `<select id="${id}" onchange="bfOnChange('${id}')"><option value="">—</option>${opts}</select>`;
+}
+function bfCheck(id, label){
+  const checked = bfGet(id)==='1';
+  return `<label class="brief-check-item"><input type="checkbox" id="${id}" ${checked?'checked':''} onchange="bfOnChange('${id}')"> ${esc(label)}</label>`;
+}
+
+/* Repeatable field: for things like Shade/SKU or Barcode/SKU where there can be
+   more than one value. Stored as a JSON array under the same field id. */
+function bfRepeatGetArr(id){
+  try{ const a = JSON.parse(bfGet(id)||'[]'); return a.length ? a : ['']; }catch(e){ return ['']; }
+}
+function bfRepeatRowsHtml(id, arr){
+  return arr.map((val,i)=>`
+    <div style="display:flex; gap:6px; margin-bottom:5px;">
+      <input type="text" value="${esc(val)}" data-idx="${i}" oninput="bfRepeatUpdate('${id}', this)" style="flex:1;">
+      <button type="button" class="brief-repeat-del" onclick="bfRepeatRemove('${id}', ${i})" title="ลบช่องนี้">🗑️</button>
+    </div>`).join('');
+}
+function bfRepeatField(id, label){
+  const arr = bfRepeatGetArr(id);
+  return `<div class="brief-field brief-full">
+    <label>${esc(label)}</label>
+    <div id="repeat-${id}">${bfRepeatRowsHtml(id, arr)}</div>
+    <button type="button" class="brief-print-btn" onclick="bfRepeatAdd('${id}')">+ เพิ่มช่อง</button>
+  </div>`;
+}
+function bfRepeatUpdate(id, inputEl){
+  const idx = parseInt(inputEl.dataset.idx,10);
+  const arr = bfRepeatGetArr(id);
+  arr[idx] = inputEl.value;
+  bfSet(id, JSON.stringify(arr));
+}
+function bfRepeatAdd(id){
+  const arr = bfRepeatGetArr(id);
+  arr.push('');
+  bfSet(id, JSON.stringify(arr));
+  document.getElementById('repeat-'+id).innerHTML = bfRepeatRowsHtml(id, arr);
+}
+function bfRepeatRemove(id, idx){
+  const arr = bfRepeatGetArr(id);
+  arr.splice(idx,1);
+  if(!arr.length) arr.push('');
+  bfSet(id, JSON.stringify(arr));
+  document.getElementById('repeat-'+id).innerHTML = bfRepeatRowsHtml(id, arr);
+}
+
+function renderBriefPartA(){
+  return `
+    <div class="brief-section-h">A1. Project Control</div>
+    <div class="brief-field-grid">
+      ${bfField('a_nprNo','NPR No.','text')}
+      ${bfField('a_projectName','Project Name','text')}
+      ${bfField('a_briefVersion','Brief Version','text',{placeholder:'เช่น V1.0'})}
+      ${bfField('a_brand','Brand / Company','select',{options:['Godmami','Glimmer Sisters']})}
+      ${bfField('a_briefDate','Brief Date','date')}
+      ${bfField('a_owner','NPD Owner','select',{options:['Peet','Bonus','Ploy']})}
+      ${bfField('a_channel','Sales Channel','select',{options:['Online','Offline','Flagship']})}
+      ${bfField('a_targetReceive','Target Receive','date')}
+      ${bfField('a_fgLaunch','FG Launch','date')}
+    </div>
+    <div class="brief-section-h">A2. Product Direction</div>
+    <div class="brief-field-grid">
+      ${bfField('a_type','ประเภทสินค้า','text',{placeholder:'เช่น Facial Serum / Sunscreen / Cleanser'})}
+      ${bfField('a_concept','Product Concept','textarea',{full:true})}
+      ${bfField('a_benefit1','Key Benefit 1','text')}
+      ${bfField('a_benefit2','Key Benefit 2','text')}
+      ${bfField('a_benefit3','Key Benefit 3','text')}
+      ${bfField('a_benchmark','Benchmark','textarea',{full:true})}
+      ${bfRepeatField('a_shade','Shade / SKU')}
+      ${bfRepeatField('a_barcode','Barcode / SKU')}
+      ${bfField('a_special','Special Request','textarea',{full:true})}
+      ${bfField('a_weight','Declare Weight','text')}
+      ${bfField('a_remark','Remark','textarea',{full:true})}
+    </div>`;
+}
+
+function renderBriefPartB(){
+  const rows = B1_ROWS.map((label,i)=>`
+    <tr>
+      <td class="label-cell">${esc(label)}</td>
+      <td>${bfTableInput('b1_brand_'+i)}</td>
+      <td>${bfTableInput('b1_factory_'+i)}</td>
+    </tr>`).join('');
+  const checks = B2_CHECKS.map((c,i)=>bfCheck('b2_'+i, c)).join('');
+  return `
+    <div class="brief-section-h">B1. Formula Direction</div>
+    <p style="font-size:11.5px; color:var(--ink-soft); margin:0 0 8px;">แบรนด์ระบุคุณสมบัติที่ต้องการให้ชัดเจน ส่วนโรงงานกรอกแนวทางที่เสนอ ข้อจำกัด และหลักฐานรองรับ Claim ในคอลัมน์ขวา</p>
+    <table class="brief-table">
+      <thead><tr><th style="width:22%;">หัวข้อ</th><th>ข้อมูลจากแบรนด์</th><th>ข้อเสนอจากโรงงาน</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="brief-section-h">B2. Technical Target & Testing</div>
+    <div class="brief-check-grid">
+      ${checks}
+      <label class="brief-check-item">${bfCheck('b2_other','อื่น ๆ')} ${bfTableInput('b2_other_txt')}</label>
+    </div>`;
+}
+
+function renderBriefPartC(){
+  const compRows = [1,2,3,4,5].map(i=>`
+    <tr>
+      <td class="label-cell" style="text-align:center;">${i}</td>
+      <td>${bfTableInput('c1_comp_'+i, i===1?'Primary pack / ขวด / กระปุก / หลอด':i===2?'Closure / Cap / Pump / Brush':i===3?'Secondary pack / กล่อง':i===4?'Sticker / Insert / Seal':'อื่น ๆ')}</td>
+      <td>${bfTableInput('c1_deco_'+i)}</td>
+      <td>${bfTableInput('c1_remark_'+i)}</td>
+    </tr>`).join('');
+  const checks = C2_CHECKS.map((c,i)=>bfCheck('c2_'+i, c)).join('');
+  return `
+    <div class="brief-section-h">C1. Component Packaging</div>
+    <table class="brief-table">
+      <thead><tr><th style="width:5%;">No.</th><th>Component Packaging</th><th>Decoration</th><th>Remark</th></tr></thead>
+      <tbody>${compRows}</tbody>
+    </table>
+    <div class="brief-section-h">C2. Packaging Approval & Reference Standard</div>
+    <div class="brief-check-grid">${checks}</div>
+    <div class="brief-note-box"><strong>Gate 3</strong> — ก่อนสั่งผลิตแพ็กเกจ ต้องอนุมัติ Dieline, Artwork Version, สีมาตรฐาน, ตัวอย่างงานพิมพ์ และตำแหน่งข้อมูลกฎหมาย</div>`;
+}
+
+function renderBriefPartD(){
+  const tRows = D1_MILESTONES.map((r,i)=>`
+    <tr>
+      <td class="label-cell">${esc(r.m)}</td>
+      <td>${bfTableInput('d1_owner_'+i, r.owner)}</td>
+      <td>${bfTableDate('d1_start_'+i)}</td>
+      <td>${bfTableDate('d1_due_'+i)}</td>
+      <td>${bfTableInput('d1_dep_'+i)}</td>
+    </tr>`).join('');
+  const iRows = [1,2,3,4].map(i=>`
+    <tr>
+      <td class="label-cell" style="text-align:center;">${i}</td>
+      <td>${bfTableInput('d2_info_'+i)}</td>
+      <td>${bfTableInput('d2_owner_'+i)}</td>
+      <td>${bfTableDate('d2_due_'+i)}</td>
+      <td>${bfTableSelect('d2_status_'+i, ['Open','Done'])}</td>
+    </tr>`).join('');
+  return `
+    <div class="brief-section-h">D1. Proposed Timeline</div>
+    <table class="brief-table">
+      <thead><tr><th style="width:20%;">Milestone</th><th style="width:16%;">Owner</th><th style="width:14%;">Start</th><th style="width:14%;">Due</th><th>Dependency / หมายเหตุ</th></tr></thead>
+      <tbody>${tRows}</tbody>
+    </table>
+    <div class="brief-section-h">D2. Open Issues / Information Required</div>
+    <table class="brief-table">
+      <thead><tr><th style="width:6%;">ลำดับ</th><th>ข้อมูล/การตัดสินใจที่ต้องการ</th><th style="width:16%;">Owner</th><th style="width:14%;">Due</th><th style="width:12%;">สถานะ</th></tr></thead>
+      <tbody>${iRows}</tbody>
+    </table>
+    <div class="brief-note-box"><strong>Timeline</strong> — วันรับสินค้าควรก่อน Launch อย่างน้อย 3-4 สัปดาห์ เผื่อ Buffer โครงการ 15-20% และวัตถุดิบหรือแพ็กเกจนำเข้าอาจต้องเพิ่ม 8-16 สัปดาห์</div>`;
+}
+
+function renderBriefPartE(){
+  const rows = E_ROWS.map((label,i)=>{
+    const resultOpts = (i===E_ROWS.length-1) ? ['อนุมัติ','Hold'] : ['ผ่าน','แก้ไข'];
+    return `<tr>
+      <td class="label-cell">${esc(label)}</td>
+      <td>${bfTableSelect('e_result_'+i, resultOpts)}</td>
+      <td>${bfTableInput('e_name_'+i)}</td>
+      <td>${bfTableDate('e_date_'+i)}</td>
+      <td>${bfTableInput('e_ver_'+i)}</td>
+    </tr>`;
+  }).join('');
+  return `
+    <table class="brief-table">
+      <thead><tr><th>จุดอนุมัติ</th><th style="width:12%;">ผล</th><th style="width:16%;">ชื่อผู้อนุมัติ</th><th style="width:14%;">วันที่</th><th style="width:16%;">Version / หลักฐาน</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="brief-note-box"><strong>สำคัญ</strong> — การอนุมัติด้วยวาจาไม่ถือเป็นการ Lock สูตร แพ็กเกจ Artwork หรือการผลิต หากแก้ไขหลัง Lock ต้องประเมินต้นทุน การทดสอบ และ Timeline ใหม่ทุกครั้ง</div>
+    <div class="brief-section-h">Brand Brief Approval</div>
+    <div class="brief-field-grid">
+      ${bfField('e_prepared_by','Prepared by','text')}
+      ${bfField('e_prepared_date','Date','date')}
+      ${bfField('e_approved_by','Approved by','text')}
+      ${bfField('e_approved_date','Date','date')}
+    </div>`;
+}
+
+const BRIEF_RENDERERS = {a:renderBriefPartA, b:renderBriefPartB, c:renderBriefPartC, d:renderBriefPartD, e:renderBriefPartE};
+
+function toggleBriefForm(){
+  const container = document.getElementById('brief-form-container');
+  const btn = document.getElementById('brief-toggle-btn');
+  const opening = container.style.display === 'none';
+  container.style.display = opening ? 'block' : 'none';
+  btn.textContent = opening ? '📋 ปิดฟอร์ม NPD Brief' : '📋 เปิดฟอร์ม NPD Brief';
+  if(opening && !container.dataset.built){
+    container.innerHTML = Object.keys(BRIEF_PARTS).map(key=>{
+      const p = BRIEF_PARTS[key];
+      return `<div class="brief-part" id="brief-part-${key}">
+        <div class="brief-part-head" onclick="toggleBriefPart('${key}')">
+          <div><span class="brief-chevron">▸</span> <span class="brief-part-title">${esc(p.title)}</span> <span style="font-size:11px; color:var(--ink-soft); font-weight:400;">${esc(p.th)}</span></div>
+          <button class="brief-print-btn" onclick="event.stopPropagation(); printBriefPart('${key}')">🖨️ Print / Save PDF</button>
+        </div>
+        <div class="brief-part-body" id="brief-part-body-${key}"></div>
+      </div>`;
+    }).join('');
+    container.dataset.built = '1';
+  }
+}
+function toggleBriefPart(key){
+  const part = document.getElementById('brief-part-'+key);
+  const body = document.getElementById('brief-part-body-'+key);
+  const isOpen = part.classList.contains('open');
+  if(!isOpen && !body.dataset.rendered){
+    body.innerHTML = BRIEF_RENDERERS[key]();
+    body.dataset.rendered = '1';
+  }
+  part.classList.toggle('open');
+}
+
+function printBriefPart(key){
+  const body = document.getElementById('brief-part-body-'+key);
+  if(!body.dataset.rendered){
+    body.innerHTML = BRIEF_RENDERERS[key]();
+    body.dataset.rendered = '1';
+  }
+  const p = BRIEF_PARTS[key];
+  const clone = body.cloneNode(true);
+
+  // 1) Collapse repeatable fields (Shade/SKU, Barcode/SKU) into one joined value first,
+  //    before the generic input pass below touches their inner inputs.
+  clone.querySelectorAll('div[id^="repeat-"]').forEach(rep=>{
+    const vals = [...rep.querySelectorAll('input')].map(i=>i.value.trim()).filter(Boolean);
+    const box = document.createElement('div');
+    box.className = 'pv-box';
+    box.textContent = vals.length ? vals.join(' , ') : '–';
+    rep.replaceWith(box);
+  });
+
+  // 2) Checkbox items: plain checkmark + label, no interactive control
+  clone.querySelectorAll('.brief-check-item').forEach(item=>{
+    const input = item.querySelector('input[type="checkbox"]');
+    const checked = input && input.checked;
+    const labelText = item.textContent.trim();
+    item.innerHTML = `<span class="pv-check ${checked?'on':''}">${checked?'☑':'☐'}</span> ${esc(labelText)}`;
+  });
+
+  // 3) Remaining plain inputs / textareas / selects -> boxed value display
+  clone.querySelectorAll('input, textarea, select').forEach(el=>{
+    let text = '';
+    if(el.tagName === 'SELECT'){
+      const opt = el.options[el.selectedIndex];
+      text = opt ? opt.textContent : '';
+    } else {
+      text = el.value || '';
+    }
+    const box = document.createElement('div');
+    box.className = 'pv-box';
+    box.textContent = text.trim() || '–';
+    el.replaceWith(box);
+  });
+
+  clone.querySelectorAll('button').forEach(b=>b.remove());
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(p.title)}</title>
+    <style>
+      @page{ margin:16mm 14mm; }
+      *{ box-sizing:border-box; }
+      body{font-family:'Sarabun',Arial,sans-serif; padding:0; color:#22303A; font-size:12.5px; line-height:1.45;}
+      .pv-header{border-bottom:3px solid #F067A6; padding-bottom:10px; margin-bottom:16px;}
+      .pv-brand{font-family:'Prompt',Arial,sans-serif; font-weight:800; font-size:22px; color:#F067A6; letter-spacing:.5px;}
+      .pv-title{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:15px; color:#22303A; margin-top:2px;}
+      .pv-meta{font-size:10.5px; color:#888; margin-top:4px;}
+      .brief-section-h{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:12.5px; color:#22303A;
+        background:#F6F0F4; border-left:3px solid #F067A6; padding:5px 10px; margin:18px 0 10px;}
+      table{width:100%; border-collapse:collapse; margin-bottom:6px; page-break-inside:avoid;}
+      th,td{border:1px solid #D8D8D8; padding:6px 8px; font-size:11.5px; text-align:left; vertical-align:top;}
+      th{background:#F067A6; color:#fff; font-family:'Prompt',Arial,sans-serif; font-weight:600; font-size:11px;}
+      tr:nth-child(even) td{background:#FBF7F9;}
+      .label-cell{font-weight:600; background:#F6F0F4 !important; white-space:nowrap;}
+      td .pv-box{border:none; padding:0; background:none; min-height:auto;}
+      .brief-check-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:7px 14px; margin-bottom:12px;}
+      .brief-check-item{font-size:12px; display:flex; align-items:center; gap:6px;}
+      .pv-check{display:inline-block; width:14px; text-align:center; font-size:14px; color:#bbb;}
+      .pv-check.on{color:#22A06B; font-weight:700;}
+      .brief-note-box{background:#FDEAF3; border-left:3px solid #F067A6; border-radius:6px; padding:9px 13px; font-size:11px; margin:10px 0; line-height:1.5;}
+      .brief-field-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px 18px; margin-bottom:12px;}
+      .brief-field{margin-bottom:2px;}
+      .brief-field label{display:block; font-size:9.5px; text-transform:uppercase; letter-spacing:.3px; color:#999; margin-bottom:3px; font-weight:600;}
+      .pv-box{border:1px solid #E0E0E0; border-radius:5px; background:#FAFAFA; padding:6px 9px; font-size:12px; min-height:1.3em; color:#22303A;}
+      .brief-full{grid-column:1/-1;}
+      @media print{ body{-webkit-print-color-adjust:exact; print-color-adjust:exact;} }
+    </style></head><body>
+    <div class="pv-header">
+      <div class="pv-brand">GODMAMI</div>
+      <div class="pv-title">${esc(p.title)}</div>
+      <div class="pv-meta">Factory Working Form · Product Development Brief &nbsp;·&nbsp; พิมพ์เมื่อ ${esc(formatDate(new Date()))}</div>
+    </div>
+    ${clone.innerHTML}
+    </body></html>`);
+  win.document.close();
+  setTimeout(()=>{ win.print(); }, 300);
+}
 
 init();
 </script>
