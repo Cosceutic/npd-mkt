@@ -313,6 +313,62 @@
   .tl-entry-by{font-size:11px; color:var(--ink-soft); font-style:italic;}
   .tl-img-row{display:flex; gap:6px; flex-wrap:wrap; margin:6px 0;}
   .tl-img-row img{width:56px; height:56px; object-fit:cover; border-radius:8px; cursor:pointer; border:1px solid var(--line);}
+
+  /* ===== Product Editor (in-web add/edit/delete) ===== */
+  .edit-toolbar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 16px; padding:12px 14px; background:var(--card); border:1px solid var(--line); border-radius:12px;}
+  .edit-toolbar .et-spacer{flex:1;}
+  .btn-edit{border:none; border-radius:8px; padding:8px 14px; font-family:'Prompt'; font-weight:600; font-size:12.5px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;}
+  .btn-edit.primary{background:var(--blue-deep); color:#fff;} .btn-edit.primary:hover{background:var(--blue-ink);}
+  .btn-edit.ghost{background:var(--blue-pale); color:var(--blue-ink);} .btn-edit.ghost:hover{background:#DCE8F7;}
+  .btn-edit.danger{background:#FDECEC; color:var(--danger);} .btn-edit.danger:hover{background:#F9D9DA;}
+  .btn-edit:disabled{opacity:.5; cursor:not-allowed;}
+  .sync-badge{font-size:11.5px; font-weight:600; padding:5px 11px; border-radius:999px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;}
+  .sync-badge.local{background:#FFF4E5; color:#B5651D;}
+  .sync-badge.synced{background:#E6F6EF; color:var(--ok);}
+  .sync-badge.off{background:var(--bg); color:var(--ink-soft);}
+  .card-edit-row{display:flex; gap:6px; margin-top:8px;}
+  .card-edit-row .btn-sm{padding:6px 8px; font-size:12px;}
+  .btn-sm.warn-ghost{background:#FDECEC; color:var(--danger);} .btn-sm.warn-ghost:hover{background:#F9D9DA;}
+
+  .pe-box{max-width:760px; width:100%;}
+  .pe-body{padding:0 22px 8px;}
+  .pe-section{margin:18px 0 4px; font-family:'Prompt'; font-weight:700; font-size:12.5px; color:var(--blue-ink); letter-spacing:.3px; border-bottom:1px solid var(--line); padding-bottom:6px;}
+  .pe-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px 14px; margin-top:10px;}
+  .pe-field{display:flex; flex-direction:column; gap:4px;}
+  .pe-field.full{grid-column:1/-1;}
+  .pe-field label{font-size:11.5px; font-weight:600; color:var(--ink-soft);}
+  .pe-field input, .pe-field select, .pe-field textarea{border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-family:'Sarabun',sans-serif; font-size:13px; background:#fff; color:var(--ink); width:100%;}
+  .pe-field input:focus, .pe-field select:focus, .pe-field textarea:focus{outline:none; border-color:var(--blue-deep);}
+  .pe-field textarea{resize:vertical; min-height:56px;}
+  .pe-ms-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px 10px; margin-top:8px;}
+  .pe-ms-row{display:contents;}
+  .pe-ms-label{grid-column:1/-1; font-size:12px; font-weight:600; color:var(--ink); margin-top:8px;}
+  .pe-ms-cell label{font-size:10.5px; color:var(--ink-soft); display:block; margin-bottom:2px;}
+  .pe-ms-cell input{border:1px solid var(--line); border-radius:7px; padding:6px 8px; font-size:12.5px; width:100%; font-family:'Sarabun',sans-serif;}
+  .pe-check{display:flex; align-items:center; gap:8px; font-size:13px;}
+  .pe-check input{width:auto;}
+  .pe-footer{display:flex; align-items:center; gap:10px; padding:14px 22px; border-top:1px solid var(--line); position:sticky; bottom:0; background:#fff; border-radius:0 0 16px 16px;}
+  .pe-hint{font-size:11.5px; color:var(--ink-soft); line-height:1.5;}
+  .pe-setup pre{background:#1E2530; color:#E6EDF3; border-radius:10px; padding:14px; font-size:11.5px; line-height:1.5; overflow:auto; max-height:280px; white-space:pre; font-family:ui-monospace,Menlo,Consolas,monospace;}
+  .pe-setup ol{margin:8px 0; padding-left:20px; font-size:13px; line-height:1.7;}
+  .pe-setup code{background:var(--blue-pale); padding:1px 6px; border-radius:5px; font-size:12px;}
+
+  #toast-wrap{position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:120; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none;}
+  .toast{background:var(--ink); color:#fff; padding:10px 18px; border-radius:10px; font-size:13px; font-weight:500; box-shadow:0 6px 20px rgba(0,0,0,.22); opacity:0; transform:translateY(8px); transition:opacity .2s, transform .2s; max-width:88vw;}
+  .toast.show{opacity:1; transform:translateY(0);}
+  .toast.ok{background:var(--ok);} .toast.err{background:var(--danger);} .toast.info{background:var(--blue-deep);}
+
+  .kan-status-sel{margin-top:10px; width:100%; border:1px solid var(--blue-deep); border-radius:8px; padding:6px 8px; font-family:'Sarabun',sans-serif; font-size:12px; color:var(--blue-ink); background:var(--blue-pale); cursor:pointer;}
+  .upd-add-bar{display:flex; justify-content:flex-end; margin:0 0 10px;}
+  .nm-row{display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);}
+  .nm-row:last-child{border-bottom:none;}
+  .nm-msg{flex:1; font-size:13px; line-height:1.4;}
+  .nm-msg.off{color:var(--ink-soft); text-decoration:line-through;}
+  .nm-toggle{font-size:11.5px; font-weight:600; border:none; border-radius:7px; padding:5px 10px; cursor:pointer;}
+  .nm-toggle.on{background:#E6F6EF; color:var(--ok);} .nm-toggle.offbtn{background:var(--bg); color:var(--ink-soft);}
+  .nm-del{background:#FDECEC; color:var(--danger); border:none; border-radius:7px; padding:5px 9px; cursor:pointer; font-size:12px;}
+  .nm-add{display:flex; gap:8px; margin-top:14px;}
+  .nm-add input{flex:1; border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-family:'Sarabun',sans-serif; font-size:13px;}
 </style>
 </head>
 <body>
@@ -449,6 +505,18 @@
 
   <div class="view" id="view-catalog">
     <p class="section-sub" style="margin-top:0;">Product Information — click a card for the milestone timeline, or open the presentation directly.</p>
+    <div class="edit-toolbar" id="edit-toolbar">
+      <span class="sync-badge off" id="sync-badge">…</span>
+      <span class="et-spacer"></span>
+      <button class="btn-edit ghost" id="btn-edit-unlock" onclick="toggleEditMode()">🔓 โหมดแก้ไข</button>
+      <button class="btn-edit primary" id="btn-add-product" onclick="openProductEditor()" style="display:none;">➕ เพิ่มสินค้า</button>
+      <button class="btn-edit ghost" id="btn-refresh" onclick="refreshFromSheet()" style="display:none;">🔄 รีเฟรช</button>
+      <button class="btn-edit ghost" id="btn-push" onclick="pushPendingToSheet()" style="display:none;">⬆️ ส่งที่ค้างขึ้น Sheet</button>
+      <button class="btn-edit ghost" id="btn-export" onclick="exportProductsCsv()" style="display:none;">⬇️ Export CSV</button>
+      <button class="btn-edit ghost" id="btn-notices" onclick="openNoticeManager()" style="display:none;">📢 จัดการประกาศ</button>
+      <button class="btn-edit danger" id="btn-clear-local" onclick="clearLocalEdits()" style="display:none;">🧹 ล้างที่แก้ในเครื่อง</button>
+      <button class="btn-edit ghost" id="btn-sync-setup" onclick="openSyncSetup()" style="display:none;">⚙️ ตั้งค่า Sheet Sync</button>
+    </div>
     <div class="catalog-grid" id="catalog-grid"></div>
     <div id="catalog-empty" class="empty" style="display:none;">No products yet.</div>
   </div>
@@ -512,6 +580,7 @@
     <div id="team-subview-status">
     <p class="section-title" style="margin-top:0;">Current Status</p>
     <p class="section-sub">Formulation, Packaging, and FDA move in parallel — click a cell to see its full history.</p>
+    <div class="upd-add-bar"><button class="btn-edit primary" id="btn-add-update" onclick="openUpdateEditor()" style="display:none;">➕ เพิ่มบันทึกความคืบหน้า</button></div>
     <div class="panel">
       <div class="table-scroll">
         <table>
@@ -657,6 +726,120 @@
   </div>
 </div>
 
+<!-- ===== Product Editor modal ===== -->
+<div class="modal-overlay" id="pe-overlay" style="z-index:70;" onclick="if(event.target===this) closeProductEditor()">
+  <div class="modal-box pe-box">
+    <div class="modal-header">
+      <div>
+        <div class="mh-name" id="pe-title">เพิ่มสินค้าใหม่</div>
+        <div class="mh-sku">กรอกข้อมูลแล้วกดบันทึก — เซฟในเครื่องทันที และซิงค์ขึ้น Google Sheet (ถ้าตั้งค่าไว้)</div>
+      </div>
+      <button class="modal-close" onclick="closeProductEditor()">✕</button>
+    </div>
+    <div class="modal-body pe-body" id="pe-form"><!-- built by renderProductForm() --></div>
+    <div class="pe-footer">
+      <span class="pe-hint" id="pe-hint"></span>
+      <span style="flex:1;"></span>
+      <button class="btn-edit ghost" onclick="closeProductEditor()">ยกเลิก</button>
+      <button class="btn-edit primary" onclick="saveProduct()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Sheet Sync setup modal ===== -->
+<div class="modal-overlay" id="sync-overlay" style="z-index:75;" onclick="if(event.target===this) closeSyncSetup()">
+  <div class="modal-box pe-box pe-setup">
+    <div class="modal-header">
+      <div>
+        <div class="mh-name">⚙️ ตั้งค่า Sheet Sync</div>
+        <div class="mh-sku">ตั้งครั้งเดียว เพื่อให้ "เพิ่ม/แก้/ลบ" ในเว็บ เขียนกลับเข้า Google Sheet ให้ทั้งทีมเห็น</div>
+      </div>
+      <button class="modal-close" onclick="closeSyncSetup()">✕</button>
+    </div>
+    <div class="modal-body pe-body">
+      <div class="pe-section">ขั้นตอน (ทำครั้งเดียว ~5 นาที)</div>
+      <ol>
+        <li>เปิด Google Sheet หลัก → เมนู <code>Extensions ▸ Apps Script</code></li>
+        <li>ลบโค้ดเดิมทั้งหมด แล้ววางโค้ดด้านล่างนี้ลงไป (กดปุ่ม 📋 คัดลอก)</li>
+        <li>แก้บรรทัด <code>SECRET</code> ให้เป็นรหัสลับที่ตั้งเอง (จำไว้ ใช้ช่องล่าง)</li>
+        <li>กด <code>Deploy ▸ New deployment ▸ ⚙️ ▸ Web app</code></li>
+        <li>ตั้ง <code>Execute as: Me</code> และ <code>Who has access: Anyone</code> → <code>Deploy</code> → อนุญาตสิทธิ์</li>
+        <li>คัดลอก <b>Web app URL</b> (ลงท้าย <code>/exec</code>) มาวางในช่องล่าง พร้อมรหัสลับ แล้วกดบันทึก</li>
+      </ol>
+      <div class="pe-section">โค้ด Apps Script</div>
+      <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
+        <button class="btn-edit ghost" onclick="copyAppsScript(this)">📋 คัดลอกโค้ด</button>
+      </div>
+      <pre id="apps-script-code"></pre>
+      <div class="pe-section">ตั้งค่าปลายทาง</div>
+      <div class="pe-grid">
+        <div class="pe-field full">
+          <label>Web app URL (ลงท้าย /exec)</label>
+          <input type="text" id="cfg-url" placeholder="https://script.google.com/macros/s/…/exec">
+        </div>
+        <div class="pe-field full">
+          <label>รหัสลับ (ต้องตรงกับ SECRET ในสคริปต์)</label>
+          <input type="text" id="cfg-token" placeholder="เช่น godmami-npd-2026">
+        </div>
+      </div>
+      <div class="pe-hint" style="margin-top:8px;">💡 URL/รหัสนี้เก็บใน localStorage ของเบราว์เซอร์นี้เท่านั้น — เพื่อนร่วมทีมต้องวางเองในเครื่องตัวเอง (หรือฝัง <code>DEFAULT_WRITE_*</code> ใน HTML ให้ทุกคนใช้ค่าเดียวกัน)</div>
+    </div>
+    <div class="pe-footer">
+      <button class="btn-edit ghost" onclick="testSyncConnection()">🔌 ทดสอบการเชื่อมต่อ</button>
+      <span style="flex:1;"></span>
+      <button class="btn-edit danger" onclick="clearSyncConfig()">ล้างค่า</button>
+      <button class="btn-edit primary" onclick="saveSyncConfig()">💾 บันทึกการตั้งค่า</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Update Log entry modal ===== -->
+<div class="modal-overlay" id="ue-overlay" style="z-index:72;" onclick="if(event.target===this) closeUpdateEditor()">
+  <div class="modal-box pe-box">
+    <div class="modal-header">
+      <div>
+        <div class="mh-name">➕ เพิ่มบันทึกความคืบหน้า</div>
+        <div class="mh-sku">R&D / Packaging / FDA — บันทึกจะไปต่อท้ายใน Updates Log</div>
+      </div>
+      <button class="modal-close" onclick="closeUpdateEditor()">✕</button>
+    </div>
+    <div class="modal-body pe-body" id="ue-form"><!-- built by renderUpdateForm() --></div>
+    <div class="pe-footer">
+      <span class="pe-hint">บันทึกในเครื่องทันที + ต่อท้ายใน Sheet (ถ้าตั้งค่าไว้)</span>
+      <span style="flex:1;"></span>
+      <button class="btn-edit ghost" onclick="closeUpdateEditor()">ยกเลิก</button>
+      <button class="btn-edit primary" onclick="saveUpdateEntry()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Notice manager modal ===== -->
+<div class="modal-overlay" id="nm-overlay" style="z-index:72;" onclick="if(event.target===this) closeNoticeManager()">
+  <div class="modal-box pe-box">
+    <div class="modal-header">
+      <div>
+        <div class="mh-name">📢 จัดการประกาศ (แบนเนอร์)</div>
+        <div class="mh-sku">เปิด = แสดงแถบบนหัวเว็บให้ทุกคนเห็น</div>
+      </div>
+      <button class="modal-close" onclick="closeNoticeManager()">✕</button>
+    </div>
+    <div class="modal-body pe-body">
+      <div id="nm-list"></div>
+      <div class="nm-add">
+        <input type="text" id="nm-new" placeholder="พิมพ์ข้อความประกาศใหม่…" onkeydown="if(event.key==='Enter') addNotice()">
+        <button class="btn-edit primary" onclick="addNotice()">➕ เพิ่ม</button>
+      </div>
+    </div>
+    <div class="pe-footer">
+      <span class="pe-hint">การเปลี่ยนแปลงเซฟในเครื่องทันที + ซิงค์ขึ้นแท็บ Notice (ถ้าตั้งค่าไว้)</span>
+      <span style="flex:1;"></span>
+      <button class="btn-edit ghost" onclick="closeNoticeManager()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-wrap"></div>
+
 <script>
 /* ===== DATA — Claude updates this array directly when Ploy sends new info in chat ===== */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=1762470958";
@@ -683,6 +866,112 @@ const IMAGES = {
 };
 
 let PRODUCTS = [];
+let SHEET_ROWS = [];   // raw rows straight from the Google Sheet (before local overlay)
+
+/* ===== In-web editing (Hybrid: localStorage now + Google Sheet write-back via Apps Script) =====
+   Team-wide default endpoint — fill these once you've deployed the Apps Script and want
+   EVERY teammate to sync to the same Sheet without pasting the URL themselves.
+   Leave blank to configure per-browser via the "⚙️ ตั้งค่า Sheet Sync" panel. */
+const DEFAULT_WRITE_ENDPOINT = "https://script.google.com/macros/s/AKfycbyOWWMLC9HPJ9lUslPuzJFN42TB5pMVh_zg-6rCZfhlIDOfVuPBV47veUNAkgjuRdB8/exec";
+const DEFAULT_WRITE_TOKEN = "npd2026!";
+
+/* The exact column keys of the products tab, in a stable order. Used for the edit form,
+   the CSV export, the write payload, and change-detection when auto-pruning local edits. */
+const PRODUCT_COLUMNS = [
+  'name','sku','barcode','brand','type','category',
+  'arrival_deadline','arrival_actual','sampleToMkt_deadline','sampleToMkt_actual',
+  'refPhoto_deadline','refPhoto_actual','photoShoot_deadline','photoShoot_actual',
+  'productMedia_deadline','productMedia_actual','dataReady_deadline','dataReady_actual',
+  'platformDone_deadline','platformDone_actual','basketOpen_deadline','basketOpen_actual',
+  'launch_deadline','launch_actual','prDate_deadline','prDate_actual',
+  'refPhoto_link','productMedia_link','dataReady_link','platformDone_link',
+  'canva','lot','exp','remark','saleHalted','saleHaltDate','saleHaltNote','risk','nextDue','history','image'
+];
+
+/* Human-friendly milestone groups for the editor (prefix -> Thai label). */
+const MILESTONE_FIELDS = [
+  ['arrival','สินค้าเข้าสต็อก (Product on Stock)'],
+  ['sampleToMkt','ส่งตัวอย่างให้ MKT (Sample to MKT)'],
+  ['refPhoto','ส่งรูป Reference (Ref Photo Due)'],
+  ['photoShoot','วันถ่ายภาพ (Photo Shoot)'],
+  ['productMedia','ภาพ/วิดีโอสินค้าเสร็จ (Product Image/Video Ready)'],
+  ['dataReady','Digital Asset เสร็จ (Digital Asset Ready)'],
+  ['platformDone','ขึ้นแพลตฟอร์มเสร็จ (Platform Listing Done)'],
+  ['basketOpen','เปิดตะกร้า (Basket Open)'],
+  ['launch','วางขาย (Launch)'],
+  ['prDate','PR/Marketing (PR Marketing Date)'],
+];
+const MS_LINK_FIELDS = { refPhoto:'refPhoto_link', productMedia:'productMedia_link', dataReady:'dataReady_link', platformDone:'platformDone_link' };
+
+function getWriteConfig(){
+  let cfg = {url:'', token:''};
+  try{ cfg = JSON.parse(localStorage.getItem('npd_write_cfg')) || cfg; }catch(e){}
+  return { url: (cfg.url||DEFAULT_WRITE_ENDPOINT||'').trim(), token: (cfg.token||DEFAULT_WRITE_TOKEN||'').trim() };
+}
+
+const PENDING_KEY = 'npd_pending_products_v1';
+function getPendingStore(){
+  try{ const s = JSON.parse(localStorage.getItem(PENDING_KEY)); if(s && s.edits) return {edits:s.edits||{}, deletes:s.deletes||[]}; }catch(e){}
+  return {edits:{}, deletes:[]};
+}
+function savePendingStore(s){ try{ localStorage.setItem(PENDING_KEY, JSON.stringify(s)); }catch(e){} }
+function pendingCount(){ const s = getPendingStore(); return Object.keys(s.edits).length + (s.deletes||[]).length; }
+
+/* Rebuild PRODUCTS = Sheet rows with local (unsynced) edits/adds/deletes laid on top. */
+function rebuildProducts(){
+  const store = getPendingStore();
+  const bySku = {}; const order = [];
+  SHEET_ROWS.forEach((r,i)=>{
+    const key = (r.sku||'').trim() || ('__sheet'+i);
+    if(!(key in bySku)) order.push(key);
+    bySku[key] = r;
+  });
+  Object.keys(store.edits).forEach(sku=>{
+    if(!(sku in bySku)) order.push(sku);
+    bySku[sku] = store.edits[sku];
+  });
+  (store.deletes||[]).forEach(sku=>{ delete bySku[sku]; });
+  const merged = order.map(k=>bySku[k]).filter(Boolean);
+  PRODUCTS = merged.filter(r=>r.name).map(rowToProduct);
+}
+
+/* Once the Sheet reflects a local change, drop it from the pending overlay (self-healing,
+   so a stale local copy never masks a teammate's newer Sheet edit). */
+function rowSig(r){ return PRODUCT_COLUMNS.map(c=>String((r&&r[c])!=null?r[c]:'').trim()).join(''); }
+function autoPrunePending(){
+  const store = getPendingStore(); let changed = false;
+  const sheetBySku = {};
+  SHEET_ROWS.forEach(r=>{ const k=(r.sku||'').trim(); if(k) sheetBySku[k]=r; });
+  Object.keys(store.edits).forEach(sku=>{
+    if(sheetBySku[sku] && rowSig(sheetBySku[sku]) === rowSig(store.edits[sku])){ delete store.edits[sku]; changed = true; }
+  });
+  const keptDel = (store.deletes||[]).filter(sku=>{ if(!sheetBySku[sku]){ changed = true; return false; } return true; });
+  store.deletes = keptDel;
+  if(changed) savePendingStore(store);
+}
+
+/* ===== Local overlays for the other tabs (same hybrid idea, per-tab) ===== */
+// -- Updates Log: append-only progress entries --
+const UPDATES_LOCAL_KEY='npd_pending_updates_v1';
+function getUpdatesLocal(){ try{ return JSON.parse(localStorage.getItem(UPDATES_LOCAL_KEY))||[]; }catch(e){ return []; } }
+function saveUpdatesLocal(a){ try{ localStorage.setItem(UPDATES_LOCAL_KEY, JSON.stringify(a)); }catch(e){} }
+function updateSig(r){ return [parseSheetDate(r.Date||''),(r.SKU||'').trim(),(r.Track||'').trim(),(r.Stage||'').trim(),(r.Detail||'').trim()].join('|'); }
+
+// -- Task: status overrides keyed by task detail --
+const TASK_OVR_KEY='npd_pending_taskstatus_v1';
+function getTaskOverrides(){ try{ return JSON.parse(localStorage.getItem(TASK_OVR_KEY))||{}; }catch(e){ return {}; } }
+function saveTaskOverrides(o){ try{ localStorage.setItem(TASK_OVR_KEY, JSON.stringify(o)); }catch(e){} }
+
+// -- Notice: add / toggle-active / delete banners --
+const NOTICE_KEY='npd_pending_notices_v1';
+function getNoticeStore(){ try{ const s=JSON.parse(localStorage.getItem(NOTICE_KEY)); if(s) return {edits:s.edits||{}, appends:s.appends||[], deletes:s.deletes||[]}; }catch(e){} return {edits:{},appends:[],deletes:[]}; }
+function saveNoticeStore(s){ try{ localStorage.setItem(NOTICE_KEY, JSON.stringify(s)); }catch(e){} }
+
+function totalPending(){
+  const n=getNoticeStore();
+  return pendingCount() + getUpdatesLocal().length + Object.keys(getTaskOverrides()).length
+       + Object.keys(n.edits).length + n.appends.length + n.deletes.length;
+}
 
 function parseHistory(str){
   if(!str) return [];
@@ -766,15 +1055,16 @@ async function loadProductsFromSheet(){
     const res = await fetch(SHEET_CSV_URL + '&_cb=' + Date.now(), {cache:'no-store'});
     if(!res.ok) throw new Error('fetch failed: '+res.status);
     const csvText = await res.text();
-    const rows = parseCsvByHeader(csvText, ['sku','name']);
-    PRODUCTS = rows.filter(r=>r.name).map(rowToProduct);
+    SHEET_ROWS = parseCsvByHeader(csvText, ['sku','name']).filter(r=>r.name);
     const now = new Date();
     badge.textContent = 'Live from Google Sheet · Loaded ' + formatDate(now);
   }catch(err){
     console.error(err);
-    PRODUCTS = [];
+    SHEET_ROWS = [];
     badge.textContent = 'Could not load data: ' + err.message;
   }
+  autoPrunePending();
+  rebuildProducts();
 }
 
 /* Free-text Track values from the sheet get folded into 3 buckets. Graphic/Design work
@@ -866,47 +1156,86 @@ function parseSheetDate(raw){
   return s; // give up, pass through as-is
 }
 
+let SHEET_UPDATE_RAW = [];
+function mapUpdateRow(r){
+  return {
+    date: parseSheetDate(r.Date),
+    sku: (r.SKU||'').trim(),
+    productName: (r.ProductName||'').trim(),
+    track: normalizeTrack(r.Track),
+    trackRaw: (r.Track||'').trim(),
+    subCategory: (r.SubCategory||'').trim(),
+    stage: (r.Stage||'').trim(),
+    detail: (r.Detail||'').trim(),
+    note: (r.Note||'').trim(),
+    images: resolveImageList(r.Images),
+    updatedBy: (r.UpdatedBy||'').trim(),
+    risk: (r.Risk||'').trim(),
+    nextDue: parseSheetDate(r.NextDue || r['Next Due'] || ''),
+    _local: !!r._local,
+  };
+}
+function rebuildUpdateLogs(){
+  const sheetSigs = new Set(SHEET_UPDATE_RAW.map(updateSig));
+  const local = getUpdatesLocal().filter(r=>!sheetSigs.has(updateSig(r))).map(r=>Object.assign({_local:true}, r));
+  UPDATE_LOGS = SHEET_UPDATE_RAW.concat(local).map(mapUpdateRow).filter(u=>u.sku);
+}
+function autoPruneUpdates(){
+  const sheetSigs = new Set(SHEET_UPDATE_RAW.map(updateSig));
+  const local = getUpdatesLocal();
+  const kept = local.filter(r=>!sheetSigs.has(updateSig(r)));
+  if(kept.length !== local.length) saveUpdatesLocal(kept);
+}
 async function loadUpdatesFromSheet(){
   try{
     const res = await fetch(UPDATES_CSV_URL + '&_cb=' + Date.now(), {cache:'no-store'});
     if(!res.ok) throw new Error('fetch failed: '+res.status);
     const csvText = await res.text();
-    const rows = parseCsvByHeader(csvText, ['SKU','Track']);
-    UPDATE_LOGS = rows.filter(r=>(r.SKU||'').trim()).map(r=>({
-      date: parseSheetDate(r.Date),
-      sku: (r.SKU||'').trim(),
-      productName: (r.ProductName||'').trim(),
-      track: normalizeTrack(r.Track),
-      trackRaw: (r.Track||'').trim(),
-      subCategory: (r.SubCategory||'').trim(),
-      stage: (r.Stage||'').trim(),
-      detail: (r.Detail||'').trim(),
-      note: (r.Note||'').trim(),
-      images: resolveImageList(r.Images),
-      updatedBy: (r.UpdatedBy||'').trim(),
-      risk: (r.Risk||'').trim(),
-      nextDue: parseSheetDate(r.NextDue || r['Next Due'] || ''),
-    }));
+    SHEET_UPDATE_RAW = parseCsvByHeader(csvText, ['SKU','Track']).filter(r=>(r.SKU||'').trim());
   }catch(err){
     console.error('Updates Log load failed', err);
-    UPDATE_LOGS = [];
+    SHEET_UPDATE_RAW = [];
   }
+  autoPruneUpdates();
+  rebuildUpdateLogs();
 }
 
 let NOTICES = [];
+let SHEET_NOTICE_RAW = [];
+let ALL_NOTICES = [];   // {Message, Active} incl. inactive — for the manager
+function rebuildNotices(){
+  const store=getNoticeStore(); const byMsg={}, order=[];
+  SHEET_NOTICE_RAW.forEach(n=>{ if(!(n.Message in byMsg))order.push(n.Message); byMsg[n.Message]=n; });
+  store.appends.forEach(n=>{ if(!(n.Message in byMsg))order.push(n.Message); byMsg[n.Message]=n; });
+  Object.keys(store.edits).forEach(m=>{ if(!(m in byMsg))order.push(m); byMsg[m]=store.edits[m]; });
+  (store.deletes||[]).forEach(m=>{ delete byMsg[m]; });
+  ALL_NOTICES = order.map(m=>byMsg[m]).filter(Boolean);
+  NOTICES = ALL_NOTICES.filter(n=>toBool(n.Active)).map(n=>({message:n.Message}));
+}
+function autoPruneNotices(){
+  const store=getNoticeStore(); let ch=false;
+  const sheetByMsg={}; SHEET_NOTICE_RAW.forEach(n=>sheetByMsg[n.Message]=n);
+  Object.keys(store.edits).forEach(m=>{ if(sheetByMsg[m] && sheetByMsg[m].Active===store.edits[m].Active){ delete store.edits[m]; ch=true; } });
+  const keptAp=store.appends.filter(n=>{ if(sheetByMsg[n.Message]){ ch=true; return false; } return true; });
+  store.appends=keptAp;
+  const keptDel=(store.deletes||[]).filter(m=>{ if(!sheetByMsg[m]){ ch=true; return false; } return true; });
+  store.deletes=keptDel;
+  if(ch) saveNoticeStore(store);
+}
 async function loadNoticesFromSheet(){
   try{
     const res = await fetch(NOTICE_CSV_URL + '&_cb=' + Date.now(), {cache:'no-store'});
     if(!res.ok) throw new Error('fetch failed: '+res.status);
     const csvText = await res.text();
-    const rows = parseCsvByHeader(csvText, ['Message']);
-    NOTICES = rows
-      .filter(r=>toBool(r.Active) && (r.Message||'').trim())
-      .map(r=>({message:(r.Message||'').trim()}));
+    SHEET_NOTICE_RAW = parseCsvByHeader(csvText, ['Message'])
+      .filter(r=>(r.Message||'').trim())
+      .map(r=>({Message:(r.Message||'').trim(), Active: toBool(r.Active)?'TRUE':'FALSE'}));
   }catch(err){
     console.error('Notice load failed (this is fine if the Notice tab does not exist yet)', err);
-    NOTICES = [];
+    SHEET_NOTICE_RAW = [];
   }
+  autoPruneNotices();
+  rebuildNotices();
 }
 
 function noticeDismissKey(msg){
@@ -1053,29 +1382,15 @@ async function init(){
   await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet(), loadNPRSummaryFromSheet()]);
   renderNotices();
 
-  const years = Array.from(new Set(PRODUCTS.map(getYear)));
-  const thisYear = new Date().getFullYear();
-  if(!years.includes(thisYear)) years.push(thisYear);
-  if(!years.includes(thisYear+1)) years.push(thisYear+1);
-  years.sort();
-  currentYear = thisYear;
-
-  const tabsEl = document.getElementById('year-tabs');
-  tabsEl.innerHTML = years.map(y=>`<div class="year-tab ${y===currentYear?'active':''}" data-year="${y}">${y}</div>`).join('');
-  tabsEl.querySelectorAll('.year-tab').forEach(t=>{
-    t.addEventListener('click', ()=>{
-      currentYear = parseInt(t.dataset.year);
-      tabsEl.querySelectorAll('.year-tab').forEach(x=>x.classList.remove('active'));
-      t.classList.add('active');
-      renderCalendar();
-    });
-  });
+  currentYear = new Date().getFullYear();
+  buildYearTabs();
   renderCalendar();
   renderCatalog();
   renderTeamUpdates();
   initTeamLock();
   initTaskForm();
   renderTaskBoard();
+  initEditUi();
 }
 
 function renderCategoryChart(items){
@@ -1507,6 +1822,10 @@ function renderCatalog(){
             ? `<a class="btn-sm primary" href="${esc(p.canva)}" target="_blank" rel="noopener">Presentation</a>`
             : `<span class="btn-sm disabled">No link yet</span>`}
         </div>
+        ${EDIT_MODE ? `<div class="card-edit-row">
+          <button class="btn-sm ghost" onclick="openProductEditor('${attrJs(p.sku)}')">✏️ แก้ไข</button>
+          <button class="btn-sm warn-ghost" onclick="deleteProduct('${attrJs(p.sku)}')">🗑️ ลบ</button>
+        </div>` : ''}
       </div>
     </div>
   `).join('');
@@ -1869,6 +2188,7 @@ async function loadTasksFromSheet(){
     const rows = parseCsvByHeader(await res.text(), ['รายละเอียดงาน','NPD ที่ต้องการฝาก']);
     TASKS = rows.filter(r=>(r['รายละเอียดงาน']||r.Detail||'').trim()).map((r,i)=>({
       id: 'row'+i,
+      ts: (r['ประทับเวลา']||'').trim(),
       created: parseSheetDate((r['ประทับเวลา']||'').split(' ')[0] || r.Created),
       assignee: (r['NPD ที่ต้องการฝาก']||r.Assignee||'').trim(),
       requester: (r['ผู้ฝากงาน']||r.Requester||'').trim(),
@@ -1883,6 +2203,24 @@ async function loadTasksFromSheet(){
     console.error('Tasks load failed', err);
     TASKS = [];
   }
+  // apply local status overrides (and drop ones the Sheet has already caught up to)
+  autoPruneTaskOverrides();
+  const ovr = getTaskOverrides();
+  TASKS.forEach(t=>{ if(ovr[t.detail]!=null) t.status = ovr[t.detail]; });
+}
+function autoPruneTaskOverrides(){
+  const ovr = getTaskOverrides(); let ch=false;
+  Object.keys(ovr).forEach(detail=>{
+    const t = TASKS.find(x=>x.detail===detail);
+    if(t && t.status===ovr[detail]){ delete ovr[detail]; ch=true; }   // Sheet matches → done
+  });
+  if(ch) saveTaskOverrides(ovr);
+}
+function setTaskStatus(detail, status){
+  const ovr = getTaskOverrides(); ovr[detail]=status; saveTaskOverrides(ovr);
+  const t = TASKS.find(x=>x.detail===detail); if(t) t.status=status;
+  renderTaskBoard(); updateSyncStatus(); updateEditControls();
+  syncToSheet('task','update', detail, {Status:status});
 }
 
 function renderTaskBoard(){
@@ -1910,6 +2248,9 @@ function renderTaskBoard(){
           ${t.requester ? `<div>จาก: ${esc(t.requester)}</div>` : ''}
           ${t.remark ? `<div>หมายเหตุ: ${esc(t.remark)}</div>` : ''}
         </div>
+        ${EDIT_MODE ? `<select class="kan-status-sel" data-detail="${esc(t.detail)}" onchange="setTaskStatus(this.dataset.detail, this.value)">
+          ${TASK_STATUSES.map(s=>`<option value="${esc(s)}"${s===t.status?' selected':''}>${esc(s)}</option>`).join('')}
+        </select>` : ''}
       </div>`;
     }).join('');
 
@@ -2103,6 +2444,17 @@ function bfCheck(id, label){
   return `<label class="brief-check-item"><input type="checkbox" id="${id}" ${checked?'checked':''} onchange="bfOnChange('${id}')"> ${esc(label)}</label>`;
 }
 
+/* Clears every field in an "extra" table row (Market Comparison, Component
+   Packaging, Open Issues) so a row nobody used doesn't carry stray data or
+   show up (even blank) on the printed output. */
+function clearRow(ids){
+  ids.forEach(id=>{
+    bfSet(id, '');
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+}
+
 /* Repeatable field: for things like Shade/SKU or Barcode/SKU where there can be
    more than one value. Stored as a JSON array under the same field id. */
 function bfRepeatGetArr(id){
@@ -2143,6 +2495,55 @@ function bfRepeatRemove(id, idx){
   document.getElementById('repeat-'+id).innerHTML = bfRepeatRowsHtml(id, arr);
 }
 
+/* Multi-select checkbox group (e.g. Sales Channel — can pick more than one).
+   Stored as a JSON array of the checked option labels. */
+function bfMultiGetArr(id){
+  try{ return JSON.parse(bfGet(id)||'[]'); }catch(e){ return []; }
+}
+function bfMultiToggle(id, option, checked){
+  let arr = bfMultiGetArr(id);
+  if(checked){ if(!arr.includes(option)) arr.push(option); }
+  else { arr = arr.filter(o=>o!==option); }
+  bfSet(id, JSON.stringify(arr));
+}
+function bfMultiField(id, label, options){
+  const arr = bfMultiGetArr(id);
+  const checks = options.map(o=>{
+    const checked = arr.includes(o);
+    return `<label class="brief-check-item"><input type="checkbox" ${checked?'checked':''} onchange="bfMultiToggle('${id}','${esc(o)}',this.checked)"> ${esc(o)}</label>`;
+  }).join('');
+  return `<div class="brief-field brief-full"><label>${esc(label)}</label><div class="brief-check-grid">${checks}</div></div>`;
+}
+
+/* Image attach field — stores the image as a base64 data URL directly in
+   localStorage so it survives reloads without needing any server. */
+function bfImageChange(id, inputEl){
+  const file = inputEl.files && inputEl.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    bfSet(id, reader.result);
+    const preview = document.getElementById('imgprev-'+id);
+    if(preview) preview.innerHTML = `<img src="${reader.result}" style="max-width:180px; max-height:180px; border-radius:8px; border:1px solid var(--line); display:block; margin-top:6px;">`;
+  };
+  reader.readAsDataURL(file);
+}
+function bfImageRemove(id){
+  bfSet(id, '');
+  const preview = document.getElementById('imgprev-'+id);
+  if(preview) preview.innerHTML = '';
+}
+function bfImageField(id, label){
+  const saved = bfGet(id);
+  const preview = saved ? `<img src="${saved}" style="max-width:180px; max-height:180px; border-radius:8px; border:1px solid var(--line); display:block; margin-top:6px;">` : '';
+  return `<div class="brief-field brief-full">
+    <label>${esc(label)}</label>
+    <input type="file" accept="image/*" onchange="bfImageChange('${id}', this)">
+    <button type="button" class="brief-print-btn" style="margin-top:4px;" onclick="bfImageRemove('${id}')">ลบรูป</button>
+    <div id="imgprev-${id}">${preview}</div>
+  </div>`;
+}
+
 function renderBriefPartA(){
   return `
     <div class="brief-section-h">A1. Project Control</div>
@@ -2151,10 +2552,11 @@ function renderBriefPartA(){
       ${bfField('a_projectName','Project Name','text')}
       ${bfField('a_briefVersion','Brief Version','text',{placeholder:'เช่น V1.0'})}
       ${bfField('a_brand','Brand / Company','select',{options:['Godmami','Glimmer Sisters']})}
+      ${bfField('a_objective','Objective','select',{options:['New Product','Re-Formula','Re-Packaging']})}
       ${bfField('a_briefDate','Brief Date','date')}
       ${bfField('a_owner','NPD Owner','select',{options:['Peet','Bonus','Ploy']})}
-      ${bfField('a_channel','Sales Channel','select',{options:['Online','Offline','Flagship']})}
-      ${bfField('a_targetReceive','Target Receive','date')}
+      ${bfMultiField('a_channel','Sales Channel',['Online','Offline','Flagship'])}
+      ${bfField('a_targetReceive','Product on Stock','date')}
       ${bfField('a_fgLaunch','FG Launch','date')}
     </div>
     <div class="brief-section-h">A2. Product Direction</div>
@@ -2165,8 +2567,11 @@ function renderBriefPartA(){
       ${bfField('a_benefit2','Key Benefit 2','text')}
       ${bfField('a_benefit3','Key Benefit 3','text')}
       ${bfField('a_benchmark','Benchmark','textarea',{full:true})}
-      ${bfRepeatField('a_shade','Shade / SKU')}
-      ${bfRepeatField('a_barcode','Barcode / SKU')}
+      ${bfRepeatField('a_shade','SKU — ระบุชื่อสี/ขนาด แต่ละ SKU (จำนวนช่อง = จำนวน SKU)')}
+      <div class="brief-field brief-full">
+        <label>Barcode</label>
+        ${bfCheck('a_barcodeRequest','แจ้งทีมระบบให้สร้าง Barcode ให้ (ตามจำนวน SKU ด้านบน) — ไม่ต้องกรอกเลขเอง')}
+      </div>
       ${bfField('a_special','Special Request','textarea',{full:true})}
       ${bfField('a_weight','Declare Weight','text')}
       ${bfField('a_remark','Remark','textarea',{full:true})}
@@ -2174,6 +2579,27 @@ function renderBriefPartA(){
 }
 
 const B_MARKET_ROWS = 3;
+
+const GODMAMI_ADDRESS = '\u0e40\u0e25\u0e02\u0e17\u0e35\u0e48 47 \u0e0b\u0e2d\u0e22\u0e2a\u0e38\u0e02\u0e38\u0e21\u0e27\u0e34\u0e17 60/1 \u0e41\u0e02\u0e27\u0e07\u0e1e\u0e23\u0e30\u0e42\u0e02\u0e19\u0e07\u0e43\u0e15\u0e49 \u0e40\u0e02\u0e15\u0e1e\u0e23\u0e30\u0e42\u0e02\u0e19\u0e07 \u0e01\u0e23\u0e38\u0e07\u0e40\u0e17\u0e1e 10260';
+function fillCustomerAddress(){
+  bfSet('b_address', GODMAMI_ADDRESS);
+  const el = document.getElementById('b_address');
+  if(el) el.value = GODMAMI_ADDRESS;
+}
+/* Copies the overlapping fields from Part A into Part B, so the person doesn't
+   have to retype brand / product type / benchmark that were already entered. */
+function copyFromPartA(){
+  const map = {
+    b_brandName: bfGet('a_brand'),
+    b_productName: bfGet('a_projectName'),
+    b_productType: bfGet('a_type'),
+    b_benchmarkDetail: bfGet('a_benchmark'),
+  };
+  Object.entries(map).forEach(([id,val])=>{ if(val) bfSet(id, val); });
+  if(bfGet('a_benchmark')) bfSet('b_benchmarkHave','1');
+  const body = document.getElementById('brief-part-body-b');
+  if(body){ body.innerHTML = renderBriefPartB(); body.dataset.rendered='1'; }
+}
 
 function renderBriefPartB(){
   const rows = B1_ROWS.map((label,i)=>`
@@ -2184,7 +2610,9 @@ function renderBriefPartB(){
     </tr>`).join('');
   const checks = B2_CHECKS.map((c,i)=>bfCheck('b2_'+i, c)).join('');
 
-  const marketRows = Array.from({length:B_MARKET_ROWS}, (_,i)=>`
+  const marketRows = Array.from({length:B_MARKET_ROWS}, (_,i)=>{
+    const ids = ['b_mkt_name_'+i,'b_mkt_pro_'+i,'b_mkt_con_'+i,'b_mkt_price_'+i,'b_mkt_size_'+i,'b_mkt_price10_'+i];
+    return `
     <tr>
       <td>${bfTableInput('b_mkt_name_'+i,'ชื่อสินค้าคู่แข่ง')}</td>
       <td>${bfTableInput('b_mkt_pro_'+i)}</td>
@@ -2192,10 +2620,13 @@ function renderBriefPartB(){
       <td>${bfTableInput('b_mkt_price_'+i,'บาท')}</td>
       <td>${bfTableInput('b_mkt_size_'+i,'ml')}</td>
       <td>${bfTableInput('b_mkt_price10_'+i)}</td>
-    </tr>`).join('');
+      <td style="text-align:center; border:none;"><button type="button" class="brief-repeat-del" title="ล้างแถวนี้ (ไม่ใช้แถวนี้ก็ไม่ขึ้นตอนปริ้น)" onclick="clearRow(${JSON.stringify(ids)})">🗑️</button></td>
+    </tr>`;
+  }).join('');
 
   return `
     <div class="brief-note-box">อ้างอิงจากแบบฟอร์ม RD Request ของโรงงาน (COSMANIA) — กรอกที่นี่แล้วปริ้นออกมาให้หน้าตาเหมือนฟอร์มโรงงานได้เลย ด้วยปุ่ม "Print (Factory Form Style)" ด้านล่าง</div>
+    <button type="button" class="brief-print-btn" onclick="copyFromPartA()">📋 ใช้ข้อมูลจากหมวด A (แบรนด์ / ชื่อสินค้า / ประเภท / Benchmark)</button>
 
     <div class="brief-section-h">Request Info</div>
     <div class="brief-field-grid">
@@ -2209,7 +2640,11 @@ function renderBriefPartB(){
     <div class="brief-field-grid">
       ${bfField('b_customerName','ชื่อลูกค้า','text',{placeholder:'Cosceutic Innovation Laboratories Co., Ltd.'})}
       ${bfField('b_brandName','ชื่อบริษัท/ชื่อแบรนด์','select',{options:['Godmami','Glimmer Sisters']})}
-      ${bfField('b_address','ที่อยู่','textarea',{full:true})}
+      <div class="brief-field brief-full">
+        <label>ที่อยู่</label>
+        <textarea id="b_address" onchange="bfOnChange('b_address')">${esc(bfGet('b_address'))}</textarea>
+        <button type="button" class="brief-print-btn" style="margin-top:4px;" onclick="fillCustomerAddress()">📍 กรอกที่อยู่อัตโนมัติ</button>
+      </div>
       ${bfField('b_phone','เบอร์โทรศัพท์','text')}
       ${bfField('b_faxEmail','เบอร์แฟกซ์ / Email','text')}
       ${bfField('b_mobile','เบอร์มือถือ','text')}
@@ -2231,6 +2666,7 @@ function renderBriefPartB(){
     </div>
     <div class="brief-field-grid">
       ${bfField('b_benchmarkDetail','ระบุผลิตภัณฑ์ต้นแบบ','text',{full:true})}
+      ${bfImageField('b_benchmarkImage','แนบภาพผลิตภัณฑ์ต้นแบบ')}
       ${bfField('b_benchmarkIngredient','แนบตัวอย่าง — ส่วนประกอบ','select',{options:['ไม่มี','มี (แนบ)']})}
       ${bfField('b_benchmarkTexture','แนบตัวอย่าง — เนื้อผลิตภัณฑ์','select',{options:['ไม่มี','มี (แนบ)']})}
       ${bfField('b_spfTest','การส่งตรวจ SPF (สำหรับสินค้ากันแดด)','select',{options:['ไม่ส่งตรวจ','ส่งตรวจ']})}
@@ -2261,8 +2697,8 @@ function renderBriefPartB(){
     </div>
 
     <div class="brief-section-h">Market Comparison (Optional)</div>
-    <table class="brief-table">
-      <thead><tr><th>สินค้าคู่แข่ง</th><th>จุดเด่น</th><th>จุดด้อย</th><th style="width:9%;">ราคา</th><th style="width:9%;">ขนาด (ml)</th><th style="width:10%;">ราคา/10g</th></tr></thead>
+    <table class="brief-table optional-row-table">
+      <thead><tr><th>สินค้าคู่แข่ง</th><th>จุดเด่น</th><th>จุดด้อย</th><th style="width:9%;">ราคา</th><th style="width:9%;">ขนาด (ml)</th><th style="width:10%;">ราคา/10g</th><th style="width:5%; border:none;"></th></tr></thead>
       <tbody>${marketRows}</tbody>
     </table>
 
@@ -2280,18 +2716,22 @@ function renderBriefPartB(){
 }
 
 function renderBriefPartC(){
-  const compRows = [1,2,3,4,5].map(i=>`
+  const compRows = [1,2,3,4,5].map(i=>{
+    const ids = ['c1_comp_'+i,'c1_deco_'+i,'c1_remark_'+i];
+    return `
     <tr>
       <td class="label-cell" style="text-align:center;">${i}</td>
       <td>${bfTableInput('c1_comp_'+i, i===1?'Primary pack / ขวด / กระปุก / หลอด':i===2?'Closure / Cap / Pump / Brush':i===3?'Secondary pack / กล่อง':i===4?'Sticker / Insert / Seal':'อื่น ๆ')}</td>
       <td>${bfTableInput('c1_deco_'+i)}</td>
       <td>${bfTableInput('c1_remark_'+i)}</td>
-    </tr>`).join('');
+      <td style="text-align:center; border:none;"><button type="button" class="brief-repeat-del" title="ล้างแถวนี้ (ไม่ใช้แถวนี้ก็ไม่ขึ้นตอนปริ้น)" onclick="clearRow(${JSON.stringify(ids)})">🗑️</button></td>
+    </tr>`;
+  }).join('');
   const checks = C2_CHECKS.map((c,i)=>bfCheck('c2_'+i, c)).join('');
   return `
     <div class="brief-section-h">C1. Component Packaging</div>
-    <table class="brief-table">
-      <thead><tr><th style="width:5%;">No.</th><th>Component Packaging</th><th>Decoration</th><th>Remark</th></tr></thead>
+    <table class="brief-table optional-row-table">
+      <thead><tr><th style="width:5%;">No.</th><th>Component Packaging</th><th>Decoration</th><th>Remark</th><th style="width:5%; border:none;"></th></tr></thead>
       <tbody>${compRows}</tbody>
     </table>
     <div class="brief-section-h">C2. Packaging Approval & Reference Standard</div>
@@ -2308,14 +2748,18 @@ function renderBriefPartD(){
       <td>${bfTableDate('d1_due_'+i)}</td>
       <td>${bfTableInput('d1_dep_'+i)}</td>
     </tr>`).join('');
-  const iRows = [1,2,3,4].map(i=>`
+  const iRows = [1,2,3,4].map(i=>{
+    const ids = ['d2_info_'+i,'d2_owner_'+i,'d2_due_'+i,'d2_status_'+i];
+    return `
     <tr>
       <td class="label-cell" style="text-align:center;">${i}</td>
       <td>${bfTableInput('d2_info_'+i)}</td>
       <td>${bfTableInput('d2_owner_'+i)}</td>
       <td>${bfTableDate('d2_due_'+i)}</td>
       <td>${bfTableSelect('d2_status_'+i, ['Open','Done'])}</td>
-    </tr>`).join('');
+      <td style="text-align:center; border:none;"><button type="button" class="brief-repeat-del" title="ล้างแถวนี้ (ไม่ใช้แถวนี้ก็ไม่ขึ้นตอนปริ้น)" onclick="clearRow(${JSON.stringify(ids)})">🗑️</button></td>
+    </tr>`;
+  }).join('');
   return `
     <div class="brief-section-h">D1. Proposed Timeline</div>
     <table class="brief-table">
@@ -2323,8 +2767,8 @@ function renderBriefPartD(){
       <tbody>${tRows}</tbody>
     </table>
     <div class="brief-section-h">D2. Open Issues / Information Required</div>
-    <table class="brief-table">
-      <thead><tr><th style="width:6%;">ลำดับ</th><th>ข้อมูล/การตัดสินใจที่ต้องการ</th><th style="width:16%;">Owner</th><th style="width:14%;">Due</th><th style="width:12%;">สถานะ</th></tr></thead>
+    <table class="brief-table optional-row-table">
+      <thead><tr><th style="width:6%;">ลำดับ</th><th>ข้อมูล/การตัดสินใจที่ต้องการ</th><th style="width:16%;">Owner</th><th style="width:14%;">Due</th><th style="width:12%;">สถานะ</th><th style="width:5%; border:none;"></th></tr></thead>
       <tbody>${iRows}</tbody>
     </table>
     <div class="brief-note-box"><strong>Timeline</strong> — วันรับสินค้าควรก่อน Launch อย่างน้อย 3-4 สัปดาห์ เผื่อ Buffer โครงการ 15-20% และวัตถุดิบหรือแพ็กเกจนำเข้าอาจต้องเพิ่ม 8-16 สัปดาห์</div>`;
@@ -2402,6 +2846,17 @@ function printBriefPart(key){
     body.dataset.rendered = '1';
   }
   const p = BRIEF_PARTS[key];
+
+  // cloneNode(true) only serializes the "selected" HTML *attribute*, not the live
+  // selectedIndex/value a user set by picking an option — so without this sync step,
+  // any dropdown the person actually changed would print back to blank/default.
+  body.querySelectorAll('select').forEach(sel=>{
+    [...sel.options].forEach(opt=>{
+      if(opt.value === sel.value) opt.setAttribute('selected','selected');
+      else opt.removeAttribute('selected');
+    });
+  });
+
   const clone = body.cloneNode(true);
 
   // 1) Collapse repeatable fields (Shade/SKU, Barcode/SKU) into one joined value first,
@@ -2420,6 +2875,14 @@ function printBriefPart(key){
     const checked = input && input.checked;
     const labelText = item.textContent.trim();
     item.innerHTML = `<span class="pv-check ${checked?'on':''}">${checked?'☑':'☐'}</span> ${esc(labelText)}`;
+  });
+
+  // 2b) Drop entirely-blank rows in "extra slot" tables (Market Comparison,
+  //     Component Packaging, Open Issues) so unused rows don't print at all.
+  clone.querySelectorAll('table.optional-row-table tbody tr').forEach(tr=>{
+    const fields = [...tr.querySelectorAll('input, textarea, select')];
+    const allBlank = fields.every(el=>!el.value || !el.value.trim());
+    if(allBlank) tr.remove();
   });
 
   // 3) Remaining plain inputs / textareas / selects -> boxed value display
@@ -2600,6 +3063,564 @@ function printBriefPartBFactory(){
   win.document.close();
   setTimeout(()=>{ win.print(); }, 300);
 }
+
+/* ==================================================================================
+   IN-WEB PRODUCT EDITOR  (Hybrid: localStorage now · Google Sheet write-back later)
+   ================================================================================== */
+let EDIT_MODE = false;
+let editingSku = null;
+
+function attrJs(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+let _toastTimer=null;
+function toast(msg, kind){
+  const wrap=document.getElementById('toast-wrap'); if(!wrap) return;
+  const el=document.createElement('div'); el.className='toast '+(kind||''); el.textContent=msg;
+  wrap.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),250); }, 3400);
+}
+
+/* ---------- render orchestration ---------- */
+function buildYearTabs(){
+  const years = Array.from(new Set(PRODUCTS.map(getYear)));
+  const thisYear = new Date().getFullYear();
+  if(!years.includes(thisYear)) years.push(thisYear);
+  if(!years.includes(thisYear+1)) years.push(thisYear+1);
+  years.sort();
+  if(!years.includes(currentYear)) currentYear = thisYear;
+  const tabsEl = document.getElementById('year-tabs');
+  tabsEl.innerHTML = years.map(y=>`<div class="year-tab ${y===currentYear?'active':''}" data-year="${y}">${y}</div>`).join('');
+  tabsEl.querySelectorAll('.year-tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      currentYear = parseInt(t.dataset.year);
+      tabsEl.querySelectorAll('.year-tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      renderCalendar();
+    });
+  });
+}
+function renderAll(){
+  buildYearTabs();
+  renderCalendar();
+  renderCatalog();
+  updateSyncStatus();
+  updateEditControls();
+}
+
+/* ---------- edit-mode gate (reuses the team passcode) ---------- */
+function toggleEditMode(){
+  if(EDIT_MODE){ EDIT_MODE=false; renderAll(); toast('ออกจากโหมดแก้ไขแล้ว','info'); return; }
+  let unlocked=false; try{ unlocked = sessionStorage.getItem('npdUnlocked')==='1'; }catch(e){}
+  if(!unlocked){
+    const pass = prompt('ใส่รหัสผ่านทีม NPD เพื่อเข้าโหมดแก้ไข:');
+    if(pass===null) return;
+    if(pass!==TEAM_PASSCODE){ toast('รหัสผ่านไม่ถูกต้อง','err'); return; }
+    try{ sessionStorage.setItem('npdUnlocked','1'); }catch(e){}
+  }
+  EDIT_MODE=true; renderAll();
+  toast('เข้าโหมดแก้ไขแล้ว — เพิ่ม/แก้/ลบ สินค้าได้เลย','ok');
+}
+
+function updateEditControls(){
+  const show=(id,on)=>{ const el=document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; };
+  const cfg=getWriteConfig(), pc=totalPending();
+  show('btn-add-product', EDIT_MODE);
+  show('btn-refresh', EDIT_MODE);
+  show('btn-export', EDIT_MODE);
+  show('btn-notices', EDIT_MODE);
+  show('btn-add-update', EDIT_MODE);
+  show('btn-sync-setup', EDIT_MODE);
+  show('btn-push', EDIT_MODE && !!cfg.url && pc>0);
+  show('btn-clear-local', EDIT_MODE && pc>0);
+  const b=document.getElementById('btn-edit-unlock');
+  if(b) b.textContent = EDIT_MODE ? '🔒 ออกจากโหมดแก้ไข' : '🔓 โหมดแก้ไข';
+}
+function updateSyncStatus(){
+  const badge=document.getElementById('sync-badge'); if(!badge) return;
+  const cfg=getWriteConfig(), pc=totalPending();
+  if(!cfg.url){
+    if(pc>0){ badge.className='sync-badge local'; badge.textContent='💾 เก็บในเครื่องนี้ '+pc+' รายการ · ยังไม่ได้ตั้ง Sheet Sync'; }
+    else { badge.className='sync-badge off'; badge.textContent='อ่านจาก Google Sheet · ยังไม่เปิด Sheet Sync'; }
+  } else {
+    if(pc>0){ badge.className='sync-badge local'; badge.textContent='⏳ รอยืนยัน '+pc+' รายการ (กดรีเฟรชเพื่อตรวจ)'; }
+    else { badge.className='sync-badge synced'; badge.textContent='✅ ซิงค์กับ Google Sheet'; }
+  }
+}
+
+/* ---------- the Add/Edit form ---------- */
+function peOpt(v,label,cur){ return `<option value="${esc(v)}"${String(cur||'')===String(v)?' selected':''}>${esc(label)}</option>`; }
+function brandToLabel(raw){ const s=(raw||'').toLowerCase(); if(s.includes('glimmer'))return 'Glimmer Sisters'; if(s.includes('godmami'))return 'Godmami'; return ''; }
+function riskToVal(raw){ const s=(raw||'').toLowerCase(); if(s.includes('high'))return 'High'; if(s.includes('med'))return 'Medium'; if(s.includes('low'))return 'Low'; return ''; }
+function isoVal(raw){ const s=(raw||'').trim(); if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; const p=parseSheetDate(s); return /^\d{4}-\d{2}-\d{2}$/.test(p)?p:''; }
+
+function renderProductForm(row, isEdit){
+  const V=(c)=>esc(row[c]!=null?row[c]:'');
+  let ms='';
+  MILESTONE_FIELDS.forEach(([pfx,label])=>{
+    ms += `<div class="pe-ms-label">${esc(label)}</div>
+      <div class="pe-ms-cell"><label>กำหนด / แผน</label><input type="date" id="pe-${pfx}_deadline" value="${isoVal(row[pfx+'_deadline'])}"></div>
+      <div class="pe-ms-cell"><label>วันจริง</label><input type="date" id="pe-${pfx}_actual" value="${isoVal(row[pfx+'_actual'])}"></div>`;
+    if(MS_LINK_FIELDS[pfx]){
+      const lc=MS_LINK_FIELDS[pfx];
+      ms += `<div class="pe-ms-cell" style="grid-column:1/-1;"><label>ลิงก์ไฟล์แนบ (ถ้ามี)</label><input type="text" id="pe-${lc}" value="${V(lc)}" placeholder="วางลิงก์ Google Drive / ไฟล์"></div>`;
+    }
+  });
+  const typeOpts = ['<option value="">— เลือก —</option>'].concat(Object.keys(TYPE_DEFS).map(k=>peOpt(k,TYPE_DEFS[k].label,(row.type||'').toLowerCase()))).join('');
+  const catOpts  = ['<option value="">— เลือก —</option>'].concat(Object.keys(CATEGORY_DEFS).map(k=>peOpt(k,CATEGORY_DEFS[k].label,(row.category||'').toLowerCase()))).join('');
+  const brandCur = brandToLabel(row.brand);
+  const brandOpts = ['',"Godmami","Glimmer Sisters"].map(b=>peOpt(b, b||'— เลือก —', brandCur)).join('');
+  const riskCur = riskToVal(row.risk);
+  const riskOpts = ['','Low','Medium','High'].map(r=>peOpt(r, r||'— ไม่ระบุ —', riskCur)).join('');
+
+  document.getElementById('pe-form').innerHTML = `
+    <div class="pe-section">ข้อมูลหลัก</div>
+    <div class="pe-grid">
+      <div class="pe-field full"><label>ชื่อสินค้า *</label><input type="text" id="pe-name" value="${V('name')}" placeholder="เช่น Lip Serum Glow"></div>
+      <div class="pe-field"><label>SKU * ${isEdit?'(แก้ไม่ได้ — ใช้เป็นรหัสอ้างอิง)':''}</label><input type="text" id="pe-sku" value="${V('sku')}" placeholder="เช่น GM-LS-01" ${isEdit?'readonly style="background:var(--bg);"':''}></div>
+      <div class="pe-field"><label>Barcode</label><input type="text" id="pe-barcode" value="${V('barcode')}" placeholder="เว้นว่างได้ / ให้ทีมระบบสร้าง"></div>
+      <div class="pe-field"><label>Brand</label><select id="pe-brand">${brandOpts}</select></div>
+      <div class="pe-field"><label>Type</label><select id="pe-type">${typeOpts}</select></div>
+      <div class="pe-field"><label>Category</label><select id="pe-category">${catOpts}</select></div>
+    </div>
+
+    <div class="pe-section">วันสำคัญ / Milestones (เว้นว่างได้ = ยังไม่กำหนด)</div>
+    <div class="pe-ms-grid">${ms}</div>
+
+    <div class="pe-section">รายละเอียดเพิ่มเติม</div>
+    <div class="pe-grid">
+      <div class="pe-field full"><label>Canva / Presentation link</label><input type="text" id="pe-canva" value="${V('canva')}" placeholder="https://www.canva.com/…"></div>
+      <div class="pe-field"><label>Lot</label><input type="text" id="pe-lot" value="${V('lot')}"></div>
+      <div class="pe-field"><label>วันหมดอายุ (EXP)</label><input type="date" id="pe-exp" value="${isoVal(row.exp)}"></div>
+      <div class="pe-field"><label>Risk</label><select id="pe-risk">${riskOpts}</select></div>
+      <div class="pe-field"><label>งาน/กำหนดถัดไป (Next due)</label><input type="text" id="pe-nextDue" value="${V('nextDue')}"></div>
+      <div class="pe-field full"><label>หมายเหตุ (Remark)</label><textarea id="pe-remark" placeholder="โน้ตเพิ่มเติม">${V('remark')}</textarea></div>
+    </div>
+
+    <div class="pe-section">สถานะหยุดขาย</div>
+    <div class="pe-grid">
+      <div class="pe-field"><div class="pe-check"><input type="checkbox" id="pe-saleHalted" ${toBool(row.saleHalted)?'checked':''}><label for="pe-saleHalted" style="font-size:13px;">หยุดขายชั่วคราว</label></div></div>
+      <div class="pe-field"><label>วันที่หยุดขาย</label><input type="date" id="pe-saleHaltDate" value="${isoVal(row.saleHaltDate)}"></div>
+      <div class="pe-field full"><label>เหตุผล/โน้ตการหยุดขาย</label><input type="text" id="pe-saleHaltNote" value="${V('saleHaltNote')}"></div>
+    </div>
+
+    <div class="pe-section">รูปภาพ & ประวัติ</div>
+    <div class="pe-grid">
+      <div class="pe-field full"><label>ลิงก์รูปสินค้า (Google Drive share link หรือ URL รูป)</label><input type="text" id="pe-image" value="${V('image')}" placeholder="https://drive.google.com/file/d/…/view"></div>
+      <div class="pe-field full"><label>ประวัติ (รูปแบบ: <code>2026-01-05: โน้ต | 2026-02-01: โน้ต</code>)</label><textarea id="pe-history" placeholder="ปล่อยว่างได้">${V('history')}</textarea></div>
+    </div>
+  `;
+  document.getElementById('pe-hint').textContent = isEdit ? 'กำลังแก้ไขสินค้าที่มีอยู่' : 'สินค้าใหม่ — SKU ต้องไม่ซ้ำของเดิม';
+}
+
+function collectProductForm(){
+  const row={};
+  PRODUCT_COLUMNS.forEach(c=>{
+    if(c==='saleHalted'){ const el=document.getElementById('pe-saleHalted'); row[c]= (el&&el.checked)?'TRUE':'FALSE'; return; }
+    const el=document.getElementById('pe-'+c);
+    row[c]= el ? String(el.value||'').trim() : '';
+  });
+  return row;
+}
+
+function openProductEditor(sku){
+  editingSku = sku || null;
+  let row = {};
+  if(sku){
+    const store=getPendingStore();
+    row = store.edits[sku] || SHEET_ROWS.find(r=>(r.sku||'').trim()===sku) || {};
+  }
+  document.getElementById('pe-title').textContent = sku ? ('แก้ไข: '+((row.name||sku))) : 'เพิ่มสินค้าใหม่';
+  renderProductForm(row, !!sku);
+  document.getElementById('pe-overlay').classList.add('open');
+}
+function closeProductEditor(){ document.getElementById('pe-overlay').classList.remove('open'); editingSku=null; }
+
+function skuExists(sku){
+  if(SHEET_ROWS.some(r=>(r.sku||'').trim()===sku)) return true;
+  const store=getPendingStore();
+  return Object.prototype.hasOwnProperty.call(store.edits, sku);
+}
+
+function saveProduct(){
+  const row = collectProductForm();
+  const name=(row.name||'').trim(), sku=(row.sku||'').trim();
+  if(!name){ toast('กรุณากรอกชื่อสินค้า','err'); return; }
+  if(!sku){ toast('กรุณากรอก SKU (ใช้เป็นรหัสอ้างอิง)','err'); return; }
+  if(!editingSku && skuExists(sku)){
+    if(!confirm('มี SKU "'+sku+'" อยู่แล้ว — บันทึกทับข้อมูลเดิมหรือไม่?')) return;
+  }
+  const store=getPendingStore();
+  store.edits[sku]=row;
+  store.deletes=(store.deletes||[]).filter(s=>s!==sku);
+  savePendingStore(store);
+  rebuildProducts();
+  renderAll();
+  closeProductEditor();
+  syncRowToSheet('upsert', row);
+}
+
+function deleteProduct(sku){
+  const p = PRODUCTS.find(x=>x.sku===sku);
+  if(!confirm('ลบสินค้า "'+((p&&p.name)||sku)+'" ?\nถ้าตั้ง Sheet Sync ไว้ จะลบออกจาก Google Sheet ด้วย')) return;
+  const inSheet = SHEET_ROWS.some(r=>(r.sku||'').trim()===sku);
+  const store=getPendingStore();
+  delete store.edits[sku];
+  if(inSheet && !(store.deletes||[]).includes(sku)) (store.deletes=store.deletes||[]).push(sku);
+  savePendingStore(store);
+  rebuildProducts();
+  renderAll();
+  if(inSheet) syncRowToSheet('delete', {sku});
+  else toast('ลบรายการที่เพิ่มไว้ในเครื่องแล้ว','ok');
+}
+
+/* ---------- talking to the Apps Script endpoint ---------- */
+async function postToSheet(payload){
+  const cfg=getWriteConfig();
+  // Apps Script web apps don't answer CORS preflight, so send a "simple" text/plain
+  // request with no-cors. The write still lands; we just can't read the reply here,
+  // which is why the auto-prune-on-reload confirms it on the next Sheet refresh.
+  await fetch(cfg.url, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload)});
+  return {sent:true};
+}
+/* One sender for every tab. `target` selects the Sheet tab; `sku` is kept alongside
+   keyValue for products so an older (products-only) Apps Script deployment still works. */
+async function syncToSheet(target, action, keyValue, row){
+  const cfg=getWriteConfig();
+  updateSyncStatus(); updateEditControls();
+  if(!cfg.url){ toast('บันทึกในเครื่องนี้แล้ว · ยังไม่ได้ตั้ง Sheet Sync (กด ⚙️ เพื่อแชร์ทั้งทีม)','info'); return; }
+  const payload={target, action, token:cfg.token, keyValue, row: action==='delete'?undefined:row};
+  if(target==='products') payload.sku=keyValue;
+  try{
+    await postToSheet(payload);
+    toast('ส่งขึ้น Google Sheet แล้ว · จะยืนยันอัตโนมัติเมื่อรีเฟรช','ok');
+    setTimeout(()=>reloadEverything(true), 6000);
+  }catch(err){
+    toast('บันทึกในเครื่องแล้ว แต่ต่อ Sheet ไม่ได้ ('+err.message+') — เก็บไว้รอซิงค์','err');
+  }
+}
+function syncRowToSheet(action, row){ return syncToSheet('products', action, row.sku, row); }
+
+async function pushPendingToSheet(){
+  const cfg=getWriteConfig();
+  if(!cfg.url){ toast('ยังไม่ได้ตั้ง Sheet Sync','err'); return; }
+  const store=getPendingStore();
+  const edits=Object.keys(store.edits), dels=(store.deletes||[]).slice();
+  const uStore=getUpdatesLocal(), tStore=getTaskOverrides(), nStore=getNoticeStore();
+  const uCnt=uStore.length, tCnt=Object.keys(tStore).length;
+  const nCnt=Object.keys(nStore.edits).length + nStore.appends.length + nStore.deletes.length;
+  const total=edits.length+dels.length+uCnt+tCnt+nCnt;
+  if(!total){ toast('ไม่มีรายการค้าง','info'); return; }
+  toast('กำลังส่ง '+total+' รายการขึ้น Sheet…','info');
+  try{
+    for(const sku of edits){ const p={target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:store.edits[sku]}; await postToSheet(p); }
+    for(const sku of dels){ await postToSheet({target:'products',action:'delete',token:cfg.token,keyValue:sku,sku}); }
+    for(const e of uStore){ await postToSheet({target:'updates',action:'append',token:cfg.token,row:e}); }
+    for(const detail of Object.keys(tStore)){ await postToSheet({target:'task',action:'update',token:cfg.token,keyValue:detail,row:{Status:tStore[detail]}}); }
+    for(const e of nStore.appends){ await postToSheet({target:'notice',action:'append',token:cfg.token,row:e}); }
+    for(const msg of Object.keys(nStore.edits)){ await postToSheet({target:'notice',action:'upsert',token:cfg.token,keyValue:msg,row:nStore.edits[msg]}); }
+    for(const msg of nStore.deletes){ await postToSheet({target:'notice',action:'delete',token:cfg.token,keyValue:msg}); }
+    toast('ส่งครบแล้ว · กำลังตรวจยืนยัน…','ok');
+    setTimeout(()=>reloadEverything(true), 6000);
+  }catch(err){ toast('ส่งไม่สำเร็จบางรายการ: '+err.message,'err'); }
+}
+async function refreshFromSheet(silent){ return reloadEverything(silent); }
+async function reloadEverything(silent){
+  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet()]);
+  renderNotices(); renderAll();
+  renderTeamUpdates(); renderTaskBoard();
+  if(!silent) toast('รีเฟรชจาก Google Sheet แล้ว','ok');
+}
+function clearLocalEdits(){
+  if(totalPending()===0){ toast('ไม่มีข้อมูลที่แก้ในเครื่อง','info'); return; }
+  if(!confirm('ล้างข้อมูลที่แก้ในเครื่องนี้ทั้งหมด (สินค้า/บันทึก/สถานะงาน/ประกาศ) แล้วใช้ค่าจาก Google Sheet?\n(ข้อมูลที่ยังไม่ได้ซิงค์จะหายไป)')) return;
+  savePendingStore({edits:{}, deletes:[]});
+  saveUpdatesLocal([]);
+  saveTaskOverrides({});
+  saveNoticeStore({edits:{},appends:[],deletes:[]});
+  rebuildProducts();
+  if(typeof rebuildUpdateLogs==='function') rebuildUpdateLogs();
+  if(typeof rebuildNotices==='function') rebuildNotices();
+  renderAll(); renderNotices();
+  if(typeof renderTeamUpdates==='function') renderTeamUpdates();
+  if(typeof renderTaskBoard==='function') renderTaskBoard();
+  toast('ล้างข้อมูลในเครื่องแล้ว','ok');
+}
+
+/* ---------- CSV export (backup / manual paste) ---------- */
+function getMergedRawRows(){
+  const store=getPendingStore(); const bySku={}, order=[];
+  SHEET_ROWS.forEach((r,i)=>{ const k=(r.sku||'').trim()||('__s'+i); if(!(k in bySku))order.push(k); bySku[k]=r; });
+  Object.keys(store.edits).forEach(sku=>{ if(!(sku in bySku))order.push(sku); bySku[sku]=store.edits[sku]; });
+  (store.deletes||[]).forEach(sku=>{ delete bySku[sku]; });
+  return order.map(k=>bySku[k]).filter(r=>r&&r.name);
+}
+function exportProductsCsv(){
+  const data=getMergedRawRows().map(r=>{ const o={}; PRODUCT_COLUMNS.forEach(c=>o[c]=(r[c]!=null?r[c]:'')); return o; });
+  const csv=Papa.unparse({fields:PRODUCT_COLUMNS, data});
+  const blob=new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='godmami-npd-products-'+todayStr()+'.csv'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  toast('ดาวน์โหลด CSV แล้ว','ok');
+}
+
+/* ---------- Sheet Sync setup panel ---------- */
+const APPS_SCRIPT_CODE = `/**
+ * Godmami NPD — Google Sheet write-back endpoint (multi-tab)
+ * วางโค้ดนี้ใน Apps Script ของ Google Sheet หลัก แล้ว Deploy เป็น Web app
+ * รองรับ: สินค้า (products) / บันทึกความคืบหน้า (updates) / ประกาศ (notice) / งาน (task)
+ */
+const SECRET = 'CHANGE_ME';    // <-- ตั้งรหัสลับ แล้วใส่ให้ตรงกับในเว็บ
+const VER = 'multitab-2';      // เวอร์ชันโค้ด (ใช้เช็กว่า deploy โค้ดใหม่แล้วจริง)
+
+// แต่ละแท็บ: gid = เลขท้าย URL ของแท็บ, key = คอลัมน์ที่ใช้จับคู่แถว ('' = ต่อท้ายอย่างเดียว)
+const TARGETS = {
+  products: {gid:1762470958, key:'sku'},
+  updates:  {gid:327758317,  key:''},              // log ต่อท้าย
+  notice:   {name:'Notice',   key:'Message'},
+  task:     {gid:141244138,   key:'รายละเอียดงาน'}  // จับคู่ด้วยรายละเอียดงาน
+};
+
+function getSheetByCfg_(ss, cfg){
+  if(cfg.gid != null){
+    var m = ss.getSheets().filter(function(s){ return s.getSheetId() === cfg.gid; })[0];
+    if(m) return m;
+  }
+  if(cfg.name){ var n = ss.getSheetByName(cfg.name); if(n) return n; }
+  return null;
+}
+function out_(o){
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+function doGet(e){
+  var p = (e && e.parameter) || {};
+  if(SECRET && p.token !== SECRET) return out_({ok:false, error:'bad token'});
+  if(p.debug){   // cache-free read of one row, for verification: ?debug=1&target=task&key=...
+    var cfg = TARGETS[p.target || 'products'];
+    if(!cfg) return out_({ok:false, error:'unknown target'});
+    var sh = getSheetByCfg_(SpreadsheetApp.getActiveSpreadsheet(), cfg);
+    if(!sh) return out_({ok:false, error:'sheet not found'});
+    var data = sh.getDataRange().getValues();
+    var header = data[0].map(function(h){ return String(h).trim(); });
+    var kc = header.indexOf(cfg.key);
+    for(var i=1;i<data.length;i++){
+      if(kc>-1 && String(data[i][kc]).trim() === String(p.key||'').trim()){
+        var obj={}; header.forEach(function(h,c){ obj[h]=String(data[i][c]); });
+        return out_({ok:true, ver:VER, rowNum:i+1, row:obj});
+      }
+    }
+    return out_({ok:true, ver:VER, row:null});
+  }
+  return out_({ok:true, ping:true, ver:VER});
+}
+function doPost(e){
+  try{
+    var body = JSON.parse(e.postData.contents);
+    if(SECRET && body.token !== SECRET) return out_({ok:false, error:'bad token'});
+    if(body.action === 'ping') return out_({ok:true, ping:true, ver:VER});
+    var cfg = TARGETS[body.target || 'products'];
+    if(!cfg) return out_({ok:false, error:'unknown target'});
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = getSheetByCfg_(ss, cfg);
+    if(!sh) return out_({ok:false, error:'sheet not found: ' + (body.target||'products')});
+    var data = sh.getDataRange().getValues();
+    var header = data[0].map(function(h){ return String(h).trim(); });
+    var incoming = body.row || {};
+
+    // ---- append (log ต่อท้าย) ----
+    if(body.action === 'append'){
+      var arrA = header.map(function(h){ return (h && Object.prototype.hasOwnProperty.call(incoming, h)) ? incoming[h] : ''; });
+      var trA = sh.getLastRow() + 1;
+      var rngA = sh.getRange(trA, 1, 1, header.length);
+      rngA.setNumberFormat('@'); rngA.setValues([arrA]);
+      return out_({ok:true, appended:true});
+    }
+
+    // ---- ต้องมี key เพื่อ upsert/update/delete ----
+    var keyCol = header.indexOf(cfg.key);
+    if(keyCol === -1) return out_({ok:false, error:'key column not found: ' + cfg.key});
+    var keyVal = String(body.keyValue != null ? body.keyValue : '').trim();
+    var rowIdx = -1;
+    for(var i=1; i<data.length; i++){ if(String(data[i][keyCol]).trim() === keyVal){ rowIdx = i; break; } }
+
+    if(body.action === 'delete'){
+      if(rowIdx > -1) sh.deleteRow(rowIdx + 1);
+      return out_({ok:true, deleted: rowIdx > -1});
+    }
+
+    // upsert = แทนที่คอลัมน์ที่ส่งมา (คงคอลัมน์อื่น) / update = แก้เฉพาะที่ส่ง (ห้ามสร้างใหม่)
+    if(rowIdx > -1){
+      // write ONLY the columns that were sent (leaves timestamps/other cols untouched —
+      // more reliable on Form-Responses sheets than rewriting the whole row)
+      for(var c2=0; c2<header.length; c2++){
+        var h2 = header[c2];
+        if(h2 && Object.prototype.hasOwnProperty.call(incoming, h2)){
+          var cell = sh.getRange(rowIdx + 1, c2 + 1);
+          cell.setNumberFormat('@'); cell.setValue(incoming[h2]);
+        }
+      }
+      return out_({ok:true, mode:'update'});
+    } else if(body.action === 'upsert'){
+      var arr = header.map(function(h){ return (h && Object.prototype.hasOwnProperty.call(incoming, h)) ? incoming[h] : ''; });
+      var trU = sh.getLastRow() + 1;
+      var rngU = sh.getRange(trU, 1, 1, header.length);
+      rngU.setNumberFormat('@'); rngU.setValues([arr]);
+      return out_({ok:true, mode:'append'});
+    } else {
+      return out_({ok:false, error:'row not found for update'});
+    }
+  }catch(err){
+    return out_({ok:false, error:String(err)});
+  }
+}`;
+
+function openSyncSetup(){ document.getElementById('sync-overlay').classList.add('open'); }
+function closeSyncSetup(){ document.getElementById('sync-overlay').classList.remove('open'); }
+function copyAppsScript(btn){
+  navigator.clipboard.writeText(APPS_SCRIPT_CODE).then(()=>{ toast('คัดลอกโค้ดแล้ว','ok'); }).catch(()=>{ toast('คัดลอกไม่สำเร็จ — เลือกแล้วกด Ctrl/Cmd+C เอง','err'); });
+}
+function saveSyncConfig(){
+  const url=document.getElementById('cfg-url').value.trim();
+  const token=document.getElementById('cfg-token').value.trim();
+  if(url && !/\/exec$/.test(url)){ if(!confirm('URL ปกติควรลงท้ายด้วย /exec — บันทึกต่อไหม?')) return; }
+  try{ localStorage.setItem('npd_write_cfg', JSON.stringify({url, token})); }catch(e){}
+  updateSyncStatus(); updateEditControls();
+  toast(url?'บันทึกการตั้งค่าแล้ว ✓ พร้อมซิงค์กับ Sheet':'ล้างค่าปลายทางแล้ว','ok');
+  closeSyncSetup();
+}
+function clearSyncConfig(){
+  document.getElementById('cfg-url').value=''; document.getElementById('cfg-token').value='';
+  try{ localStorage.removeItem('npd_write_cfg'); }catch(e){}
+  updateSyncStatus(); updateEditControls();
+  toast('ล้างค่าการตั้งค่าแล้ว','info');
+}
+async function testSyncConnection(){
+  const url=document.getElementById('cfg-url').value.trim();
+  const token=document.getElementById('cfg-token').value.trim();
+  if(!url){ toast('กรุณาวาง Web app URL ก่อน','err'); return; }
+  toast('กำลังทดสอบ…','info');
+  try{
+    const res=await fetch(url+(url.includes('?')?'&':'?')+'action=ping&token='+encodeURIComponent(token));
+    const txt=await res.text(); let ok=false; try{ ok=JSON.parse(txt).ok; }catch(e){}
+    if(ok) toast('เชื่อมต่อสำเร็จ ✓ Apps Script ตอบกลับปกติ','ok');
+    else toast('ตอบกลับแต่ไม่ผ่าน: '+txt.slice(0,90),'err');
+  }catch(err){
+    toast('อ่านผลไม่ได้ (เป็นเรื่องปกติของ Apps Script/CORS) — ลองบันทึกค่า แล้วเพิ่มสินค้าทดสอบ + กดรีเฟรชดู','info');
+  }
+}
+
+function initEditUi(){
+  EDIT_MODE=false;
+  const codeEl=document.getElementById('apps-script-code'); if(codeEl) codeEl.textContent=APPS_SCRIPT_CODE;
+  let stored={url:'',token:''}; try{ stored=JSON.parse(localStorage.getItem('npd_write_cfg'))||stored; }catch(e){}
+  const u=document.getElementById('cfg-url'), t=document.getElementById('cfg-token');
+  if(u) u.value=stored.url||''; if(t) t.value=stored.token||'';
+  updateSyncStatus(); updateEditControls();
+}
+
+/* ---------- Updates Log: add progress entry (append) ---------- */
+function renderUpdateForm(){
+  const skuOpts = ['<option value="">— เลือกสินค้า —</option>'].concat(
+    PRODUCTS.map(p=>`<option value="${esc(p.sku)}">${esc(p.sku)} — ${esc(p.name)}</option>`)
+  ).join('');
+  const trackOpts = ['R&D','FDA','Packaging','Graphic','Marketing','Cost','Production'].map(x=>`<option value="${x}">${x}</option>`).join('');
+  const byOpts = ['','Peet','Bonus','Ploy'].map(x=>`<option value="${x}">${x||'— ใครอัปเดต —'}</option>`).join('');
+  const riskOpts = ['','Low','Medium','High'].map(r=>`<option value="${r}">${r||'— ไม่ระบุ —'}</option>`).join('');
+  document.getElementById('ue-form').innerHTML = `
+  <div class="pe-grid">
+    <div class="pe-field"><label>วันที่ *</label><input type="date" id="ue-Date" value="${todayStr()}"></div>
+    <div class="pe-field"><label>สินค้า (SKU) *</label><select id="ue-SKU">${skuOpts}</select></div>
+    <div class="pe-field"><label>สาย/แผนก (Track)</label><select id="ue-Track">${trackOpts}</select></div>
+    <div class="pe-field"><label>หัวข้อย่อย (SubCategory)</label><input type="text" id="ue-SubCategory" placeholder="เช่น สูตร, กล่อง, สติกเกอร์"></div>
+    <div class="pe-field"><label>ขั้น/สถานะ (Stage)</label><input type="text" id="ue-Stage" placeholder="เช่น กำลังทำ, เสร็จ, รออนุมัติ"></div>
+    <div class="pe-field"><label>ผู้อัปเดต (UpdatedBy)</label><select id="ue-UpdatedBy">${byOpts}</select></div>
+    <div class="pe-field"><label>Risk</label><select id="ue-Risk">${riskOpts}</select></div>
+    <div class="pe-field"><label>กำหนดถัดไป (NextDue)</label><input type="date" id="ue-NextDue"></div>
+    <div class="pe-field full"><label>รายละเอียด (Detail) *</label><textarea id="ue-Detail" placeholder="อัปเดตความคืบหน้า…"></textarea></div>
+    <div class="pe-field full"><label>หมายเหตุ (Note)</label><input type="text" id="ue-Note"></div>
+    <div class="pe-field full"><label>ลิงก์รูป (Images) — คั่นหลายรูปด้วย ; </label><input type="text" id="ue-Images" placeholder="วางลิงก์ Google Drive"></div>
+  </div>`;
+}
+function collectUpdateForm(){
+  const g=id=>String((document.getElementById('ue-'+id)||{}).value||'').trim();
+  const sku=g('SKU');
+  return {
+    Date:g('Date'), SKU:sku, ProductName: nameForSku(sku)||'',
+    Track:g('Track'), SubCategory:g('SubCategory'), Stage:g('Stage'),
+    Detail:g('Detail'), Note:g('Note'), Images:g('Images'),
+    UpdatedBy:g('UpdatedBy'), Risk:g('Risk'), NextDue:g('NextDue')
+  };
+}
+function openUpdateEditor(){ renderUpdateForm(); document.getElementById('ue-overlay').classList.add('open'); }
+function closeUpdateEditor(){ document.getElementById('ue-overlay').classList.remove('open'); }
+function saveUpdateEntry(){
+  const row=collectUpdateForm();
+  if(!row.SKU){ toast('เลือกสินค้า (SKU) ก่อน','err'); return; }
+  if(!row.Detail){ toast('กรอกรายละเอียด (Detail) ก่อน','err'); return; }
+  if(!row.Date) row.Date=todayStr();
+  const arr=getUpdatesLocal(); arr.push(row); saveUpdatesLocal(arr);
+  rebuildUpdateLogs(); renderTeamUpdates(); updateSyncStatus(); updateEditControls();
+  closeUpdateEditor();
+  syncToSheet('updates','append', null, row);
+}
+
+/* ---------- Notice manager (add / toggle active / delete) ---------- */
+function openNoticeManager(){ renderNoticeList(); document.getElementById('nm-overlay').classList.add('open'); }
+function closeNoticeManager(){ document.getElementById('nm-overlay').classList.remove('open'); }
+function renderNoticeList(){
+  const el=document.getElementById('nm-list'); if(!el) return;
+  if(!ALL_NOTICES.length){ el.innerHTML='<div class="empty" style="padding:20px 0; font-size:13px;">ยังไม่มีประกาศ</div>'; return; }
+  el.innerHTML = ALL_NOTICES.map(n=>{
+    const on=toBool(n.Active);
+    return `<div class="nm-row">
+      <div class="nm-msg ${on?'':'off'}">${esc(n.Message)}</div>
+      <button class="nm-toggle ${on?'on':'offbtn'}" onclick="toggleNotice('${attrJs(n.Message)}')">${on?'เปิดอยู่':'ปิดอยู่'}</button>
+      <button class="nm-del" onclick="deleteNotice('${attrJs(n.Message)}')">🗑️</button>
+    </div>`;
+  }).join('');
+}
+function addNotice(){
+  const inp=document.getElementById('nm-new'); const msg=(inp.value||'').trim();
+  if(!msg){ toast('พิมพ์ข้อความก่อน','err'); return; }
+  if(ALL_NOTICES.some(n=>n.Message===msg)){ toast('มีประกาศข้อความนี้อยู่แล้ว','info'); return; }
+  const store=getNoticeStore();
+  store.appends.push({Message:msg,Active:'TRUE'});
+  store.deletes=(store.deletes||[]).filter(m=>m!==msg);
+  saveNoticeStore(store);
+  inp.value='';
+  rebuildNotices(); renderNoticeList(); renderNotices(); updateSyncStatus(); updateEditControls();
+  syncToSheet('notice','upsert', msg, {Message:msg,Active:'TRUE'});
+}
+function toggleNotice(msg){
+  const cur=ALL_NOTICES.find(n=>n.Message===msg); if(!cur) return;
+  const newActive=toBool(cur.Active)?'FALSE':'TRUE';
+  const store=getNoticeStore();
+  const ap=(store.appends||[]).find(n=>n.Message===msg);
+  if(ap) ap.Active=newActive; else store.edits[msg]={Message:msg,Active:newActive};
+  saveNoticeStore(store);
+  rebuildNotices(); renderNoticeList(); renderNotices(); updateSyncStatus(); updateEditControls();
+  syncToSheet('notice','upsert', msg, {Message:msg,Active:newActive});
+}
+function deleteNotice(msg){
+  if(!confirm('ลบประกาศนี้?')) return;
+  const store=getNoticeStore();
+  const inSheet=SHEET_NOTICE_RAW.some(n=>n.Message===msg);
+  store.appends=(store.appends||[]).filter(n=>n.Message!==msg);
+  delete store.edits[msg];
+  if(inSheet && !(store.deletes||[]).includes(msg)) (store.deletes=store.deletes||[]).push(msg);
+  saveNoticeStore(store);
+  rebuildNotices(); renderNoticeList(); renderNotices(); updateSyncStatus(); updateEditControls();
+  if(inSheet) syncToSheet('notice','delete', msg, null);
+  else toast('ลบประกาศ (ในเครื่อง) แล้ว','ok');
+}
+
+/* ESC closes the new modals */
+document.addEventListener('keydown', (e)=>{
+  if(e.key!=='Escape') return;
+  const stack=[['sync-overlay',closeSyncSetup],['nm-overlay',closeNoticeManager],['ue-overlay',closeUpdateEditor],['pe-overlay',closeProductEditor]];
+  for(const [id,fn] of stack){ const el=document.getElementById(id); if(el && el.classList.contains('open')){ fn(); return; } }
+});
 
 init();
 </script>
