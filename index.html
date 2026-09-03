@@ -193,39 +193,55 @@
   .notice-banner .msg{flex:1; line-height:1.5;}
   .notice-banner .close-btn{background:none; border:none; cursor:pointer; font-size:16px; color:#8A7238; line-height:1; padding:0 2px; flex-shrink:0;}
 
-  .brief-part{border:1px solid var(--line); border-radius:12px; margin-bottom:14px; overflow:hidden;}
-  .brief-part-head{display:flex; align-items:center; justify-content:space-between; background:var(--bg); padding:12px 16px; cursor:pointer; flex-wrap:wrap; gap:8px;}
-  .brief-print-btn + .brief-print-btn{margin-left:6px;}
-  .brief-part-title{font-family:'Prompt'; font-weight:700; font-size:14px; color:var(--accent-deep);}
-  .brief-part-body{padding:16px; display:none;}
-  .brief-part.open .brief-part-body{display:block;}
-  .brief-part.open .brief-part-head{border-bottom:1px solid var(--line);}
-  .brief-chevron{transition:transform .15s;}
-  .brief-part.open .brief-chevron{transform:rotate(90deg);}
-  .brief-section-h{font-family:'Prompt'; font-weight:600; font-size:13px; color:var(--ink); margin:14px 0 8px;}
-  .brief-section-h:first-child{margin-top:0;}
-  .brief-field-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px 14px;}
-  .brief-field label{display:block; font-size:11.5px; color:var(--ink-soft); margin-bottom:3px;}
-  .brief-field input, .brief-field textarea, .brief-field select{
-    width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:7px;
-    font-family:'Sarabun',sans-serif; font-size:13px; background:#fff; box-sizing:border-box;
+  /* ===== NPD Brief — soft, modern, airy look (scoped to the form) ===== */
+  #brief-form-container{
+    --bA:#6E7FC4; --bAD:#4C5A96; --bAP:#EEF0FB; --bLine:#E7EAF3;
+    --bHead:#F6F7FC; --bInk:#2E3652; --bMuted:#828BA0; --bField:#FCFCFE;
   }
-  .brief-field textarea{min-height:52px; resize:vertical;}
-  .brief-field input:focus, .brief-field textarea:focus, .brief-field select:focus{outline:none; border-color:var(--accent-deep);}
+  .brief-part{border:1px solid var(--bLine); border-radius:16px; margin-bottom:14px; overflow:hidden; background:#fff; box-shadow:0 1px 3px rgba(40,54,110,.05);}
+  .brief-part-head{display:flex; align-items:center; justify-content:space-between; background:#fff; padding:15px 18px; cursor:pointer; flex-wrap:wrap; gap:8px; transition:background .15s;}
+  .brief-part-head:hover{background:var(--bHead);}
+  .brief-part.open .brief-part-head{border-bottom:1px solid var(--bLine); background:var(--bHead);}
+  .brief-print-btn + .brief-print-btn{margin-left:6px;}
+  .brief-part-title{font-family:'Prompt'; font-weight:700; font-size:15px; color:var(--bInk); letter-spacing:.2px;}
+  .brief-part-body{padding:20px; display:none;}
+  .brief-part.open .brief-part-body{display:block;}
+  .brief-chevron{transition:transform .18s; color:var(--bA); font-weight:700;}
+  .brief-part.open .brief-chevron{transform:rotate(90deg);}
+  .brief-section-h{font-family:'Prompt'; font-weight:700; font-size:12px; letter-spacing:.6px; text-transform:uppercase; color:var(--bAD); margin:22px 0 12px; padding-bottom:7px; border-bottom:2px solid var(--bAP); display:flex; align-items:center; gap:8px;}
+  .brief-section-h:first-child{margin-top:0;}
+  .brief-sub-label{font-family:'Prompt'; font-weight:600; font-size:12.5px; color:var(--bMuted); margin:16px 0 8px;}
+  .brief-field-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:13px 16px;}
+  .brief-field label{display:block; font-size:11.5px; font-weight:600; color:var(--bMuted); margin-bottom:5px;}
+  .brief-field input, .brief-field textarea, .brief-field select{
+    width:100%; padding:9px 11px; border:1px solid var(--bLine); border-radius:10px;
+    font-family:'Sarabun',sans-serif; font-size:13.5px; background:var(--bField); color:var(--bInk); box-sizing:border-box; transition:border-color .12s, box-shadow .12s;
+  }
+  .brief-field textarea{min-height:58px; resize:vertical; line-height:1.5;}
+  .brief-field input:focus, .brief-field textarea:focus, .brief-field select:focus{outline:none; border-color:var(--bA); box-shadow:0 0 0 3px var(--bAP); background:#fff;}
+  .brief-field select:disabled{background:#F1F2F6; color:#AAB0BF; cursor:not-allowed;}
   .brief-full{grid-column:1/-1;}
-  .brief-table{width:100%; border-collapse:collapse; margin-bottom:6px;}
-  .brief-table th{background:var(--bg); font-size:11px; padding:6px; text-align:left; border:1px solid var(--line);}
-  .brief-table td{border:1px solid var(--line); padding:4px;}
-  .brief-table td.label-cell{font-size:12px; font-weight:600; background:var(--bg); white-space:nowrap; padding:6px 8px;}
-  .brief-table input, .brief-table select{width:100%; border:none; padding:6px; font-family:'Sarabun',sans-serif; font-size:12.5px; box-sizing:border-box;}
-  .brief-table input:focus, .brief-table select:focus{outline:2px solid var(--accent-deep); outline-offset:-2px;}
-  .brief-check-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px;}
-  .brief-check-item{display:flex; align-items:center; gap:7px; font-size:12.5px;}
-  .brief-note-box{background:var(--accent-pale); border-left:3px solid var(--accent); border-radius:8px; padding:10px 14px; font-size:12px; margin:10px 0; line-height:1.5;}
-  .brief-print-btn{background:none; border:1px solid var(--accent); color:var(--accent-deep); border-radius:7px; padding:5px 12px; font-size:12px; cursor:pointer; font-family:'Sarabun',sans-serif;}
-  .brief-print-btn:hover{background:var(--accent-pale);}
-  .brief-repeat-del{background:none; border:1px solid var(--line); border-radius:7px; padding:5px 10px; cursor:pointer; font-size:13px; flex-shrink:0;}
-  .brief-repeat-del:hover{background:#FDEAEA; border-color:var(--danger);}
+  .brief-bench-row{display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;}
+  .brief-bench-img{width:210px; flex:none;}
+  .brief-img-box{border:1px dashed var(--bLine); border-radius:10px; background:var(--bField); min-height:96px; display:flex; align-items:center; justify-content:center; padding:8px; overflow:hidden;}
+  .brief-img-empty{color:#AEB4C2; font-size:12px;}
+  .brief-table{width:100%; border-collapse:separate; border-spacing:0; margin-bottom:8px; border:1px solid var(--bLine); border-radius:10px; overflow:hidden;}
+  .brief-table th{background:var(--bHead); font-size:11px; font-weight:700; color:var(--bMuted); padding:9px 8px; text-align:left; border-bottom:1px solid var(--bLine);}
+  .brief-table td{border-bottom:1px solid var(--bLine); padding:4px;}
+  .brief-table tr:last-child td{border-bottom:none;}
+  .brief-table td.label-cell{font-size:12px; font-weight:600; background:var(--bHead); white-space:nowrap; padding:6px 10px; color:var(--bInk);}
+  .brief-table input, .brief-table select{width:100%; border:1px solid transparent; border-radius:7px; padding:7px; font-family:'Sarabun',sans-serif; font-size:12.5px; box-sizing:border-box; background:transparent; color:var(--bInk);}
+  .brief-table input:focus, .brief-table select:focus{outline:none; border-color:var(--bA); background:#fff; box-shadow:0 0 0 2px var(--bAP);}
+  .brief-check-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:9px;}
+  .brief-check-item{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--bInk);}
+  .brief-note-box{background:var(--bAP); border-left:3px solid var(--bA); border-radius:10px; padding:11px 15px; font-size:12px; margin:12px 0; line-height:1.55; color:#3E4761;}
+  .brief-print-btn{background:#fff; border:1px solid #D7DCEA; color:var(--bAD); border-radius:9px; padding:6px 13px; font-size:12px; cursor:pointer; font-family:'Sarabun',sans-serif; font-weight:600; transition:background .12s;}
+  .brief-print-btn:hover{background:var(--bAP); border-color:var(--bA);}
+  .brief-repeat-del{background:#fff; border:1px solid var(--bLine); border-radius:8px; padding:6px 9px; cursor:pointer; font-size:13px; flex-shrink:0;}
+  .brief-repeat-del:hover{background:#FDECEC; border-color:var(--danger);}
+  .brief-sign{margin-top:20px; padding:15px 17px; border:1px dashed var(--bLine); border-radius:12px; background:var(--bHead);}
+  .brief-sign-title{font-family:'Prompt'; font-weight:700; font-size:12px; color:var(--bAD); margin-bottom:11px; letter-spacing:.3px;}
+  .brief-sign-img{min-width:200px;}
 
   .cal-avatar img{width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;}
   .cal-avatar .fallback{width:100%; height:100%; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-family:'Prompt'; font-weight:700; font-size:10px;}
@@ -568,7 +584,8 @@
     <p class="section-sub">แบบฟอร์มบรีฟโรงงาน — กรอกแล้วพิมพ์/บันทึกเป็น PDF แยกทีละ Part เพื่อส่งบรีฟแต่ละแผนกได้เลย ข้อมูลที่กรอกจะถูกจำไว้ในเครื่องนี้อัตโนมัติ</p>
     <div class="panel" style="padding:16px 20px;">
       <button class="btn-sm primary" onclick="toggleBriefForm()" id="brief-toggle-btn">📋 เปิดฟอร์ม NPD Brief</button>
-      <button class="btn-sm ghost" onclick="saveToNPRSummary()" style="margin-left:8px;">💾 Save to NPR Summary</button>
+      <button class="btn-sm ghost" onclick="saveBriefToCloud()" style="margin-left:8px;">💾 บันทึกบรีฟ (กลาง)</button>
+      <button class="btn-sm ghost" onclick="openSavedBriefsModal()" style="margin-left:6px;">📂 บรีฟที่บันทึกไว้</button>
       <div id="brief-form-container" style="display:none; margin-top:16px;"></div>
     </div>
 
@@ -628,8 +645,9 @@
     </div>
 
     <div id="team-subview-nprsummary" style="display:none;">
-    <p class="section-title" style="margin-top:0;">NPR Summary</p>
-    <p class="section-sub">รายการโครงการที่กด "Save to NPR Summary" จากฟอร์ม NPD Brief</p>
+    <p class="section-title" style="margin-top:0;">NPR Summary — บรีฟที่บันทึกไว้</p>
+    <p class="section-sub">ทุกบรีฟที่กด "💾 บันทึกบรีฟ (กลาง)" จะมาแสดงที่นี่ · กด "เปิด/แก้ไข" เพื่อโหลดกลับเข้าฟอร์ม (ทั้งทีมเห็นชุดเดียวกัน)</p>
+    <div style="margin-bottom:10px;"><button class="btn-sm ghost" onclick="renderNPRSummary()">🔄 รีเฟรช</button></div>
     <div class="panel">
       <div class="table-scroll">
         <table>
@@ -637,15 +655,15 @@
             <tr>
               <th>NPR No.</th>
               <th>Project Name</th>
-              <th>Start Project Date</th>
-              <th>Launch Plan</th>
-              <th>NPD Owner</th>
+              <th>ผู้แก้ล่าสุด</th>
+              <th>อัปเดตเมื่อ</th>
+              <th style="width:170px;">จัดการ</th>
             </tr>
           </thead>
           <tbody id="npr-summary-tbody"></tbody>
         </table>
       </div>
-      <div id="npr-summary-empty" class="empty" style="display:none;">ยังไม่มีข้อมูล — กรอก Part A ในฟอร์ม NPD Brief ด้านล่าง แล้วกด "Save to NPR Summary"</div>
+      <div id="npr-summary-empty" class="empty" style="display:none;">ยังไม่มีบรีฟที่บันทึก — กรอกฟอร์ม NPD Brief แล้วกด "💾 บันทึกบรีฟ (กลาง)"</div>
     </div>
     </div>
   </div>
@@ -838,6 +856,25 @@
   </div>
 </div>
 
+<!-- ===== Saved briefs list modal ===== -->
+<div class="modal-overlay" id="sb-overlay" style="z-index:74;" onclick="if(event.target===this) closeSavedBriefsModal()">
+  <div class="modal-box pe-box">
+    <div class="modal-header">
+      <div>
+        <div class="mh-name">📂 บรีฟที่บันทึกไว้ (ระบบกลาง)</div>
+        <div class="mh-sku">คลิก "เปิด" เพื่อโหลดบรีฟเข้าฟอร์ม — ทุกคน/ทุกเครื่องเห็นชุดเดียวกัน</div>
+      </div>
+      <button class="modal-close" onclick="closeSavedBriefsModal()">✕</button>
+    </div>
+    <div class="modal-body pe-body"><div id="sb-list"></div></div>
+    <div class="pe-footer">
+      <span class="pe-hint">💡 รูปแนบ (benchmark) จะเก็บเฉพาะเครื่องที่แนบ ไม่ซิงค์กลาง (รูปใหญ่เกินช่อง Sheet)</span>
+      <span style="flex:1;"></span>
+      <button class="btn-edit ghost" onclick="closeSavedBriefsModal()">ปิด</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-wrap"></div>
 
 <script>
@@ -845,6 +882,7 @@
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=1762470958";
 const UPDATES_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=327758317";
 const NOTICE_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=Notice";
+const BRIEFS_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=Briefs";
 
 /* ===== NPR Summary — Google Form + Sheet (same pattern as the Task board) =====
    PLACEHOLDERS: swap these once the actual Form exists — see chat instructions. */
@@ -872,7 +910,7 @@ let SHEET_ROWS = [];   // raw rows straight from the Google Sheet (before local 
    Team-wide default endpoint — fill these once you've deployed the Apps Script and want
    EVERY teammate to sync to the same Sheet without pasting the URL themselves.
    Leave blank to configure per-browser via the "⚙️ ตั้งค่า Sheet Sync" panel. */
-const DEFAULT_WRITE_ENDPOINT = "https://script.google.com/macros/s/AKfycbyOWWMLC9HPJ9lUslPuzJFN42TB5pMVh_zg-6rCZfhlIDOfVuPBV47veUNAkgjuRdB8/exec";
+const DEFAULT_WRITE_ENDPOINT = "https://script.google.com/macros/s/AKfycbx8hpZCxlRDuy2F91K4D7hlxUuLH-uuFyQ4T7bEXR-01GUFE8TVc7GKYjMzsPJjQcr1/exec";
 const DEFAULT_WRITE_TOKEN = "npd2026!";
 
 /* The exact column keys of the products tab, in a stable order. Used for the edit form,
@@ -1897,22 +1935,35 @@ async function loadNPRSummaryFromSheet(){
     NPR_SUMMARY_ROWS = [];
   }
 }
-function renderNPRSummary(){
+/* NPR Summary = the saved briefs (from the Briefs tab), editable via the brief form */
+async function renderNPRSummary(){
   const tbody = document.getElementById('npr-summary-tbody');
   const empty = document.getElementById('npr-summary-empty');
-  if(!NPR_SUMMARY_ROWS.length){
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
-    return;
-  }
-  empty.style.display = 'none';
-  tbody.innerHTML = NPR_SUMMARY_ROWS.map(r=>`<tr>
-    <td>${esc(r['NPR No.']||'-')}</td>
-    <td>${esc(r['Project Name']||'-')}</td>
-    <td>${esc(r['Start Project Date']||'-')}</td>
-    <td>${esc(r['Launch Planning Date']||'-')}</td>
-    <td>${esc(r['NPD Owner']||'-')}</td>
+  if(!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--ink-soft); padding:16px;">กำลังโหลด…</td></tr>';
+  const list = await fetchSavedBriefs();
+  if(!list.length){ tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  list.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
+  tbody.innerHTML = list.map(b=>`<tr>
+    <td>${esc(b.nprNo||'-')}</td>
+    <td>${esc(b.projectName||'-')}</td>
+    <td>${esc(b.updatedBy||'-')}</td>
+    <td>${esc(b.updatedAt||'-')}</td>
+    <td>
+      <button class="btn-sm primary" onclick="editBriefFromSummary('${attrJs(b.nprNo)}')">✏️ เปิด/แก้ไข</button>
+      <button class="btn-sm warn-ghost" onclick="deleteBriefFromSummary('${attrJs(b.nprNo)}')">🗑️</button>
+    </td>
   </tr>`).join('');
+}
+async function editBriefFromSummary(nprNo){
+  switchTeamSubview('status');
+  await loadBriefFromCloud(nprNo);
+  const el=document.getElementById('brief-form-container'); if(el) el.scrollIntoView({block:'start'});
+}
+async function deleteBriefFromSummary(nprNo){
+  await deleteBriefFromCloud(nprNo);
+  renderNPRSummary();
 }
 
 function renderTeamUpdates(){
@@ -2380,14 +2431,14 @@ function esc(s){ const d=document.createElement('div'); d.textContent = s||''; r
    on its own so it can be sent to just the relevant department. */
 
 const BRIEF_PARTS = {
-  a: { title:'A. Project & Product Brief', th:'ข้อมูลโครงการ + ทิศทางสินค้า' },
+  a: { title:'A. Project Brief', th:'ข้อมูลโครงการ + ทิศทางสินค้า' },
   b: { title:'B. Formula Brief — โจทย์พัฒนาสูตร', th:'บรีฟให้ R&D' },
   c: { title:'C. Packaging Brief (PKG) — โจทย์บรรจุภัณฑ์', th:'บรีฟให้ Packaging' },
   d: { title:'D. Timeline & Project Follow-up', th:'ไทม์ไลน์และประเด็นที่ต้องติดตาม' },
   e: { title:'E. Approval & Sign-off', th:'จุดอนุมัติ / ลงนาม' },
 };
 
-const B1_ROWS = ['Product Form','วิธีใช้ / ปริมาณ','Shade / SKU','Hero Ingredient','Required Claims','Benchmark','สี / Appearance','กลิ่น','เนื้อสัมผัส / Finish'];
+const B1_ROWS = ['Product Form','วิธีใช้','ปริมาณ','Shade / SKU','Hero Ingredient','Required Claims','Benchmark','สี / Appearance','กลิ่น','เนื้อสัมผัส / Finish'];
 const B2_CHECKS = ['Stability Test','Compatibility Test','Microbial Test','Challenge Test','Dermatological Test','Efficacy / Claim Test','HRIPT / Patch Test'];
 const C2_CHECKS = ['Dieline / Artwork Size','Print Proof / Color Proof','Barcode Zone','Lot Code Zone','MFG / EXP Zone','Net Content','เลขจดแจ้ง','คำเตือน / วิธีใช้ / ส่วนประกอบ'];
 const D1_MILESTONES = [
@@ -2403,6 +2454,22 @@ const D1_MILESTONES = [
   {m:'Batch Release / Delivery', owner:'Factory QA'},
 ];
 const E_ROWS = ['Product Brief','Concept & Target Cost','Formula Lock','Packaging Lock','Compatibility Approval','Artwork Final','Golden / Pre-production Sample','Production Approval'];
+
+/* ชื่อทีมทั้งหมด (ชื่อจริง นามสกุล (ชื่อเล่น)) — ใช้ใน dropdown อนุมัติ/ลายเซ็น */
+const TEAM_NAMES = [
+  'รงค์รุจา โยธินปริทัศน์ (จ๋า)',
+  'ธาริณี ชื่นชอบ (แพรว)',
+  'ธีรนาท ชื่นชอบ (พลอย)',
+  'ณัฐสุรางค์ โคตรตระกูล (โบนัส)',
+  'นาวิน ขวัญเมือง (พีท)',
+  'กันติชา ศรีวงศ์ราช (มีน)'
+];
+/* Ingredient list สำหรับ dropdown ใน Formula Brief */
+const INGREDIENTS = [
+  'Organic Rosehip Oil','Organic Argan Oil','Organic Aloe Vera Extract','Cetellasia Orgianic',
+  'Organic Virgin Coconut Oil','Vitamin E','Vitamin B5','Vitamin B3','Organic Chamomile Water',
+  'Organic Cornflower Water','Organic Peach Kernel Oil','Olive Oil','Organic Cocoa Butter'
+];
 
 function bfGet(id){ try{ return localStorage.getItem('brief_'+id) || ''; }catch(e){ return ''; } }
 function bfSet(id, val){ try{ localStorage.setItem('brief_'+id, val); }catch(e){} }
@@ -2544,38 +2611,225 @@ function bfImageField(id, label){
   </div>`;
 }
 
+/* ===== Product category — 4-level linked dropdowns (data from the shared Doc) ===== */
+const CAT_TREE = {
+  "Skincare": {
+    "Face": {
+      "Cleanser":["Facial Wash","Cleansing Water","Cleansing Oil","Cleansing Balm","Cleansing Cream","Cleansing Gel","Cleansing Milk","Cleansing Wipe"],
+      "Prep":["Toner","Toner Pad","Mist","Essence"],
+      "Treatment":["Serum","Ampoule","Booster","Spot Treatment","Acne Treatment","Exfoliator","Peeling"],
+      "Moisturizer":["Day Cream","Night Cream","Moisturizing Gel","Lotion","Emulsion","Sleeping Mask"],
+      "Sun Care":["Sunscreen","Sun Stick","Sun Cushion","Sun Spray"],
+      "Mask":["Sheet Mask","Wash-Off Mask","Sleeping Mask","Peel-Off Mask","Clay Mask","Hydrogel Mask"]
+    },
+    "Eye":["Eye Cream","Eye Gel","Eye Serum","Eye Patch","Eye Mask"],
+    "Lip":["Lip Balm","Lip Sleeping Mask","Lip Scrub","Lip Treatment","Lip Serum"],
+    "Neck":[], "Hand":[], "Foot":[]
+  },
+  "Makeup": {
+    "Face":{ "Base Makeup":["Primer","Makeup Base","Foundation","Cushion","BB Cream","CC Cream","Concealer"], "Setting":["Loose Powder","Pressed Powder","Setting Spray"], "Color Makeup":["Blush","Contour","Bronzer","Highlighter"] },
+    "Eye":{ "Eye Color":["Eyeshadow","Glitter","Pigment"], "Eye Definition":["Eyeliner","Mascara","Lash Primer"], "Brow":["Brow Pencil","Brow Powder","Brow Mascara","Brow Pomade"], "Lash":["False Eyelash","Lash Glue"] },
+    "Lip":["Lipstick","Lip Tint","Lip Gloss","Lip Oil","Lip Balm","Lip Serum","Lip Plumper","Lip Mud","Lip Cream"],
+    "Nail":["Nail Polish","Gel Polish","Nail Treatment","Top Coat","Base Coat"]
+  },
+  "Body Care": {
+    "Body":{ "Cleansing":["Soap","Shower Gel","Body Wash","Body Scrub"], "Moisturizing":["Body Lotion","Body Cream","Body Butter","Body Gel"], "Treatment":["Body Serum","Body Oil","Stretch Mark Care"], "Sun Care":["Body Sunscreen","After Sun"] },
+    "Hand":["Hand Wash","Hand Cream","Hand Serum","Hand Scrub"],
+    "Foot":["Foot Cream","Foot Scrub","Foot Mask","Foot Spray"],
+    "Intimate":["Feminine Wash","Intimate Wipe","Intimate Serum"]
+  },
+  "Hair Care": {
+    "Hair":{ "Cleansing":["Shampoo","Dry Shampoo"], "Conditioning":["Conditioner","Hair Mask"], "Treatment":["Hair Serum","Hair Oil","Hair Tonic","Leave-In Treatment"], "Styling":["Hair Spray","Hair Wax","Hair Gel","Hair Cream","Hair Mist"] },
+    "Scalp":["Scalp Shampoo","Scalp Scrub","Scalp Tonic","Scalp Serum"]
+  },
+  "Fragrance": {
+    "Body":["Perfume","Eau de Parfum","Eau de Toilette","Body Mist"],
+    "Hair":["Hair Perfume","Hair Mist"],
+    "Home":["Room Spray","Diffuser"]
+  },
+  "Oral Care": {
+    "Teeth":["Toothpaste","Mouthwash","Teeth Whitening","Breath Spray"],
+    "Gum":["Toothpaste","Mouthwash","Teeth Whitening","Breath Spray"],
+    "Mouth":["Toothpaste","Mouthwash","Teeth Whitening","Breath Spray"]
+  },
+  "Beauty Accessories": {}
+};
+const TEXTURE_GROUPS = {
+  "Liquid":["Water","Essence Water","Fluid","Liquid","Serum","Ampoule"],
+  "Semi-Liquid":["Emulsion","Lotion","Milk"],
+  "Gel":["Gel","Jelly","Gel Cream","Hydrogel"],
+  "Cream":["Cream","Rich Cream","Soft Cream"],
+  "Balm":["Balm","Cleansing Balm","Melting Balm"],
+  "Oil":["Dry Oil","Beauty Oil"],
+  "Solid":["Stick","Bar","Soap Bar","Balm Stick"],
+  "Powder":["Loose Powder","Pressed Powder","Powder Cake","Pigment Powder"],
+  "Mousse / Foam":["Foam","Mousse"],
+  "Spray":["Spray","Mist","Aerosol"],
+  "Pad / Wipe":["Toner Pad","Cleansing Pad","Wipe"],
+  "Mask Format":["Sheet","Peel-Off","Wash-Off","Hydrogel","Sleeping"]
+};
+function catOptionsHtml(items, cur){
+  if(Array.isArray(items)) return items.map(v=>`<option value="${esc(v)}"${v===cur?' selected':''}>${esc(v)}</option>`).join('');
+  return Object.keys(items).map(g=>`<optgroup label="${esc(g)}">${items[g].map(v=>`<option value="${esc(v)}"${v===cur?' selected':''}>${esc(v)}</option>`).join('')}</optgroup>`).join('');
+}
+function catL3Items(l1,l2){ const a=CAT_TREE[l1]; if(!a) return null; return (l2 in a)?a[l2]:null; }
+function renderCatCascade(){
+  const l1=bfGet('a_catL1'), l2=bfGet('a_catL2'), l3=bfGet('a_catL3'), l4=bfGet('a_catL4');
+  const l1keys=Object.keys(CAT_TREE);
+  const l2keys=CAT_TREE[l1]?Object.keys(CAT_TREE[l1]):[];
+  const l3items=catL3Items(l1,l2);
+  const noL3 = l3items==null || (Array.isArray(l3items) && l3items.length===0);
+  let l3html;
+  if(!l1||!l2){ l3html=`<select disabled><option>— เลือก Category/Area ก่อน —</option></select>`; }
+  else if(noL3){ l3html=`<input type="text" id="a_catL3" value="${esc(l3)}" placeholder="ระบุประเภทสินค้า" onchange="bfSet('a_catL3',this.value)">`; }
+  else { l3html=`<select id="a_catL3" onchange="bfSet('a_catL3',this.value)"><option value="">— เลือก —</option>${catOptionsHtml(l3items,l3)}</select>`; }
+  return `
+    <div class="brief-field"><label>1 · Category</label>
+      <select id="a_catL1" onchange="catCascadeChange(1,this.value)"><option value="">— เลือก —</option>${l1keys.map(k=>`<option${k===l1?' selected':''}>${esc(k)}</option>`).join('')}</select></div>
+    <div class="brief-field"><label>2 · Area (บริเวณที่ใช้)</label>
+      <select id="a_catL2" ${l2keys.length?'':'disabled'} onchange="catCascadeChange(2,this.value)"><option value="">${l2keys.length?'— เลือก —':'— (ไม่มี) —'}</option>${l2keys.map(k=>`<option${k===l2?' selected':''}>${esc(k)}</option>`).join('')}</select></div>
+    <div class="brief-field"><label>3 · Product Type</label>${l3html}</div>
+    <div class="brief-field"><label>4 · Format / Texture (เนื้อ)</label>
+      <select id="a_catL4" onchange="bfSet('a_catL4',this.value)"><option value="">— เลือก —</option>${catOptionsHtml(TEXTURE_GROUPS,l4)}</select></div>`;
+}
+function catCascadeChange(level,val){
+  if(level===1){ bfSet('a_catL1',val); bfSet('a_catL2',''); bfSet('a_catL3',''); }
+  if(level===2){ bfSet('a_catL2',val); bfSet('a_catL3',''); }
+  const c=document.getElementById('cat-cascade'); if(c) c.innerHTML=renderCatCascade();
+}
+
+/* ===== Multi-column add/remove table (reused by SKU detail, Product Appearance, …) ===== */
+const BF_GRID_COLS = {};
+function bfGridGet(id){ try{ const a=JSON.parse(bfGet(id)||'[]'); return a.length?a:[{}]; }catch(e){ return [{}]; } }
+function bfGridSave(id,arr){ bfSet(id, JSON.stringify(arr)); }
+function bfGridRowsHtml(id, cols, arr){
+  return arr.map((row,i)=>`<tr>${cols.map(c=>{
+    if(c.type==='check') return `<td style="text-align:center; width:64px;"><input type="checkbox" ${row[c.key]?'checked':''} onchange="bfGridUpdate('${id}',${i},'${esc(c.key)}',this.checked)"></td>`;
+    if(c.type==='select') return `<td><select onchange="bfGridUpdate('${id}',${i},'${esc(c.key)}',this.value)"><option value="">—</option>${(c.options||[]).map(o=>`<option${row[c.key]===o?' selected':''}>${esc(o)}</option>`).join('')}</select></td>`;
+    return `<td><input type="text" value="${esc(row[c.key]||'')}" placeholder="${esc(c.ph||'')}" oninput="bfGridUpdate('${id}',${i},'${esc(c.key)}',this.value)"></td>`;
+  }).join('')}<td style="text-align:center; width:36px;"><button type="button" class="brief-repeat-del" onclick="bfGridRemove('${id}',${i})" title="ลบแถว">🗑️</button></td></tr>`).join('');
+}
+function bfGridField(id, label, cols){
+  BF_GRID_COLS[id]=cols;
+  const arr=bfGridGet(id);
+  return `<div class="brief-field brief-full"><label>${esc(label)}</label>
+    <div style="overflow-x:auto;"><table class="brief-table"><thead><tr>${cols.map(c=>`<th>${esc(c.label)}</th>`).join('')}<th></th></tr></thead>
+    <tbody id="grid-${id}">${bfGridRowsHtml(id,cols,arr)}</tbody></table></div>
+    <button type="button" class="brief-print-btn" onclick="bfGridAdd('${id}')">+ เพิ่มแถว</button></div>`;
+}
+function reRenderGrid(id){ const el=document.getElementById('grid-'+id); if(el && BF_GRID_COLS[id]) el.innerHTML=bfGridRowsHtml(id,BF_GRID_COLS[id],bfGridGet(id)); }
+function bfGridUpdate(id,i,key,val){ const a=bfGridGet(id); a[i]=a[i]||{}; a[i][key]=val; bfGridSave(id,a); }
+function bfGridAdd(id){ const a=bfGridGet(id); a.push({}); bfGridSave(id,a); reRenderGrid(id); }
+function bfGridRemove(id,i){ const a=bfGridGet(id); a.splice(i,1); if(!a.length)a.push({}); bfGridSave(id,a); reRenderGrid(id); }
+
+/* Compact inline image attach (for Benchmark, side-by-side with its text) */
+function briefImgInline(id, label){
+  const saved=bfGet(id);
+  const prev = saved ? `<img src="${esc(saved)}" style="max-width:100%; max-height:150px; border-radius:8px; display:block;">` : '<div class="brief-img-empty">ยังไม่มีรูป</div>';
+  return `<label>${esc(label||'รูปอ้างอิง')}</label>
+    <div id="imgprev-${id}" class="brief-img-box">${prev}</div>
+    <div style="display:flex; gap:6px; margin-top:6px;">
+      <label class="brief-print-btn" style="cursor:pointer;">📎 แนบรูป<input type="file" accept="image/*" style="display:none;" onchange="bfImageChange('${id}',this)"></label>
+      <button type="button" class="brief-print-btn" onclick="bfImageRemove('${id}')">ลบ</button>
+    </div>`;
+}
+
+/* Auto-pull helpers — so downstream parts don't retype what Part A already has */
+function catSummary(){
+  const l1=bfGet('a_catL1'),l2=bfGet('a_catL2'),l3=bfGet('a_catL3'),l4=bfGet('a_catL4');
+  let s=[l1,l2,l3].filter(Boolean).join(' › ');
+  if(l4) s += (s?' · ':'')+l4;
+  return s;
+}
+function keyBenefitsText(){
+  return [bfGet('a_benefit1'),bfGet('a_benefit2'),bfGet('a_benefit3')].filter(Boolean).map((b,i)=>(i+1)+'. '+b).join('\n');
+}
+function skuColorsText(){
+  try{ return (JSON.parse(bfGet('a_skuDetail')||'[]')).map(r=>r.color).filter(Boolean).join(', '); }catch(e){ return ''; }
+}
+function bDefault(id, val){ if(!bfGet(id) && val) bfSet(id, val); return bfGet(id); }
+
+/* Signature block appended to each part that gets passed on: name(dropdown)+date+signature image */
+function briefSignBlock(prefix, roleLabel){
+  const nameId=prefix+'_signName', dateId=prefix+'_signDate', imgId=prefix+'_signImg';
+  const nameOpts=['<option value="">— เลือกชื่อ —</option>'].concat(TEAM_NAMES.map(n=>`<option${bfGet(nameId)===n?' selected':''}>${esc(n)}</option>`)).join('');
+  return `<div class="brief-sign">
+    <div class="brief-sign-title">✍️ ${esc(roleLabel||'ผู้จัดทำ / ส่งต่อข้อมูล')}</div>
+    <div class="brief-field-grid">
+      <div class="brief-field"><label>ชื่อ</label><select id="${nameId}" onchange="bfOnChange('${nameId}')">${nameOpts}</select></div>
+      <div class="brief-field"><label>วันที่</label><input type="date" id="${dateId}" value="${esc(bfGet(dateId))}" onchange="bfOnChange('${dateId}')"></div>
+      <div class="brief-field brief-sign-img">${briefImgInline(imgId,'ลายเซ็น')}</div>
+    </div>
+  </div>`;
+}
+/* Name dropdown for table cells (Part E) */
+function bfNameSelect(id){
+  const opts=['<option value="">—</option>'].concat(TEAM_NAMES.map(n=>`<option${bfGet(id)===n?' selected':''}>${esc(n)}</option>`)).join('');
+  return `<select onchange="bfSetCell('${id}',this.value)">${opts}</select>`;
+}
+function bfSetCell(id,val){ bfSet(id,val); }
+
 function renderBriefPartA(){
   return `
-    <div class="brief-section-h">A1. Project Control</div>
+    <div class="brief-section-h">A1 · Project Control</div>
     <div class="brief-field-grid">
       ${bfField('a_nprNo','NPR No.','text')}
       ${bfField('a_projectName','Project Name','text')}
       ${bfField('a_briefVersion','Brief Version','text',{placeholder:'เช่น V1.0'})}
       ${bfField('a_brand','Brand / Company','select',{options:['Godmami','Glimmer Sisters']})}
-      ${bfField('a_objective','Objective','select',{options:['New Product','Re-Formula','Re-Packaging']})}
+      ${bfField('a_objective','Product Type','select',{options:['New Product','Re-Formula','Re-Packaging','ชุด Set']})}
       ${bfField('a_briefDate','Brief Date','date')}
       ${bfField('a_owner','NPD Owner','select',{options:['Peet','Bonus','Ploy']})}
       ${bfMultiField('a_channel','Sales Channel',['Online','Offline','Flagship'])}
       ${bfField('a_targetReceive','Product on Stock','date')}
       ${bfField('a_fgLaunch','FG Launch','date')}
     </div>
-    <div class="brief-section-h">A2. Product Direction</div>
+
+    <div class="brief-section-h">A2 · Product Direction</div>
     <div class="brief-field-grid">
-      ${bfField('a_type','ประเภทสินค้า','text',{placeholder:'เช่น Facial Serum / Sunscreen / Cleanser'})}
       ${bfField('a_concept','Product Concept','textarea',{full:true})}
       ${bfField('a_benefit1','Key Benefit 1','text')}
       ${bfField('a_benefit2','Key Benefit 2','text')}
       ${bfField('a_benefit3','Key Benefit 3','text')}
-      ${bfField('a_benchmark','Benchmark','textarea',{full:true})}
-      ${bfRepeatField('a_shade','SKU — ระบุชื่อสี/ขนาด แต่ละ SKU (จำนวนช่อง = จำนวน SKU)')}
-      <div class="brief-field brief-full">
-        <label>Barcode</label>
-        ${bfCheck('a_barcodeRequest','แจ้งทีมระบบให้สร้าง Barcode ให้ (ตามจำนวน SKU ด้านบน) — ไม่ต้องกรอกเลขเอง')}
+    </div>
+    <div class="brief-sub-label">ประเภทสินค้า (Detail 4 ระดับ) — เลือกเชื่อมโยงกัน</div>
+    <div id="cat-cascade" class="brief-field-grid">${renderCatCascade()}</div>
+
+    <div class="brief-sub-label">Benchmark</div>
+    <div class="brief-bench-row">
+      <div class="brief-field" style="flex:1; min-width:220px;">
+        <label>รายละเอียด Benchmark</label>
+        <textarea id="a_benchmark" onchange="bfOnChange('a_benchmark')" placeholder="อ้างอิงคู่แข่ง / สินค้าตัวอย่าง">${esc(bfGet('a_benchmark'))}</textarea>
       </div>
-      ${bfField('a_special','Special Request','textarea',{full:true})}
-      ${bfField('a_weight','Declare Weight','text')}
+      <div class="brief-field brief-bench-img">${briefImgInline('a_benchmarkImg','รูป Benchmark')}</div>
+    </div>
+
+    <div class="brief-section-h">A3 · SKU</div>
+    <div class="brief-field-grid">
+      ${bfField('a_skuQty','จำนวน SKU','text',{placeholder:'เช่น 3'})}
+    </div>
+    ${bfGridField('a_skuDetail','รายละเอียด SKU', [
+      {key:'color',label:'ชื่อสี'},
+      {key:'appearance',label:'สี (Appearance)'},
+      {key:'formulaNo',label:'Formula No.'},
+      {key:'makeBar',label:'สร้าง Bar',type:'check'}
+    ])}
+    <div class="brief-note-box">☑️ ติ๊ก "สร้าง Bar" = แจ้งทีมระบบให้สร้าง Barcode ให้ SKU นั้น (ไม่ต้องกรอกเลขเอง)</div>
+
+    <div class="brief-field-grid" style="margin-top:14px;">
+      <div class="brief-field">
+        <label>Declare Weight</label>
+        <div style="display:flex; gap:6px;">
+          <input type="text" id="a_weight" value="${esc(bfGet('a_weight'))}" onchange="bfOnChange('a_weight')" placeholder="เช่น 30" style="flex:1;">
+          <select id="a_weightUnit" onchange="bfOnChange('a_weightUnit')" style="width:82px; flex:none;">
+            <option value="g"${bfGet('a_weightUnit')==='g'?' selected':''}>g</option>
+            <option value="ml"${bfGet('a_weightUnit')==='ml'?' selected':''}>ml</option>
+          </select>
+        </div>
+      </div>
       ${bfField('a_remark','Remark','textarea',{full:true})}
-    </div>`;
+    </div>
+    ${briefSignBlock('a','NPD ผู้จัดทำบรีฟ')}`;
 }
 
 const B_MARKET_ROWS = 3;
@@ -2601,7 +2855,26 @@ function copyFromPartA(){
   if(body){ body.innerHTML = renderBriefPartB(); body.dataset.rendered='1'; }
 }
 
+function bfArr(id){ try{ return JSON.parse(bfGet(id)||'[]'); }catch(e){ return []; } }
+function ingredientsText(){ return bfArr('b_ingredients').map(r=>[r.name,r.pct].filter(Boolean).join(' ')).filter(Boolean).join(', '); }
+function appearanceText(key){ return bfArr('b_appearance').map(r=>r[key]).filter(Boolean).join(', '); }
+
 function renderBriefPartB(){
+  // ----- auto-pull from Part A (fills only empty fields, so edits are kept) -----
+  bDefault('b_requestNo', bfGet('a_nprNo'));
+  bDefault('b_requestDate', bfGet('a_briefDate'));
+  bDefault('b_objective', bfGet('a_objective')==='New Product' ? 'New Product' : '');
+  bDefault('b_customerName', 'Cosceutic Innovation Laboratories Co., Ltd.');
+  bDefault('b_brandName', bfGet('a_brand'));
+  bDefault('b_address', GODMAMI_ADDRESS);
+  bDefault('b_productName', bfGet('a_projectName'));
+  bDefault('b_properties', keyBenefitsText());
+  bDefault('b_productType', catSummary());
+  // B1 brand-side column pulled from the fields above
+  const wt = [bfGet('a_weight'), bfGet('a_weightUnit')].filter(Boolean).join(' ');
+  const b1src = [ bfGet('a_catL4')||catSummary(), bfGet('b_howToUse'), wt, skuColorsText(), ingredientsText(), keyBenefitsText(), bfGet('a_benchmark'), appearanceText('color'), appearanceText('odor'), appearanceText('texture') ];
+  b1src.forEach((v,i)=>bDefault('b1_brand_'+i, v));
+
   const rows = B1_ROWS.map((label,i)=>`
     <tr>
       <td class="label-cell">${esc(label)}</td>
@@ -2618,32 +2891,30 @@ function renderBriefPartB(){
       <td>${bfTableInput('b_mkt_pro_'+i)}</td>
       <td>${bfTableInput('b_mkt_con_'+i)}</td>
       <td>${bfTableInput('b_mkt_price_'+i,'บาท')}</td>
-      <td>${bfTableInput('b_mkt_size_'+i,'ml')}</td>
-      <td>${bfTableInput('b_mkt_price10_'+i)}</td>
-      <td style="text-align:center; border:none;"><button type="button" class="brief-repeat-del" title="ล้างแถวนี้ (ไม่ใช้แถวนี้ก็ไม่ขึ้นตอนปริ้น)" onclick="clearRow(${JSON.stringify(ids)})">🗑️</button></td>
+      <td>${bfTableInput('b_mkt_size_'+i,'g/ml')}</td>
+      <td>${bfTableInput('b_mkt_price10_'+i,'บาท/g หรือ /ml')}</td>
+      <td style="text-align:center; border:none;"><button type="button" class="brief-repeat-del" title="ล้างแถวนี้" onclick="clearRow(${JSON.stringify(ids)})">🗑️</button></td>
     </tr>`;
   }).join('');
 
   return `
-    <div class="brief-note-box">อ้างอิงจากแบบฟอร์ม RD Request ของโรงงาน (COSMANIA) — กรอกที่นี่แล้วปริ้นออกมาให้หน้าตาเหมือนฟอร์มโรงงานได้เลย ด้วยปุ่ม "Print (Factory Form Style)" ด้านล่าง</div>
-    <button type="button" class="brief-print-btn" onclick="copyFromPartA()">📋 ใช้ข้อมูลจากหมวด A (แบรนด์ / ชื่อสินค้า / ประเภท / Benchmark)</button>
+    <div class="brief-note-box">ℹ️ ข้อมูลหลายช่องด้านล่าง <b>ดึงจาก Part A ให้อัตโนมัติ</b> (ยังแก้ไขเพิ่มได้) — ปริ้นแบบเหมือนฟอร์มโรงงานได้ด้วยปุ่ม "Print (Factory Form Style)" ด้านบน</div>
 
-    <div class="brief-section-h">Request Info</div>
+    <div class="brief-section-h">Request Info · ดึงอัตโนมัติ</div>
     <div class="brief-field-grid">
-      ${bfField('b_requestNo','Request No.','text',{placeholder:'เช่น CRC01-...'})}
+      ${bfField('b_requestNo','Request No. (จาก NPR No.)','text')}
       ${bfField('b_requestDate','Date','date')}
       ${bfField('b_objective','Objective','select',{options:['New Product','Ingredient alternative','Save cost','Other']})}
       ${bfField('b_objectiveOther','Other (ถ้าเลือก Other)','text')}
     </div>
 
-    <div class="brief-section-h">Customer Information</div>
+    <div class="brief-section-h">Customer Information · ดึงอัตโนมัติ (NPD ไม่ต้องกรอก)</div>
     <div class="brief-field-grid">
-      ${bfField('b_customerName','ชื่อลูกค้า','text',{placeholder:'Cosceutic Innovation Laboratories Co., Ltd.'})}
+      ${bfField('b_customerName','ชื่อลูกค้า','text')}
       ${bfField('b_brandName','ชื่อบริษัท/ชื่อแบรนด์','select',{options:['Godmami','Glimmer Sisters']})}
       <div class="brief-field brief-full">
         <label>ที่อยู่</label>
         <textarea id="b_address" onchange="bfOnChange('b_address')">${esc(bfGet('b_address'))}</textarea>
-        <button type="button" class="brief-print-btn" style="margin-top:4px;" onclick="fillCustomerAddress()">📍 กรอกที่อยู่อัตโนมัติ</button>
       </div>
       ${bfField('b_phone','เบอร์โทรศัพท์','text')}
       ${bfField('b_faxEmail','เบอร์แฟกซ์ / Email','text')}
@@ -2652,33 +2923,44 @@ function renderBriefPartB(){
 
     <div class="brief-section-h">Product Request</div>
     <div class="brief-field-grid">
-      ${bfField('b_productName','ชื่อสินค้า','text',{full:true})}
-      ${bfField('b_properties','คุณสมบัติที่ต้องการ','textarea',{full:true})}
-      ${bfField('b_productType','ประเภทของผลิตภัณฑ์','text')}
+      ${bfField('b_productName','ชื่อสินค้า (จากชื่อโปรเจกต์)','text',{full:true})}
+      ${bfField('b_properties','คุณสมบัติที่ต้องการ (ดึงจาก Key Benefit — เพิ่มได้)','textarea',{full:true})}
+      ${bfField('b_productType','ประเภทสินค้า (จาก A2)','text',{full:true})}
       ${bfField('b_howToUse','วิธีใช้ผลิตภัณฑ์','textarea',{full:true})}
-      ${bfField('b_keyIngredients','ส่วนประกอบสำคัญที่ต้องการใช้เป็นจุดขาย','textarea',{full:true})}
     </div>
+    <div class="brief-sub-label">Key Ingredients — เลือกจากรายการ (เพิ่ม/ลบได้)</div>
+    ${bfGridField('b_ingredients','', [
+      {key:'name',label:'Ingredient',type:'select',options:INGREDIENTS},
+      {key:'pct',label:'% (ถ้ามี)'},
+      {key:'note',label:'หมายเหตุ'}
+    ])}
 
-    <div class="brief-section-h">Benchmark / ผลิตภัณฑ์ต้นแบบ</div>
+    <div class="brief-section-h">Benchmark · ดึงจาก A2</div>
+    <div class="brief-bench-row">
+      <div class="brief-field" style="flex:1; min-width:220px;">
+        <label>รายละเอียด Benchmark (จาก Part A)</label>
+        <textarea id="a_benchmark" onchange="bfOnChange('a_benchmark')">${esc(bfGet('a_benchmark'))}</textarea>
+      </div>
+      <div class="brief-field brief-bench-img">${briefImgInline('a_benchmarkImg','รูป Benchmark')}</div>
+    </div>
+    <div class="brief-sub-label">แนบตัวอย่าง / การทดสอบ</div>
     <div class="brief-check-grid">
-      ${bfCheck('b_benchmarkNone','ไม่มีผลิตภัณฑ์ต้นแบบ')}
-      ${bfCheck('b_benchmarkHave','มี (โปรดระบุด้านล่าง)')}
-    </div>
-    <div class="brief-field-grid">
-      ${bfField('b_benchmarkDetail','ระบุผลิตภัณฑ์ต้นแบบ','text',{full:true})}
-      ${bfImageField('b_benchmarkImage','แนบภาพผลิตภัณฑ์ต้นแบบ')}
-      ${bfField('b_benchmarkIngredient','แนบตัวอย่าง — ส่วนประกอบ','select',{options:['ไม่มี','มี (แนบ)']})}
-      ${bfField('b_benchmarkTexture','แนบตัวอย่าง — เนื้อผลิตภัณฑ์','select',{options:['ไม่มี','มี (แนบ)']})}
-      ${bfField('b_spfTest','การส่งตรวจ SPF (สำหรับสินค้ากันแดด)','select',{options:['ไม่ส่งตรวจ','ส่งตรวจ']})}
+      ${bfCheck('b_attachIngredient','แนบตัวอย่าง — ส่วนประกอบ')}
+      ${bfCheck('b_attachTexture','แนบตัวอย่าง — เนื้อผลิตภัณฑ์')}
+      ${bfCheck('b_spfTest','ส่งตรวจ SPF (สินค้ากันแดด)')}
     </div>
 
-    <div class="brief-section-h">Product Spec</div>
+    <div class="brief-section-h">Product Appearance</div>
+    ${bfGridField('b_appearance','', [
+      {key:'color',label:'สี (Color)'},
+      {key:'odor',label:'กลิ่น (Odor)'},
+      {key:'texture',label:'เนื้อสัมผัส (Texture)'}
+    ])}
+
+    <div class="brief-section-h">รายละเอียดอื่นๆ</div>
     <div class="brief-field-grid">
-      ${bfField('b_color','สี (Color)','text')}
       ${bfField('b_moq','ขั้นต่ำที่ต้องการสั่งผลิต (MOQ)','text')}
-      ${bfField('b_odor','กลิ่น (Odor)','text')}
       ${bfField('b_skinType','ประเภทผิวของกลุ่มลูกค้า','text')}
-      ${bfField('b_texture','เนื้อผลิตภัณฑ์ (Texture)','text')}
       ${bfField('b_ageRange','ช่วงอายุกลุ่มลูกค้าเป้าหมาย','text')}
       ${bfField('b_sampleQty','จำนวนตัวอย่างที่ต้องการ','text')}
       ${bfField('b_targetCost','ราคาทุน/Kg ที่คาดหวัง','text')}
@@ -2698,12 +2980,12 @@ function renderBriefPartB(){
 
     <div class="brief-section-h">Market Comparison (Optional)</div>
     <table class="brief-table optional-row-table">
-      <thead><tr><th>สินค้าคู่แข่ง</th><th>จุดเด่น</th><th>จุดด้อย</th><th style="width:9%;">ราคา</th><th style="width:9%;">ขนาด (ml)</th><th style="width:10%;">ราคา/10g</th><th style="width:5%; border:none;"></th></tr></thead>
+      <thead><tr><th>สินค้าคู่แข่ง</th><th>จุดเด่น</th><th>จุดด้อย</th><th style="width:9%;">ราคา</th><th style="width:11%;">ขนาด (g/ml)</th><th style="width:12%;">ราคา/g หรือ /ml</th><th style="width:5%; border:none;"></th></tr></thead>
       <tbody>${marketRows}</tbody>
     </table>
 
     <div class="brief-section-h">B1. Formula Direction (สรุปย่อ)</div>
-    <p style="font-size:11.5px; color:var(--ink-soft); margin:0 0 8px;">แบรนด์ระบุคุณสมบัติที่ต้องการให้ชัดเจน ส่วนโรงงานกรอกแนวทางที่เสนอ ข้อจำกัด และหลักฐานรองรับ Claim ในคอลัมน์ขวา</p>
+    <p style="font-size:11.5px; color:var(--bMuted); margin:0 0 8px;">คอลัมน์ "ข้อมูลจากแบรนด์" ดึงจากส่วนบนให้อัตโนมัติ — โรงงานกรอกข้อเสนอ/ข้อจำกัดในคอลัมน์ขวา</p>
     <table class="brief-table">
       <thead><tr><th style="width:22%;">หัวข้อ</th><th>ข้อมูลจากแบรนด์</th><th>ข้อเสนอจากโรงงาน</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -2712,31 +2994,81 @@ function renderBriefPartB(){
     <div class="brief-check-grid">
       ${checks}
       <label class="brief-check-item">${bfCheck('b2_other','อื่น ๆ')} ${bfTableInput('b2_other_txt')}</label>
-    </div>`;
+    </div>
+    ${briefSignBlock('b','ผู้จัดทำ Formula Brief (R&D)')}`;
 }
 
+const C_PACK_TYPE = ['Bottle','Jar','Tube','Pump Bottle','Airless Pump','Dispenser','Compact'];
+const C_MATERIAL  = ['PP','PET','HDPE','Glass','Acrylic','Aluminum','PCR'];
+const C_BODY_COLOR= ['Clear / ใส','White / ขาว','Black / ดำ','Custom (ตามแนบ)'];
+const C_CAP_COLOR = ['Match body / เข้าชุด','Contrast / ตัดสี','Custom (ตามแนบ)'];
+const C_FINISH    = ['Glossy','Matte','Frosted','Metallic','Soft-touch'];
+const C_PRINT_AREA= ['Front / ด้านหน้า','Back / ด้านหลัง','Wrap / รอบข้าง','Cap / ฝา','Base / ก้น'];
+const C_PRINT_METHOD=['Silkscreen','Hot Stamp','Label','Emboss','Deboss','Pad Print'];
+const C_YNP       = ['Yes / ต้องการ','No / ไม่ต้องการ','Parallel / ทำคู่ขนานกัน'];
+const C_CERT      = ['Food Grade','Cosmetic Grade','ISO','REACH','RoHS'];
+
 function renderBriefPartC(){
-  const compRows = [1,2,3,4,5].map(i=>{
-    const ids = ['c1_comp_'+i,'c1_deco_'+i,'c1_remark_'+i];
-    return `
-    <tr>
-      <td class="label-cell" style="text-align:center;">${i}</td>
-      <td>${bfTableInput('c1_comp_'+i, i===1?'Primary pack / ขวด / กระปุก / หลอด':i===2?'Closure / Cap / Pump / Brush':i===3?'Secondary pack / กล่อง':i===4?'Sticker / Insert / Seal':'อื่น ๆ')}</td>
-      <td>${bfTableInput('c1_deco_'+i)}</td>
-      <td>${bfTableInput('c1_remark_'+i)}</td>
-      <td style="text-align:center; border:none;"><button type="button" class="brief-repeat-del" title="ล้างแถวนี้ (ไม่ใช้แถวนี้ก็ไม่ขึ้นตอนปริ้น)" onclick="clearRow(${JSON.stringify(ids)})">🗑️</button></td>
-    </tr>`;
-  }).join('');
-  const checks = C2_CHECKS.map((c,i)=>bfCheck('c2_'+i, c)).join('');
+  bDefault('c_projectName', bfGet('a_projectName'));
+  bDefault('c_brand', bfGet('a_brand'));
+  bDefault('c_productName', bfGet('a_projectName'));
+  bDefault('c_skuCount', bfGet('a_skuQty'));
   return `
-    <div class="brief-section-h">C1. Component Packaging</div>
-    <table class="brief-table optional-row-table">
-      <thead><tr><th style="width:5%;">No.</th><th>Component Packaging</th><th>Decoration</th><th>Remark</th><th style="width:5%; border:none;"></th></tr></thead>
-      <tbody>${compRows}</tbody>
-    </table>
-    <div class="brief-section-h">C2. Packaging Approval & Reference Standard</div>
-    <div class="brief-check-grid">${checks}</div>
-    <div class="brief-note-box"><strong>Gate 3</strong> — ก่อนสั่งผลิตแพ็กเกจ ต้องอนุมัติ Dieline, Artwork Version, สีมาตรฐาน, ตัวอย่างงานพิมพ์ และตำแหน่งข้อมูลกฎหมาย</div>`;
+    <div class="brief-note-box">อ้างอิง <b>Packaging Requirement Form (Primary Packaging)</b> ของทีมจัดซื้อ — ปริ้นได้ 2 แบบ: <b>Print (Standard)</b> และ <b>🏭 Print (Factory Form Style)</b> ด้านบน</div>
+
+    <div class="brief-section-h">Header · ดึงจาก A</div>
+    <div class="brief-field-grid">
+      ${bfField('c_projectName','Project / Customer Name','text')}
+      ${bfField('c_brand','Brand','select',{options:['Godmami','Glimmer Sisters']})}
+      ${bfField('c_productName','Product Name','text',{full:true})}
+    </div>
+
+    <div class="brief-section-h">Packaging Requirement Details</div>
+    ${bfMultiField('c_packType','Packaging Type', C_PACK_TYPE)}
+    ${bfField('c_packTypeOther','Packaging Type — Other','text')}
+    ${bfMultiField('c_material','Material', C_MATERIAL)}
+    ${bfField('c_materialOther','Material — Other','text')}
+    <div class="brief-field-grid">${bfField('c_size','Size / Volume (ml/g)','text')}</div>
+    ${bfMultiField('c_bodyColor','Body Color', C_BODY_COLOR)}
+    ${bfMultiField('c_capColor','Cap / Closure Color', C_CAP_COLOR)}
+    ${bfMultiField('c_finish','Surface Finish', C_FINISH)}
+    ${bfMultiField('c_printArea','Printing Area', C_PRINT_AREA)}
+    ${bfMultiField('c_printMethod','Printing Method', C_PRINT_METHOD)}
+    ${bfField('c_printMethodOther','Printing Method — Other','text')}
+    <div class="brief-field-grid">
+      ${bfField('c_skuCount','No. of SKUs required','text')}
+      ${bfField('c_moq','Target MOQ (pcs)','text')}
+      ${bfField('c_unitPrice','Target Unit Price (THB)','text')}
+      ${bfField('c_timeline','Required Timeline','text')}
+      ${bfField('c_budget','Budget (if any)','text')}
+    </div>
+
+    <div class="brief-section-h">Reference & Special Requirements</div>
+    ${bfMultiField('c_refSample','Reference Sample Provided',['Yes / มี (แนบมาด้วย)','No / ไม่มี'])}
+    <div class="brief-bench-row">
+      <div class="brief-field" style="flex:1; min-width:220px;">
+        <label>Reference Description</label>
+        <textarea id="c_refDesc" onchange="bfOnChange('c_refDesc')">${esc(bfGet('c_refDesc'))}</textarea>
+      </div>
+      <div class="brief-field brief-bench-img">${briefImgInline('c_benchImg','รูป Benchmark / ตัวอย่าง')}</div>
+    </div>
+    ${bfField('c_specialReq','Special Requirements / Notes','textarea',{full:true})}
+    ${bfMultiField('c_eco','Eco / Sustainable Packaging',['Yes / ต้องการ','No / ไม่ต้องการ','Preferred / ถ้ามี'])}
+    ${bfMultiField('c_cert','Required Certification', C_CERT)}
+    ${bfField('c_certOther','Certification — Other','text')}
+    ${bfMultiField('c_funcTest','Functional Test', C_YNP)}
+    ${bfMultiField('c_decoTest','Decoration Test', C_YNP)}
+
+    <div class="brief-section-h">Sign-off</div>
+    <div class="brief-field-grid">
+      ${bfField('c_reqBy','Requested by (Sales / Sales Manager)','select',{options:TEAM_NAMES})}
+      ${bfField('c_reqDate','Requested Date','date')}
+      ${bfField('c_recBy','Received by (PK Technical Specialist)','select',{options:TEAM_NAMES})}
+      ${bfField('c_recDate','Received Date','date')}
+      ${bfField('c_appBy','Approved by (Sourcing & Purchasing Manager)','select',{options:TEAM_NAMES})}
+      ${bfField('c_appDate','Approved Date','date')}
+    </div>
+    ${briefSignBlock('c','ผู้จัดทำ Packaging Brief')}`;
 }
 
 function renderBriefPartD(){
@@ -2771,7 +3103,8 @@ function renderBriefPartD(){
       <thead><tr><th style="width:6%;">ลำดับ</th><th>ข้อมูล/การตัดสินใจที่ต้องการ</th><th style="width:16%;">Owner</th><th style="width:14%;">Due</th><th style="width:12%;">สถานะ</th><th style="width:5%; border:none;"></th></tr></thead>
       <tbody>${iRows}</tbody>
     </table>
-    <div class="brief-note-box"><strong>Timeline</strong> — วันรับสินค้าควรก่อน Launch อย่างน้อย 3-4 สัปดาห์ เผื่อ Buffer โครงการ 15-20% และวัตถุดิบหรือแพ็กเกจนำเข้าอาจต้องเพิ่ม 8-16 สัปดาห์</div>`;
+    <div class="brief-note-box"><strong>Timeline</strong> — วันรับสินค้าควรก่อน Launch อย่างน้อย 3-4 สัปดาห์ เผื่อ Buffer โครงการ 15-20% และวัตถุดิบหรือแพ็กเกจนำเข้าอาจต้องเพิ่ม 8-16 สัปดาห์</div>
+    ${briefSignBlock('d','ผู้จัดทำ Timeline / Project Plan')}`;
 }
 
 function renderBriefPartE(){
@@ -2780,27 +3113,118 @@ function renderBriefPartE(){
     return `<tr>
       <td class="label-cell">${esc(label)}</td>
       <td>${bfTableSelect('e_result_'+i, resultOpts)}</td>
-      <td>${bfTableInput('e_name_'+i)}</td>
+      <td>${bfTableSelect('e_name_'+i, TEAM_NAMES)}</td>
       <td>${bfTableDate('e_date_'+i)}</td>
       <td>${bfTableInput('e_ver_'+i)}</td>
     </tr>`;
   }).join('');
   return `
     <table class="brief-table">
-      <thead><tr><th>จุดอนุมัติ</th><th style="width:12%;">ผล</th><th style="width:16%;">ชื่อผู้อนุมัติ</th><th style="width:14%;">วันที่</th><th style="width:16%;">Version / หลักฐาน</th></tr></thead>
+      <thead><tr><th>จุดอนุมัติ</th><th style="width:12%;">ผล</th><th style="width:22%;">ชื่อผู้อนุมัติ</th><th style="width:14%;">วันที่</th><th style="width:16%;">Version / หลักฐาน</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <div class="brief-note-box"><strong>สำคัญ</strong> — การอนุมัติด้วยวาจาไม่ถือเป็นการ Lock สูตร แพ็กเกจ Artwork หรือการผลิต หากแก้ไขหลัง Lock ต้องประเมินต้นทุน การทดสอบ และ Timeline ใหม่ทุกครั้ง</div>
     <div class="brief-section-h">Brand Brief Approval</div>
     <div class="brief-field-grid">
-      ${bfField('e_prepared_by','Prepared by','text')}
+      ${bfField('e_prepared_by','Prepared by','select',{options:TEAM_NAMES})}
       ${bfField('e_prepared_date','Date','date')}
-      ${bfField('e_approved_by','Approved by','text')}
+      <div class="brief-field brief-sign-img">${briefImgInline('e_prepared_sign','ลายเซ็น Prepared by')}</div>
+      ${bfField('e_approved_by','Approved by','select',{options:TEAM_NAMES})}
       ${bfField('e_approved_date','Date','date')}
+      <div class="brief-field brief-sign-img">${briefImgInline('e_approved_sign','ลายเซ็น Approved by')}</div>
     </div>`;
 }
 
 const BRIEF_RENDERERS = {a:renderBriefPartA, b:renderBriefPartB, c:renderBriefPartC, d:renderBriefPartD, e:renderBriefPartE};
+
+/* ===== NPD Brief — save/load the whole brief to the shared backend ===== */
+async function postReadable(payload){
+  const cfg = getWriteConfig();
+  const res = await fetch(cfg.url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(Object.assign({token:cfg.token}, payload))});
+  return JSON.parse(await res.text());
+}
+/* Gather every brief_* localStorage key into one object. Big base64 images are skipped
+   (they don't fit a Sheet cell) — text/fields sync; images stay on the device that added them. */
+function collectBriefData(){
+  const o = {}; let skippedImg = 0;
+  for(let i=0; i<localStorage.length; i++){
+    const k = localStorage.key(i);
+    if(!k || k.indexOf('brief_') !== 0) continue;
+    const v = localStorage.getItem(k);
+    if(typeof v === 'string' && v.indexOf('data:') === 0 && v.length > 2000){ skippedImg++; continue; }
+    o[k] = v;
+  }
+  return {data:o, skippedImg};
+}
+async function saveBriefToCloud(){
+  const cfg = getWriteConfig();
+  if(!cfg.url){ toast('ยังไม่ได้ตั้ง Sheet Sync','err'); return; }
+  const nprNo = (bfGet('a_nprNo')||'').trim();
+  if(!nprNo){ toast('กรุณากรอก NPR No. ใน Part A ก่อน (ใช้เป็นรหัสบรีฟ)','err'); return; }
+  const {data, skippedImg} = collectBriefData();
+  const json = JSON.stringify(data);
+  if(json.length > 48000){ toast('บรีฟใหญ่เกิน 48KB — ลดข้อความ/ตารางลงก่อน','err'); return; }
+  const row = { nprNo, projectName:(bfGet('a_projectName')||'').trim(), updatedBy:(bfGet('a_owner')||'').trim(), updatedAt: todayStr(), data: json };
+  toast('กำลังบันทึกบรีฟขึ้นระบบกลาง…','info');
+  try{
+    const r = await postReadable({action:'upsert', target:'briefs', keyValue:nprNo, row});
+    if(r && r.ok) toast('บันทึกบรีฟ "'+nprNo+'" แล้ว ✓ ทั้งทีมเปิดได้'+(skippedImg?(' · (รูปแนบ '+skippedImg+' รูปไม่ได้ซิงค์ — ใหญ่เกินช่อง Sheet)'):''), 'ok');
+    else toast('บันทึกไม่สำเร็จ: '+((r&&r.error)||'?'),'err');
+  }catch(e){ toast('ต่อ Sheet ไม่ได้: '+e.message,'err'); }
+}
+async function fetchSavedBriefs(){
+  try{
+    const res = await fetch(BRIEFS_CSV_URL + '&_cb=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) throw new Error('no');
+    return parseCsvByHeader(await res.text(), ['nprNo']).filter(r=>(r.nprNo||'').trim());
+  }catch(e){ return []; }
+}
+function openSavedBriefsModal(){
+  document.getElementById('sb-overlay').classList.add('open');
+  document.getElementById('sb-list').innerHTML = '<div class="empty" style="padding:24px 0;">กำลังโหลด…</div>';
+  fetchSavedBriefs().then(renderSavedBriefsList);
+}
+function closeSavedBriefsModal(){ document.getElementById('sb-overlay').classList.remove('open'); }
+function renderSavedBriefsList(list){
+  const el = document.getElementById('sb-list');
+  if(!list.length){ el.innerHTML = '<div class="empty" style="padding:24px 0;">ยังไม่มีบรีฟที่บันทึกไว้ — กรอกแล้วกด "บันทึกบรีฟ (กลาง)"</div>'; return; }
+  list.sort((a,b)=> (b.updatedAt||'').localeCompare(a.updatedAt||''));
+  el.innerHTML = list.map(b=>`<div class="nm-row">
+    <div class="nm-msg"><b>${esc(b.nprNo)}</b> — ${esc(b.projectName)||'(ไม่มีชื่อ)'}<br><span style="font-size:11px; color:var(--ink-soft);">อัปเดต ${esc(b.updatedAt)||'-'}${b.updatedBy?(' · '+esc(b.updatedBy)):''}</span></div>
+    <button class="nm-toggle on" onclick="loadBriefFromCloud('${attrJs(b.nprNo)}')">เปิด</button>
+    <button class="nm-del" onclick="deleteBriefFromCloud('${attrJs(b.nprNo)}')">🗑️</button>
+  </div>`).join('');
+}
+async function loadBriefFromCloud(nprNo){
+  const list = await fetchSavedBriefs();
+  const b = list.find(x=>(x.nprNo||'').trim()===nprNo);
+  if(!b){ toast('ไม่พบบรีฟนี้','err'); return; }
+  let data={}; try{ data = JSON.parse(b.data||'{}'); }catch(e){ toast('ข้อมูลบรีฟเสียหาย','err'); return; }
+  if(!confirm('เปิดบรีฟ "'+nprNo+'" ทับข้อมูลในฟอร์มตอนนี้?\n(ข้อมูลที่ยังไม่บันทึกจะหาย)')) return;
+  const del=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.indexOf('brief_')===0) del.push(k); }
+  del.forEach(k=>localStorage.removeItem(k));
+  Object.keys(data).forEach(k=>{ try{ localStorage.setItem(k, data[k]); }catch(e){} });
+  // make sure the form is open & built, then re-render every part from the loaded data
+  const container = document.getElementById('brief-form-container');
+  if(container && container.style.display==='none') toggleBriefForm();
+  rerenderBriefParts();
+  closeSavedBriefsModal();
+  toast('เปิดบรีฟ "'+nprNo+'" แล้ว','ok');
+}
+async function deleteBriefFromCloud(nprNo){
+  if(!confirm('ลบบรีฟ "'+nprNo+'" ออกจากระบบกลาง?')) return;
+  try{
+    const r = await postReadable({action:'delete', target:'briefs', keyValue:nprNo});
+    if(r && r.ok){ toast('ลบบรีฟแล้ว','ok'); fetchSavedBriefs().then(renderSavedBriefsList); }
+    else toast('ลบไม่สำเร็จ: '+((r&&r.error)||'?'),'err');
+  }catch(e){ toast('ต่อ Sheet ไม่ได้: '+e.message,'err'); }
+}
+function rerenderBriefParts(){
+  ['a','b','c','d','e'].forEach(key=>{
+    const body = document.getElementById('brief-part-body-'+key);
+    if(body && BRIEF_RENDERERS[key]){ body.innerHTML = BRIEF_RENDERERS[key](); body.dataset.rendered='1'; }
+  });
+}
 
 function toggleBriefForm(){
   const container = document.getElementById('brief-form-container');
@@ -2813,6 +3237,8 @@ function toggleBriefForm(){
       const p = BRIEF_PARTS[key];
       const factoryBtn = key==='b'
         ? `<button class="brief-print-btn" onclick="event.stopPropagation(); printBriefPartBFactory()" style="margin-left:6px;">🏭 Print (Factory Form Style)</button>`
+        : key==='c'
+        ? `<button class="brief-print-btn" onclick="event.stopPropagation(); printBriefPartCFactory()" style="margin-left:6px;">🏭 Print (Factory Form Style)</button>`
         : '';
       return `<div class="brief-part" id="brief-part-${key}">
         <div class="brief-part-head" onclick="toggleBriefPart('${key}')">
@@ -2939,6 +3365,68 @@ function printBriefPart(key){
     </div>
     ${clone.innerHTML}
     </body></html>`);
+  win.document.close();
+  setTimeout(()=>{ win.print(); }, 300);
+}
+
+function printBriefPartCFactory(){
+  const body=document.getElementById('brief-part-body-c');
+  if(!body.dataset.rendered){ body.innerHTML=BRIEF_RENDERERS.c(); body.dataset.rendered='1'; }
+  const g=id=>esc(bfGet(id)||'');
+  const arr=id=>{ try{ return JSON.parse(bfGet(id)||'[]'); }catch(e){ return []; } };
+  const box=(id,opt)=>(arr(id).includes(opt)?'☑':'☐')+' '+esc(opt);
+  const line=(id,opts,otherId)=>{ let s=opts.map(o=>box(id,o)).join('&nbsp;&nbsp; '); if(otherId&&bfGet(otherId)) s+='&nbsp;&nbsp; ☑ Other: '+g(otherId); return s; };
+  const fmtDate=id=>{ const v=bfGet(id); return v?esc(v):'____/____/____'; };
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>Packaging Requirement Form</title>
+  <style>
+    *{box-sizing:border-box;} body{font-family:'Sarabun','TH Sarabun New',sans-serif; font-size:13px; color:#111; margin:24px 28px; line-height:1.55;}
+    h1{font-size:16px; text-align:center; margin:0 0 6px;} .subttl{text-align:center; color:#555; font-size:12px; margin:0 0 12px; border-bottom:2px solid #111; padding-bottom:8px;}
+    .hd{margin:5px 0;}
+    table{width:100%; border-collapse:collapse; margin-top:8px;}
+    td{border:1px solid #444; padding:6px 8px; vertical-align:top;}
+    td.k{width:27%; background:#f2f2f2; font-weight:600;}
+    .sec{font-weight:700; background:#e9e9e9; padding:6px 8px; border:1px solid #444; margin-top:14px;}
+    .sign{display:flex; gap:22px; margin-top:26px; flex-wrap:wrap;}
+    .sign div{flex:1; min-width:160px; border-top:1px solid #111; padding-top:6px; font-size:12px;}
+    @media print{ body{margin:12mm;} }
+  </style></head><body>
+  <h1>Packaging Requirement Form</h1><div class="subttl">for Primary Packaging</div>
+  <div class="hd"><b>Project / Customer Name:</b> ${g('c_projectName')} &nbsp;&nbsp; <b>Brand:</b> ${g('c_brand')}</div>
+  <div class="hd"><b>Product Name:</b> ${g('c_productName')}</div>
+  <div class="sec">Packaging Requirement Details for Primary Packaging</div>
+  <table>
+    <tr><td class="k">Packaging Type</td><td>${line('c_packType',C_PACK_TYPE,'c_packTypeOther')}</td></tr>
+    <tr><td class="k">Material</td><td>${line('c_material',C_MATERIAL,'c_materialOther')}</td></tr>
+    <tr><td class="k">Size / Volume (ml/g)</td><td>${g('c_size')}</td></tr>
+    <tr><td class="k">Body Color</td><td>${line('c_bodyColor',C_BODY_COLOR)}</td></tr>
+    <tr><td class="k">Cap / Closure Color</td><td>${line('c_capColor',C_CAP_COLOR)}</td></tr>
+    <tr><td class="k">Surface Finish</td><td>${line('c_finish',C_FINISH)}</td></tr>
+    <tr><td class="k">Printing Area</td><td>${line('c_printArea',C_PRINT_AREA)}</td></tr>
+    <tr><td class="k">Printing Method</td><td>${line('c_printMethod',C_PRINT_METHOD,'c_printMethodOther')}</td></tr>
+    <tr><td class="k">No. of SKUs required</td><td>${g('c_skuCount')}</td></tr>
+    <tr><td class="k">Target MOQ (pcs)</td><td>${g('c_moq')}</td></tr>
+    <tr><td class="k">Target Unit Price (THB)</td><td>${g('c_unitPrice')}</td></tr>
+    <tr><td class="k">Required Timeline</td><td>${g('c_timeline')}</td></tr>
+    <tr><td class="k">Budget (if any)</td><td>${g('c_budget')}</td></tr>
+  </table>
+  <div class="sec">Reference & Special Requirements</div>
+  <table>
+    <tr><td class="k">Reference Sample Provided</td><td>${line('c_refSample',['Yes / มี (แนบมาด้วย)','No / ไม่มี'])}</td></tr>
+    <tr><td class="k">Reference Description</td><td>${g('c_refDesc')}</td></tr>
+    <tr><td class="k">Special Requirements / Notes</td><td>${g('c_specialReq')}</td></tr>
+    <tr><td class="k">Eco / Sustainable Packaging</td><td>${line('c_eco',['Yes / ต้องการ','No / ไม่ต้องการ','Preferred / ถ้ามี'])}</td></tr>
+    <tr><td class="k">Required Certification</td><td>${line('c_cert',C_CERT,'c_certOther')}</td></tr>
+    <tr><td class="k">Functional Test</td><td>${line('c_funcTest',C_YNP)}</td></tr>
+    <tr><td class="k">Decoration Test</td><td>${line('c_decoTest',C_YNP)}</td></tr>
+  </table>
+  ${bfGet('c_benchImg')?`<div class="sec">Reference / Benchmark Image</div><img src="${bfGet('c_benchImg')}" style="max-width:280px; max-height:280px; border:1px solid #444; margin-top:8px;">`:''}
+  <div class="sign">
+    <div><b>Requested by</b><br>${g('c_reqBy')||'____________________'}<br>Sales / Sales Manager<br>Date: ${fmtDate('c_reqDate')}</div>
+    <div><b>Received by</b><br>${g('c_recBy')||'____________________'}<br>PK Technical Specialist<br>Date: ${fmtDate('c_recDate')}</div>
+    <div><b>Approved by</b><br>${g('c_appBy')||'____________________'}<br>Sourcing & Purchasing Manager<br>Date: ${fmtDate('c_appDate')}</div>
+  </div>
+  </body></html>`);
   win.document.close();
   setTimeout(()=>{ win.print(); }, 300);
 }
@@ -3083,7 +3571,7 @@ function toast(msg, kind){
 
 /* ---------- render orchestration ---------- */
 function buildYearTabs(){
-  const years = Array.from(new Set(PRODUCTS.map(getYear)));
+  const years = Array.from(new Set(PRODUCTS.map(getYear))).filter(y=>Number.isFinite(y));
   const thisYear = new Date().getFullYear();
   if(!years.includes(thisYear)) years.push(thisYear);
   if(!years.includes(thisYear+1)) years.push(thisYear+1);
@@ -3372,23 +3860,31 @@ const APPS_SCRIPT_CODE = `/**
  * รองรับ: สินค้า (products) / บันทึกความคืบหน้า (updates) / ประกาศ (notice) / งาน (task)
  */
 const SECRET = 'CHANGE_ME';    // <-- ตั้งรหัสลับ แล้วใส่ให้ตรงกับในเว็บ
-const VER = 'multitab-2';      // เวอร์ชันโค้ด (ใช้เช็กว่า deploy โค้ดใหม่แล้วจริง)
+const VER = 'multitab-3';      // เวอร์ชันโค้ด (ใช้เช็กว่า deploy โค้ดใหม่แล้วจริง)
 
 // แต่ละแท็บ: gid = เลขท้าย URL ของแท็บ, key = คอลัมน์ที่ใช้จับคู่แถว ('' = ต่อท้ายอย่างเดียว)
+// create = ถ้าไม่มีแท็บนี้ ให้สร้างใหม่พร้อมหัวคอลัมน์ตามนี้
 const TARGETS = {
   products: {gid:1762470958, key:'sku'},
   updates:  {gid:327758317,  key:''},              // log ต่อท้าย
   notice:   {name:'Notice',   key:'Message'},
-  task:     {gid:141244138,   key:'รายละเอียดงาน'}  // จับคู่ด้วยรายละเอียดงาน
+  task:     {gid:141244138,   key:'รายละเอียดงาน'}, // จับคู่ด้วยรายละเอียดงาน
+  briefs:   {name:'Briefs',   key:'nprNo', create:['nprNo','projectName','updatedBy','updatedAt','data']}
 };
 
-function getSheetByCfg_(ss, cfg){
-  if(cfg.gid != null){
-    var m = ss.getSheets().filter(function(s){ return s.getSheetId() === cfg.gid; })[0];
-    if(m) return m;
-  }
-  if(cfg.name){ var n = ss.getSheetByName(cfg.name); if(n) return n; }
+function resolveCfg_(o){
+  // known target, else a generic one described in the request (future tabs need no redeploy)
+  var cfg = TARGETS[o.target || 'products'];
+  if(cfg) return cfg;
+  if(o.sheetName) return {name:String(o.sheetName), key:String(o.key||''), create:o.create};
   return null;
+}
+function getSheetByCfg_(ss, cfg){
+  var sh = null;
+  if(cfg.gid != null){ sh = ss.getSheets().filter(function(s){ return s.getSheetId() === cfg.gid; })[0] || null; }
+  if(!sh && cfg.name){ sh = ss.getSheetByName(cfg.name); }
+  if(!sh && cfg.name && cfg.create){ sh = ss.insertSheet(cfg.name); sh.appendRow(cfg.create); }
+  return sh || null;
 }
 function out_(o){
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
@@ -3397,7 +3893,7 @@ function doGet(e){
   var p = (e && e.parameter) || {};
   if(SECRET && p.token !== SECRET) return out_({ok:false, error:'bad token'});
   if(p.debug){   // cache-free read of one row, for verification: ?debug=1&target=task&key=...
-    var cfg = TARGETS[p.target || 'products'];
+    var cfg = resolveCfg_(p);
     if(!cfg) return out_({ok:false, error:'unknown target'});
     var sh = getSheetByCfg_(SpreadsheetApp.getActiveSpreadsheet(), cfg);
     if(!sh) return out_({ok:false, error:'sheet not found'});
@@ -3419,7 +3915,7 @@ function doPost(e){
     var body = JSON.parse(e.postData.contents);
     if(SECRET && body.token !== SECRET) return out_({ok:false, error:'bad token'});
     if(body.action === 'ping') return out_({ok:true, ping:true, ver:VER});
-    var cfg = TARGETS[body.target || 'products'];
+    var cfg = resolveCfg_(body);
     if(!cfg) return out_({ok:false, error:'unknown target'});
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sh = getSheetByCfg_(ss, cfg);
@@ -3618,7 +4114,7 @@ function deleteNotice(msg){
 /* ESC closes the new modals */
 document.addEventListener('keydown', (e)=>{
   if(e.key!=='Escape') return;
-  const stack=[['sync-overlay',closeSyncSetup],['nm-overlay',closeNoticeManager],['ue-overlay',closeUpdateEditor],['pe-overlay',closeProductEditor]];
+  const stack=[['sync-overlay',closeSyncSetup],['sb-overlay',closeSavedBriefsModal],['nm-overlay',closeNoticeManager],['ue-overlay',closeUpdateEditor],['pe-overlay',closeProductEditor]];
   for(const [id,fn] of stack){ const el=document.getElementById(id); if(el && el.classList.contains('open')){ fn(); return; } }
 });
 
