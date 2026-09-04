@@ -2674,11 +2674,11 @@ function esc(s){ const d=document.createElement('div'); d.textContent = s||''; r
 const BRIEF_PARTS = {
   a: { title:'A. Project Brief', th:'ข้อมูลโครงการ + ทิศทางสินค้า' },
   b: { title:'B. Formula Brief — โจทย์พัฒนาสูตร', th:'บรีฟให้ R&D' },
-  g: { title:'Graphic Brief — บรีฟงานกราฟิก', th:'บรีฟให้ Graphic / Design' },
-  c: { title:'C. Packaging Brief (PKG) — โจทย์บรรจุภัณฑ์', th:'บรีฟให้ Packaging' },
-  d: { title:'D. Timeline & Project Follow-up', th:'ไทม์ไลน์และประเด็นที่ต้องติดตาม' },
-  e: { title:'E. Approval & Sign-off', th:'จุดอนุมัติ / ลงนาม' },
-  f: { title:'F. Supply Chain', th:'บรีฟให้ Supply Chain / Production' },
+  g: { title:'C. Graphic Brief — บรีฟงานกราฟิก', th:'บรีฟให้ Graphic / Design' },
+  c: { title:'D. Packaging Brief (PKG) — โจทย์บรรจุภัณฑ์', th:'บรีฟให้ Packaging' },
+  d: { title:'E. Timeline & Project Follow-up', th:'ไทม์ไลน์และประเด็นที่ต้องติดตาม' },
+  e: { title:'F. Approval & Sign-off', th:'จุดอนุมัติ / ลงนาม' },
+  f: { title:'G. Supply Chain', th:'บรีฟให้ Supply Chain / Production' },
 };
 
 const B1_ROWS = ['Product Form','วิธีใช้','ปริมาณ','Shade / SKU','Hero Ingredient','Required Claims','Benchmark','สี / Appearance','กลิ่น','เนื้อสัมผัส / Finish'];
@@ -3629,12 +3629,12 @@ function renderBriefPartD(){
     </tr>`;
   }).join('');
   return `
-    <div class="brief-section-h">D1. Proposed Timeline</div>
+    <div class="brief-section-h">E1. Proposed Timeline</div>
     <table class="brief-table">
       <thead><tr><th style="width:20%;">Milestone</th><th style="width:16%;">Owner</th><th style="width:14%;">Start</th><th style="width:14%;">Due</th><th>Dependency / หมายเหตุ</th></tr></thead>
       <tbody>${tRows}</tbody>
     </table>
-    <div class="brief-section-h">D2. Open Issues / Information Required</div>
+    <div class="brief-section-h">E2. Open Issues / Information Required</div>
     <table class="brief-table optional-row-table">
       <thead><tr><th style="width:6%;">ลำดับ</th><th>ข้อมูล/การตัดสินใจที่ต้องการ</th><th style="width:16%;">Owner</th><th style="width:14%;">Due</th><th style="width:12%;">สถานะ</th><th style="width:5%; border:none;"></th></tr></thead>
       <tbody>${iRows}</tbody>
@@ -3691,7 +3691,7 @@ function renderBriefPartF(){
   return `
     <div class="brief-note-box no-print-hint">ℹ️ หลายช่อง <b>ดึงจาก Part A/B อัตโนมัติ</b> (แก้ไขเพิ่มได้) — บรีฟนี้ส่งต่อทีม Supply Chain / Production</div>
 
-    <div class="brief-section-h">F1 · ข้อมูลสินค้า (ดึงอัตโนมัติ)</div>
+    <div class="brief-section-h">G1 · ข้อมูลสินค้า (ดึงอัตโนมัติ)</div>
     <div class="brief-field-grid">
       ${bfField('f_productName','Product Name','text')}
       ${bfField('f_formulaNo','Formula No. (Trial No.)','text')}
@@ -3706,7 +3706,7 @@ function renderBriefPartF(){
       {key:'channel',label:'ช่องทางการขาย'}
     ])}
 
-    <div class="brief-section-h">F2 · สถานะจดแจ้ง อย.</div>
+    <div class="brief-section-h">G2 · สถานะจดแจ้ง อย.</div>
     <div class="brief-check-grid">
       ${bfCheck('f_fdaProcessing','กำลังดำเนินการ')}
       ${bfCheck('f_fdaDone','แล้วเสร็จ')}
@@ -3716,7 +3716,7 @@ function renderBriefPartF(){
       ${bfField('f_fdaExpectDate','วันที่คาดว่าจะได้ผล อย.','date')}
     </div>
 
-    <div class="brief-section-h">F3 · Packaging (PKG) — เพิ่ม/ลบได้</div>
+    <div class="brief-section-h">G3 · Packaging (PKG) — เพิ่ม/ลบได้</div>
     ${bfGridField('f_pkgList','', [
       {key:'code',label:'รหัสบรรจุภัณฑ์'},
       {key:'name',label:'ชื่อบรรจุภัณฑ์'},
@@ -3726,7 +3726,7 @@ function renderBriefPartF(){
       ${bfField('f_screenCode','รหัสส่งสกรีนสินค้า (กรณีสั่ง บจภ. เปล่ามาสกรีนที่ไทย)','text',{full:true})}
     </div>
 
-    <div class="brief-section-h">F4 · Soft Component</div>
+    <div class="brief-section-h">G4 · Soft Component</div>
     <div class="brief-sub-label">Sticker — เพิ่ม/ลบจุดได้</div>
     ${bfGridField('f_stickers','', [
       {key:'type',label:'ชนิด STK',type:'select',options:['STK Shade','STK FDA','STK Barcode','STK Virgin Seal']},
@@ -3745,7 +3745,7 @@ function renderBriefPartF(){
     </div>
     ${bfMultiField('f_shrinkWrap','ระบุส่วนที่หุ้ม',['กล่อง','บรรจุภัณฑ์ (บจภ.)'])}
 
-    <div class="brief-section-h">F5 · Shooting Lot / MFG / EXP</div>
+    <div class="brief-section-h">G5 · Shooting Lot / MFG / EXP</div>
     <div class="brief-check-grid">
       ${bfCheck('f_shootYes','ยิงล็อต (มี)')}
       ${bfCheck('f_shootNo','ไม่ยิง')}
@@ -3769,7 +3769,7 @@ function renderBriefPartF(){
       <div class="brief-field brief-bench-img">${briefImgInline('f_shootPosImg','ภาพระบุตำแหน่งยิง')}</div>
     </div>
 
-    <div class="brief-section-h">F6 · Accessories / ของแถม</div>
+    <div class="brief-section-h">G6 · Accessories / ของแถม</div>
     ${bfGridField('f_accessories','', [
       {key:'name',label:'ชื่อสินค้า'},
       {key:'qty',label:'จำนวน'},
@@ -3778,20 +3778,20 @@ function renderBriefPartF(){
       {key:'cf',label:'ลิงก์ใบ CF (กรณี STK แถม)'}
     ])}
 
-    <div class="brief-section-h">F7 · ส่วนประกอบที่ซื้อจาก CIL</div>
+    <div class="brief-section-h">G7 · ส่วนประกอบที่ซื้อจาก CIL</div>
     ${bfGridField('f_cilComponents','', [
       {key:'sku',label:'SKU'},
       {key:'name',label:'ชื่อส่วนประกอบ'},
       {key:'qty',label:'จำนวน'}
     ])}
 
-    <div class="brief-section-h">F8 · การเรียงสี — กรณีชุดเซต</div>
+    <div class="brief-section-h">G8 · การเรียงสี — กรณีชุดเซต</div>
     <div class="brief-bench-row">
       <div class="brief-field" style="flex:1; min-width:220px;">${bfField('f_setColorNote','ชี้แจงการเรียงสีที่ต้องการ','textarea',{full:true})}</div>
       <div class="brief-field brief-bench-img">${briefImgInline('f_setColorImg','ภาพไฟนอลการเรียงสี')}</div>
     </div>
 
-    <div class="brief-section-h">F9 · หมายเหตุเพิ่มเติม</div>
+    <div class="brief-section-h">G9 · หมายเหตุเพิ่มเติม</div>
     <div class="brief-bench-row">
       <div class="brief-field" style="flex:1; min-width:220px;">${bfField('f_assemblyNote','กรณีชุดเซต/กล่องพับซับซ้อน — หมายเหตุขั้นตอนประกอบ','textarea',{full:true})}</div>
       <div class="brief-field brief-bench-img">${briefImgInline('f_assemblyImg','ภาพขั้นตอนประกอบ')}</div>
@@ -4410,18 +4410,24 @@ function printBriefPartCFactory(){
   win.document.write(`<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>Packaging Requirement Form</title>
   <style>
     *{box-sizing:border-box;} body{font-family:'Sarabun','TH Sarabun New',sans-serif; font-size:13px; color:#111; margin:22px 26px; line-height:1.5;}
-    .brand-head{display:flex; align-items:center; gap:14px; border-bottom:3px solid #F87060; padding-bottom:10px; margin-bottom:6px;}
+    .brand-head{display:flex; align-items:center; gap:14px; padding-bottom:6px; margin-bottom:4px;}
     .brand-head img{height:52px; width:auto;}
     .brand-head .co{flex:1;} .brand-head .co-name{font-weight:700; font-size:15px; color:#111;} .brand-head .co-addr{font-size:10px; color:#555;}
     .brand-head .ref{font-size:11px; text-align:right; white-space:nowrap; color:#333;}
-    h1{font-size:17px; text-align:center; margin:8px 0 2px; color:#D9512C;} .subttl{text-align:center; color:#666; font-size:12px; margin:0 0 10px;}
+    h1{font-size:16px; text-align:center; margin:6px 0 2px; color:#111; font-weight:700;} .subttl{text-align:center; color:#555; font-size:12px; margin:0 0 10px;}
     .hd{margin:5px 0;}
-    table{width:100%; border-collapse:collapse; margin-top:8px;}
-    td{border:1px solid #E0A99E; padding:6px 8px; vertical-align:top;}
-    td.k{width:27%; background:#FBF1EF; font-weight:600;}
-    .sec{font-weight:700; background:#FDEBE8; color:#B23A1E; padding:7px 9px; border:1px solid #E0A99E; border-left:4px solid #F87060; margin-top:14px;}
-    .sign{display:flex; gap:22px; margin-top:26px; flex-wrap:wrap;}
-    .sign div{flex:1; min-width:160px; border-top:1px solid #111; padding-top:6px; font-size:12px;}
+    table{width:100%; border-collapse:collapse; margin-top:6px;}
+    td{border:1px solid #9DB0CE; padding:6px 8px; vertical-align:top;}
+    td.k{width:27%; background:#D9E1F2; font-weight:700; color:#1F2A44;}
+    .sec{font-weight:700; background:#4472C4; color:#fff; padding:7px 9px; border:1px solid #4472C4; text-align:center; margin-top:14px;}
+    .sec.teal{background:#38756B; border-color:#38756B;}
+    .sign{display:flex; gap:0; margin-top:30px;}
+    .sign > div{flex:1; border:1px solid #9DB0CE; border-right:none; padding:12px 14px 16px; font-size:12px;}
+    .sign > div:last-child{border-right:1px solid #9DB0CE;}
+    .sig-label{font-weight:700; margin-top:10px;}
+    .sig-label:first-child{margin-top:0;}
+    .sig-line{border-bottom:1px solid #333; min-height:22px; margin:6px 0 2px; text-align:center; padding:0 4px;}
+    .sig-role{text-align:center; font-size:11px; color:#333;}
     @media print{ body{-webkit-print-color-adjust:exact; print-color-adjust:exact; margin:12mm;} }
   </style></head><body>
   <div class="brand-head">
@@ -4435,13 +4441,31 @@ function printBriefPartCFactory(){
   <div class="hd"><b>Product Name:</b> ${g('c_productName')}</div>
   <div class="sec">${esc(specSec)}</div>
   <table>${specRows}</table>
-  <div class="sec">Reference & Special Requirements</div>
+  <div class="sec teal">Reference & Special Requirements</div>
   <table>${refRows}</table>
   ${bfGet('c_benchImg')?`<div class="sec">Reference / Benchmark Image</div>${imgListOf('c_benchImg').map(v=>`<img src="${esc(briefImgSrc(v))}" style="max-width:230px; max-height:230px; border:1px solid #444; margin:8px 8px 0 0;">`).join('')}`:''}
   <div class="sign">
-    <div><b>Requested by</b><br>${g('c_reqBy')||'____________________'}<br>Sales / Sales Manager<br>Date: ${fmtDate('c_reqDate')}</div>
-    <div><b>Received by</b><br>${g('c_recBy')||'____________________'}<br>PK Technical Specialist<br>Date: ${fmtDate('c_recDate')}</div>
-    <div><b>Approved by</b><br>${g('c_appBy')||'____________________'}<br>Sourcing & Purchasing Manager<br>Date: ${fmtDate('c_appDate')}</div>
+    <div>
+      <div class="sig-label">Requested by :</div>
+      <div class="sig-line">${g('c_reqBy')}</div>
+      <div class="sig-role">Sales / Sales Manager</div>
+      <div class="sig-label">Requested Date :</div>
+      <div class="sig-line">${bfGet('c_reqDate')?esc(bfGet('c_reqDate')):''}</div>
+    </div>
+    <div>
+      <div class="sig-label">Received by :</div>
+      <div class="sig-line">${g('c_recBy')}</div>
+      <div class="sig-role">PK Technical Specialist</div>
+      <div class="sig-label">Received Date :</div>
+      <div class="sig-line">${bfGet('c_recDate')?esc(bfGet('c_recDate')):''}</div>
+    </div>
+    <div>
+      <div class="sig-label">Approved by :</div>
+      <div class="sig-line">${g('c_appBy')}</div>
+      <div class="sig-role">Sourcing &amp; Purchasing Manager</div>
+      <div class="sig-label">Approved Date :</div>
+      <div class="sig-line">${bfGet('c_appDate')?esc(bfGet('c_appDate')):''}</div>
+    </div>
   </div>
   </body></html>`);
   win.document.close();
