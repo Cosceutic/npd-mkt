@@ -190,7 +190,21 @@
   .tev-pkg{background:#FCEFD8; color:#B26A00; border:1px solid #F3D9A6;}
   .tev-other{background:#EEE9FD; color:#5B3FC0; border:1px solid #D8CCF7;}
   .tev-due{background:#FDE7E7; color:#C0392B; border:1px solid #F3B4B4;}
-  @media(max-width:640px){ .tcal-cell{min-height:60px;} .tev{font-size:9.5px; padding:1px 4px;} }
+  .tev{display:flex; flex-direction:column; line-height:1.2;}
+  .tev-sub{font-weight:500; font-size:9px; opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  @media(max-width:640px){ .tcal-cell{min-height:60px;} .tev{font-size:9.5px; padding:1px 4px;} .tev-sub{display:none;} }
+  /* focus banner + highlighted entry when arriving from the calendar */
+  .tl-focus-banner{border-radius:11px; padding:11px 14px; margin-bottom:14px; border:1px solid;}
+  .tl-focus-banner.due{background:#FEF0F0; border-color:#F3B4B4;}
+  .tl-focus-banner.done{background:#EEF3FE; border-color:#C9DCFB;}
+  .tl-focus-h{font-family:'Prompt'; font-weight:700; font-size:13.5px;}
+  .tl-focus-banner.due .tl-focus-h{color:#C0392B;}
+  .tl-focus-banner.done .tl-focus-h{color:#1D4FB0;}
+  .tl-focus-body{font-size:12.5px; color:var(--ink); margin-top:3px;}
+  .tl-focus-note{font-size:11px; color:var(--ink-soft); margin-top:4px;}
+  .tl-entry-focus{border:2px solid var(--accent); box-shadow:0 0 0 3px var(--accent-pale); background:#FFFDF9;}
+  .tl-focus-tag{font-family:'Prompt'; font-weight:700; font-size:11px; color:var(--accent-deep); margin-bottom:4px;}
+  .tl-entry-due{margin-top:6px; font-size:12px; font-weight:700; color:#C0392B;}
   .tl-entry{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff;}
   .tl-entry-actions{display:flex; gap:6px; margin-top:8px;}
   .tl-entry-actions button{font-size:11px; padding:4px 9px; border-radius:7px; border:1px solid var(--line); background:#fff; cursor:pointer;}
@@ -2030,37 +2044,43 @@ function normalizeDueDate(raw){
   }
   return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
 }
+let ALL_TRACK_EVENTS = [];
 function trackingEvents(){
   const evs=[];
   (UPDATE_LOGS||[]).forEach(l=>{
     const name = nameForSku(l.sku);
     const label = [l.subCategory, l.stage, l.detail].filter(Boolean).join(' — ') || l.note || 'อัปเดต';
-    if(l.date) evs.push({date:l.date, kind:'done', sku:l.sku, track:l.track, name, label, by:l.updatedBy});
+    if(l.date) evs.push({date:l.date, kind:'done', sku:l.sku, track:l.track, name, label, by:l.updatedBy, log:l});
     const due = normalizeDueDate(l.nextDue);
-    if(due) evs.push({date:due, kind:'due', sku:l.sku, track:l.track, name, label, by:l.updatedBy});
+    if(due) evs.push({date:due, kind:'due', sku:l.sku, track:l.track, name, label, by:l.updatedBy, log:l});
   });
   return evs;
 }
+function rebuildTrackEvents(){ ALL_TRACK_EVENTS = trackingEvents(); }  // stable order → indices are reusable across month moves
 function tevClass(e){ return e.kind==='due' ? 'tev-due' : (e.track==='rd'?'tev-rd':e.track==='pkg'?'tev-pkg':'tev-other'); }
+// clicking any calendar chip / upcoming row opens the full history AND highlights the exact entry
+function openTrackEventFromCal(idx){ const e=ALL_TRACK_EVENTS[idx]; if(!e) return; openTrackLog(e.sku, e.track, e); }
 function renderTrackingCalendar(){
   tcalInit();
+  rebuildTrackEvents();
   const host=document.getElementById('tcal-host'); if(!host) return;
   const y=TCAL.y, m=TCAL.m;
   const startWk=new Date(y,m,1).getDay();
   const dim=new Date(y,m+1,0).getDate();
   const today=new Date(); today.setHours(0,0,0,0);
   const byDay={};
-  trackingEvents().forEach(e=>{ const d=new Date(e.date+"T00:00:00"); if(d.getFullYear()===y && d.getMonth()===m){ const day=d.getDate(); (byDay[day]=byDay[day]||[]).push(e); } });
+  ALL_TRACK_EVENTS.forEach((e,idx)=>{ const d=new Date(e.date+"T00:00:00"); if(d.getFullYear()===y && d.getMonth()===m){ const day=d.getDate(); (byDay[day]=byDay[day]||[]).push({e,idx}); } });
   const wk=['อา','จ','อ','พ','พฤ','ศ','ส'];
   let html = wk.map(w=>`<div class="tcal-weekday">${w}</div>`).join('');
   for(let i=0;i<startWk;i++) html+=`<div class="tcal-cell empty"></div>`;
   for(let day=1;day<=dim;day++){
     const isToday = new Date(y,m,day).getTime()===today.getTime();
-    const list=(byDay[day]||[]).sort((a,b)=> (a.kind===b.kind)?0 : (a.kind==='due'?-1:1));
-    const chips = list.map(e=>{
+    const list=(byDay[day]||[]).sort((a,b)=> (a.e.kind===b.e.kind)?0 : (a.e.kind==='due'?-1:1));
+    const chips = list.map(({e,idx})=>{
       const pfx = e.kind==='due' ? '⏰ ' : '';
       const tip = (e.kind==='due'?'ครบกำหนด: ':'')+e.name+' — '+e.label+(e.by?(' · '+e.by):'');
-      return `<div class="tev ${tevClass(e)}" title="${esc(tip)}" onclick="openTrackLog('${esc(e.sku)}','${e.track}')">${esc(pfx+e.name)}</div>`;
+      const short = e.label ? (e.label.length>22 ? e.label.slice(0,22)+'…' : e.label) : e.name;
+      return `<div class="tev ${tevClass(e)}" title="${esc(tip)}" onclick="openTrackEventFromCal(${idx})">${esc(pfx+e.name)}<span class="tev-sub">${esc(short)}</span></div>`;
     }).join('');
     html+=`<div class="tcal-cell ${isToday?'today':''}"><div class="tcal-daynum">${day}</div><div class="tev-list">${chips}</div></div>`;
   }
@@ -2069,17 +2089,17 @@ function renderTrackingCalendar(){
 }
 function renderTrackingUpcoming(){
   const host=document.getElementById('tcal-upcoming'); if(!host) return;
+  rebuildTrackEvents();
   const today=new Date(); today.setHours(0,0,0,0);
-  const dues = trackingEvents().filter(e=>e.kind==='due')
-    .map(e=>Object.assign({}, e, {d:new Date(e.date+"T00:00:00")}))
-    .filter(e=>!isNaN(e.d) && e.d>=today)
+  const dues = ALL_TRACK_EVENTS.map((e,idx)=>({e,idx,d:new Date(e.date+"T00:00:00")}))
+    .filter(x=>x.e.kind==='due' && !isNaN(x.d) && x.d>=today)
     .sort((a,b)=>a.d-b.d).slice(0,25);
   if(!dues.length){ host.innerHTML='<div class="empty" style="padding:14px 0;">ยังไม่มีวันครบกำหนดถัดไป — กรอกช่อง "กำหนดถัดไป (Next Due)" ตอนเพิ่มบันทึกความคืบหน้า</div>'; return; }
-  host.innerHTML = dues.map(e=>{
-    const days=Math.round((e.d-today)/86400000);
+  host.innerHTML = dues.map(({e,idx,d})=>{
+    const days=Math.round((d-today)/86400000);
     const urgent = days<=3 ? 'style="color:#C0392B;font-weight:700;"' : days<=7 ? 'style="color:#B26A00;font-weight:700;"' : 'style="color:var(--ink-soft);"';
     const dLabel = days===0?'วันนี้':days===1?'พรุ่งนี้':`อีก ${days} วัน`;
-    return `<div class="mini-row"><span><button class="link-btn" style="font-weight:600;" onclick="openTrackLog('${esc(e.sku)}','${e.track}')">${esc(e.name)}</button> <span class="sku" style="display:inline;">(${esc(trackLabelShort(e.track))})</span> — ${esc(e.label)} <span ${urgent}>· ${formatDate(e.d)} · ${dLabel}</span></span></div>`;
+    return `<div class="mini-row"><span>⏰ <button class="link-btn" style="font-weight:600;" onclick="openTrackEventFromCal(${idx})">${esc(e.name)}</button> <span class="sku" style="display:inline;">(${esc(trackLabelShort(e.track))})</span> — <b>${esc(e.label)}</b> <span ${urgent}>· ${formatDate(d)} · ${dLabel}</span></span></div>`;
   }).join('');
 }
 function trackLabelShort(t){ return t==='rd'?'R&D':t==='pkg'?'Packaging':t||''; }
@@ -2242,12 +2262,31 @@ function stepKey(s){
   return String(s||'').toLowerCase().replace(/^สั่ง\s*/,'').replace(/\s+/g,' ').trim();
 }
 
-function openTrackLog(sku, track){
+function openTrackLog(sku, track, focus){
   const entries = logsFor(sku, track);
   const product = PRODUCTS.find(p=>p.sku===sku);
   const trackLabel = {rd:'Formulation (R&D)', pkg:'Packaging / Graphic'}[track] || track;
   document.getElementById('tl-title').textContent = nameForSku(sku);
   document.getElementById('tl-subtitle').textContent = `${trackLabel}${sku ? ' · '+sku : ''}`;
+
+  // Banner explaining exactly which calendar item was clicked (so the modal isn't ambiguous)
+  let focusHtml = '';
+  if(focus){
+    const fd = focus.date ? formatDate(new Date(focus.date+"T00:00:00")) : '';
+    if(focus.kind==='due'){
+      focusHtml = `<div class="tl-focus-banner due">
+        <div class="tl-focus-h">⏰ ครบกำหนดถัดไป (Next Due) · ${esc(fd)}</div>
+        <div class="tl-focus-body">${esc(focus.label||'')}${focus.by?` · โดย ${esc(focus.by)}`:''}</div>
+        <div class="tl-focus-note">มาจากบันทึกที่ไฮไลต์ด้านล่าง — คือสิ่งที่ต้องทำให้เสร็จภายในวันนี้</div>
+      </div>`;
+    } else {
+      focusHtml = `<div class="tl-focus-banner done">
+        <div class="tl-focus-h">🔎 รายการที่เลือกจากปฏิทิน · ${esc(fd)}</div>
+        <div class="tl-focus-body">${esc(focus.label||'')}${focus.by?` · โดย ${esc(focus.by)}`:''}</div>
+      </div>`;
+    }
+  }
+
   // "add update" button (edit mode) — prefills SKU + Track for this cell
   const addBtn = document.getElementById('tl-add-btn');
   if(addBtn){
@@ -2277,6 +2316,7 @@ function openTrackLog(sku, track){
 
   if(!entries.length){
     document.getElementById('tl-list').innerHTML = `
+      ${focusHtml}
       ${checklistHtml}
       <div class="empty" style="padding:20px 0;">ยังไม่มีการอัปเดต — กด "➕ เพิ่มอัปเดต" เพื่อบันทึกความคืบหน้า</div>`;
     document.getElementById('tracklog-overlay').classList.add('open');
@@ -2293,10 +2333,14 @@ function openTrackLog(sku, track){
       <button onclick="editUpdateEntry('${attrJs(e.id)}')">✏️ แก้ไข</button>
       <button class="tl-del" onclick="deleteUpdateEntry('${attrJs(e.id)}')">🗑️ ลบ</button>
     </div>` : (e.id ? '' : '<div class="tl-entry-actions"><span style="font-size:11px; color:#B0964F;">บันทึกเก่า (ไม่มี id)</span></div>');
-    return `<div class="tl-entry">
+    const isFocus = focus && focus.log && focus.log===e;
+    const dueTag = (isFocus && focus.kind==='due') ? `<div class="tl-entry-due">⏰ กำหนดถัดไป: ${esc(focus.date?formatDate(new Date(focus.date+"T00:00:00")):'')}</div>` : '';
+    return `<div class="tl-entry${isFocus?' tl-entry-focus':''}"${isFocus?' id="tl-focus-entry"':''}>
+      ${isFocus?'<div class="tl-focus-tag">🔎 รายการที่เลือกจากปฏิทิน</div>':''}
       <div class="tl-entry-date">${e.date ? formatDate(new Date(e.date+"T00:00:00")) : 'Undated'}</div>
       ${sub ? `<div class="tl-entry-sub">${esc(sub)}</div>` : ''}
       ${e.note ? `<div class="tl-entry-note">${esc(e.note)}</div>` : ''}
+      ${dueTag}
       ${imgHtml}
       ${e.updatedBy ? `<div class="tl-entry-by">${esc(e.updatedBy)}</div>` : ''}
       ${actions}
@@ -2304,6 +2348,7 @@ function openTrackLog(sku, track){
   }).join('') : '<div class="empty" style="padding:14px 0;">ยังไม่มีการอัปเดต</div>';
 
   document.getElementById('tl-list').innerHTML = `
+    ${focusHtml}
     ${matrixHtml}
     ${checklistHtml}
     ${legacyHint}
@@ -2311,6 +2356,7 @@ function openTrackLog(sku, track){
     <div style="display:flex; flex-direction:column; gap:16px;">${timelineHtml}</div>
   `;
   document.getElementById('tracklog-overlay').classList.add('open');
+  if(focus){ const fe=document.getElementById('tl-focus-entry'); if(fe) setTimeout(()=>{ try{ fe.scrollIntoView({block:'center', behavior:'smooth'}); }catch(e){} }, 120); }
 }
 
 /* Checklist of every canonical step for the track, marking which are done.
