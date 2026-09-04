@@ -242,6 +242,13 @@
   .brief-sign{margin-top:20px; padding:15px 17px; border:1px dashed var(--bLine); border-radius:12px; background:var(--bHead);}
   .brief-sign-title{font-family:'Prompt'; font-weight:700; font-size:12px; color:var(--bAD); margin-bottom:11px; letter-spacing:.3px;}
   .brief-sign-img{min-width:200px;}
+  .brief-sign-table{width:100%; border-collapse:separate; border-spacing:0; border:1px solid var(--bLine); border-radius:10px; overflow:hidden; background:#fff;}
+  .brief-sign-table th{background:#fff; font-size:11px; font-weight:700; color:var(--bMuted); padding:8px 10px; text-align:left; border-bottom:1px solid var(--bLine);}
+  .brief-sign-table td{padding:8px 10px; vertical-align:middle; border-right:1px solid var(--bLine);}
+  .brief-sign-table td:last-child{border-right:none;}
+  .brief-sign-table select, .brief-sign-table input{width:100%; border:1px solid var(--bLine); border-radius:8px; padding:8px; font-family:'Sarabun',sans-serif; font-size:12.5px; background:var(--bField);}
+  .sign-cell{min-width:180px;}
+  .sign-blank{min-height:44px; display:flex; align-items:flex-end; justify-content:center; color:#b9bfcc; font-size:12px; padding-bottom:4px;}
 
   .cal-avatar img{width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;}
   .cal-avatar .fallback{width:100%; height:100%; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-family:'Prompt'; font-weight:700; font-size:10px;}
@@ -586,6 +593,7 @@
       <button class="btn-sm primary" onclick="toggleBriefForm()" id="brief-toggle-btn">📋 เปิดฟอร์ม NPD Brief</button>
       <button class="btn-sm ghost" onclick="saveBriefToCloud()" style="margin-left:8px;">💾 บันทึกบรีฟ (กลาง)</button>
       <button class="btn-sm ghost" onclick="openSavedBriefsModal()" style="margin-left:6px;">📂 บรีฟที่บันทึกไว้</button>
+      <button class="btn-sm warn-ghost" onclick="clearBriefForm()" style="margin-left:6px;">🆕 เริ่มบรีฟใหม่</button>
       <div id="brief-form-container" style="display:none; margin-top:16px;"></div>
     </div>
 
@@ -2463,7 +2471,8 @@ const TEAM_NAMES = [
   'ธีรนาท ชื่นชอบ (พลอย)',
   'ณัฐสุรางค์ โคตรตระกูล (โบนัส)',
   'นาวิน ขวัญเมือง (พีท)',
-  'กันติชา ศรีวงศ์ราช (มีน)'
+  'กันติชา ศรีวงศ์ราช (มีน)',
+  'นริศรา ชูวงศ์'
 ];
 /* Ingredient list สำหรับ dropdown ใน Formula Brief */
 const INGREDIENTS = [
@@ -2710,11 +2719,17 @@ function bfGridRowsHtml(id, cols, arr){
   return arr.map((row,i)=>`<tr>${cols.map(c=>{
     if(c.type==='check') return `<td style="text-align:center; width:64px;"><input type="checkbox" ${row[c.key]?'checked':''} onchange="bfGridUpdate('${id}',${i},'${esc(c.key)}',this.checked)"></td>`;
     if(c.type==='select') return `<td><select onchange="bfGridUpdate('${id}',${i},'${esc(c.key)}',this.value)"><option value="">—</option>${(c.options||[]).map(o=>`<option${row[c.key]===o?' selected':''}>${esc(o)}</option>`).join('')}</select></td>`;
-    if(c.type==='image') return `<td style="width:120px; text-align:center;">
-      <div>${row[c.key]?`<img src="${esc(briefImgSrc(row[c.key]))}" style="max-width:96px; max-height:72px; border-radius:6px; display:block; margin:0 auto;">`:'<span style="font-size:11px; color:#aab;">— ไม่มีรูป —</span>'}</div>
-      <label class="brief-print-btn" style="cursor:pointer; font-size:11px; padding:3px 8px; margin-top:4px; display:inline-block;">📎 รูป<input type="file" accept="image/*" style="display:none;" onchange="bfGridImageChange('${id}',${i},'${esc(c.key)}',this)"></label>
-      ${row[c.key]?`<button type="button" class="brief-repeat-del" style="font-size:10px; padding:2px 6px; margin-top:3px;" onclick="bfGridUpdate('${id}',${i},'${esc(c.key)}','');reRenderGrid('${id}')">ลบรูป</button>`:''}
+    if(c.type==='image'){
+      const iv=row[c.key], ilink=(iv && iv.indexOf('data:')!==0)?iv:'';
+      const itag = iv?`<img src="${esc(briefImgSrc(iv))}" style="max-width:96px; max-height:72px; border-radius:6px; display:block; margin:0 auto;">`:'<span style="font-size:11px; color:#aab;">— ไม่มีรูป —</span>';
+      return `<td style="width:120px; text-align:center;">
+      <div>${ilink?`<a href="${esc(ilink)}" target="_blank" rel="noopener">${itag}</a>`:itag}</div>
+      <div class="no-print">
+        <label class="brief-print-btn" style="cursor:pointer; font-size:11px; padding:3px 8px; margin-top:4px; display:inline-block;">📎 รูป<input type="file" accept="image/*" style="display:none;" onchange="bfGridImageChange('${id}',${i},'${esc(c.key)}',this)"></label>
+        ${iv?`<button type="button" class="brief-repeat-del" style="font-size:10px; padding:2px 6px; margin-top:3px;" onclick="bfGridUpdate('${id}',${i},'${esc(c.key)}','');reRenderGrid('${id}')">ลบรูป</button>${ilink?` <a href="${esc(ilink)}" target="_blank" rel="noopener" style="font-size:10px;">🔍 Drive</a>`:''}`:''}
+      </div>
     </td>`;
+    }
     return `<td><input type="text" value="${esc(row[c.key]||'')}" placeholder="${esc(c.ph||'')}" oninput="bfGridUpdate('${id}',${i},'${esc(c.key)}',this.value)"></td>`;
   }).join('')}<td style="text-align:center; width:36px;"><button type="button" class="brief-repeat-del" onclick="bfGridRemove('${id}',${i})" title="ลบแถว">🗑️</button></td></tr>`).join('');
 }
@@ -2737,15 +2752,20 @@ function bfGridUpdate(id,i,key,val){ const a=bfGridGet(id); a[i]=a[i]||{}; a[i][
 function bfGridAdd(id){ const a=bfGridGet(id); a.push({}); bfGridSave(id,a); reRenderGrid(id); }
 function bfGridRemove(id,i){ const a=bfGridGet(id); a.splice(i,1); if(!a.length)a.push({}); bfGridSave(id,a); reRenderGrid(id); }
 
+/* A Drive link (not base64) is clickable — open full-res in Drive (useful in the PDF). */
+function briefImgLink(v){ return (v && v.indexOf('data:')!==0) ? v : ''; }
 /* Compact inline image attach (for Benchmark, side-by-side with its text) */
 function briefImgInline(id, label){
   const saved=bfGet(id);
-  const prev = saved ? `<img src="${esc(briefImgSrc(saved))}" style="max-width:100%; max-height:150px; border-radius:8px; display:block;">` : '<div class="brief-img-empty">ยังไม่มีรูป</div>';
+  const link=briefImgLink(saved);
+  const imgTag = saved ? `<img src="${esc(briefImgSrc(saved))}" style="max-width:100%; max-height:150px; border-radius:8px; display:block;">` : '<div class="brief-img-empty">ยังไม่มีรูป</div>';
+  const prev = link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${imgTag}</a>` : imgTag;
   return `<label>${esc(label||'รูปอ้างอิง')}</label>
     <div id="imgprev-${id}" class="brief-img-box">${prev}</div>
-    <div style="display:flex; gap:6px; margin-top:6px;">
+    <div class="no-print" style="display:flex; gap:6px; margin-top:6px; align-items:center; flex-wrap:wrap;">
       <label class="brief-print-btn" style="cursor:pointer;">📎 แนบรูป<input type="file" accept="image/*" style="display:none;" onchange="bfImageChange('${id}',this)"></label>
       <button type="button" class="brief-print-btn" onclick="bfImageRemove('${id}')">ลบ</button>
+      ${link?`<a href="${esc(link)}" target="_blank" rel="noopener" class="brief-print-btn" style="text-decoration:none;">🔍 ดูใน Drive</a>`:''}
     </div>`;
 }
 
@@ -2764,17 +2784,29 @@ function skuColorsText(){
 }
 function bDefault(id, val){ if(!bfGet(id) && val) bfSet(id, val); return bfGet(id); }
 
-/* Signature block appended to each part that gets passed on: name(dropdown)+date+signature image */
+/* Signature block: a sign-off row (ลายมือชื่อ box for manual signing OR attached image, + name + date) */
 function briefSignBlock(prefix, roleLabel){
   const nameId=prefix+'_signName', dateId=prefix+'_signDate', imgId=prefix+'_signImg';
   const nameOpts=['<option value="">— เลือกชื่อ —</option>'].concat(TEAM_NAMES.map(n=>`<option${bfGet(nameId)===n?' selected':''}>${esc(n)}</option>`)).join('');
+  const img=bfGet(imgId), link=briefImgLink(img);
+  const imgTag = img?`<img src="${esc(briefImgSrc(img))}" style="max-height:64px; max-width:100%; display:block; margin:0 auto;">`:'';
+  const signCell = img ? (link?`<a href="${esc(link)}" target="_blank" rel="noopener">${imgTag}</a>`:imgTag) : '<div class="sign-blank">ลงชื่อ......................................</div>';
   return `<div class="brief-sign">
-    <div class="brief-sign-title">✍️ ${esc(roleLabel||'ผู้จัดทำ / ส่งต่อข้อมูล')}</div>
-    <div class="brief-field-grid">
-      <div class="brief-field"><label>ชื่อ</label><select id="${nameId}" onchange="bfOnChange('${nameId}')">${nameOpts}</select></div>
-      <div class="brief-field"><label>วันที่</label><input type="date" id="${dateId}" value="${esc(bfGet(dateId))}" onchange="bfOnChange('${dateId}')"></div>
-      <div class="brief-field brief-sign-img">${briefImgInline(imgId,'ลายเซ็น')}</div>
-    </div>
+    <div class="brief-sign-title">✍️ ${esc(roleLabel||'ผู้จัดทำ')}</div>
+    <table class="brief-sign-table">
+      <thead><tr><th style="width:44%;">ลายมือชื่อ</th><th>ชื่อ-สกุล</th><th style="width:24%;">วันที่</th></tr></thead>
+      <tbody><tr>
+        <td class="sign-cell">
+          <div id="imgprev-${imgId}">${signCell}</div>
+          <div class="sign-attach no-print" style="margin-top:6px;">
+            <label class="brief-print-btn" style="cursor:pointer; font-size:11px;">📎 แนบลายเซ็น<input type="file" accept="image/*" style="display:none;" onchange="bfImageChange('${imgId}',this)"></label>
+            ${img?`<button type="button" class="brief-print-btn" style="font-size:11px;" onclick="bfImageRemove('${imgId}')">ลบ</button> <a href="${esc(link)}" target="_blank" rel="noopener" class="brief-print-btn" style="font-size:11px; text-decoration:none;">🔍 Drive</a>`:''}
+          </div>
+        </td>
+        <td><select id="${nameId}" onchange="bfOnChange('${nameId}')">${nameOpts}</select></td>
+        <td><input type="date" id="${dateId}" value="${esc(bfGet(dateId))}" onchange="bfOnChange('${dateId}')"></td>
+      </tr></tbody>
+    </table>
   </div>`;
 }
 /* Name dropdown for table cells (Part E) */
@@ -3169,15 +3201,15 @@ function renderBriefPartF(){
 
     <div class="brief-section-h">F1 · ข้อมูลสินค้า (ดึงอัตโนมัติ)</div>
     <div class="brief-field-grid">
-      ${bfField('f_productName','1. Product Name','text')}
-      ${bfField('f_formulaNo','2. Formula No.','text')}
-      ${bfField('f_orderQty','3. Order Qty.','text')}
-      ${bfField('f_declareWeight','4. Declare Weight (1 ปริมาณบรรจุ / 1 สูตร)','text')}
-      ${bfField('f_channel','5. ช่องทางการขาย','text')}
-      ${bfField('f_launchDate','19. Launch Date','date')}
+      ${bfField('f_productName','Product Name','text')}
+      ${bfField('f_formulaNo','Formula No.','text')}
+      ${bfField('f_orderQty','Order Qty.','text')}
+      ${bfField('f_declareWeight','Declare Weight (1 ปริมาณบรรจุ / 1 สูตร)','text')}
+      ${bfField('f_channel','ช่องทางการขาย','text')}
+      ${bfField('f_launchDate','Launch Date','date')}
     </div>
 
-    <div class="brief-section-h">F2 · สถานะจดแจ้ง อย. (6, 17)</div>
+    <div class="brief-section-h">F2 · สถานะจดแจ้ง อย.</div>
     <div class="brief-check-grid">
       ${bfCheck('f_fdaProcessing','กำลังดำเนินการ')}
       ${bfCheck('f_fdaDone','แล้วเสร็จ')}
@@ -3187,99 +3219,88 @@ function renderBriefPartF(){
       ${bfField('f_fdaExpectDate','วันที่คาดว่าจะได้ผล อย.','date')}
     </div>
 
-    <div class="brief-section-h">F3 · Packaging (PKG)</div>
-    <div class="brief-sub-label">1st PKG</div>
-    <div class="brief-bench-row">
-      <div style="flex:1; min-width:220px; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        ${bfField('f_pkg1_code','รหัสบรรจุภัณฑ์','text')}
-        ${bfField('f_pkg1_name','ชื่อบรรจุภัณฑ์','text')}
-      </div>
-      <div class="brief-field brief-bench-img">${briefImgInline('f_pkg1_img','ภาพ 1st PKG')}</div>
-    </div>
-    <div class="brief-sub-label">2nd PKG</div>
-    <div class="brief-bench-row">
-      <div style="flex:1; min-width:220px; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        ${bfField('f_pkg2_code','รหัสบรรจุภัณฑ์','text')}
-        ${bfField('f_pkg2_name','ชื่อบรรจุภัณฑ์','text')}
-      </div>
-      <div class="brief-field brief-bench-img">${briefImgInline('f_pkg2_img','ภาพ 2nd PKG')}</div>
-    </div>
-    <div class="brief-field-grid">
-      ${bfField('f_screenCode','16. รหัสส่งสกรีนสินค้า (กรณีสั่ง บจภ. เปล่ามาสกรีนที่ไทย)','text',{full:true})}
+    <div class="brief-section-h">F3 · Packaging (PKG) — เพิ่ม/ลบได้</div>
+    ${bfGridField('f_pkgList','', [
+      {key:'code',label:'รหัสบรรจุภัณฑ์'},
+      {key:'name',label:'ชื่อบรรจุภัณฑ์'},
+      {key:'img',label:'รูปภาพ',type:'image'}
+    ])}
+    <div class="brief-field-grid" style="margin-top:10px;">
+      ${bfField('f_screenCode','รหัสส่งสกรีนสินค้า (กรณีสั่ง บจภ. เปล่ามาสกรีนที่ไทย)','text',{full:true})}
     </div>
 
-    <div class="brief-section-h">F4 · Soft Component (8, 22, 23)</div>
+    <div class="brief-section-h">F4 · Soft Component</div>
     <div class="brief-sub-label">Sticker — เพิ่ม/ลบจุดได้</div>
     ${bfGridField('f_stickers','', [
       {key:'type',label:'ชนิด STK',type:'select',options:['STK Shade','STK FDA','STK Barcode','STK Virgin Seal']},
       {key:'points',label:'จำนวนจุด'},
       {key:'material',label:'ชนิดสติกเกอร์',type:'select',options:['PP','PVC','Paper']},
+      {key:'img',label:'รูปภาพ',type:'image'},
       {key:'cf',label:'ลิงก์ใบ CF'}
     ])}
-    <div class="brief-bench-row">
-      <div class="brief-field" style="flex:1; min-width:200px;">${bfField('f_stickerCFchannel','23. ช่องทางส่งใบ CF สั่งสติกเกอร์','select',{options:['แนบมากับใบบรีฟ','อื่นๆ (ระบุใน remark)']})}</div>
-      <div class="brief-field brief-bench-img">${briefImgInline('f_stickerImg','ภาพสติกเกอร์')}</div>
+    <div class="brief-field-grid">
+      ${bfField('f_stickerCFchannel','ช่องทางส่งใบ CF สั่งสติกเกอร์','text',{full:true,placeholder:'เช่น แนบมากับใบบรีฟ / ส่งทางไลน์ ฯลฯ'})}
     </div>
-    <div class="brief-sub-label">Shrink Film (13. การหุ้มฟิล์มสินค้า)</div>
+    <div class="brief-sub-label">Shrink Film (การหุ้มฟิล์มสินค้า)</div>
     <div class="brief-check-grid">
       ${bfCheck('f_shrinkYes','มีหุ้มฟิล์ม')}
       ${bfCheck('f_shrinkNo','ไม่มี')}
     </div>
     ${bfMultiField('f_shrinkWrap','ระบุส่วนที่หุ้ม',['กล่อง','บรรจุภัณฑ์ (บจภ.)'])}
 
-    <div class="brief-section-h">F5 · Shooting Lot / MFG / EXP (9, 14)</div>
+    <div class="brief-section-h">F5 · Shooting Lot / MFG / EXP</div>
     <div class="brief-check-grid">
       ${bfCheck('f_shootYes','ยิงล็อต (มี)')}
       ${bfCheck('f_shootNo','ไม่ยิง')}
     </div>
     <div class="brief-field-grid">
-      ${bfField('f_shootYears','ยิงได้กี่ปี','text')}
+      ${bfField('f_shootYears','ยิงได้กี่ปี','select',{options:['1 ปี','3 ปี']})}
       ${bfField('f_shootRemark','หมายเหตุ','text')}
     </div>
     <div class="brief-bench-row">
       <div class="brief-field" style="flex:1; min-width:220px;">
-        <label>14. กรณีไม่ยิง</label>
+        <label>กรณีไม่ยิง</label>
         <div class="brief-check-grid">${bfCheck('f_noShootLabel','พิมพ์เลขล็อตที่ฉลากทั้งหมด')}</div>
       </div>
       <div class="brief-field brief-bench-img">${briefImgInline('f_shootPosImg','ภาพระบุตำแหน่งยิง')}</div>
     </div>
 
-    <div class="brief-section-h">F6 · Accessories / ของแถม (10)</div>
+    <div class="brief-section-h">F6 · Accessories / ของแถม</div>
     ${bfGridField('f_accessories','', [
       {key:'name',label:'ชื่อสินค้า'},
       {key:'qty',label:'จำนวน'},
       {key:'position',label:'ตำแหน่งที่ใส่'},
+      {key:'img',label:'รูปภาพ',type:'image'},
       {key:'cf',label:'ลิงก์ใบ CF (กรณี STK แถม)'}
     ])}
-    <div class="brief-field brief-bench-img" style="max-width:240px;">${briefImgInline('f_accImg','ภาพของแถม')}</div>
 
-    <div class="brief-section-h">F7 · ส่วนประกอบที่ซื้อจาก CIL (21)</div>
+    <div class="brief-section-h">F7 · ส่วนประกอบที่ซื้อจาก CIL</div>
     ${bfGridField('f_cilComponents','', [
       {key:'sku',label:'SKU'},
       {key:'name',label:'ชื่อส่วนประกอบ'},
       {key:'qty',label:'จำนวน'}
     ])}
 
-    <div class="brief-section-h">F8 · การเรียงสี — กรณีชุดเซต (15)</div>
+    <div class="brief-section-h">F8 · การเรียงสี — กรณีชุดเซต</div>
     <div class="brief-bench-row">
       <div class="brief-field" style="flex:1; min-width:220px;">${bfField('f_setColorNote','ชี้แจงการเรียงสีที่ต้องการ','textarea',{full:true})}</div>
       <div class="brief-field brief-bench-img">${briefImgInline('f_setColorImg','ภาพไฟนอลการเรียงสี')}</div>
     </div>
 
-    <div class="brief-section-h">F9 · หมายเหตุเพิ่มเติม (20, 24)</div>
+    <div class="brief-section-h">F9 · หมายเหตุเพิ่มเติม</div>
     <div class="brief-field brief-full">
-      <label>20. สาร PO Leadtime เกิน 30 วัน (สอบถาม RD หลังคอนเฟิร์มสูตร)</label>
+      <label>สาร PO Leadtime เกิน 30 วัน (สอบถาม RD หลังคอนเฟิร์มสูตร)</label>
       <div class="brief-check-grid">${bfCheck('f_poLeadtime','มีสารที่ PO leadtime เกิน 30 วัน')}</div>
     </div>
     ${bfField('f_poLeadtimeDetail','ระบุสาร (ถ้ามี)','text',{full:true})}
     <div class="brief-bench-row" style="margin-top:10px;">
-      <div class="brief-field" style="flex:1; min-width:220px;">${bfField('f_assemblyNote','24. กรณีชุดเซต/กล่องพับซับซ้อน — หมายเหตุขั้นตอนประกอบ','textarea',{full:true})}</div>
+      <div class="brief-field" style="flex:1; min-width:220px;">${bfField('f_assemblyNote','กรณีชุดเซต/กล่องพับซับซ้อน — หมายเหตุขั้นตอนประกอบ','textarea',{full:true})}</div>
       <div class="brief-field brief-bench-img">${briefImgInline('f_assemblyImg','ภาพขั้นตอนประกอบ')}</div>
     </div>
     ${bfField('f_assemblyLink','ลิงก์วิดีโอขั้นตอน (ถ้ามี)','text',{full:true})}
 
-    ${briefSignBlock('f','11. ผู้จัดทำ (Supply Chain)')}
-    ${briefSignBlock('f2','11. ผู้รับทราบ')}`;
+    ${briefSignBlock('f','ผู้จัดทำ')}
+    ${briefSignBlock('f2','ผู้รับทราบ')}`;
 }
 
 const BRIEF_RENDERERS = {a:renderBriefPartA, b:renderBriefPartB, c:renderBriefPartC, d:renderBriefPartD, e:renderBriefPartE, f:renderBriefPartF};
@@ -3412,6 +3433,14 @@ function rerenderBriefParts(){
     if(body && BRIEF_RENDERERS[key]){ body.innerHTML = BRIEF_RENDERERS[key](); body.dataset.rendered='1'; }
   });
 }
+/* Clear the whole brief form to start a fresh brief */
+function clearBriefForm(){
+  if(!confirm('ล้างข้อมูลในฟอร์มทั้งหมด เพื่อเริ่มบรีฟใหม่?\n(ถ้ายังไม่ได้กด "บันทึกบรีฟ (กลาง)" ข้อมูลจะหาย)')) return;
+  const del=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.indexOf('brief_')===0) del.push(k); }
+  del.forEach(k=>localStorage.removeItem(k));
+  rerenderBriefParts();
+  toast('ล้างฟอร์มแล้ว — เริ่มบรีฟใหม่ได้เลย','ok');
+}
 
 function toggleBriefForm(){
   const container = document.getElementById('brief-form-container');
@@ -3518,37 +3547,49 @@ function printBriefPart(key){
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(p.title)}</title>
     <style>
-      @page{ margin:16mm 14mm; }
+      @page{ margin:15mm 14mm; }
       *{ box-sizing:border-box; }
-      body{font-family:'Sarabun',Arial,sans-serif; padding:0; color:#22303A; font-size:12.5px; line-height:1.45;}
-      .pv-header{border-bottom:3px solid #F067A6; padding-bottom:10px; margin-bottom:16px;}
-      .pv-brand{font-family:'Prompt',Arial,sans-serif; font-weight:800; font-size:22px; color:#F067A6; letter-spacing:.5px;}
-      .pv-title{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:15px; color:#22303A; margin-top:2px;}
-      .pv-meta{font-size:10.5px; color:#888; margin-top:4px;}
-      .brief-section-h{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:12.5px; color:#22303A;
-        background:#F6F0F4; border-left:3px solid #F067A6; padding:5px 10px; margin:18px 0 10px;}
-      table{width:100%; border-collapse:collapse; margin-bottom:6px; page-break-inside:avoid;}
-      th,td{border:1px solid #D8D8D8; padding:6px 8px; font-size:11.5px; text-align:left; vertical-align:top;}
-      th{background:#F067A6; color:#fff; font-family:'Prompt',Arial,sans-serif; font-weight:600; font-size:11px;}
-      tr:nth-child(even) td{background:#FBF7F9;}
-      .label-cell{font-weight:600; background:#F6F0F4 !important; white-space:nowrap;}
+      body{font-family:'Sarabun',Arial,sans-serif; padding:0; color:#1F2937; font-size:12.5px; line-height:1.5;}
+      .pv-header{display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #334155; padding-bottom:10px; margin-bottom:18px;}
+      .pv-brand{font-family:'Prompt',Arial,sans-serif; font-weight:800; font-size:20px; color:#334155; letter-spacing:1px;}
+      .pv-title{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:14px; color:#475569; margin-top:3px;}
+      .pv-meta{font-size:10px; color:#94A3B8; text-align:right;}
+      .brief-section-h{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:11.5px; letter-spacing:.4px; text-transform:uppercase; color:#334155;
+        background:#F1F5F9; border-left:3px solid #64748B; padding:6px 11px; margin:18px 0 10px; border-radius:4px;}
+      .brief-sub-label{font-family:'Prompt',Arial,sans-serif; font-weight:600; font-size:12px; color:#64748B; margin:12px 0 6px;}
+      table{width:100%; border-collapse:collapse; margin-bottom:8px; page-break-inside:avoid;}
+      th,td{border:1px solid #CBD5E1; padding:6px 8px; font-size:11.5px; text-align:left; vertical-align:top;}
+      th{background:#334155; color:#fff; font-family:'Prompt',Arial,sans-serif; font-weight:600; font-size:11px;}
+      tr:nth-child(even) td{background:#F8FAFC;}
+      .label-cell{font-weight:600; background:#F1F5F9 !important; white-space:nowrap;}
       td .pv-box{border:none; padding:0; background:none; min-height:auto;}
-      .brief-check-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:7px 14px; margin-bottom:12px;}
+      .brief-check-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:6px 14px; margin-bottom:12px;}
       .brief-check-item{font-size:12px; display:flex; align-items:center; gap:6px;}
-      .pv-check{display:inline-block; width:14px; text-align:center; font-size:14px; color:#bbb;}
-      .pv-check.on{color:#22A06B; font-weight:700;}
-      .brief-note-box{background:#FDEAF3; border-left:3px solid #F067A6; border-radius:6px; padding:9px 13px; font-size:11px; margin:10px 0; line-height:1.5;}
-      .brief-field-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px 18px; margin-bottom:12px;}
+      .pv-check{display:inline-block; width:14px; text-align:center; font-size:14px; color:#94A3B8;}
+      .pv-check.on{color:#0F766E; font-weight:700;}
+      .brief-note-box{background:#F1F5F9; border-left:3px solid #64748B; border-radius:6px; padding:9px 13px; font-size:11px; margin:10px 0; line-height:1.5; color:#334155;}
+      .brief-field-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:9px 18px; margin-bottom:12px;}
       .brief-field{margin-bottom:2px;}
-      .brief-field label{display:block; font-size:9.5px; text-transform:uppercase; letter-spacing:.3px; color:#999; margin-bottom:3px; font-weight:600;}
-      .pv-box{border:1px solid #E0E0E0; border-radius:5px; background:#FAFAFA; padding:6px 9px; font-size:12px; min-height:1.3em; color:#22303A;}
+      .brief-field label{display:block; font-size:9.5px; text-transform:uppercase; letter-spacing:.3px; color:#94A3B8; margin-bottom:3px; font-weight:600;}
+      .pv-box{border:1px solid #E2E8F0; border-radius:5px; background:#F8FAFC; padding:6px 9px; font-size:12px; min-height:1.3em; color:#1F2937;}
       .brief-full{grid-column:1/-1;}
-      @media print{ body{-webkit-print-color-adjust:exact; print-color-adjust:exact;} }
+      .brief-sign{border:none; background:none; padding:0; margin-top:16px;}
+      .brief-sign-title{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:11.5px; color:#334155; margin-bottom:6px;}
+      .brief-sign-table{width:100%; border-collapse:collapse;}
+      .brief-sign-table th{background:#F1F5F9; color:#475569;}
+      .sign-blank{min-height:46px; color:#94A3B8; display:flex; align-items:flex-end; justify-content:center; padding-bottom:4px;}
+      img{max-width:150px; max-height:120px; border:1px solid #E2E8F0; border-radius:6px;}
+      .brief-img-empty{color:#CBD5E1; font-size:11px;}
+      a{color:#0369A1;}
+      .no-print{display:none !important;}
+      @media print{ body{-webkit-print-color-adjust:exact; print-color-adjust:exact;} .no-print{display:none !important;} }
     </style></head><body>
     <div class="pv-header">
-      <div class="pv-brand">GODMAMI</div>
-      <div class="pv-title">${esc(p.title)}</div>
-      <div class="pv-meta">Factory Working Form · Product Development Brief &nbsp;·&nbsp; พิมพ์เมื่อ ${esc(formatDate(new Date()))}</div>
+      <div>
+        <div class="pv-brand">${esc((brandToLabel(bfGet('a_brand'))||'Godmami').toUpperCase())}</div>
+        <div class="pv-title">${esc(p.title)}</div>
+      </div>
+      <div class="pv-meta">Product Development Brief<br>พิมพ์เมื่อ ${esc(formatDate(new Date()))}</div>
     </div>
     ${clone.innerHTML}
     </body></html>`);
