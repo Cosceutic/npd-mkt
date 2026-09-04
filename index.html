@@ -2090,7 +2090,7 @@ function openTrackLog(sku, track){
   // "add update" button (edit mode) — prefills SKU + Track for this cell
   const addBtn = document.getElementById('tl-add-btn');
   if(addBtn){
-    addBtn.style.display = EDIT_MODE ? '' : 'none';
+    addBtn.style.display = isTeamUnlocked() ? '' : 'none';
     addBtn.onclick = ()=>{ closeTrackLog(); openUpdateEditor({sku, track}); };
   }
 
@@ -2215,12 +2215,16 @@ function lockTeam(){
   try{ sessionStorage.removeItem('npdUnlocked'); }catch(e){}
   applyTeamLockState(false);
 }
+function isTeamUnlocked(){ try{ return sessionStorage.getItem('npdUnlocked')==='1'; }catch(e){ return false; } }
 function applyTeamLockState(unlocked){
   const lock = document.getElementById('team-lock');
   const content = document.getElementById('team-content');
   if(!lock || !content) return;
   lock.style.display = unlocked ? 'none' : 'flex';
   content.style.display = unlocked ? 'block' : 'none';
+  // Current Status editing is available whenever this (password-gated) page is unlocked
+  const addBtn = document.getElementById('btn-add-update');
+  if(addBtn) addBtn.style.display = unlocked ? '' : 'none';
 }
 function initTeamLock(){
   let unlocked = false;
@@ -3865,7 +3869,7 @@ function updateEditControls(){
   show('btn-refresh', EDIT_MODE);
   show('btn-export', EDIT_MODE);
   show('btn-notices', EDIT_MODE);
-  show('btn-add-update', EDIT_MODE);
+  show('btn-add-update', isTeamUnlocked());
   show('btn-sync-setup', EDIT_MODE);
   show('btn-push', EDIT_MODE && !!cfg.url && pc>0);
   show('btn-clear-local', EDIT_MODE && pc>0);
