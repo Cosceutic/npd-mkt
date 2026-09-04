@@ -172,6 +172,25 @@
   .tl-check-item.done .tl-check-box{background:#E6F6EF; border-color:#8ED4AE; color:#1E7A54;}
   .tl-legacy-hint{margin:6px 0 14px; font-size:11.5px; color:#8A6D3B; background:#FCF4E0; border:1px solid #F0D9A8; border-radius:9px; padding:8px 11px;}
   .tl-legacy-hint button{margin-top:6px; font-size:11.5px; padding:5px 11px; border-radius:8px; border:1px solid var(--accent); background:var(--accent); color:#fff; cursor:pointer; font-weight:600;}
+  /* ===== Tracking calendar ===== */
+  .tcal-toolbar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px;}
+  .tcal-label{font-family:'Prompt'; font-weight:700; font-size:15px; min-width:150px; text-align:center; color:var(--ink);}
+  .tcal-legend{display:flex; gap:6px; margin-left:auto; flex-wrap:wrap; align-items:center;}
+  .tcal-legend .tev{cursor:default;}
+  .tcal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
+  .tcal-weekday{font-family:'Prompt'; font-weight:600; font-size:11px; color:var(--ink-soft); text-align:center; padding:4px 0;}
+  .tcal-cell{border:1px solid var(--line); border-radius:9px; min-height:82px; padding:5px; background:#fff; display:flex; flex-direction:column; gap:3px; overflow:hidden;}
+  .tcal-cell.empty{border:none; background:transparent; min-height:0;}
+  .tcal-cell.today{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-pale);}
+  .tcal-daynum{font-size:11px; font-weight:700; color:var(--ink-soft);}
+  .tcal-cell.today .tcal-daynum{color:var(--accent-deep);}
+  .tev-list{display:flex; flex-direction:column; gap:3px;}
+  .tev{font-size:10.5px; line-height:1.3; padding:2px 6px; border-radius:6px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; max-width:100%;}
+  .tev-rd{background:#E7F0FE; color:#1D4FB0; border:1px solid #C9DCFB;}
+  .tev-pkg{background:#FCEFD8; color:#B26A00; border:1px solid #F3D9A6;}
+  .tev-other{background:#EEE9FD; color:#5B3FC0; border:1px solid #D8CCF7;}
+  .tev-due{background:#FDE7E7; color:#C0392B; border:1px solid #F3B4B4;}
+  @media(max-width:640px){ .tcal-cell{min-height:60px;} .tev{font-size:9.5px; padding:1px 4px;} }
   .tl-entry{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff;}
   .tl-entry-actions{display:flex; gap:6px; margin-top:8px;}
   .tl-entry-actions button{font-size:11px; padding:4px 9px; border-radius:7px; border:1px solid var(--line); background:#fff; cursor:pointer;}
@@ -215,12 +234,13 @@
   }
   .brief-part{border:1px solid var(--bLine); border-left:6px solid var(--bA); border-radius:16px; margin-bottom:14px; overflow:hidden; background:#fff; box-shadow:0 1px 3px rgba(40,54,110,.05);}
   /* ===== Per-part bright color coding (A–F) so each form is easy to tell apart ===== */
-  .brief-part.pc-a{ --bA:#2F6FED; --bAD:#1D4FB0; --bAP:#E7F0FE; --bHead:#F0F5FF; }
-  .brief-part.pc-b{ --bA:#12B886; --bAD:#0B8A66; --bAP:#E1F7F0; --bHead:#EDFBF6; }
-  .brief-part.pc-c{ --bA:#F08C00; --bAD:#C26A00; --bAP:#FCEFD8; --bHead:#FFF7EB; }
-  .brief-part.pc-d{ --bA:#7C5CF0; --bAD:#5B3FC0; --bAP:#EEE9FD; --bHead:#F6F3FF; }
-  .brief-part.pc-e{ --bA:#E8489B; --bAD:#BE2E77; --bAP:#FCE4F1; --bHead:#FEF1F8; }
-  .brief-part.pc-f{ --bA:#0CA5C0; --bAD:#0A7E93; --bAP:#DFF4F9; --bHead:#EDFAFC; }
+  /* Pastel palette — soft spine/pill (--bA), deeper readable text (--bAD), very light tints */
+  .brief-part.pc-a{ --bA:#9CC0F7; --bAD:#3E63B8; --bAP:#EDF3FE; --bHead:#F5F9FF; }
+  .brief-part.pc-b{ --bA:#9ADCC4; --bAD:#1F8F6B; --bAP:#E8F8F1; --bHead:#F1FBF7; }
+  .brief-part.pc-c{ --bA:#F8C795; --bAD:#C07A20; --bAP:#FDF2E4; --bHead:#FFF9F1; }
+  .brief-part.pc-d{ --bA:#C6B7F4; --bAD:#6B52C4; --bAP:#F2EDFD; --bHead:#F8F5FF; }
+  .brief-part.pc-e{ --bA:#F5B2D3; --bAD:#C24C8B; --bAP:#FCEAF3; --bHead:#FEF4F9; }
+  .brief-part.pc-f{ --bA:#9CDAE4; --bAD:#1E8598; --bAP:#E7F6F9; --bHead:#F1FBFD; }
   .brief-part .brief-part-head{border-left:0;}
   /* colored pill in front of the part title */
   .brief-part-title::before{content:''; display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--bA); margin-right:8px; vertical-align:middle;}
@@ -231,7 +251,7 @@
   .cform-menu{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;}
   .cform-tab{font-family:'Prompt'; font-weight:600; font-size:12.5px; padding:9px 14px; border:1.5px solid var(--bLine); border-radius:10px; background:#fff; color:var(--bMuted); cursor:pointer; transition:all .12s;}
   .cform-tab:hover{border-color:var(--bA); color:var(--bAD);}
-  .cform-tab.active{background:var(--bA); border-color:var(--bA); color:#fff; box-shadow:0 2px 6px rgba(0,0,0,.12);}
+  .cform-tab.active{background:var(--bAD); border-color:var(--bAD); color:#fff; box-shadow:0 2px 6px rgba(0,0,0,.12);}
   .mkt-auto{background:var(--bAP) !important; font-weight:600; color:var(--bAD) !important; text-align:right;}
   .brief-part-head{display:flex; align-items:center; justify-content:space-between; background:#fff; padding:15px 18px; cursor:pointer; flex-wrap:wrap; gap:8px; transition:background .15s;}
   .brief-part-head:hover{background:var(--bHead);}
@@ -642,6 +662,7 @@
 
     <div style="display:flex; gap:8px; margin-bottom:16px;">
       <button class="btn-sm subnav-active" id="subnav-status" onclick="switchTeamSubview('status')">Current Status</button>
+      <button class="btn-sm" id="subnav-tracking" onclick="switchTeamSubview('tracking')">📅 Tracking (ปฏิทิน)</button>
       <button class="btn-sm" id="subnav-nprsummary" onclick="switchTeamSubview('nprsummary')">📊 NPR Summary</button>
     </div>
 
@@ -710,6 +731,27 @@
       </div>
       <div id="npr-summary-empty" class="empty" style="display:none;">ยังไม่มีบรีฟที่บันทึก — กรอกฟอร์ม NPD Brief แล้วกด "💾 บันทึกบรีฟ (กลาง)"</div>
     </div>
+    </div>
+
+    <div id="team-subview-tracking" style="display:none;">
+    <p class="section-title" style="margin-top:0;">Tracking Calendar</p>
+    <p class="section-sub">ทุกความคืบหน้าที่มีวันที่ + วันครบกำหนดถัดไป (Next Due) จากตาราง Current Status แสดงเป็นปฏิทิน · คลิกที่รายการเพื่อดูประวัติเต็ม</p>
+    <div class="tcal-toolbar">
+      <button class="btn-sm ghost" onclick="tcalMove(-1)">‹ เดือนก่อน</button>
+      <span id="tcal-label" class="tcal-label"></span>
+      <button class="btn-sm ghost" onclick="tcalMove(1)">เดือนถัดไป ›</button>
+      <button class="btn-sm ghost" onclick="tcalToday()">วันนี้</button>
+      <span class="tcal-legend">
+        <span class="tev tev-rd">R&amp;D</span>
+        <span class="tev tev-pkg">Packaging</span>
+        <span class="tev tev-other">อื่นๆ</span>
+        <span class="tev tev-due">⏰ ครบกำหนด</span>
+      </span>
+    </div>
+    <div class="panel" style="padding:12px;"><div id="tcal-host"></div></div>
+    <p class="section-title">⏰ กำหนดส่งถัดไป (Next Due)</p>
+    <p class="section-sub">กรอกช่อง "กำหนดถัดไป (Next Due)" ตอนเพิ่มบันทึกความคืบหน้า แล้วจะมาโผล่ที่นี่เรียงตามวันที่</p>
+    <div class="panel"><div id="tcal-upcoming"></div></div>
     </div>
   </div>
 
@@ -1956,10 +1998,91 @@ function nextDueForSku(sku){
 function switchTeamSubview(key){
   document.getElementById('team-subview-status').style.display = key==='status' ? 'block' : 'none';
   document.getElementById('team-subview-nprsummary').style.display = key==='nprsummary' ? 'block' : 'none';
+  const tv=document.getElementById('team-subview-tracking'); if(tv) tv.style.display = key==='tracking' ? 'block' : 'none';
   document.getElementById('subnav-status').classList.toggle('subnav-active', key==='status');
   document.getElementById('subnav-nprsummary').classList.toggle('subnav-active', key==='nprsummary');
+  const tb=document.getElementById('subnav-tracking'); if(tb) tb.classList.toggle('subnav-active', key==='tracking');
   if(key==='nprsummary') renderNPRSummary();
+  if(key==='tracking'){ renderTrackingCalendar(); renderTrackingUpcoming(); }
 }
+
+/* ===== Tracking calendar — plots every dated Current-Status update + Next-Due on a month grid ===== */
+let TCAL = { y:null, m:null };
+function tcalInit(){
+  if(TCAL.y!==null) return;
+  const now=new Date(); let y=now.getFullYear(), m=now.getMonth();
+  const evs=trackingEvents();
+  const hasThisMonth = evs.some(e=>{ const d=new Date(e.date+"T00:00:00"); return d.getFullYear()===y && d.getMonth()===m; });
+  if(!hasThisMonth && evs.length){
+    const latest = evs.map(e=>new Date(e.date+"T00:00:00")).filter(d=>!isNaN(d)).sort((a,b)=>b-a)[0];
+    if(latest){ y=latest.getFullYear(); m=latest.getMonth(); }
+  }
+  TCAL.y=y; TCAL.m=m;
+}
+function tcalMove(delta){ tcalInit(); let m=TCAL.m+delta, y=TCAL.y; if(m<0){m=11;y--;} if(m>11){m=0;y++;} TCAL.m=m; TCAL.y=y; renderTrackingCalendar(); }
+function tcalToday(){ const d=new Date(); TCAL.y=d.getFullYear(); TCAL.m=d.getMonth(); renderTrackingCalendar(); }
+function normalizeDueDate(raw){
+  if(!raw) return '';
+  let s = parseSheetDate(raw);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s)){
+    const d=new Date(raw);
+    s = isNaN(d) ? '' : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
+}
+function trackingEvents(){
+  const evs=[];
+  (UPDATE_LOGS||[]).forEach(l=>{
+    const name = nameForSku(l.sku);
+    const label = [l.subCategory, l.stage, l.detail].filter(Boolean).join(' — ') || l.note || 'อัปเดต';
+    if(l.date) evs.push({date:l.date, kind:'done', sku:l.sku, track:l.track, name, label, by:l.updatedBy});
+    const due = normalizeDueDate(l.nextDue);
+    if(due) evs.push({date:due, kind:'due', sku:l.sku, track:l.track, name, label, by:l.updatedBy});
+  });
+  return evs;
+}
+function tevClass(e){ return e.kind==='due' ? 'tev-due' : (e.track==='rd'?'tev-rd':e.track==='pkg'?'tev-pkg':'tev-other'); }
+function renderTrackingCalendar(){
+  tcalInit();
+  const host=document.getElementById('tcal-host'); if(!host) return;
+  const y=TCAL.y, m=TCAL.m;
+  const startWk=new Date(y,m,1).getDay();
+  const dim=new Date(y,m+1,0).getDate();
+  const today=new Date(); today.setHours(0,0,0,0);
+  const byDay={};
+  trackingEvents().forEach(e=>{ const d=new Date(e.date+"T00:00:00"); if(d.getFullYear()===y && d.getMonth()===m){ const day=d.getDate(); (byDay[day]=byDay[day]||[]).push(e); } });
+  const wk=['อา','จ','อ','พ','พฤ','ศ','ส'];
+  let html = wk.map(w=>`<div class="tcal-weekday">${w}</div>`).join('');
+  for(let i=0;i<startWk;i++) html+=`<div class="tcal-cell empty"></div>`;
+  for(let day=1;day<=dim;day++){
+    const isToday = new Date(y,m,day).getTime()===today.getTime();
+    const list=(byDay[day]||[]).sort((a,b)=> (a.kind===b.kind)?0 : (a.kind==='due'?-1:1));
+    const chips = list.map(e=>{
+      const pfx = e.kind==='due' ? '⏰ ' : '';
+      const tip = (e.kind==='due'?'ครบกำหนด: ':'')+e.name+' — '+e.label+(e.by?(' · '+e.by):'');
+      return `<div class="tev ${tevClass(e)}" title="${esc(tip)}" onclick="openTrackLog('${esc(e.sku)}','${e.track}')">${esc(pfx+e.name)}</div>`;
+    }).join('');
+    html+=`<div class="tcal-cell ${isToday?'today':''}"><div class="tcal-daynum">${day}</div><div class="tev-list">${chips}</div></div>`;
+  }
+  host.innerHTML = `<div class="tcal-grid">${html}</div>`;
+  const lbl=document.getElementById('tcal-label'); if(lbl) lbl.textContent = `${MONTH_NAMES[m]} ${y}`;
+}
+function renderTrackingUpcoming(){
+  const host=document.getElementById('tcal-upcoming'); if(!host) return;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const dues = trackingEvents().filter(e=>e.kind==='due')
+    .map(e=>Object.assign({}, e, {d:new Date(e.date+"T00:00:00")}))
+    .filter(e=>!isNaN(e.d) && e.d>=today)
+    .sort((a,b)=>a.d-b.d).slice(0,25);
+  if(!dues.length){ host.innerHTML='<div class="empty" style="padding:14px 0;">ยังไม่มีวันครบกำหนดถัดไป — กรอกช่อง "กำหนดถัดไป (Next Due)" ตอนเพิ่มบันทึกความคืบหน้า</div>'; return; }
+  host.innerHTML = dues.map(e=>{
+    const days=Math.round((e.d-today)/86400000);
+    const urgent = days<=3 ? 'style="color:#C0392B;font-weight:700;"' : days<=7 ? 'style="color:#B26A00;font-weight:700;"' : 'style="color:var(--ink-soft);"';
+    const dLabel = days===0?'วันนี้':days===1?'พรุ่งนี้':`อีก ${days} วัน`;
+    return `<div class="mini-row"><span><button class="link-btn" style="font-weight:600;" onclick="openTrackLog('${esc(e.sku)}','${e.track}')">${esc(e.name)}</button> <span class="sku" style="display:inline;">(${esc(trackLabelShort(e.track))})</span> — ${esc(e.label)} <span ${urgent}>· ${formatDate(e.d)} · ${dLabel}</span></span></div>`;
+  }).join('');
+}
+function trackLabelShort(t){ return t==='rd'?'R&D':t==='pkg'?'Packaging':t||''; }
 
 function saveToNPRSummary(){
   const params = new URLSearchParams();
@@ -3208,7 +3331,10 @@ function renderBriefPartC(){
       <button type="button" class="cform-tab ${active==='details'?'active':''}" onclick="setCForm('details')">📦 Packaging Requirement Details</button>
       <button type="button" class="cform-tab ${active==='sticker'?'active':''}" onclick="setCForm('sticker')">🏷️ for Sticker</button>
       <button type="button" class="cform-tab ${active==='box'?'active':''}" onclick="setCForm('box')">📦 for Individual Box (UnitBox)</button>
-      <button type="button" class="brief-print-btn" style="margin-left:auto; align-self:center;" onclick="printBriefPart('c')">🖨️ ปริ้นฟอร์มนี้</button>
+      <span style="margin-left:auto; display:flex; gap:6px; align-self:center;">
+        <button type="button" class="brief-print-btn" onclick="printBriefPart('c')">🖨️ ปริ้นฟอร์มนี้</button>
+        <button type="button" class="brief-print-btn" onclick="printBriefPartCFactory()">🏭 ปริ้นฟอร์มโรงงาน</button>
+      </span>
     </div>
     ${cSharedHeader(active)}
     ${body}
@@ -3861,11 +3987,83 @@ const FACTORY_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQQAAAC4CAYA
 function printBriefPartCFactory(){
   const body=document.getElementById('brief-part-body-c');
   if(!body.dataset.rendered){ body.innerHTML=BRIEF_RENDERERS.c(); body.dataset.rendered='1'; }
+  const active = bfGet('c_activeForm')||'details';
   const g=id=>esc(bfGet(id)||'');
   const arr=id=>{ try{ return JSON.parse(bfGet(id)||'[]'); }catch(e){ return []; } };
   const box=(id,opt)=>(arr(id).includes(opt)?'☑':'☐')+' '+esc(opt);
   const line=(id,opts,otherId)=>{ let s=opts.map(o=>box(id,o)).join('&nbsp;&nbsp; '); if(otherId&&bfGet(otherId)) s+='&nbsp;&nbsp; ☑ Other: '+g(otherId); return s; };
   const fmtDate=id=>{ const v=bfGet(id); return v?esc(v):'____/____/____'; };
+  const metaRows = `
+    <tr><td class="k">No. of SKUs required</td><td>${g('c_skuCount')}</td></tr>
+    <tr><td class="k">Target MOQ (pcs)</td><td>${g('c_moq')}</td></tr>
+    <tr><td class="k">Target Unit Price (THB)</td><td>${g('c_unitPrice')}</td></tr>
+    <tr><td class="k">Required Timeline</td><td>${g('c_timeline')}</td></tr>
+    <tr><td class="k">Budget (if any)</td><td>${g('c_budget')}</td></tr>`;
+
+  let subttl, specSec, specRows, refRows;
+  if(active==='sticker'){
+    subttl='for Sticker';
+    specSec='Packaging Requirement Details for Sticker';
+    specRows=`
+      <tr><td class="k">Packaging Type</td><td>${line('cs_type',CS_TYPE,'cs_typeOther')}</td></tr>
+      <tr><td class="k">Material</td><td>${line('cs_material',CS_MATERIAL,'cs_materialOther')}</td></tr>
+      <tr><td class="k">Size (mm)</td><td>${g('cs_size')}</td></tr>
+      <tr><td class="k">Quantity of Color</td><td>${line('cs_colorQty',C_COLORQTY)}</td></tr>
+      <tr><td class="k">Surface Finish</td><td>${line('cs_finish',CS_FINISH)}</td></tr>
+      <tr><td class="k">Decoration</td><td>${line('cs_deco',C_DECORATION,'cs_decoOther')}</td></tr>
+      <tr><td class="k">Inkjet Lot Batch Coding</td><td>${line('cs_inkjet',C_YN)}</td></tr>
+      ${metaRows}`;
+    refRows=`
+      <tr><td class="k">Reference Sample Provided</td><td>${line('c_refSample',['Yes / มี (แนบมาด้วย)','No / ไม่มี'])}</td></tr>
+      <tr><td class="k">Reference Description</td><td>${g('c_refDesc')}</td></tr>
+      <tr><td class="k">Special Requirements / Notes</td><td>${g('c_specialReq')}</td></tr>
+      <tr><td class="k">Functional Test</td><td>${line('c_funcTest',C_YNP)}</td></tr>
+      <tr><td class="k">Decoration Test</td><td>${line('c_decoTest',C_YNP)}</td></tr>`;
+  } else if(active==='box'){
+    subttl='for Individual Box (or Unit Box)';
+    specSec='Packaging Requirement Details for Individual Box (or Unit Box)';
+    specRows=`
+      <tr><td class="k">Packaging Type</td><td>${line('cb_type',CB_TYPE)}</td></tr>
+      <tr><td class="k">Material</td><td>${line('cb_material',CB_MATERIAL,'cb_materialOther')}</td></tr>
+      <tr><td class="k">Open Size (mm)</td><td>Width ${g('cb_openW')||'______'} &nbsp;x&nbsp; Length ${g('cb_openL')||'______'}</td></tr>
+      <tr><td class="k">Finished Size (mm)</td><td>Width ${g('cb_finW')||'______'} &nbsp;x&nbsp; Length ${g('cb_finL')||'______'} &nbsp;x&nbsp; Height ${g('cb_finH')||'______'}</td></tr>
+      <tr><td class="k">Side of Printing</td><td>${line('cb_side',CB_SIDE)}</td></tr>
+      <tr><td class="k">Quantity of Color</td><td>${line('cb_colorQty',C_COLORQTY)}</td></tr>
+      <tr><td class="k">Types of Printing Inks</td><td>${line('cb_inks',CB_INKS)}</td></tr>
+      <tr><td class="k">Surface Finish</td><td>${line('cb_finish',CB_FINISH)}</td></tr>
+      <tr><td class="k">Decoration</td><td>${line('cb_deco',C_DECORATION,'cb_decoOther')}</td></tr>
+      <tr><td class="k">Inkjet Lot Batch Coding</td><td>${line('cb_inkjet',C_YN)}</td></tr>
+      ${metaRows}`;
+    refRows=`
+      <tr><td class="k">Reference Sample Provided</td><td>${line('c_refSample',['Yes / มี (แนบมาด้วย)','No / ไม่มี'])}</td></tr>
+      <tr><td class="k">Reference Description</td><td>${g('c_refDesc')}</td></tr>
+      <tr><td class="k">Special Requirements / Notes</td><td>${g('c_specialReq')}</td></tr>
+      <tr><td class="k">Required Certification</td><td>${line('cb_cert',CB_CERT,'cb_certOther')}</td></tr>
+      <tr><td class="k">Functional Test</td><td>${line('c_funcTest',C_YNP)}</td></tr>
+      <tr><td class="k">Decoration Test</td><td>${line('c_decoTest',C_YNP)}</td></tr>`;
+  } else {
+    subttl='for Primary Packaging';
+    specSec='Packaging Requirement Details for Primary Packaging';
+    specRows=`
+      <tr><td class="k">Packaging Type</td><td>${line('c_packType',C_PACK_TYPE,'c_packTypeOther')}</td></tr>
+      <tr><td class="k">Material</td><td>${line('c_material',C_MATERIAL,'c_materialOther')}</td></tr>
+      <tr><td class="k">Size / Volume (ml/g)</td><td>${g('c_size')}</td></tr>
+      <tr><td class="k">Body Color</td><td>${line('c_bodyColor',C_BODY_COLOR)}</td></tr>
+      <tr><td class="k">Cap / Closure Color</td><td>${line('c_capColor',C_CAP_COLOR)}</td></tr>
+      <tr><td class="k">Surface Finish</td><td>${line('c_finish',C_FINISH)}</td></tr>
+      <tr><td class="k">Printing Area</td><td>${line('c_printArea',C_PRINT_AREA)}</td></tr>
+      <tr><td class="k">Printing Method</td><td>${line('c_printMethod',C_PRINT_METHOD,'c_printMethodOther')}</td></tr>
+      ${metaRows}`;
+    refRows=`
+      <tr><td class="k">Reference Sample Provided</td><td>${line('c_refSample',['Yes / มี (แนบมาด้วย)','No / ไม่มี'])}</td></tr>
+      <tr><td class="k">Reference Description</td><td>${g('c_refDesc')}</td></tr>
+      <tr><td class="k">Special Requirements / Notes</td><td>${g('c_specialReq')}</td></tr>
+      <tr><td class="k">Eco / Sustainable Packaging</td><td>${line('c_eco',['Yes / ต้องการ','No / ไม่ต้องการ','Preferred / ถ้ามี'])}</td></tr>
+      <tr><td class="k">Required Certification</td><td>${line('c_cert',C_CERT,'c_certOther')}</td></tr>
+      <tr><td class="k">Functional Test</td><td>${line('c_funcTest',C_YNP)}</td></tr>
+      <tr><td class="k">Decoration Test</td><td>${line('c_decoTest',C_YNP)}</td></tr>`;
+  }
+
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>Packaging Requirement Form</title>
   <style>
@@ -3890,36 +4088,14 @@ function printBriefPartCFactory(){
       <div class="co-addr">143/3 Moo. 8, Ban Yang, Mueang Nakhon Pathom, Nakhon Pathom 73000 · www.cosmanialab.com</div></div>
     <div class="ref">No. of SKUs: ${g('c_skuCount')||'.........'}<br>Timeline: ${g('c_timeline')||'.........'}</div>
   </div>
-  <h1>Packaging Requirement Form</h1><div class="subttl">for Primary Packaging</div>
+  <h1>Packaging Requirement Form</h1><div class="subttl">${subttl}</div>
   <div class="hd"><b>Project / Customer Name:</b> ${g('c_projectName')} &nbsp;&nbsp; <b>Brand:</b> ${g('c_brand')}</div>
   <div class="hd"><b>Product Name:</b> ${g('c_productName')}</div>
-  <div class="sec">Packaging Requirement Details for Primary Packaging</div>
-  <table>
-    <tr><td class="k">Packaging Type</td><td>${line('c_packType',C_PACK_TYPE,'c_packTypeOther')}</td></tr>
-    <tr><td class="k">Material</td><td>${line('c_material',C_MATERIAL,'c_materialOther')}</td></tr>
-    <tr><td class="k">Size / Volume (ml/g)</td><td>${g('c_size')}</td></tr>
-    <tr><td class="k">Body Color</td><td>${line('c_bodyColor',C_BODY_COLOR)}</td></tr>
-    <tr><td class="k">Cap / Closure Color</td><td>${line('c_capColor',C_CAP_COLOR)}</td></tr>
-    <tr><td class="k">Surface Finish</td><td>${line('c_finish',C_FINISH)}</td></tr>
-    <tr><td class="k">Printing Area</td><td>${line('c_printArea',C_PRINT_AREA)}</td></tr>
-    <tr><td class="k">Printing Method</td><td>${line('c_printMethod',C_PRINT_METHOD,'c_printMethodOther')}</td></tr>
-    <tr><td class="k">No. of SKUs required</td><td>${g('c_skuCount')}</td></tr>
-    <tr><td class="k">Target MOQ (pcs)</td><td>${g('c_moq')}</td></tr>
-    <tr><td class="k">Target Unit Price (THB)</td><td>${g('c_unitPrice')}</td></tr>
-    <tr><td class="k">Required Timeline</td><td>${g('c_timeline')}</td></tr>
-    <tr><td class="k">Budget (if any)</td><td>${g('c_budget')}</td></tr>
-  </table>
+  <div class="sec">${esc(specSec)}</div>
+  <table>${specRows}</table>
   <div class="sec">Reference & Special Requirements</div>
-  <table>
-    <tr><td class="k">Reference Sample Provided</td><td>${line('c_refSample',['Yes / มี (แนบมาด้วย)','No / ไม่มี'])}</td></tr>
-    <tr><td class="k">Reference Description</td><td>${g('c_refDesc')}</td></tr>
-    <tr><td class="k">Special Requirements / Notes</td><td>${g('c_specialReq')}</td></tr>
-    <tr><td class="k">Eco / Sustainable Packaging</td><td>${line('c_eco',['Yes / ต้องการ','No / ไม่ต้องการ','Preferred / ถ้ามี'])}</td></tr>
-    <tr><td class="k">Required Certification</td><td>${line('c_cert',C_CERT,'c_certOther')}</td></tr>
-    <tr><td class="k">Functional Test</td><td>${line('c_funcTest',C_YNP)}</td></tr>
-    <tr><td class="k">Decoration Test</td><td>${line('c_decoTest',C_YNP)}</td></tr>
-  </table>
-  ${bfGet('c_benchImg')?`<div class="sec">Reference / Benchmark Image</div><img src="${esc(briefImgSrc(bfGet('c_benchImg')))}" style="max-width:280px; max-height:280px; border:1px solid #444; margin-top:8px;">`:''}
+  <table>${refRows}</table>
+  ${bfGet('c_benchImg')?`<div class="sec">Reference / Benchmark Image</div>${imgListOf('c_benchImg').map(v=>`<img src="${esc(briefImgSrc(v))}" style="max-width:230px; max-height:230px; border:1px solid #444; margin:8px 8px 0 0;">`).join('')}`:''}
   <div class="sign">
     <div><b>Requested by</b><br>${g('c_reqBy')||'____________________'}<br>Sales / Sales Manager<br>Date: ${fmtDate('c_reqDate')}</div>
     <div><b>Received by</b><br>${g('c_recBy')||'____________________'}<br>PK Technical Specialist<br>Date: ${fmtDate('c_recDate')}</div>
