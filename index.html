@@ -162,6 +162,13 @@
   .sg-item .sg-sku{font-size:11px; color:var(--ink-soft);}
   .tl-entry{border-left:3px solid var(--blue); padding-left:12px;}
   .tl-section-label{font-family:'Prompt'; font-weight:600; font-size:12px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.4px; margin-top:4px;}
+  .tl-chip-row{display:flex; flex-wrap:wrap; gap:7px; margin:8px 0 14px;}
+  .tl-done-chip{background:#E6F6EF; color:#1E7A54; border:1px solid #BFE7D3; border-radius:999px; padding:5px 11px; font-size:11.5px; font-weight:600; white-space:nowrap;}
+  .tl-entry{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff;}
+  .tl-entry-actions{display:flex; gap:6px; margin-top:8px;}
+  .tl-entry-actions button{font-size:11px; padding:4px 9px; border-radius:7px; border:1px solid var(--line); background:#fff; cursor:pointer;}
+  .tl-entry-actions button:hover{background:var(--bg);}
+  .tl-entry-actions .tl-del:hover{background:#FDECEC; border-color:var(--danger); color:var(--danger);}
 
   .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-top:12px;}
   .cal-weekday{font-family:'Prompt'; font-size:11px; font-weight:600; color:var(--ink-soft); text-align:center; padding:4px 0;}
@@ -198,7 +205,26 @@
     --bA:#6E7FC4; --bAD:#4C5A96; --bAP:#EEF0FB; --bLine:#E7EAF3;
     --bHead:#F6F7FC; --bInk:#2E3652; --bMuted:#828BA0; --bField:#FCFCFE;
   }
-  .brief-part{border:1px solid var(--bLine); border-radius:16px; margin-bottom:14px; overflow:hidden; background:#fff; box-shadow:0 1px 3px rgba(40,54,110,.05);}
+  .brief-part{border:1px solid var(--bLine); border-left:6px solid var(--bA); border-radius:16px; margin-bottom:14px; overflow:hidden; background:#fff; box-shadow:0 1px 3px rgba(40,54,110,.05);}
+  /* ===== Per-part bright color coding (A–F) so each form is easy to tell apart ===== */
+  .brief-part.pc-a{ --bA:#2F6FED; --bAD:#1D4FB0; --bAP:#E7F0FE; --bHead:#F0F5FF; }
+  .brief-part.pc-b{ --bA:#12B886; --bAD:#0B8A66; --bAP:#E1F7F0; --bHead:#EDFBF6; }
+  .brief-part.pc-c{ --bA:#F08C00; --bAD:#C26A00; --bAP:#FCEFD8; --bHead:#FFF7EB; }
+  .brief-part.pc-d{ --bA:#7C5CF0; --bAD:#5B3FC0; --bAP:#EEE9FD; --bHead:#F6F3FF; }
+  .brief-part.pc-e{ --bA:#E8489B; --bAD:#BE2E77; --bAP:#FCE4F1; --bHead:#FEF1F8; }
+  .brief-part.pc-f{ --bA:#0CA5C0; --bAD:#0A7E93; --bAP:#DFF4F9; --bHead:#EDFAFC; }
+  .brief-part .brief-part-head{border-left:0;}
+  /* colored pill in front of the part title */
+  .brief-part-title::before{content:''; display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--bA); margin-right:8px; vertical-align:middle;}
+  /* empty-field reminder (Part C only) — subtle so a fresh form reads as "to-do", not alarming.
+     Print strips inputs entirely, so no red shows on the printout. */
+  #brief-part-body-c .bf-warn{ border-color:#F3A6A6 !important; background:#FFF6F6 !important; }
+  /* sub-form switcher (Part C) — segmented buttons like a mini menu */
+  .cform-menu{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;}
+  .cform-tab{font-family:'Prompt'; font-weight:600; font-size:12.5px; padding:9px 14px; border:1.5px solid var(--bLine); border-radius:10px; background:#fff; color:var(--bMuted); cursor:pointer; transition:all .12s;}
+  .cform-tab:hover{border-color:var(--bA); color:var(--bAD);}
+  .cform-tab.active{background:var(--bA); border-color:var(--bA); color:#fff; box-shadow:0 2px 6px rgba(0,0,0,.12);}
+  .mkt-auto{background:var(--bAP) !important; font-weight:600; color:var(--bAD) !important; text-align:right;}
   .brief-part-head{display:flex; align-items:center; justify-content:space-between; background:#fff; padding:15px 18px; cursor:pointer; flex-wrap:wrap; gap:8px; transition:background .15s;}
   .brief-part-head:hover{background:var(--bHead);}
   .brief-part.open .brief-part-head{border-bottom:1px solid var(--bLine); background:var(--bHead);}
@@ -218,13 +244,22 @@
     font-family:'Sarabun',sans-serif; font-size:13.5px; background:var(--bField); color:var(--bInk); box-sizing:border-box; transition:border-color .12s, box-shadow .12s;
   }
   .brief-field textarea{min-height:58px; resize:vertical; line-height:1.5;}
+  /* auto-growing single-line text fields — wrap long entries instead of truncating */
+  .brief-field textarea.bf-line{min-height:0; height:auto; resize:none; overflow:hidden; line-height:1.5; white-space:pre-wrap; word-break:break-word;}
+  textarea.grid-ta{width:100%; min-height:0; height:auto; resize:none; overflow:hidden; line-height:1.45; white-space:pre-wrap; word-break:break-word; padding:6px 8px; border:1px solid var(--bLine); border-radius:8px; font-family:'Sarabun',sans-serif; font-size:13px; background:#fff; color:var(--bInk); box-sizing:border-box;}
+  textarea.grid-ta:focus{outline:none; border-color:var(--bA); box-shadow:0 0 0 3px var(--bAP);}
   .brief-field input:focus, .brief-field textarea:focus, .brief-field select:focus{outline:none; border-color:var(--bA); box-shadow:0 0 0 3px var(--bAP); background:#fff;}
   .brief-field select:disabled{background:#F1F2F6; color:#AAB0BF; cursor:not-allowed;}
   .brief-full{grid-column:1/-1;}
   .brief-bench-row{display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;}
   .brief-bench-img{width:210px; flex:none;}
   .brief-img-box{border:1px dashed var(--bLine); border-radius:10px; background:var(--bField); min-height:96px; display:flex; align-items:center; justify-content:center; padding:8px; overflow:hidden;}
-  .brief-img-empty{color:#AEB4C2; font-size:12px;}
+  .brief-img-box.brief-img-multi{display:block;}
+  .brief-img-empty{color:#AEB4C2; font-size:12px; text-align:center; width:100%;}
+  .brief-img-grid{display:flex; flex-wrap:wrap; gap:8px;}
+  .brief-img-cell{position:relative; border:1px solid var(--bLine); border-radius:8px; padding:4px; background:#fff;}
+  .brief-img-x{position:absolute; top:-8px; right:-8px; width:22px; height:22px; border-radius:50%; border:none; background:#EF4444; color:#fff; font-size:12px; line-height:1; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.3);}
+  .brief-img-drivebtn{position:absolute; bottom:2px; right:2px; background:rgba(255,255,255,.9); border-radius:6px; padding:1px 4px; font-size:12px; text-decoration:none;}
   .brief-table{width:100%; border-collapse:separate; border-spacing:0; margin-bottom:8px; border:1px solid var(--bLine); border-radius:10px; overflow:hidden;}
   .brief-table th{background:var(--bHead); font-size:11px; font-weight:700; color:var(--bMuted); padding:9px 8px; text-align:left; border-bottom:1px solid var(--bLine);}
   .brief-table td{border-bottom:1px solid var(--bLine); padding:4px;}
@@ -610,13 +645,7 @@
       <div class="table-scroll">
         <table>
           <thead>
-            <tr>
-              <th style="width:8%;">Image<span class="th-info" data-tip="รูปสินค้า">&#9432;</span></th>
-              <th style="width:18%;">Product<span class="th-info" data-tip="ชื่อสินค้า">&#9432;</span></th>
-              <th style="width:33%;">Formulation (R&D)<span class="th-info" data-tip="สูตร + อย.">&#9432;</span></th>
-              <th style="width:33%;">Packaging<span class="th-info" data-tip="บรรจุภัณฑ์ / กราฟิก">&#9432;</span></th>
-              <th style="width:6%;">Risk<span class="th-info" data-tip="ความเสี่ยง">&#9432;</span></th>
-            </tr>
+            <tr id="team-status-headrow"></tr>
           </thead>
           <tbody id="team-status-tbody"></tbody>
         </table>
@@ -827,7 +856,7 @@
   <div class="modal-box pe-box">
     <div class="modal-header">
       <div>
-        <div class="mh-name">➕ เพิ่มบันทึกความคืบหน้า</div>
+        <div class="mh-name" id="ue-title">➕ เพิ่มบันทึกความคืบหน้า</div>
         <div class="mh-sku">R&D / Packaging / FDA — บันทึกจะไปต่อท้ายใน Updates Log</div>
       </div>
       <button class="modal-close" onclick="closeUpdateEditor()">✕</button>
@@ -921,7 +950,7 @@ let SHEET_ROWS = [];   // raw rows straight from the Google Sheet (before local 
    Team-wide default endpoint — fill these once you've deployed the Apps Script and want
    EVERY teammate to sync to the same Sheet without pasting the URL themselves.
    Leave blank to configure per-browser via the "⚙️ ตั้งค่า Sheet Sync" panel. */
-const DEFAULT_WRITE_ENDPOINT = "https://script.google.com/macros/s/AKfycbyVfzE6FK5uzyHf4AjqafKPCARhmIZVOsdSuiJdsMzXWZyU7GbGhZBBCnCxFCpm1nUp/exec";
+const DEFAULT_WRITE_ENDPOINT = "https://script.google.com/macros/s/AKfycbxAZRAwfPWaotrcD4OFWi4TTNx5tn7-eLMwZtEsljbaEDgBBrJeOpyz7cf9adcOIl29/exec";
 const DEFAULT_WRITE_TOKEN = "npd2026!";
 
 /* The exact column keys of the products tab, in a stable order. Used for the edit form,
@@ -1218,9 +1247,11 @@ function mapUpdateRow(r){
     detail: (r.Detail||'').trim(),
     note: (r.Note||'').trim(),
     images: resolveImageList(r.Images),
+    imagesRaw: (r.Images||'').trim(),
     updatedBy: (r.UpdatedBy||'').trim(),
     risk: (r.Risk||'').trim(),
-    nextDue: parseSheetDate(r.NextDue || r['Next Due'] || ''),
+    nextDue: (r.NextDue || r['Next Due'] || '').trim(),
+    id: (r.id || r.ID || '').trim(),
     _local: !!r._local,
   };
 }
@@ -1977,14 +2008,25 @@ async function deleteBriefFromSummary(nprNo){
   renderNPRSummary();
 }
 
+const TRACK_LABELS = { rd:'Formulation (R&D)', pkg:'Packaging', purchase:'Purchase', warehouse:'Warehouse', 'supply chain':'Supply Chain', accounting:'Accounting', branding:'Branding', marketing:'Marketing', 'cosmania oem':'Cosmania OEM' };
+function trackLabelOf(t){ return TRACK_LABELS[t] || (t ? t.replace(/\b\w/g,c=>c.toUpperCase()) : t); }
 function renderTeamUpdates(){
-  // Current Status table — R&D (incl. FDA) / Packaging (incl. Graphic) shown side by side,
-  // summarized from the Updates Log's most recent entry per track.
+  // Current Status table — one column per track that has updates (R&D + Packaging always shown)
   const tbody = document.getElementById('team-status-tbody');
+  const headRow = document.getElementById('team-status-headrow');
   const skusWithLogs = new Set(UPDATE_LOGS.map(l=>l.sku));
   const knownSkus = new Set(PRODUCTS.map(p=>p.sku));
   const pendingSkus = [...skusWithLogs].filter(sku=>!knownSkus.has(sku));
   const relevant = PRODUCTS.filter(p=>skusWithLogs.has(p.sku));
+
+  const otherTracks = [...new Set(UPDATE_LOGS.map(l=>l.track).filter(Boolean))].filter(t=>t!=='rd'&&t!=='pkg').sort();
+  const trackCols = ['rd','pkg', ...otherTracks];
+  if(headRow) headRow.innerHTML = `<th style="width:8%;">Image</th><th style="min-width:130px;">Product</th>${trackCols.map(t=>`<th style="min-width:150px;">${esc(trackLabelOf(t))}</th>`).join('')}<th style="width:6%;">Risk</th>`;
+
+  const rowFor = (sku, imgCell, nameCell, extraTr='') => `<tr${extraTr}>
+    <td>${imgCell}</td><td>${nameCell}</td>
+    ${trackCols.map(t=>`<td>${trackCellSummary(sku,t)}</td>`).join('')}
+    <td>${riskBadge(riskForSku(sku))}</td></tr>`;
 
   if(!relevant.length && !pendingSkus.length){
     tbody.innerHTML = '';
@@ -1996,23 +2038,11 @@ function renderTeamUpdates(){
       const imgCell = p.image
         ? `<img src="${esc(p.image)}" alt="" style="width:36px; height:36px; border-radius:8px; object-fit:cover; cursor:pointer;" onclick="openLightbox('${esc(p.image)}',event)">`
         : '<span class="dash">-</span>';
-      return `<tr>
-        <td>${imgCell}</td>
-        <td><button class="link-btn" onclick="openTimeline(${idx})">${esc(p.name)}</button></td>
-        <td>${trackCellSummary(p.sku,'rd')}</td>
-        <td>${trackCellSummary(p.sku,'pkg')}</td>
-        <td>${riskBadge(riskForSku(p.sku))}</td>
-      </tr>`;
+      return rowFor(p.sku, imgCell, `<button class="link-btn" onclick="openTimeline(${idx})">${esc(p.name)}</button>`);
     }).join('');
     const pendingRows = pendingSkus.map(sku=>{
       const name = nameForSku(sku);
-      return `<tr style="background:var(--bg);">
-        <td><span class="dash">-</span></td>
-        <td><strong style="font-size:13px;">${esc(name)}</strong><br><span class="sku" style="display:inline;">${esc(sku)} · ยังไม่มีในระบบสินค้า</span></td>
-        <td>${trackCellSummary(sku,'rd')}</td>
-        <td>${trackCellSummary(sku,'pkg')}</td>
-        <td>${riskBadge(riskForSku(sku))}</td>
-      </tr>`;
+      return rowFor(sku, '<span class="dash">-</span>', `<strong style="font-size:13px;">${esc(name)}</strong><br><span class="sku" style="display:inline;">${esc(sku)} · ยังไม่มีในระบบสินค้า</span>`, ' style="background:var(--bg);"');
     }).join('');
     tbody.innerHTML = knownRows + pendingRows;
   }
@@ -2094,73 +2124,18 @@ function openTrackLog(sku, track){
     addBtn.onclick = ()=>{ closeTrackLog(); openUpdateEditor({sku, track}); };
   }
 
-  // Build the column list: canonical steps first, then anything extra found in the data
-  const cols = [];
-  const seen = new Set();
-  (TRACK_STEPS[track]||[]).forEach(s=>{ cols.push(s); seen.add(stepKey(s)); });
-  entries.forEach(e=>{
-    if(e.subCategory && !seen.has(stepKey(e.subCategory))){
-      cols.push(e.subCategory); seen.add(stepKey(e.subCategory));
-    }
-  });
+  // Compact "completed steps" — only what's actually been logged (no ยังไม่เริ่ม clutter)
+  const doneSeen = new Set();
+  const doneChips = entries.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(e=>{
+    const label = [e.subCategory, e.stage].filter(Boolean).join(' · ');
+    if(!label || doneSeen.has(label)) return '';
+    doneSeen.add(label);
+    return `<span class="tl-done-chip">✓ ${esc(label)}${e.date?` · ${esc(formatDate(new Date(e.date+"T00:00:00")))}`:''}</span>`;
+  }).filter(Boolean).join('');
+  const matrixHtml = doneChips ? `<div class="tl-section-label">ขั้นที่ทำแล้ว</div><div class="tl-chip-row">${doneChips}</div>` : '';
 
-  let matrixHtml = '';
-  if(track === 'pkg' && cols.length){
-    // One mini-checklist per SubCategory (Primary Packaging/Box/...), since each
-    // now has its own set of sub-phases (Primary Packaging has more steps than Box/Sticker).
-    const sections = cols.map(cn=>{
-      const phases = phasesForCol(cn);
-      const rows = phases.map(phase=>{
-        const hits = entries.filter(e=>stepKey(e.subCategory)===stepKey(cn) && stepKey(e.stage)===stepKey(phase))
-                            .sort((a,b)=>b.date.localeCompare(a.date));
-        if(!hits.length){
-          return `<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px;">
-            <span style="color:var(--ink-soft);">${esc(phase)}</span>
-            <span style="color:var(--gray);">– ยังไม่เริ่ม</span>
-          </div>`;
-        }
-        const latest = hits[0];
-        const dateTxt = latest.date ? formatDate(new Date(latest.date+"T00:00:00")) : '';
-        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:12px;">
-          <span>${esc(phase)}</span>
-          <span style="color:var(--green-deep); font-weight:600;">✓ ${dateTxt}</span>
-        </div>`;
-      }).join('');
-      return `<div style="background:var(--bg); border-radius:8px; padding:8px 12px; min-width:150px; flex:1;">
-        <div style="font-family:'Prompt'; font-weight:600; font-size:12.5px; margin-bottom:4px;">${esc(cn)}</div>
-        ${rows}
-      </div>`;
-    }).join('');
-    matrixHtml = `
-      <div class="tl-section-label">ความคืบหน้าแต่ละขั้นตอน</div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">${sections}</div>`;
-  } else if(cols.length){
-    const headCells = cols.map(cn=>`<th style="text-align:center; font-size:11px;">${esc(cn)}</th>`).join('');
-    const bodyCells = cols.map(cn=>{
-      const hits = entries.filter(e=>stepKey(e.subCategory)===stepKey(cn))
-                          .sort((a,b)=>b.date.localeCompare(a.date));
-      if(!hits.length){
-        return `<td style="text-align:center; color:var(--gray); font-size:11.5px;">–<div style="font-size:10px;">ยังไม่เริ่ม</div></td>`;
-      }
-      const latest = hits[0];
-      const dateTxt = latest.date ? formatDate(new Date(latest.date+"T00:00:00")) : '';
-      const detailTxt = latest.detail ? `<div style="font-size:10px; color:var(--ink-soft);">${esc(latest.detail)}</div>` : '';
-      const countTxt = hits.length>1 ? `<div style="font-size:9.5px; color:var(--gray);">${hits.length} updates</div>` : '';
-      return `<td style="text-align:center; background:var(--green-pale);">
-        <div style="color:var(--green-deep); font-size:14px; line-height:1;">✓</div>
-        <div style="font-size:10.5px; font-weight:600; margin-top:2px;">${dateTxt}</div>
-        ${detailTxt}${countTxt}
-      </td>`;
-    }).join('');
-    matrixHtml = `
-      <div class="tl-section-label">ความคืบหน้าแต่ละขั้นตอน</div>
-      <div class="table-scroll" style="margin-bottom:6px;">
-        <table><thead><tr>${headCells}</tr></thead><tbody><tr>${bodyCells}</tr></tbody></table>
-      </div>`;
-  }
-
-  if(!entries.length && !cols.length){
-    document.getElementById('tl-list').innerHTML = '<div class="empty">No entries yet.</div>';
+  if(!entries.length){
+    document.getElementById('tl-list').innerHTML = '<div class="empty" style="padding:20px 0;">ยังไม่มีการอัปเดต — กด "➕ เพิ่มอัปเดต" เพื่อบันทึกความคืบหน้า</div>';
     document.getElementById('tracklog-overlay').classList.add('open');
     return;
   }
@@ -2170,12 +2145,18 @@ function openTrackLog(sku, track){
     const imgHtml = e.images.length
       ? `<div class="tl-img-row">${e.images.map(src=>`<img src="${esc(src)}" onclick="openLightbox('${esc(src)}',event)">`).join('')}</div>`
       : '';
+    const canEdit = e.id && isTeamUnlocked();
+    const actions = canEdit ? `<div class="tl-entry-actions">
+      <button onclick="editUpdateEntry('${attrJs(e.id)}')">✏️ แก้ไข</button>
+      <button class="tl-del" onclick="deleteUpdateEntry('${attrJs(e.id)}')">🗑️ ลบ</button>
+    </div>` : '';
     return `<div class="tl-entry">
       <div class="tl-entry-date">${e.date ? formatDate(new Date(e.date+"T00:00:00")) : 'Undated'}</div>
       ${sub ? `<div class="tl-entry-sub">${esc(sub)}</div>` : ''}
       ${e.note ? `<div class="tl-entry-note">${esc(e.note)}</div>` : ''}
       ${imgHtml}
       ${e.updatedBy ? `<div class="tl-entry-by">${esc(e.updatedBy)}</div>` : ''}
+      ${actions}
     </div>`;
   }).join('') : '<div class="empty" style="padding:14px 0;">ยังไม่มีการอัปเดต</div>';
 
@@ -2511,14 +2492,17 @@ function bfField(id, label, type, opts){
   } else if(type==='select'){
     const options = (opts.options||[]).map(o=>`<option value="${esc(o)}" ${bfGet(id)===o?'selected':''}>${esc(o)}</option>`).join('');
     input = `<select id="${id}" onchange="bfOnChange('${id}')"><option value="">— เลือก —</option>${options}</select>`;
+  } else if(!type || type==='text'){
+    // plain text → auto-growing textarea so long entries wrap and stay fully visible
+    input = `<textarea id="${id}" class="bf-line" rows="1" placeholder="${esc(opts.placeholder||'')}" oninput="autoGrow(this)" onchange="bfOnChange('${id}')">${saved}</textarea>`;
   } else {
-    input = `<input type="${type||'text'}" id="${id}" value="${saved}" placeholder="${esc(opts.placeholder||'')}" onchange="bfOnChange('${id}')">`;
+    input = `<input type="${type}" id="${id}" value="${saved}" placeholder="${esc(opts.placeholder||'')}" onchange="bfOnChange('${id}')">`;
   }
   return `<div class="brief-field ${opts.full?'brief-full':''}"><label>${esc(label)}</label>${input}</div>`;
 }
 function bfTableInput(id, placeholder){
   const saved = esc(bfGet(id));
-  return `<input type="text" id="${id}" value="${saved}" placeholder="${esc(placeholder||'')}" onchange="bfOnChange('${id}')">`;
+  return `<textarea id="${id}" class="grid-ta" rows="1" placeholder="${esc(placeholder||'')}" oninput="autoGrow(this)" onchange="bfOnChange('${id}')">${saved}</textarea>`;
 }
 function bfTableDate(id){
   const saved = esc(bfGet(id));
@@ -2708,7 +2692,7 @@ function renderCatCascade(){
   let l3html;
   if(!l1||!l2){ l3html=`<select disabled><option>— เลือก Category/Area ก่อน —</option></select>`; }
   else if(noL3){ l3html=`<input type="text" id="a_catL3" value="${esc(l3)}" placeholder="ระบุประเภทสินค้า" onchange="bfSet('a_catL3',this.value)">`; }
-  else { l3html=`<select id="a_catL3" onchange="bfSet('a_catL3',this.value)"><option value="">— เลือก —</option>${catOptionsHtml(l3items,l3)}</select>`; }
+  else { l3html=`<select id="a_catL3" onchange="catCascadeChange(3,this.value)"><option value="">— เลือก —</option>${catOptionsHtml(l3items,l3)}<option value="Other"${l3==='Other'?' selected':''}>อื่นๆ (Other)</option></select>${l3==='Other'?`<input type="text" id="a_catL3_other" value="${esc(bfGet('a_catL3_other'))}" placeholder="ระบุประเภทสินค้า" onchange="bfSet('a_catL3_other',this.value)" style="margin-top:6px;">`:''}`; }
   return `
     <div class="brief-field"><label>1 · Category</label>
       <select id="a_catL1" onchange="catCascadeChange(1,this.value)"><option value="">— เลือก —</option>${l1keys.map(k=>`<option${k===l1?' selected':''}>${esc(k)}</option>`).join('')}</select></div>
@@ -2716,11 +2700,13 @@ function renderCatCascade(){
       <select id="a_catL2" ${l2keys.length?'':'disabled'} onchange="catCascadeChange(2,this.value)"><option value="">${l2keys.length?'— เลือก —':'— (ไม่มี) —'}</option>${l2keys.map(k=>`<option${k===l2?' selected':''}>${esc(k)}</option>`).join('')}</select></div>
     <div class="brief-field"><label>3 · Product Type</label>${l3html}</div>
     <div class="brief-field"><label>4 · Format / Texture (เนื้อ)</label>
-      <select id="a_catL4" onchange="bfSet('a_catL4',this.value)"><option value="">— เลือก —</option>${catOptionsHtml(TEXTURE_GROUPS,l4)}</select></div>`;
+      <select id="a_catL4" onchange="catCascadeChange(4,this.value)"><option value="">— เลือก —</option>${catOptionsHtml(TEXTURE_GROUPS,l4)}<option value="Other"${l4==='Other'?' selected':''}>อื่นๆ (Other)</option></select>${l4==='Other'?`<input type="text" id="a_catL4_other" value="${esc(bfGet('a_catL4_other'))}" placeholder="ระบุเนื้อ/รูปแบบ" onchange="bfSet('a_catL4_other',this.value)" style="margin-top:6px;">`:''}</div>`;
 }
 function catCascadeChange(level,val){
   if(level===1){ bfSet('a_catL1',val); bfSet('a_catL2',''); bfSet('a_catL3',''); }
   if(level===2){ bfSet('a_catL2',val); bfSet('a_catL3',''); }
+  if(level===3){ bfSet('a_catL3',val); }
+  if(level===4){ bfSet('a_catL4',val); }
   const c=document.getElementById('cat-cascade'); if(c) c.innerHTML=renderCatCascade();
 }
 
@@ -2732,6 +2718,7 @@ function bfGridRowsHtml(id, cols, arr){
   return arr.map((row,i)=>`<tr>${cols.map(c=>{
     if(c.type==='check') return `<td style="text-align:center; width:64px;"><input type="checkbox" ${row[c.key]?'checked':''} onchange="bfGridUpdate('${id}',${i},'${esc(c.key)}',this.checked)"></td>`;
     if(c.type==='select') return `<td><select onchange="bfGridUpdate('${id}',${i},'${esc(c.key)}',this.value)"><option value="">—</option>${(c.options||[]).map(o=>`<option${row[c.key]===o?' selected':''}>${esc(o)}</option>`).join('')}</select></td>`;
+    if(c.type==='datalist') return `<td><input list="dl-${id}-${esc(c.key)}" value="${esc(row[c.key]||'')}" placeholder="${esc(c.ph||'พิมพ์/เลือก')}" oninput="bfGridUpdate('${id}',${i},'${esc(c.key)}',this.value)"></td>`;
     if(c.type==='image'){
       const iv=row[c.key], ilink=(iv && iv.indexOf('data:')!==0)?iv:'';
       const itag = iv?`<img src="${esc(briefImgSrc(iv))}" style="max-width:96px; max-height:72px; border-radius:6px; display:block; margin:0 auto;">`:'<span style="font-size:11px; color:#aab;">— ไม่มีรูป —</span>';
@@ -2743,9 +2730,11 @@ function bfGridRowsHtml(id, cols, arr){
       </div>
     </td>`;
     }
-    return `<td><input type="text" value="${esc(row[c.key]||'')}" placeholder="${esc(c.ph||'')}" oninput="bfGridUpdate('${id}',${i},'${esc(c.key)}',this.value)"></td>`;
+    return `<td><textarea class="grid-ta" rows="1" placeholder="${esc(c.ph||'')}" oninput="bfGridUpdate('${id}',${i},'${esc(c.key)}',this.value); autoGrow(this)">${esc(row[c.key]||'')}</textarea></td>`;
   }).join('')}<td style="text-align:center; width:36px;"><button type="button" class="brief-repeat-del" onclick="bfGridRemove('${id}',${i})" title="ลบแถว">🗑️</button></td></tr>`).join('');
 }
+function autoGrow(el){ if(!el) return; el.style.height='auto'; el.style.height=(el.scrollHeight+2)+'px'; }
+function autoGrowIn(root){ if(!root) return; root.querySelectorAll('textarea.bf-line, textarea.grid-ta').forEach(autoGrow); }
 function bfGridImageChange(id,i,key,inputEl){
   const file=inputEl.files&&inputEl.files[0]; if(!file) return;
   const reader=new FileReader();
@@ -2755,12 +2744,16 @@ function bfGridImageChange(id,i,key,inputEl){
 function bfGridField(id, label, cols){
   BF_GRID_COLS[id]=cols;
   const arr=bfGridGet(id);
+  const datalists = cols.filter(c=>c.type==='datalist').map(c=>{
+    const opts=(typeof c.options==='function'?c.options():(c.options||[]));
+    return `<datalist id="dl-${id}-${esc(c.key)}">${opts.map(o=>`<option value="${esc(o)}">`).join('')}</datalist>`;
+  }).join('');
   return `<div class="brief-field brief-full"><label>${esc(label)}</label>
     <div style="overflow-x:auto;"><table class="brief-table"><thead><tr>${cols.map(c=>`<th>${esc(c.label)}</th>`).join('')}<th></th></tr></thead>
-    <tbody id="grid-${id}">${bfGridRowsHtml(id,cols,arr)}</tbody></table></div>
+    <tbody id="grid-${id}">${bfGridRowsHtml(id,cols,arr)}</tbody></table></div>${datalists}
     <button type="button" class="brief-print-btn" onclick="bfGridAdd('${id}')">+ เพิ่มแถว</button></div>`;
 }
-function reRenderGrid(id){ if(!BF_GRID_COLS[id]) return; const html=bfGridRowsHtml(id,BF_GRID_COLS[id],bfGridGet(id)); document.querySelectorAll('[id="grid-'+id+'"]').forEach(el=>{ el.innerHTML=html; }); }
+function reRenderGrid(id){ if(!BF_GRID_COLS[id]) return; const html=bfGridRowsHtml(id,BF_GRID_COLS[id],bfGridGet(id)); document.querySelectorAll('[id="grid-'+id+'"]').forEach(el=>{ el.innerHTML=html; autoGrowIn(el); }); }
 function bfGridUpdate(id,i,key,val){ const a=bfGridGet(id); a[i]=a[i]||{}; a[i][key]=val; bfGridSave(id,a); }
 function bfGridAdd(id){ const a=bfGridGet(id); a.push({}); bfGridSave(id,a); reRenderGrid(id); }
 function bfGridRemove(id,i){ const a=bfGridGet(id); a.splice(i,1); if(!a.length)a.push({}); bfGridSave(id,a); reRenderGrid(id); }
@@ -2768,23 +2761,51 @@ function bfGridRemove(id,i){ const a=bfGridGet(id); a.splice(i,1); if(!a.length)
 /* A Drive link (not base64) is clickable — open full-res in Drive (useful in the PDF). */
 function briefImgLink(v){ return (v && v.indexOf('data:')!==0) ? v : ''; }
 /* Compact inline image attach (for Benchmark, side-by-side with its text) */
+/* Multi-image attach field — value is one or more images joined by ';'
+   (each part = base64 data: URL or Drive link). Add many, remove one at a time. */
+/* Multi-image values are joined by a newline — a char that never appears inside a
+   base64 data: URL (which itself contains ';' in "data:image/png;base64,") or a Drive link. */
+const IMG_SEP='\n';
+function imgListOf(id){ const v=bfGet(id); return v ? v.split(IMG_SEP).filter(Boolean) : []; }
+function bfImageAppend(id, inputEl){
+  const files = inputEl.files ? Array.prototype.slice.call(inputEl.files) : [];
+  if(!files.length) return;
+  let pending = files.length;
+  const list = imgListOf(id);
+  files.forEach(file=>{
+    const reader=new FileReader();
+    const done=()=>{ if(--pending===0){ bfSet(id, list.join(IMG_SEP)); refreshMultiImg(id); } };
+    reader.onload=()=>{ list.push(reader.result); done(); };
+    reader.onerror=done;
+    reader.readAsDataURL(file);
+  });
+  inputEl.value='';
+}
+function briefImgRemoveAt(id, i){ const list=imgListOf(id); list.splice(i,1); bfSet(id, list.join(IMG_SEP)); refreshMultiImg(id); }
+function multiImgHtml(id){
+  const list=imgListOf(id);
+  if(!list.length) return '<div class="brief-img-empty">ยังไม่มีรูป</div>';
+  return `<div class="brief-img-grid">`+list.map((v,i)=>{
+    const link=briefImgLink(v);
+    const tag=`<img src="${esc(briefImgSrc(v))}" style="max-width:100%; max-height:130px; border-radius:8px; display:block;">`;
+    const inner = link?`<a href="${esc(link)}" target="_blank" rel="noopener">${tag}</a>`:tag;
+    return `<div class="brief-img-cell">${inner}<button type="button" class="brief-img-x no-print" title="ลบรูปนี้" onclick="briefImgRemoveAt('${id}',${i})">✕</button>${link?`<a href="${esc(link)}" target="_blank" rel="noopener" class="brief-img-drivebtn no-print" title="ดูใน Drive">🔍</a>`:''}</div>`;
+  }).join('')+`</div>`;
+}
+function refreshMultiImg(id){ const el=document.getElementById('imgprev-'+id); if(el) el.innerHTML=multiImgHtml(id); }
 function briefImgInline(id, label){
-  const saved=bfGet(id);
-  const link=briefImgLink(saved);
-  const imgTag = saved ? `<img src="${esc(briefImgSrc(saved))}" style="max-width:100%; max-height:150px; border-radius:8px; display:block;">` : '<div class="brief-img-empty">ยังไม่มีรูป</div>';
-  const prev = link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${imgTag}</a>` : imgTag;
   return `<label>${esc(label||'รูปอ้างอิง')}</label>
-    <div id="imgprev-${id}" class="brief-img-box">${prev}</div>
+    <div id="imgprev-${id}" class="brief-img-box brief-img-multi">${multiImgHtml(id)}</div>
     <div class="no-print" style="display:flex; gap:6px; margin-top:6px; align-items:center; flex-wrap:wrap;">
-      <label class="brief-print-btn" style="cursor:pointer;">📎 แนบรูป<input type="file" accept="image/*" style="display:none;" onchange="bfImageChange('${id}',this)"></label>
-      <button type="button" class="brief-print-btn" onclick="bfImageRemove('${id}')">ลบ</button>
-      ${link?`<a href="${esc(link)}" target="_blank" rel="noopener" class="brief-print-btn" style="text-decoration:none;">🔍 ดูใน Drive</a>`:''}
+      <label class="brief-print-btn" style="cursor:pointer;">📎 แนบรูป (เพิ่มได้หลายรูป)<input type="file" accept="image/*" multiple style="display:none;" onchange="bfImageAppend('${id}',this)"></label>
     </div>`;
 }
 
 /* Auto-pull helpers — so downstream parts don't retype what Part A already has */
 function catSummary(){
-  const l1=bfGet('a_catL1'),l2=bfGet('a_catL2'),l3=bfGet('a_catL3'),l4=bfGet('a_catL4');
+  const l1=bfGet('a_catL1'),l2=bfGet('a_catL2');
+  let l3=bfGet('a_catL3'); if(l3==='Other') l3=bfGet('a_catL3_other')||'อื่นๆ';
+  let l4=bfGet('a_catL4'); if(l4==='Other') l4=bfGet('a_catL4_other')||'อื่นๆ';
   let s=[l1,l2,l3].filter(Boolean).join(' › ');
   if(l4) s += (s?' · ':'')+l4;
   return s;
@@ -2869,7 +2890,7 @@ function renderBriefPartA(){
     ${bfGridField('a_skuDetail','รายละเอียด SKU', [
       {key:'color',label:'ชื่อสี'},
       {key:'appearance',label:'สี (Appearance)'},
-      {key:'formulaNo',label:'Formula No.'},
+      {key:'formulaNo',label:'Formula No. (Trial No.)'},
       {key:'makeBar',label:'สร้าง Bar',type:'check'}
     ])}
     <div class="brief-note-box">☑️ ติ๊ก "สร้าง Bar" = แจ้งทีมระบบให้สร้าง Barcode ให้ SKU นั้น (ไม่ต้องกรอกเลขเอง)</div>
@@ -2916,6 +2937,20 @@ function copyFromPartA(){
 function bfArr(id){ try{ return JSON.parse(bfGet(id)||'[]'); }catch(e){ return []; } }
 function ingredientsText(){ return bfArr('b_ingredients').map(r=>[r.name,r.pct].filter(Boolean).join(' ')).filter(Boolean).join(', '); }
 function appearanceText(key){ return bfArr('b_appearance').map(r=>r[key]).filter(Boolean).join(', '); }
+/* Custom ingredients the user typed — remembered for next time */
+function getCustomIngredients(){ try{ return JSON.parse(localStorage.getItem('npd_custom_ingredients')||'[]'); }catch(e){ return []; } }
+function saveCustomIngredient(name){ name=(name||'').trim(); if(!name || INGREDIENTS.indexOf(name)>-1) return; const c=getCustomIngredients(); if(c.indexOf(name)===-1){ c.push(name); try{ localStorage.setItem('npd_custom_ingredients', JSON.stringify(c)); }catch(e){} } }
+function getAllIngredients(){ return INGREDIENTS.concat(getCustomIngredients()); }
+/* Field with an auto-filled but editable unit box beside it */
+function bfUnitField(id, label, unitDefault, ph){
+  const unitId = id+'_unit';
+  if(!bfGet(unitId) && unitDefault) bfSet(unitId, unitDefault);
+  return `<div class="brief-field"><label>${esc(label)}</label>
+    <div style="display:flex; gap:6px;">
+      <input type="text" id="${id}" value="${esc(bfGet(id))}" onchange="bfOnChange('${id}')" placeholder="${esc(ph||'')}" style="flex:1;">
+      <input type="text" id="${unitId}" value="${esc(bfGet(unitId))}" onchange="bfOnChange('${unitId}')" title="หน่วย (แก้ได้)" style="width:82px; flex:none; text-align:center;">
+    </div></div>`;
+}
 function benchmarkText(){ return bfArr('a_benchTable').map(r=>r.name).filter(Boolean).join(', '); }
 function benchmarkDisplayHtml(){
   const rows=bfArr('a_benchTable').filter(r=>r && (r.name||r.img||r.note));
@@ -2926,7 +2961,19 @@ function benchmarkDisplayHtml(){
     <td style="padding:8px;">${esc(r.note||'')}</td></tr>`).join('')}</tbody></table>`;
 }
 
+/* Market Comparison — auto price per gram/ml = ราคา ÷ ขนาด */
+function mktPrice10(i){
+  const p = parseFloat(String(bfGet('b_mkt_price_'+i)||'').replace(/[^0-9.]/g,''));
+  const s = parseFloat(String(bfGet('b_mkt_size_'+i)||'').replace(/[^0-9.]/g,''));
+  const v = (isFinite(p) && isFinite(s) && s>0) ? (p/s) : NaN;
+  const out = isFinite(v) ? (Math.round(v*100)/100).toString() : '';
+  return out;
+}
+function mktCalc(i){ const out=mktPrice10(i); bfSet('b_mkt_price10_'+i, out); const el=document.getElementById('b_mkt_price10_'+i); if(el) el.value=out; }
+
 function renderBriefPartB(){
+  // remember any ingredient the user has typed, so it shows in the list next time
+  bfArr('b_ingredients').forEach(r=>saveCustomIngredient(r.name));
   // ----- auto-pull from Part A (fills only empty fields, so edits are kept) -----
   bDefault('b_requestNo', bfGet('a_nprNo'));
   bDefault('b_requestDate', bfGet('a_briefDate'));
@@ -2940,7 +2987,9 @@ function renderBriefPartB(){
   // B1 brand-side column pulled from the fields above
   const wt = [bfGet('a_weight'), bfGet('a_weightUnit')].filter(Boolean).join(' ');
   const b1src = [ bfGet('a_catL4')||catSummary(), bfGet('b_howToUse'), wt, skuColorsText(), ingredientsText(), keyBenefitsText(), benchmarkText(), appearanceText('color'), appearanceText('odor'), appearanceText('texture') ];
-  b1src.forEach((v,i)=>bDefault('b1_brand_'+i, v));
+  // always mirror the source into the "ข้อมูลจากแบรนด์" column so it stays auto-filled
+  // even after Part A is edited later (only overwrites when there is a source value)
+  b1src.forEach((v,i)=>{ if(v) bfSet('b1_brand_'+i, v); else bDefault('b1_brand_'+i, v); });
 
   const rows = B1_ROWS.map((label,i)=>`
     <tr>
@@ -2957,9 +3006,9 @@ function renderBriefPartB(){
       <td>${bfTableInput('b_mkt_name_'+i,'ชื่อสินค้าคู่แข่ง')}</td>
       <td>${bfTableInput('b_mkt_pro_'+i)}</td>
       <td>${bfTableInput('b_mkt_con_'+i)}</td>
-      <td>${bfTableInput('b_mkt_price_'+i,'บาท')}</td>
-      <td>${bfTableInput('b_mkt_size_'+i,'g/ml')}</td>
-      <td>${bfTableInput('b_mkt_price10_'+i,'บาท/g หรือ /ml')}</td>
+      <td><textarea id="b_mkt_price_${i}" class="grid-ta" rows="1" placeholder="บาท" oninput="bfOnChange('b_mkt_price_${i}'); autoGrow(this); mktCalc(${i})">${esc(bfGet('b_mkt_price_'+i))}</textarea></td>
+      <td><textarea id="b_mkt_size_${i}" class="grid-ta" rows="1" placeholder="g/ml" oninput="bfOnChange('b_mkt_size_${i}'); autoGrow(this); mktCalc(${i})">${esc(bfGet('b_mkt_size_'+i))}</textarea></td>
+      <td><input type="text" id="b_mkt_price10_${i}" class="mkt-auto" readonly title="คำนวณอัตโนมัติ = ราคา ÷ ขนาด" value="${esc(mktPrice10(i))}"></td>
       <td style="text-align:center; border:none;"><button type="button" class="brief-repeat-del" title="ล้างแถวนี้" onclick="clearRow(${JSON.stringify(ids)})">🗑️</button></td>
     </tr>`;
   }).join('');
@@ -2995,9 +3044,9 @@ function renderBriefPartB(){
       ${bfField('b_productType','ประเภทสินค้า (จาก A2)','text',{full:true})}
       ${bfField('b_howToUse','วิธีใช้ผลิตภัณฑ์','textarea',{full:true})}
     </div>
-    <div class="brief-sub-label">Key Ingredients — เลือกจากรายการ (เพิ่ม/ลบได้)</div>
+    <div class="brief-sub-label">Key Ingredients — เลือกจากรายการ หรือพิมพ์สารใหม่ (จำไว้ให้ครั้งหน้า)</div>
     ${bfGridField('b_ingredients','', [
-      {key:'name',label:'Ingredient',type:'select',options:INGREDIENTS},
+      {key:'name',label:'Ingredient',type:'datalist',options:getAllIngredients},
       {key:'pct',label:'% (ถ้ามี)'},
       {key:'note',label:'หมายเหตุ'}
     ])}
@@ -3019,16 +3068,17 @@ function renderBriefPartB(){
     ${bfGridField('b_appearance','', [
       {key:'color',label:'สี (Color)'},
       {key:'odor',label:'กลิ่น (Odor)'},
-      {key:'texture',label:'เนื้อสัมผัส (Texture)'}
+      {key:'texture',label:'เนื้อสัมผัส (Texture)'},
+      {key:'img',label:'รูปภาพ',type:'image'}
     ])}
 
     <div class="brief-section-h">รายละเอียดอื่นๆ</div>
     <div class="brief-field-grid">
-      ${bfField('b_moq','ขั้นต่ำที่ต้องการสั่งผลิต (MOQ)','text')}
-      ${bfField('b_skinType','ประเภทผิวของกลุ่มลูกค้า','text')}
+      ${bfUnitField('b_moq','ขั้นต่ำที่ต้องการสั่งผลิต (MOQ)','ชิ้น')}
+      ${bfField('b_skinType','ประเภทผิวของกลุ่มลูกค้า','select',{options:['ผิวธรรมดา','ผิวแห้ง','ผิวมัน','ผิวผสม','ผิวแพ้ง่าย','ทุกสภาพผิว']})}
       ${bfField('b_ageRange','ช่วงอายุกลุ่มลูกค้าเป้าหมาย','text')}
-      ${bfField('b_sampleQty','จำนวนตัวอย่างที่ต้องการ','text')}
-      ${bfField('b_targetCost','ราคาทุน/Kg ที่คาดหวัง','text')}
+      ${bfUnitField('b_sampleQty','จำนวนตัวอย่างที่ต้องการ','ชิ้น')}
+      ${bfUnitField('b_targetCost','ราคาทุนที่คาดหวัง','บาท/Kg')}
     </div>
 
     <div class="brief-section-h">Customer-Supplied Raw Material</div>
@@ -3203,8 +3253,8 @@ function renderBriefPartE(){
 function renderBriefPartF(){
   // ----- auto-pull from Part A / B -----
   bDefault('f_productName', bfGet('a_projectName'));
+  bDefault('f_shootProduct', bfGet('a_projectName'));
   bDefault('f_formulaNo', bfArr('a_skuDetail').map(r=>r.formulaNo).filter(Boolean).join(', '));
-  bDefault('f_orderQty', bfGet('b_moq'));
   bDefault('f_declareWeight', [bfGet('a_weight'), bfGet('a_weightUnit')].filter(Boolean).join(' '));
   bDefault('f_channel', bfArr('a_channel').join(', '));
   bDefault('f_launchDate', bfGet('a_fgLaunch'));
@@ -3215,12 +3265,17 @@ function renderBriefPartF(){
     <div class="brief-section-h">F1 · ข้อมูลสินค้า (ดึงอัตโนมัติ)</div>
     <div class="brief-field-grid">
       ${bfField('f_productName','Product Name','text')}
-      ${bfField('f_formulaNo','Formula No.','text')}
-      ${bfField('f_orderQty','Order Qty.','text')}
+      ${bfField('f_formulaNo','Formula No. (Trial No.)','text')}
       ${bfField('f_declareWeight','Declare Weight (1 ปริมาณบรรจุ / 1 สูตร)','text')}
       ${bfField('f_channel','ช่องทางการขาย','text')}
       ${bfField('f_launchDate','Launch Date','date')}
     </div>
+    <div class="brief-sub-label">SKU / Order Qty — เพิ่มได้หลาย SKU (สั่งผลิตครั้งเดียวมีหลาย SKU)</div>
+    ${bfGridField('f_orderSkus','', [
+      {key:'sku',label:'SKU'},
+      {key:'name',label:'ชื่อ'},
+      {key:'qty',label:'Order Qty.'}
+    ])}
 
     <div class="brief-section-h">F2 · สถานะจดแจ้ง อย.</div>
     <div class="brief-check-grid">
@@ -3267,7 +3322,14 @@ function renderBriefPartF(){
       ${bfCheck('f_shootNo','ไม่ยิง')}
     </div>
     <div class="brief-field-grid">
-      ${bfField('f_shootYears','ยิงได้กี่ปี','select',{options:['1 ปี','3 ปี']})}
+      ${bfField('f_shootProduct','ชื่อสินค้า','text')}
+      ${bfField('f_shootSku','SKU','text')}
+      ${bfField('f_shootTrial','Trial No.','text')}
+    </div>
+    <div class="brief-field-grid">
+      ${bfField('f_shootMfg','MFG (วันผลิตที่ยิง)','text',{placeholder:'เช่น วันผลิตจริง / DDMMYY'})}
+      ${bfField('f_shootExp','EXP (วันหมดอายุที่ยิง)','text',{placeholder:'เช่น +2 ปี / DDMMYY'})}
+      ${bfField('f_shootYears','อายุสินค้า (Shelf Life)','select',{options:['2 ปี','3 ปี']})}
       ${bfField('f_shootRemark','หมายเหตุ','text')}
     </div>
     <div class="brief-bench-row">
@@ -3301,16 +3363,11 @@ function renderBriefPartF(){
     </div>
 
     <div class="brief-section-h">F9 · หมายเหตุเพิ่มเติม</div>
-    <div class="brief-field brief-full">
-      <label>สาร PO Leadtime เกิน 30 วัน (สอบถาม RD หลังคอนเฟิร์มสูตร)</label>
-      <div class="brief-check-grid">${bfCheck('f_poLeadtime','มีสารที่ PO leadtime เกิน 30 วัน')}</div>
-    </div>
-    ${bfField('f_poLeadtimeDetail','ระบุสาร (ถ้ามี)','text',{full:true})}
-    <div class="brief-bench-row" style="margin-top:10px;">
+    <div class="brief-bench-row">
       <div class="brief-field" style="flex:1; min-width:220px;">${bfField('f_assemblyNote','กรณีชุดเซต/กล่องพับซับซ้อน — หมายเหตุขั้นตอนประกอบ','textarea',{full:true})}</div>
       <div class="brief-field brief-bench-img">${briefImgInline('f_assemblyImg','ภาพขั้นตอนประกอบ')}</div>
     </div>
-    ${bfField('f_assemblyLink','ลิงก์วิดีโอขั้นตอน (ถ้ามี)','text',{full:true})}
+    ${bfField('f_assemblyLink','ลิงก์วิดีโอขั้นตอนประกอบ (Google Drive) — วางลิงก์ไฟล์วิดีโอ','text',{full:true,placeholder:'https://drive.google.com/...'})}
 
     ${briefSignBlock('f','ผู้จัดทำ')}
     ${briefSignBlock('f2','ผู้รับทราบ')}`;
@@ -3332,7 +3389,14 @@ function collectBriefData(){
     const k = localStorage.key(i);
     if(!k || k.indexOf('brief_') !== 0) continue;
     const v = localStorage.getItem(k);
-    if(typeof v === 'string' && v.indexOf('data:') === 0 && v.length > 2000){ skippedImg++; continue; }
+    if(typeof v === 'string' && v.trim().charAt(0) !== '[' && v.indexOf('data:') !== -1 && v.length > 2000){
+      // one or more images (IMG_SEP-joined): keep uploaded Drive links, drop any leftover base64
+      const parts = v.split(IMG_SEP).filter(Boolean);
+      const kept = parts.filter(p => p.indexOf('data:') !== 0);
+      skippedImg += (parts.length - kept.length);
+      if(kept.length) o[k] = kept.join(IMG_SEP);
+      continue;
+    }
     o[k] = v;
   }
   return {data:o, skippedImg};
@@ -3371,10 +3435,15 @@ async function uploadBriefImages(){
     try{ const r = await postReadable({action:'uploadImage', dataUrl, name}); if(r && r.ok && r.url){ uploaded++; return r.url; } }catch(e){}
     failed++; return null;
   }
-  // 1) top-level image fields (single-image inputs)
+  // 1) top-level image fields (single OR multi ';'-joined; skip grid JSON arrays)
   const keys=[];
-  for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.indexOf('brief_')===0 && isImg(localStorage.getItem(k))) keys.push(k); }
-  for(const k of keys){ const link = await up(localStorage.getItem(k), k.replace('brief_','')); if(link) localStorage.setItem(k, link); }
+  for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k || k.indexOf('brief_')!==0) continue; const v=localStorage.getItem(k); if(typeof v!=='string') continue; if(v.trim().charAt(0)==='[') continue; if(v.indexOf('data:')!==-1 && v.length>2000) keys.push(k); }
+  for(const k of keys){
+    const parts=(localStorage.getItem(k)||'').split(IMG_SEP).filter(Boolean);
+    let changed=false;
+    for(let j=0;j<parts.length;j++){ if(isImg(parts[j])){ const link=await up(parts[j], k.replace('brief_','')+(parts.length>1?('-'+j):'')); if(link){ parts[j]=link; changed=true; } } }
+    if(changed) localStorage.setItem(k, parts.join(IMG_SEP));
+  }
   // 2) images embedded inside table rows (grid arrays of objects)
   const arrKeys=[];
   for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.indexOf('brief_')===0){ const v=localStorage.getItem(k); if(typeof v==='string' && v.trim().charAt(0)==='[') arrKeys.push(k); } }
@@ -3434,6 +3503,9 @@ async function loadBriefFromCloud(nprNo){
 }
 async function deleteBriefFromCloud(nprNo){
   if(!confirm('ลบบรีฟ "'+nprNo+'" ออกจากระบบกลาง?')) return;
+  const pass = prompt('ยืนยันการลบ — ใส่รหัสผ่าน:');
+  if(pass===null) return;
+  if(pass !== TEAM_PASSCODE){ toast('รหัสผ่านไม่ถูกต้อง','err'); return; }
   try{
     const r = await postReadable({action:'delete', target:'briefs', keyValue:nprNo});
     if(r && r.ok){ toast('ลบบรีฟแล้ว','ok'); fetchSavedBriefs().then(renderSavedBriefsList); }
@@ -3443,7 +3515,7 @@ async function deleteBriefFromCloud(nprNo){
 function rerenderBriefParts(){
   ['a','b','c','d','e','f'].forEach(key=>{
     const body = document.getElementById('brief-part-body-'+key);
-    if(body && BRIEF_RENDERERS[key]){ body.innerHTML = BRIEF_RENDERERS[key](); body.dataset.rendered='1'; }
+    if(body && BRIEF_RENDERERS[key]){ body.innerHTML = BRIEF_RENDERERS[key](); body.dataset.rendered='1'; autoGrowIn(body); }
   });
 }
 /* Clear the whole brief form to start a fresh brief */
@@ -3469,7 +3541,7 @@ function toggleBriefForm(){
         : key==='c'
         ? `<button class="brief-print-btn" onclick="event.stopPropagation(); printBriefPartCFactory()" style="margin-left:6px;">🏭 Print (Factory Form Style)</button>`
         : '';
-      return `<div class="brief-part" id="brief-part-${key}">
+      return `<div class="brief-part pc-${key}" id="brief-part-${key}">
         <div class="brief-part-head" onclick="toggleBriefPart('${key}')">
           <div><span class="brief-chevron">▸</span> <span class="brief-part-title">${esc(p.title)}</span> <span style="font-size:11px; color:var(--ink-soft); font-weight:400;">${esc(p.th)}</span></div>
           <div>
@@ -3490,6 +3562,7 @@ function toggleBriefPart(key){
   if(!isOpen && !body.dataset.rendered){
     body.innerHTML = BRIEF_RENDERERS[key]();
     body.dataset.rendered = '1';
+    autoGrowIn(body);
   }
   part.classList.toggle('open');
 }
@@ -4112,13 +4185,13 @@ const APPS_SCRIPT_CODE = `/**
  * รองรับ: สินค้า (products) / บันทึกความคืบหน้า (updates) / ประกาศ (notice) / งาน (task)
  */
 const SECRET = 'CHANGE_ME';    // <-- ตั้งรหัสลับ แล้วใส่ให้ตรงกับในเว็บ
-const VER = 'multitab-4';      // เวอร์ชันโค้ด (ใช้เช็กว่า deploy โค้ดใหม่แล้วจริง)
+const VER = 'multitab-5';      // เวอร์ชันโค้ด (ใช้เช็กว่า deploy โค้ดใหม่แล้วจริง)
 
 // แต่ละแท็บ: gid = เลขท้าย URL ของแท็บ, key = คอลัมน์ที่ใช้จับคู่แถว ('' = ต่อท้ายอย่างเดียว)
 // create = ถ้าไม่มีแท็บนี้ ให้สร้างใหม่พร้อมหัวคอลัมน์ตามนี้
 const TARGETS = {
   products: {gid:1762470958, key:'sku'},
-  updates:  {gid:327758317,  key:''},              // log ต่อท้าย
+  updates:  {gid:327758317,  key:'id'},            // log — แก้/ลบตาม id (คอลัมน์ id สร้างให้อัตโนมัติ)
   notice:   {name:'Notice',   key:'Message'},
   task:     {gid:141244138,   key:'รายละเอียดงาน'}, // จับคู่ด้วยรายละเอียดงาน
   briefs:   {name:'Briefs',   key:'nprNo', create:['nprNo','projectName','updatedBy','updatedAt','data']}
@@ -4193,6 +4266,9 @@ function doPost(e){
     var data = sh.getDataRange().getValues();
     var header = data[0].map(function(h){ return String(h).trim(); });
     var incoming = body.row || {};
+
+    // targets keyed by 'id' (updates log) — auto-create the id column if missing
+    if(cfg.key === 'id' && header.indexOf('id') === -1){ sh.getRange(1, header.length + 1).setValue('id'); header.push('id'); }
 
     // ---- append (log ต่อท้าย) ----
     if(body.action === 'append'){
@@ -4287,28 +4363,47 @@ function initEditUi(){
 
 /* ---------- Updates Log: add progress entry (append) ---------- */
 let uePrefill = null;
+const UPDATE_TRACKS = ['R&D','Purchase','Technical Packaging','Warehouse','Supply Chain','Accounting','Branding','Marketing','Cosmania OEM'];
+const FORMULATION_STAGES = ['Concept Approved','Formulation Development','Sample Preparation','Sample Submitted','Sample Under Review','Reformulation Required','Reformulation in Progress','Formulation Approved','Quotation in Progress','Quotation Approved','FDA Registration in Progress','FDA Registration Completed'];
+const PACKAGING_STAGES = ['BM Selection','Sourcing','Sup. Sample','Sample Received','Design Approved','Artwork Design','Final AW','Price Confirm','PPS Sample','Online Proof','On-site Proof','PPS Approved','Mass Production','Delivery Confirm','Photo Sample','PKG Spec','Completed'];
+const PACKAGING_SUBCATS = ['Primary Packaging','Box','Label','Sticker','Insert','Shipper','Other Packaging'];
+const RD_SUBCATS = ['1st Revision','2nd Revision','3rd Revision'];
+function stagesForTrack(t){ return t==='R&D'?FORMULATION_STAGES : t==='Technical Packaging'?PACKAGING_STAGES : []; }
+function subcatsForTrack(t){ return t==='R&D'?RD_SUBCATS : t==='Technical Packaging'?PACKAGING_SUBCATS : []; }
+function ueSelectOrText(id, label, list, cur, ph){
+  if(list.length) return `<label>${label}</label><select id="${id}"><option value="">— เลือก —</option>${list.map(x=>`<option${x===cur?' selected':''}>${esc(x)}</option>`).join('')}</select>`;
+  return `<label>${label}</label><input type="text" id="${id}" value="${esc(cur||'')}" placeholder="${esc(ph||'')}">`;
+}
+function updateSubStageFields(){
+  const t=(document.getElementById('ue-Track')||{}).value||'';
+  const sc=document.getElementById('ue-subcat-cell'); if(sc) sc.innerHTML=ueSelectOrText('ue-SubCategory','หัวข้อย่อย (SubCategory)',subcatsForTrack(t),'','ระบุ (ถ้ามี)');
+  const st=document.getElementById('ue-stage-cell'); if(st) st.innerHTML=ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesForTrack(t),'','เช่น กำลังทำ, เสร็จ');
+}
+let ueEditId = null;
 function renderUpdateForm(){
-  const pfSku = uePrefill && uePrefill.sku ? uePrefill.sku : '';
-  const pfTrack = uePrefill && uePrefill.track ? ({rd:'R&D', pkg:'Packaging'}[uePrefill.track] || '') : '';
+  const pf = uePrefill || {};
+  const pfSku = pf.sku || pf.SKU || '';
+  const pfTrack = pf.trackLabel || pf.Track || (pf.track ? ({rd:'R&D', pkg:'Technical Packaging'}[pf.track]||'') : '') || '';
+  const initTrack = pfTrack || 'R&D';
   const skuOpts = ['<option value="">— เลือกสินค้า —</option>'].concat(
     PRODUCTS.map(p=>`<option value="${esc(p.sku)}"${p.sku===pfSku?' selected':''}>${esc(p.sku)} — ${esc(p.name)}</option>`)
   ).join('');
-  const trackOpts = ['R&D','FDA','Packaging','Graphic','Marketing','Cost','Production'].map(x=>`<option value="${x}"${x===pfTrack?' selected':''}>${x}</option>`).join('');
-  const byOpts = ['<option value="">— ใครอัปเดต —</option>'].concat(TEAM_NAMES.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`)).join('');
-  const riskOpts = ['','Low','Medium','High'].map(r=>`<option value="${r}">${r||'— ไม่ระบุ —'}</option>`).join('');
+  const trackOpts = UPDATE_TRACKS.map(x=>`<option value="${esc(x)}"${x===initTrack?' selected':''}>${esc(x)}</option>`).join('');
+  const byOpts = ['<option value="">— ใครอัปเดต —</option>'].concat(TEAM_NAMES.map(x=>`<option value="${esc(x)}"${x===(pf.UpdatedBy||'')?' selected':''}>${esc(x)}</option>`)).join('');
+  const riskOpts = ['','Low','Medium','High'].map(r=>`<option value="${r}"${r===(pf.Risk||'')?' selected':''}>${r||'— ไม่ระบุ —'}</option>`).join('');
   document.getElementById('ue-form').innerHTML = `
   <div class="pe-grid">
-    <div class="pe-field"><label>วันที่ *</label><input type="date" id="ue-Date" value="${todayStr()}"></div>
+    <div class="pe-field"><label>วันที่ *</label><input type="date" id="ue-Date" value="${esc(pf.Date||todayStr())}"></div>
     <div class="pe-field"><label>สินค้า (SKU) *</label><select id="ue-SKU">${skuOpts}</select></div>
-    <div class="pe-field"><label>สาย/แผนก (Track)</label><select id="ue-Track">${trackOpts}</select></div>
-    <div class="pe-field"><label>หัวข้อย่อย (SubCategory)</label><input type="text" id="ue-SubCategory" placeholder="เช่น สูตร, กล่อง, สติกเกอร์"></div>
-    <div class="pe-field"><label>ขั้น/สถานะ (Stage)</label><input type="text" id="ue-Stage" placeholder="เช่น กำลังทำ, เสร็จ, รออนุมัติ"></div>
+    <div class="pe-field"><label>สาย/แผนก (Track)</label><select id="ue-Track" onchange="updateSubStageFields()">${trackOpts}</select></div>
+    <div class="pe-field" id="ue-subcat-cell">${ueSelectOrText('ue-SubCategory','หัวข้อย่อย (SubCategory)',subcatsForTrack(initTrack),pf.SubCategory||'','ระบุ (ถ้ามี)')}</div>
+    <div class="pe-field" id="ue-stage-cell">${ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesForTrack(initTrack),pf.Stage||'','เช่น กำลังทำ, เสร็จ')}</div>
     <div class="pe-field"><label>ผู้อัปเดต (UpdatedBy)</label><select id="ue-UpdatedBy">${byOpts}</select></div>
     <div class="pe-field"><label>Risk</label><select id="ue-Risk">${riskOpts}</select></div>
-    <div class="pe-field"><label>กำหนดถัดไป (NextDue)</label><input type="date" id="ue-NextDue"></div>
-    <div class="pe-field full"><label>รายละเอียด (Detail) *</label><textarea id="ue-Detail" placeholder="อัปเดตความคืบหน้า…"></textarea></div>
-    <div class="pe-field full"><label>หมายเหตุ (Note)</label><input type="text" id="ue-Note"></div>
-    <div class="pe-field full"><label>ลิงก์รูป (Images) — คั่นหลายรูปด้วย ; </label><input type="text" id="ue-Images" placeholder="วางลิงก์ Google Drive"></div>
+    <div class="pe-field"><label>กำหนดถัดไป (NextDue)</label><input type="text" id="ue-NextDue" value="${esc(pf.NextDue||'')}" placeholder="เช่น รอผล อย. / 15 ต.ค."></div>
+    <div class="pe-field full"><label>รายละเอียด (Detail) *</label><textarea id="ue-Detail" placeholder="อัปเดตความคืบหน้า…">${esc(pf.Detail||'')}</textarea></div>
+    <div class="pe-field full"><label>หมายเหตุ (Note)</label><input type="text" id="ue-Note" value="${esc(pf.Note||'')}"></div>
+    <div class="pe-field full"><label>ลิงก์รูป (Images) — คั่นหลายรูปด้วย ; </label><input type="text" id="ue-Images" value="${esc(pf.Images||'')}" placeholder="วางลิงก์ Google Drive"></div>
   </div>`;
 }
 function collectUpdateForm(){
@@ -4321,17 +4416,50 @@ function collectUpdateForm(){
     UpdatedBy:g('UpdatedBy'), Risk:g('Risk'), NextDue:g('NextDue')
   };
 }
-function openUpdateEditor(prefill){ uePrefill = prefill||null; renderUpdateForm(); document.getElementById('ue-overlay').classList.add('open'); }
-function closeUpdateEditor(){ document.getElementById('ue-overlay').classList.remove('open'); }
+function openUpdateEditor(prefill, editId){
+  uePrefill = prefill||null; ueEditId = editId||null;
+  renderUpdateForm();
+  const t=document.getElementById('ue-title'); if(t) t.textContent = ueEditId ? '✏️ แก้ไขบันทึก' : '➕ เพิ่มบันทึกความคืบหน้า';
+  document.getElementById('ue-overlay').classList.add('open');
+}
+function closeUpdateEditor(){ document.getElementById('ue-overlay').classList.remove('open'); ueEditId=null; uePrefill=null; }
 function saveUpdateEntry(){
   const row=collectUpdateForm();
   if(!row.SKU){ toast('เลือกสินค้า (SKU) ก่อน','err'); return; }
   if(!row.Detail){ toast('กรอกรายละเอียด (Detail) ก่อน','err'); return; }
   if(!row.Date) row.Date=todayStr();
-  const arr=getUpdatesLocal(); arr.push(row); saveUpdatesLocal(arr);
-  rebuildUpdateLogs(); renderTeamUpdates(); updateSyncStatus(); updateEditControls();
-  closeUpdateEditor();
-  syncToSheet('updates','append', null, row);
+  if(ueEditId){
+    row.id = ueEditId;
+    const arr=getUpdatesLocal(); const li=arr.findIndex(x=>x.id===ueEditId);
+    if(li>-1){ arr[li]=row; saveUpdatesLocal(arr); }
+    const idx=UPDATE_LOGS.findIndex(x=>x.id===ueEditId);
+    if(idx>-1){ const wasLocal=UPDATE_LOGS[idx]._local; UPDATE_LOGS[idx]=mapUpdateRow(Object.assign({}, row, {_local:wasLocal})); }
+    renderTeamUpdates(); updateSyncStatus(); updateEditControls();
+    closeUpdateEditor();
+    syncToSheet('updates','update', row.id, row);
+    toast('แก้ไขบันทึกแล้ว','ok');
+  } else {
+    row.id = 'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    const arr=getUpdatesLocal(); arr.push(row); saveUpdatesLocal(arr);
+    rebuildUpdateLogs(); renderTeamUpdates(); updateSyncStatus(); updateEditControls();
+    closeUpdateEditor();
+    syncToSheet('updates','append', null, row);
+    toast('เพิ่มบันทึกแล้ว','ok');
+  }
+}
+function editUpdateEntry(id){
+  const e=UPDATE_LOGS.find(x=>x.id===id); if(!e){ toast('ไม่พบบันทึก (บันทึกเก่าที่ไม่มี id แก้ได้ใน Sheet เท่านั้น)','err'); return; }
+  closeTrackLog();
+  openUpdateEditor({ sku:e.sku, trackLabel:e.trackRaw||'', SubCategory:e.subCategory, Stage:e.stage, Date:e.date, UpdatedBy:e.updatedBy, Risk:e.risk, NextDue:e.nextDue, Detail:e.detail, Note:e.note, Images:e.imagesRaw||'' }, id);
+}
+function deleteUpdateEntry(id){
+  if(!confirm('ลบบันทึกนี้ออกจาก Updates Log?')) return;
+  saveUpdatesLocal(getUpdatesLocal().filter(x=>x.id!==id));
+  UPDATE_LOGS = UPDATE_LOGS.filter(x=>x.id!==id);
+  renderTeamUpdates(); updateSyncStatus(); updateEditControls();
+  closeTrackLog();
+  syncToSheet('updates','delete', id, null);
+  toast('ลบบันทึกแล้ว','ok');
 }
 
 /* ---------- Notice manager (add / toggle active / delete) ---------- */
