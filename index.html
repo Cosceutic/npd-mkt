@@ -255,6 +255,7 @@
   .brief-part.pc-d{ --bA:#C6B7F4; --bAD:#6B52C4; --bAP:#F2EDFD; --bHead:#F8F5FF; }
   .brief-part.pc-e{ --bA:#F5B2D3; --bAD:#C24C8B; --bAP:#FCEAF3; --bHead:#FEF4F9; }
   .brief-part.pc-f{ --bA:#9CDAE4; --bAD:#1E8598; --bAP:#E7F6F9; --bHead:#F1FBFD; }
+  .brief-part.pc-g{ --bA:#E8CE73; --bAD:#9A7A10; --bAP:#FAF4D6; --bHead:#FEFBEC; }
   .brief-part .brief-part-head{border-left:0;}
   /* colored pill in front of the part title */
   .brief-part-title::before{content:''; display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--bA); margin-right:8px; vertical-align:middle;}
@@ -266,6 +267,12 @@
   .cform-tab{font-family:'Prompt'; font-weight:600; font-size:12.5px; padding:9px 14px; border:1.5px solid var(--bLine); border-radius:10px; background:#fff; color:var(--bMuted); cursor:pointer; transition:all .12s;}
   .cform-tab:hover{border-color:var(--bA); color:var(--bAD);}
   .cform-tab.active{background:var(--bAD); border-color:var(--bAD); color:#fff; box-shadow:0 2px 6px rgba(0,0,0,.12);}
+  /* Accessories second-level selector — lighter pills inside a tinted bar */
+  .cform-submenu{display:flex; flex-wrap:wrap; align-items:center; gap:8px; background:var(--bAP); border:1px dashed var(--bA); border-radius:10px; padding:9px 12px; margin-bottom:16px;}
+  .cform-sub-label{font-family:'Prompt'; font-weight:700; font-size:12px; color:var(--bAD);}
+  .cform-subtab{font-family:'Prompt'; font-weight:600; font-size:12px; padding:6px 12px; border:1.5px solid var(--bA); border-radius:999px; background:#fff; color:var(--bAD); cursor:pointer; transition:all .12s;}
+  .cform-subtab:hover{background:var(--bAP);}
+  .cform-subtab.active{background:var(--bAD); border-color:var(--bAD); color:#fff;}
   .mkt-auto{background:var(--bAP) !important; font-weight:600; color:var(--bAD) !important; text-align:right;}
   .brief-part-head{display:flex; align-items:center; justify-content:space-between; background:#fff; padding:15px 18px; cursor:pointer; flex-wrap:wrap; gap:8px; transition:background .15s;}
   .brief-part-head:hover{background:var(--bHead);}
@@ -287,8 +294,8 @@
   }
   .brief-field textarea{min-height:58px; resize:vertical; line-height:1.5;}
   /* auto-growing single-line text fields — wrap long entries instead of truncating */
-  .brief-field textarea.bf-line{min-height:0; height:auto; resize:none; overflow:hidden; line-height:1.5; white-space:pre-wrap; word-break:break-word;}
-  textarea.grid-ta{width:100%; min-height:0; height:auto; resize:none; overflow:hidden; line-height:1.45; white-space:pre-wrap; word-break:break-word; padding:6px 8px; border:1px solid var(--bLine); border-radius:8px; font-family:'Sarabun',sans-serif; font-size:13px; background:#fff; color:var(--bInk); box-sizing:border-box;}
+  .brief-field textarea.bf-line{min-height:40px; height:auto; resize:none; overflow:hidden; line-height:1.5; white-space:pre-wrap; word-break:break-word;}
+  textarea.grid-ta{width:100%; min-height:33px; height:auto; resize:none; overflow:hidden; line-height:1.45; white-space:pre-wrap; word-break:break-word; padding:6px 8px; border:1px solid var(--bLine); border-radius:8px; font-family:'Sarabun',sans-serif; font-size:13px; background:#fff; color:var(--bInk); box-sizing:border-box;}
   textarea.grid-ta:focus{outline:none; border-color:var(--bA); box-shadow:0 0 0 3px var(--bAP);}
   .brief-field input:focus, .brief-field textarea:focus, .brief-field select:focus{outline:none; border-color:var(--bA); box-shadow:0 0 0 3px var(--bAP); background:#fff;}
   .brief-field select:disabled{background:#F1F2F6; color:#AAB0BF; cursor:not-allowed;}
@@ -309,8 +316,15 @@
   .brief-table td.label-cell{font-size:12px; font-weight:600; background:var(--bHead); white-space:nowrap; padding:6px 10px; color:var(--bInk);}
   .brief-table input, .brief-table select{width:100%; border:1px solid transparent; border-radius:7px; padding:7px; font-family:'Sarabun',sans-serif; font-size:12.5px; box-sizing:border-box; background:transparent; color:var(--bInk);}
   .brief-table input:focus, .brief-table select:focus{outline:none; border-color:var(--bA); background:#fff; box-shadow:0 0 0 2px var(--bAP);}
-  .brief-check-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:9px;}
-  .brief-check-item{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--bInk);}
+  .brief-check-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:6px 14px;}
+  /* higher specificity than `.brief-field label{display:block}`, `.brief-field input{width:100%}`
+     and `.brief-table input{width:100%}` — so EVERY checkbox in EVERY form (A–F, multi-selects,
+     single checks, and table/grid cells) stays small and sits right next to its own label */
+  .brief-field .brief-check-item, .brief-check-item{display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:500; color:var(--bInk); margin-bottom:0; cursor:pointer; padding:3px 0;}
+  .brief-check-item input[type="checkbox"], .brief-field input[type="checkbox"], .brief-table input[type="checkbox"]{
+    width:16px; height:16px; flex:none; margin:0; padding:0; accent-color:var(--bA); cursor:pointer;
+  }
+  .brief-table td input[type="checkbox"]{display:inline-block; margin:0 auto;}
   .brief-note-box{background:var(--bAP); border-left:3px solid var(--bA); border-radius:10px; padding:11px 15px; font-size:12px; margin:12px 0; line-height:1.55; color:#3E4761;}
   .brief-print-btn{background:#fff; border:1px solid #D7DCEA; color:var(--bAD); border-radius:9px; padding:6px 13px; font-size:12px; cursor:pointer; font-family:'Sarabun',sans-serif; font-weight:600; transition:background .12s;}
   .brief-print-btn:hover{background:var(--bAP); border-color:var(--bA);}
@@ -2660,6 +2674,7 @@ function esc(s){ const d=document.createElement('div'); d.textContent = s||''; r
 const BRIEF_PARTS = {
   a: { title:'A. Project Brief', th:'ข้อมูลโครงการ + ทิศทางสินค้า' },
   b: { title:'B. Formula Brief — โจทย์พัฒนาสูตร', th:'บรีฟให้ R&D' },
+  g: { title:'Graphic Brief — บรีฟงานกราฟิก', th:'บรีฟให้ Graphic / Design' },
   c: { title:'C. Packaging Brief (PKG) — โจทย์บรรจุภัณฑ์', th:'บรีฟให้ Packaging' },
   d: { title:'D. Timeline & Project Follow-up', th:'ไทม์ไลน์และประเด็นที่ต้องติดตาม' },
   e: { title:'E. Approval & Sign-off', th:'จุดอนุมัติ / ลงนาม' },
@@ -2958,7 +2973,7 @@ function bfGridRowsHtml(id, cols, arr){
     return `<td><textarea class="grid-ta" rows="1" placeholder="${esc(c.ph||'')}" oninput="bfGridUpdate('${id}',${i},'${esc(c.key)}',this.value); autoGrow(this)">${esc(row[c.key]||'')}</textarea></td>`;
   }).join('')}<td style="text-align:center; width:36px;"><button type="button" class="brief-repeat-del" onclick="bfGridRemove('${id}',${i})" title="ลบแถว">🗑️</button></td></tr>`).join('');
 }
-function autoGrow(el){ if(!el) return; el.style.height='auto'; el.style.height=(el.scrollHeight+2)+'px'; }
+function autoGrow(el){ if(!el) return; el.style.height='auto'; const sh=el.scrollHeight; if(sh>0) el.style.height=(sh+2)+'px'; }  // skip when hidden (scrollHeight 0) so it doesn't collapse to ~2px
 function autoGrowIn(root){ if(!root) return; root.querySelectorAll('textarea.bf-line, textarea.grid-ta').forEach(autoGrow); }
 function bfGridImageChange(id,i,key,inputEl){
   const file=inputEl.files&&inputEl.files[0]; if(!file) return;
@@ -3075,6 +3090,10 @@ function bfNameSelect(id){
 }
 function bfSetCell(id,val){ bfSet(id,val); }
 
+const A2_DESIGN_OBJ = ['ต้องการให้ดู Premium ขึ้น','ต้องการให้โดดเด่นบน Shelf','ต้องการให้เด็กเห็นแล้วอยากหยิบ','ต้องการให้แม่รู้สึกปลอดภัย/น่าเชื่อถือ','ต้องการสร้างภาพจำของ Collection','ต้องการให้แตกต่างจากคู่แข่ง','ต้องการให้เห็นแล้วรู้ทันทีว่าเป็น Godmami','อื่นๆ (โปรดระบุ)'];
+const A2_MOOD = ['Cute','Clean','Premium','Playful','Magical','Minimal','Fashion','Kawaii','อื่นๆ (โปรดระบุ)'];
+const A2_KEY_FEELING = ['Fun','Magical','Giftable','Collectible'];
+const A2_PKG_FORM = ['Tube','Bottle','Jar','Compact'];
 function renderBriefPartA(){
   return `
     <div class="brief-section-h">A1 · Project Control</div>
@@ -3108,6 +3127,36 @@ function renderBriefPartA(){
       {key:'note',label:'หมายเหตุ'}
     ])}
 
+    <div class="brief-sub-label" style="margin-top:20px; font-size:13.5px; color:var(--bAD);">🎨 Design &amp; Collection Brief</div>
+    <div class="brief-field-grid">
+      ${bfField('a2_collectionName','Collection Name','text')}
+      ${bfField('a2_designObj','Design Objective','select',{options:A2_DESIGN_OBJ})}
+      ${bfField('a2_designObjOther','Design Objective — อื่นๆ (โปรดระบุ)','text')}
+    </div>
+    ${bfField('a2_painPoint','Pain Point (ปัญหา/สิ่งที่อยากแก้)','textarea',{full:true})}
+
+    <div class="brief-sub-label">Target Customer (กลุ่มเป้าหมาย)</div>
+    <div class="brief-field-grid">
+      ${bfField('a2_tcAge','อายุ','text',{placeholder:'เช่น 3-8 ปี / 25-35 ปี'})}
+      ${bfField('a2_tcGender','Gender','select',{options:['หญิง','ชาย','ทุกเพศ','เด็กผู้หญิง','เด็กผู้ชาย','อื่นๆ']})}
+      ${bfField('a2_tcUser','ผู้ใช้สินค้า (User)','text')}
+      ${bfField('a2_tcBuyer','ผู้ซื้อสินค้า (Buyer)','text')}
+      ${bfField('a2_tcLifestyle','Lifestyle','text',{full:true})}
+    </div>
+
+    ${bfMultiField('a2_keyFeel','Key Feeling', A2_KEY_FEELING)}
+    ${bfField('a2_keyFeelOther','Key Feeling — อื่นๆ (โปรดระบุ)','text')}
+    ${bfField('a2_keyMessage','Key Message','textarea',{full:true})}
+
+    ${bfMultiField('a2_pkgForm','รูปแบบบรรจุภัณฑ์', A2_PKG_FORM)}
+    ${bfField('a2_pkgFormOther','รูปแบบบรรจุภัณฑ์ — อื่นๆ (โปรดระบุ)','text')}
+    <div class="brief-field brief-full">${briefImgInline('a2_pkgFormImg','ภาพประกอบรูปแบบบรรจุภัณฑ์ (แนบได้หลายรูป)')}</div>
+
+    <div class="brief-field-grid">
+      ${bfField('a2_mood','Mood &amp; Tone','select',{options:A2_MOOD})}
+      ${bfField('a2_moodOther','Mood &amp; Tone — อื่นๆ (โปรดระบุ)','text')}
+    </div>
+
     <div class="brief-section-h">A3 · SKU</div>
     <div class="brief-field-grid">
       ${bfField('a_skuQty','จำนวน SKU','text',{placeholder:'เช่น 3'})}
@@ -3118,7 +3167,7 @@ function renderBriefPartA(){
       {key:'formulaNo',label:'Formula No. (Trial No.)'},
       {key:'makeBar',label:'สร้าง Bar',type:'check'}
     ])}
-    <div class="brief-note-box">☑️ ติ๊ก "สร้าง Bar" = แจ้งทีมระบบให้สร้าง Barcode ให้ SKU นั้น (ไม่ต้องกรอกเลขเอง)</div>
+    <div class="brief-note-box no-print-hint">☑️ ติ๊ก "สร้าง Bar" = แจ้งทีมระบบให้สร้าง Barcode ให้ SKU นั้น (ไม่ต้องกรอกเลขเอง)</div>
 
     <div class="brief-field-grid" style="margin-top:14px;">
       <div class="brief-field">
@@ -3239,7 +3288,7 @@ function renderBriefPartB(){
   }).join('');
 
   return `
-    <div class="brief-note-box">ℹ️ ข้อมูลหลายช่องด้านล่าง <b>ดึงจาก Part A ให้อัตโนมัติ</b> (ยังแก้ไขเพิ่มได้) — ปริ้นแบบเหมือนฟอร์มโรงงานได้ด้วยปุ่ม "Print (Factory Form Style)" ด้านบน</div>
+    <div class="brief-note-box no-print-hint">ℹ️ ข้อมูลหลายช่องด้านล่าง <b>ดึงจาก Part A ให้อัตโนมัติ</b> (ยังแก้ไขเพิ่มได้) — ปริ้นแบบเหมือนฟอร์มโรงงานได้ด้วยปุ่ม "Print (Factory Form Style)" ด้านบน</div>
 
     <div class="brief-section-h">Request Info · ดึงอัตโนมัติ</div>
     <div class="brief-field-grid">
@@ -3325,7 +3374,7 @@ function renderBriefPartB(){
     </table>
 
     <div class="brief-section-h">B1. Formula Direction (สรุปย่อ)</div>
-    <p style="font-size:11.5px; color:var(--bMuted); margin:0 0 8px;">คอลัมน์ "ข้อมูลจากแบรนด์" ดึงจากส่วนบนให้อัตโนมัติ — โรงงานกรอกข้อเสนอ/ข้อจำกัดในคอลัมน์ขวา</p>
+    <p class="no-print-hint" style="font-size:11.5px; color:var(--bMuted); margin:0 0 8px;">คอลัมน์ "ข้อมูลจากแบรนด์" ดึงจากส่วนบนให้อัตโนมัติ — โรงงานกรอกข้อเสนอ/ข้อจำกัดในคอลัมน์ขวา</p>
     <table class="brief-table">
       <thead><tr><th style="width:22%;">หัวข้อ</th><th>ข้อมูลจากแบรนด์</th><th>ข้อเสนอจากโรงงาน</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -3370,13 +3419,14 @@ function renderBriefPartC(){
   bDefault('c_productName', bfGet('a_projectName'));
   bDefault('c_skuCount', bfGet('a_skuQty'));
   const active = bfGet('c_activeForm') || 'details';
-  const body = active==='sticker' ? renderCFormSticker() : active==='box' ? renderCFormBox() : renderCFormDetails();
+  const body = active==='sticker' ? renderCFormSticker() : active==='box' ? renderCFormBox() : active==='accessories' ? renderCFormAccessories() : renderCFormDetails();
   return `
-    <div class="brief-note-box">เลือกฟอร์มย่อยด้านล่าง แล้วกด <b>🖨️ ปริ้นฟอร์มนี้</b> เพื่อพิมพ์เฉพาะฟอร์มที่เลือก — ช่องที่ยังไม่กรอกจะขึ้น <b style="color:#D14657;">ขอบแดง</b> เตือน (ตอนปริ้นไม่โชว์สีแดง)</div>
+    <div class="brief-note-box no-print-hint">เลือกฟอร์มย่อยด้านล่าง แล้วกด <b>🖨️ ปริ้นฟอร์มนี้</b> เพื่อพิมพ์เฉพาะฟอร์มที่เลือก — ช่องที่ยังไม่กรอกจะขึ้น <b style="color:#D14657;">ขอบแดง</b> เตือน (ตอนปริ้นไม่โชว์สีแดง)</div>
     <div class="cform-menu">
-      <button type="button" class="cform-tab ${active==='details'?'active':''}" onclick="setCForm('details')">📦 Packaging Requirement Details</button>
+      <button type="button" class="cform-tab ${active==='details'?'active':''}" onclick="setCForm('details')">📦 for Primary Packaging</button>
       <button type="button" class="cform-tab ${active==='sticker'?'active':''}" onclick="setCForm('sticker')">🏷️ for Sticker</button>
       <button type="button" class="cform-tab ${active==='box'?'active':''}" onclick="setCForm('box')">📦 for Individual Box (UnitBox)</button>
+      <button type="button" class="cform-tab ${active==='accessories'?'active':''}" onclick="setCForm('accessories')">🎁 for Accessories</button>
       <span style="margin-left:auto; display:flex; gap:6px; align-self:center;">
         <button type="button" class="brief-print-btn" onclick="printBriefPart('c')">🖨️ ปริ้นฟอร์มนี้</button>
         <button type="button" class="brief-print-btn" onclick="printBriefPartCFactory()">🏭 ปริ้นฟอร์มโรงงาน</button>
@@ -3393,8 +3443,10 @@ function setCForm(w){
   if(body){ body.innerHTML = renderBriefPartC(); body.dataset.rendered='1'; afterCRender(); }
 }
 function cSharedHeader(active){
+  const accLabel = {sticker:'งาน Sticker', keychain:'Keychain', card:'Card'}[bfGet('c_accType')||'sticker'];
   const title = active==='sticker' ? 'Packaging Requirement Form for Sticker'
     : active==='box' ? 'Packaging Requirement Form for Individual Box (or UnitBox)'
+    : active==='accessories' ? 'Packaging Requirement Form for Accessories — '+accLabel
     : 'Packaging Requirement Form (Primary Packaging)';
   return `
     <div class="brief-section-h">${esc(title)}</div>
@@ -3443,73 +3495,103 @@ function cTest(){
     ${bfMultiField('c_funcTest','Functional Test', C_YNP)}
     ${bfMultiField('c_decoTest','Decoration Test', C_YNP)}`;
 }
-function renderCFormDetails(){
+/* Prefix-aware spec sections so the same layout can be reused with independent field ids
+   (the main forms use c_/cs_/cb_; the Accessories sub-forms use ca_*_ prefixes). */
+function cSpecPrimary(px){
   return `
     <div class="brief-section-h">Packaging Requirement Details</div>
-    ${bfMultiField('c_packType','Packaging Type', C_PACK_TYPE)}
-    ${bfField('c_packTypeOther','Packaging Type — Other','text')}
-    ${bfMultiField('c_material','Material', C_MATERIAL)}
-    ${bfField('c_materialOther','Material — Other','text')}
-    <div class="brief-field-grid">${bfField('c_size','Size / Volume (ml/g)','text')}</div>
-    ${bfMultiField('c_bodyColor','Body Color', C_BODY_COLOR)}
-    ${bfMultiField('c_capColor','Cap / Closure Color', C_CAP_COLOR)}
-    ${bfMultiField('c_finish','Surface Finish', C_FINISH)}
-    ${bfMultiField('c_printArea','Printing Area', C_PRINT_AREA)}
-    ${bfMultiField('c_printMethod','Printing Method', C_PRINT_METHOD)}
-    ${bfField('c_printMethodOther','Printing Method — Other','text')}
-    ${cMeta()}
-    ${cRef()}
-    ${bfMultiField('c_eco','Eco / Sustainable Packaging',['Yes / ต้องการ','No / ไม่ต้องการ','Preferred / ถ้ามี'])}
-    ${bfMultiField('c_cert','Required Certification', C_CERT)}
-    ${bfField('c_certOther','Certification — Other','text')}
-    ${cTest()}`;
+    ${bfMultiField(px+'packType','Packaging Type', C_PACK_TYPE)}
+    ${bfField(px+'packTypeOther','Packaging Type — Other','text')}
+    ${bfMultiField(px+'material','Material', C_MATERIAL)}
+    ${bfField(px+'materialOther','Material — Other','text')}
+    <div class="brief-field-grid">${bfField(px+'size','Size / Volume (ml/g)','text')}</div>
+    ${bfMultiField(px+'bodyColor','Body Color', C_BODY_COLOR)}
+    ${bfMultiField(px+'capColor','Cap / Closure Color', C_CAP_COLOR)}
+    ${bfMultiField(px+'finish','Surface Finish', C_FINISH)}
+    ${bfMultiField(px+'printArea','Printing Area', C_PRINT_AREA)}
+    ${bfMultiField(px+'printMethod','Printing Method', C_PRINT_METHOD)}
+    ${bfField(px+'printMethodOther','Printing Method — Other','text')}`;
 }
-function renderCFormSticker(){
+function cSpecPrimaryExtras(px){
+  return `
+    ${bfMultiField(px+'eco','Eco / Sustainable Packaging',['Yes / ต้องการ','No / ไม่ต้องการ','Preferred / ถ้ามี'])}
+    ${bfMultiField(px+'cert','Required Certification', C_CERT)}
+    ${bfField(px+'certOther','Certification — Other','text')}`;
+}
+function cSpecSticker(px){
   return `
     <div class="brief-section-h">Packaging Requirement Details for Sticker</div>
-    ${bfMultiField('cs_type','Packaging Type', CS_TYPE)}
-    ${bfField('cs_typeOther','Packaging Type — Other','text')}
-    ${bfMultiField('cs_material','Material', CS_MATERIAL)}
-    ${bfField('cs_materialOther','Material — Other','text')}
-    <div class="brief-field-grid">${bfField('cs_size','Size (mm)','text')}</div>
-    ${bfMultiField('cs_colorQty','Quantity of Color', C_COLORQTY)}
-    ${bfMultiField('cs_finish','Surface Finish', CS_FINISH)}
-    ${bfMultiField('cs_deco','Decoration', C_DECORATION)}
-    ${bfField('cs_decoOther','Decoration — Other','text')}
-    ${bfMultiField('cs_inkjet','Inkjet Lot Batch Coding', C_YN)}
-    ${cMeta()}
-    ${cRef()}
-    ${cTest()}`;
+    ${bfMultiField(px+'type','Packaging Type', CS_TYPE)}
+    ${bfField(px+'typeOther','Packaging Type — Other','text')}
+    ${bfMultiField(px+'material','Material', CS_MATERIAL)}
+    ${bfField(px+'materialOther','Material — Other','text')}
+    <div class="brief-field-grid">${bfField(px+'size','Size (mm)','text')}</div>
+    ${bfMultiField(px+'colorQty','Quantity of Color', C_COLORQTY)}
+    ${bfMultiField(px+'finish','Surface Finish', CS_FINISH)}
+    ${bfMultiField(px+'deco','Decoration', C_DECORATION)}
+    ${bfField(px+'decoOther','Decoration — Other','text')}
+    ${bfMultiField(px+'inkjet','Inkjet Lot Batch Coding', C_YN)}`;
 }
-function renderCFormBox(){
+function cSpecBox(px){
   return `
     <div class="brief-section-h">Packaging Requirement Details for Individual Box (or Unit Box)</div>
-    ${bfMultiField('cb_type','Packaging Type', CB_TYPE)}
-    ${bfMultiField('cb_material','Material', CB_MATERIAL)}
-    ${bfField('cb_materialOther','Material — Other','text')}
+    ${bfMultiField(px+'type','Packaging Type', CB_TYPE)}
+    ${bfMultiField(px+'material','Material', CB_MATERIAL)}
+    ${bfField(px+'materialOther','Material — Other','text')}
     <div class="brief-sub-label">Open Size / ขนาดเมื่อกางออก (mm)</div>
     <div class="brief-field-grid">
-      ${bfField('cb_openW','Width','text')}
-      ${bfField('cb_openL','Length','text')}
+      ${bfField(px+'openW','Width','text')}
+      ${bfField(px+'openL','Length','text')}
     </div>
     <div class="brief-sub-label">Finished Size (mm)</div>
     <div class="brief-field-grid">
-      ${bfField('cb_finW','Width','text')}
-      ${bfField('cb_finL','Length','text')}
-      ${bfField('cb_finH','Height','text')}
+      ${bfField(px+'finW','Width','text')}
+      ${bfField(px+'finL','Length','text')}
+      ${bfField(px+'finH','Height','text')}
     </div>
-    ${bfMultiField('cb_side','Side of Printing', CB_SIDE)}
-    ${bfMultiField('cb_colorQty','Quantity of Color', C_COLORQTY)}
-    ${bfMultiField('cb_inks','Types of Printing Inks', CB_INKS)}
-    ${bfMultiField('cb_finish','Surface Finish', CB_FINISH)}
-    ${bfMultiField('cb_deco','Decoration', C_DECORATION)}
-    ${bfField('cb_decoOther','Decoration — Other','text')}
-    ${bfMultiField('cb_inkjet','Inkjet Lot Batch Coding', C_YN)}
-    ${cMeta()}
-    ${cRef()}
-    ${bfMultiField('cb_cert','Required Certification', CB_CERT)}
-    ${bfField('cb_certOther','Certification — Other','text')}
-    ${cTest()}`;
+    ${bfMultiField(px+'side','Side of Printing', CB_SIDE)}
+    ${bfMultiField(px+'colorQty','Quantity of Color', C_COLORQTY)}
+    ${bfMultiField(px+'inks','Types of Printing Inks', CB_INKS)}
+    ${bfMultiField(px+'finish','Surface Finish', CB_FINISH)}
+    ${bfMultiField(px+'deco','Decoration', C_DECORATION)}
+    ${bfField(px+'decoOther','Decoration — Other','text')}
+    ${bfMultiField(px+'inkjet','Inkjet Lot Batch Coding', C_YN)}`;
+}
+function cSpecBoxCert(px){
+  return `
+    ${bfMultiField(px+'cert','Required Certification', CB_CERT)}
+    ${bfField(px+'certOther','Certification — Other','text')}`;
+}
+function renderCFormDetails(){ return `${cSpecPrimary('c_')}${cMeta()}${cRef()}${cSpecPrimaryExtras('c_')}${cTest()}`; }
+function renderCFormSticker(){ return `${cSpecSticker('cs_')}${cMeta()}${cRef()}${cTest()}`; }
+function renderCFormBox(){ return `${cSpecBox('cb_')}${cMeta()}${cRef()}${cSpecBoxCert('cb_')}${cTest()}`; }
+/* Accessories: a nested selector (งาน Sticker / Keychain / Card), each reusing an existing
+   spec layout with its own ca_* field ids so accessory specs stay separate from the main forms. */
+const C_ACC_TYPES = [
+  {key:'sticker',  label:'🏷️ งาน Sticker'},
+  {key:'keychain', label:'🔑 Keychain'},
+  {key:'card',     label:'🎴 Card'}
+];
+function renderCFormAccessories(){
+  const acc = bfGet('c_accType') || 'sticker';
+  const submenu = `<div class="cform-submenu">
+    <span class="cform-sub-label">ประเภท Accessory:</span>
+    ${C_ACC_TYPES.map(t=>`<button type="button" class="cform-subtab ${acc===t.key?'active':''}" onclick="setCAccType('${t.key}')">${t.label}</button>`).join('')}
+  </div>`;
+  let spec;
+  if(acc==='keychain'){        // Detail เหมือน for Primary Packaging
+    spec = `${cSpecPrimary('ca_key_')}${cMeta()}${cRef()}${cSpecPrimaryExtras('ca_key_')}${cTest()}`;
+  } else if(acc==='card'){      // Detail เหมือน for Individual Box
+    spec = `${cSpecBox('ca_card_')}${cMeta()}${cRef()}${cSpecBoxCert('ca_card_')}${cTest()}`;
+  } else {                      // งาน Sticker — Detail เหมือน for Sticker
+    spec = `${cSpecSticker('ca_stk_')}${cMeta()}${cRef()}${cTest()}`;
+  }
+  return submenu + spec;
+}
+function setCAccType(t){
+  bfSet('c_accType', t);
+  const body = document.getElementById('brief-part-body-c');
+  if(body){ body.innerHTML = renderBriefPartC(); body.dataset.rendered='1'; afterCRender(); }
 }
 /* empty-field warning (Part C only) — subtle red border while on screen; print strips it */
 function markCEmpty(){
@@ -3607,7 +3689,7 @@ function renderBriefPartF(){
   }
 
   return `
-    <div class="brief-note-box">ℹ️ หลายช่อง <b>ดึงจาก Part A/B อัตโนมัติ</b> (แก้ไขเพิ่มได้) — บรีฟนี้ส่งต่อทีม Supply Chain / Production</div>
+    <div class="brief-note-box no-print-hint">ℹ️ หลายช่อง <b>ดึงจาก Part A/B อัตโนมัติ</b> (แก้ไขเพิ่มได้) — บรีฟนี้ส่งต่อทีม Supply Chain / Production</div>
 
     <div class="brief-section-h">F1 · ข้อมูลสินค้า (ดึงอัตโนมัติ)</div>
     <div class="brief-field-grid">
@@ -3720,7 +3802,216 @@ function renderBriefPartF(){
     ${briefSignBlock('f2','ผู้รับทราบ')}`;
 }
 
-const BRIEF_RENDERERS = {a:renderBriefPartA, b:renderBriefPartB, c:renderBriefPartC, d:renderBriefPartD, e:renderBriefPartE, f:renderBriefPartF};
+/* ===== Graphic Brief (Part G) — nested menus: Primary Packaging / Unit Box / Sticker(ฉลาก/แจก/อื่นๆ).
+   Each sub-form uses its own field-id prefix so data never collides; shared blocks are prefix-aware
+   and auto-pull from A2 (Design & Collection Brief). Labels are English (ภาษาไทย). ===== */
+const G_DESIGN_OBJ = A2_DESIGN_OBJ.slice(0,7); // the 7 objectives (drop the trailing "อื่นๆ" — has its own text box)
+const G_SCB_SYMBOLS = ['PAO = 12M','Kids Friendly','Recycle','Not Tested On Animal'];
+const SCB_WARNING = 'ทดสอบความไวต่อการแพ้ก่อนใช้ผลิตภัณฑ์โดยสังเกตอาการ 48 ชั่วโมง หากพบอาการระคายเคืองหรือผิดปกติควรหยุดใช้ หรือหากพบอาการผิดปกติใดๆ ควรปรึกษาแพทย์';
+const SCB_DISTRIBUTOR = 'บริษัท คอสซูติค อินโนเวชั่น แลบอราทอรี่ส์ จำกัด\n47 สุขุมวิท 60/1 แขวงพระโขนงใต้ เขตพระโขนง กรุงเทพฯ 10260';
+const SCB_MANUFACTURER = 'บริษัท คอสเมเนีย แลบอราทอรี่ส์ จำกัด\n143/3 หมู่ 8 ตำบลบ้านยาง อำเภอเมือง จังหวัดนครปฐม 73000\nโรงงานที่ผ่านการรับรองมาตรฐาน ISO22716, ISO9001, ASEAN COSMETIC GMP, HALAL';
+const SCB_MFGEXP = 'วัน เดือน ปี ที่ผลิต / วัน เดือน ปี ที่หมดอายุ / ครั้งที่ผลิต: โปรดดูบนกล่องบรรจุภัณฑ์';
+
+function gBilingualTA(px, key, label){
+  return `<div class="brief-field brief-full"><label>${label}</label>
+    <textarea id="${px}${key}" class="bf-line" rows="1" oninput="autoGrow(this)" onchange="bfOnChange('${px}${key}')">${esc(bfGet(px+key))}</textarea></div>`;
+}
+function gKeyFeeling(px){
+  return `${bfMultiField(px+'keyFeel','Key Feeling (ความรู้สึกหลัก — เลือกได้มากกว่า 1)', A2_KEY_FEELING)}
+    ${bfField(px+'keyFeelOther','Key Feeling — Other (อื่นๆ โปรดระบุ)','text')}`;
+}
+function gTargetCustomer(px){
+  return `<div class="brief-sub-label">Target Customer (กลุ่มเป้าหมาย)</div>
+    <div class="brief-field-grid">
+      ${bfField(px+'tcAge','Age (อายุ)','text')}
+      ${bfField(px+'tcGender','Gender (เพศ)','select',{options:['หญิง (Female)','ชาย (Male)','ทุกเพศ (All)','เด็กผู้หญิง (Girl)','เด็กผู้ชาย (Boy)','อื่นๆ (Other)']})}
+      ${bfField(px+'tcUser','User (ผู้ใช้สินค้า)','text')}
+      ${bfField(px+'tcBuyer','Buyer (ผู้ซื้อสินค้า)','text')}
+      ${bfField(px+'tcLifestyle','Lifestyle (ไลฟ์สไตล์)','text',{full:true})}
+      ${bfField(px+'tcPain','Pain Point (ปัญหา/สิ่งที่อยากแก้)','text',{full:true})}
+    </div>`;
+}
+function gDesignObjective(px){
+  return `${bfMultiField(px+'designObj','Design Objective (วัตถุประสงค์งานออกแบบ — เลือกได้มากกว่า 1)', G_DESIGN_OBJ)}
+    ${bfField(px+'designObjOther','Design Objective — Other (อื่นๆ โปรดระบุ)','text')}`;
+}
+function gMoodTone(px, label){
+  return `<div class="brief-bench-row">
+    <div class="brief-field" style="flex:1; min-width:220px;"><label>${label||'Mood &amp; Tone (โทน/อารมณ์)'}</label>
+      <textarea id="${px}mood" class="bf-line" rows="1" oninput="autoGrow(this)" onchange="bfOnChange('${px}mood')">${esc(bfGet(px+'mood'))}</textarea></div>
+    <div class="brief-field brief-bench-img">${briefImgInline(px+'moodImg','Reference (ภาพอ้างอิง Mood &amp; Tone)')}</div>
+  </div>`;
+}
+function gRefShape(px, key, label){
+  return `<div class="brief-bench-row">
+    <div class="brief-field" style="flex:1; min-width:220px;"><label>${label}</label>
+      <textarea id="${px}${key}" class="bf-line" rows="1" oninput="autoGrow(this)" onchange="bfOnChange('${px}${key}')">${esc(bfGet(px+key))}</textarea></div>
+    <div class="brief-field brief-bench-img">${briefImgInline(px+key+'Img','Reference (ภาพอ้างอิง)')}</div>
+  </div>`;
+}
+function gBranding(px){
+  return `${gBilingualTA(px,'concept','Concept (คอนเซ็ปต์)')}
+    ${gKeyFeeling(px)}
+    ${gBilingualTA(px,'keyMsg','Key Message (ข้อความหลัก)')}
+    ${gTargetCustomer(px)}
+    ${gDesignObjective(px)}`;
+}
+function gStickerTypeBlock(px){
+  return `<div class="brief-sub-label">Sticker Material (ชนิดสติ๊กเกอร์)</div>
+    <div class="brief-field-grid">
+      ${bfField(px+'stkMaterial','Material','select',{options:['PP (กระดาษกันน้ำ)','PVC (กันน้ำ/เหนียวทนทาน)']})}
+      ${bfField(px+'stkFinish','Finish (ผิว)','select',{options:['เงา (Gloss)','ด้าน (Matte)','ใส (Clear)']})}
+    </div>
+    <div class="brief-note-box no-print-hint" style="font-size:11px;">
+      <b>PP</b> (สติกเกอร์กระดาษกันน้ำ) — ข้อดี: กันน้ำ พิมพ์เร็ว (ภายในวัน) สตก. A3 · ข้อเสีย: อาจมีผงหมึกติดมือ (ไม่บ่อย)<br>
+      <b>PVC</b> (กันน้ำ/เหนียวทนทาน) — ข้อดี: สีสวยติดทน เนื้อเหนียว สตก.เป็นม้วน เลย์ได้เยอะ หมึกน้ำ สีคมชัด · ข้อเสีย: รอแห้งนาน (ขั้นต่ำ 3 วัน) งานรีบไม่แนะนำ
+    </div>`;
+}
+function gBoxSpecialTech(px){
+  return `${bfMultiField(px+'specialTech','Special Technique (เทคนิคพิเศษ — เลือกได้มากกว่า 1)', ['Spot UV','Hot Stamp','Emboss'])}
+    <div class="brief-note-box no-print-hint" style="font-size:11px;">
+      <b>Spot UV</b> = ส่วนที่เงา (กรณีกล่องเป็นแบบด้าน) · <b>Hot Stamp</b> = การ K (ปั๊มทอง/ปั๊มเงิน) ในจุดที่ต้องการ · <b>Emboss</b> = ปั๊มนูนในตำแหน่งที่ต้องการ
+    </div>`;
+}
+function gPackagingStructure(px){
+  return `<div class="brief-section-h">Packaging Structure (โครงสร้างบรรจุภัณฑ์)</div>
+    <div class="brief-field-grid">
+      ${bfField(px+'material','Material (วัสดุ)','text')}
+      ${bfField(px+'size','Size (ขนาด)','text')}
+      ${bfField(px+'shape','Shape (รูปทรง)','text')}
+      ${bfField(px+'materialColor','Material Color (สีวัสดุ)','text')}
+      ${bfField(px+'transparency','Transparent / Opaque (โปร่งใส/ทึบ)','select',{options:['Transparent (โปร่งใส)','Opaque (ทึบ)','Semi (กึ่งโปร่ง)']})}
+      ${bfField(px+'printTech','Printing Technique (เทคนิคการพิมพ์)','text')}
+      ${bfField(px+'printArea','Printing Area (บริเวณที่พิมพ์)','text')}
+    </div>
+    ${bfField(px+'printScreen','Printing Screen (ข้อมูลสำหรับ Screen)','text',{full:true})}
+    ${bfMultiField(px+'specialTech','Special Technique (เทคนิคพิเศษ — เช่น K Gold, K Silver)', ['K Gold','K Silver'])}
+    ${bfField(px+'specialTechOther','Special Technique — Other (อื่นๆ โปรดระบุ)','text')}
+    ${bfField(px+'supplierLimit','Supplier Limitation (ข้อจำกัดจาก Supplier)','text',{full:true})}
+    ${bfField(px+'remark','Remark (หมายเหตุ)','textarea',{full:true})}`;
+}
+function gSCBLabel(px){
+  bDefault(px+'scbWarning', SCB_WARNING);
+  bDefault(px+'scbDistributor', SCB_DISTRIBUTOR);
+  bDefault(px+'scbManufacturer', SCB_MANUFACTURER);
+  bDefault(px+'scbMfgExp', SCB_MFGEXP);
+  return `<div class="brief-section-h">SCB Label Info (ข้อมูลสำหรับฉลาก สคบ.)</div>
+    ${bfField(px+'scbNameTh','Product Name — Thai (ชื่อสินค้าภาษาไทย)','text',{full:true})}
+    <div class="brief-field-grid">
+      ${bfField(px+'scbType','Product Type (ผลิตภัณฑ์ประเภท)','text')}
+      ${bfField(px+'scbNetContent','Net Content (ปริมาณสุทธิ)','text',{placeholder:'เช่น 30 กรัม'})}
+      ${bfField(px+'scbPrice','Price (ราคา)','text',{placeholder:'เช่น xxx บาท / THB'})}
+      ${bfField(px+'scbNotifyNo','Notification No. (เลขที่ใบรับจดแจ้ง)','text')}
+    </div>
+    ${bfField(px+'scbDesc','Description (คำบรรยายสินค้า)','textarea',{full:true})}
+    ${bfField(px+'scbIngredients','Ingredients (ส่วนประกอบ)','textarea',{full:true})}
+    ${bfField(px+'scbHowTo','How to Use (วิธีใช้)','textarea',{full:true})}
+    ${bfField(px+'scbWarning','Warning (คำเตือน)','textarea',{full:true})}
+    ${bfField(px+'scbDistributor','Distributed by (จัดจำหน่ายโดย)','textarea',{full:true})}
+    ${bfField(px+'scbManufacturer','Manufactured by (ผลิตโดย)','textarea',{full:true})}
+    ${bfField(px+'scbMfgExp','MFG / EXP / Batch (วันผลิต/หมดอายุ/ครั้งที่ผลิต)','text',{full:true})}
+    ${bfMultiField(px+'scbSymbols','Symbols (สัญลักษณ์ — เลือกได้มากกว่า 1)', G_SCB_SYMBOLS)}
+    ${bfField(px+'scbSymbolsOther','Symbols — Other (อื่นๆ โปรดระบุ)','text')}`;
+}
+function gVisualHead(){ return `<div class="brief-section-h">Visual Direction (ทิศทางภาพ)</div>`; }
+function gFormPrimary(){
+  const px='gp_';
+  return `${gBranding(px)}${gVisualHead()}${gMoodTone(px)}${gPackagingStructure(px)}`;
+}
+function gFormUnitBox(){
+  const px='gu_';
+  return `${gBranding(px)}${gVisualHead()}
+    ${gMoodTone(px)}
+    ${gRefShape(px,'boxShape','Box Shape (รูปทรงกล่อง)')}
+    ${gBoxSpecialTech(px)}
+    ${gSCBLabel(px)}
+    ${bfField(px+'remark','Remark (หมายเหตุ)','textarea',{full:true})}`;
+}
+function gFormSticker(){
+  const st = bfGet('g_stickerType') || 'label';
+  const submenu = `<div class="cform-submenu">
+    <span class="cform-sub-label">ประเภท Sticker:</span>
+    <button type="button" class="cform-subtab ${st==='label'?'active':''}" onclick="setGStickerType('label')">🏷️ Sticker ฉลาก</button>
+    <button type="button" class="cform-subtab ${st==='giveaway'?'active':''}" onclick="setGStickerType('giveaway')">🎁 Sticker แจก</button>
+    <button type="button" class="cform-subtab ${st==='other'?'active':''}" onclick="setGStickerType('other')">✨ Sticker อื่นๆ</button>
+  </div>`;
+  let body;
+  if(st==='giveaway'){
+    const px='gsg_';
+    body = `${gBranding(px)}${gVisualHead()}${gMoodTone(px)}${gStickerTypeBlock(px)}${bfField(px+'remark','Remark (หมายเหตุ)','textarea',{full:true})}`;
+  } else if(st==='other'){
+    const px='gso_';
+    body = `<div class="brief-field-grid">
+        ${bfField(px+'designItem','Design Item (รายการออกแบบ)','text')}
+        ${bfField(px+'prodType','Production Type (ประเภทการผลิต)','text')}
+        ${bfField(px+'name','Name (ชื่อ)','text')}
+        ${bfField(px+'size','Size (ขนาด)','text')}
+      </div>
+      ${gVisualHead()}${gMoodTone(px)}${gStickerTypeBlock(px)}${bfField(px+'remark','Remark (หมายเหตุ)','textarea',{full:true})}`;
+  } else { // ฉลาก — เหมือน Unit Box แต่ใช้รูปทรง Sticker + เพิ่มชนิดสติ๊กเกอร์
+    const px='gsl_';
+    body = `${gBranding(px)}${gVisualHead()}
+      ${gMoodTone(px)}
+      ${gRefShape(px,'stkShape','Sticker Shape (รูปทรง Sticker)')}
+      ${gStickerTypeBlock(px)}
+      ${gBoxSpecialTech(px)}
+      ${gSCBLabel(px)}
+      ${bfField(px+'remark','Remark (หมายเหตุ)','textarea',{full:true})}`;
+  }
+  return submenu + body;
+}
+function gActivePrefix(){
+  const active = bfGet('g_activeForm') || 'primary';
+  if(active==='unitbox') return 'gu_';
+  if(active==='sticker'){ const st=bfGet('g_stickerType')||'label'; return st==='giveaway'?'gsg_':st==='other'?'gso_':'gsl_'; }
+  return 'gp_';
+}
+function gAutoPull(){
+  bDefault('g_projectName', bfGet('a_projectName'));
+  bDefault('g_brand', bfGet('a_brand'));
+  bDefault('g_collection', bfGet('a2_collectionName'));
+  const px = gActivePrefix();
+  if(px==='gso_') return;  // "Sticker อื่นๆ" has no branding block to fill
+  bDefault(px+'concept', bfGet('a_concept'));
+  bDefault(px+'keyMsg', bfGet('a2_keyMessage'));
+  bDefault(px+'tcAge', bfGet('a2_tcAge'));
+  bDefault(px+'tcGender', bfGet('a2_tcGender'));
+  bDefault(px+'tcUser', bfGet('a2_tcUser'));
+  bDefault(px+'tcBuyer', bfGet('a2_tcBuyer'));
+  bDefault(px+'tcLifestyle', bfGet('a2_tcLifestyle'));
+  bDefault(px+'tcPain', bfGet('a2_painPoint'));
+  bDefault(px+'mood', bfGet('a2_mood'));
+  if(!bfGet(px+'keyFeel') && bfGet('a2_keyFeel')) bfSet(px+'keyFeel', bfGet('a2_keyFeel'));
+}
+function gHeader(){
+  return `<div class="brief-field-grid">
+    ${bfField('g_projectName','Project Name (ชื่อโปรเจกต์)','text')}
+    ${bfField('g_brand','Brand','select',{options:['Godmami','Glimmer Sisters']})}
+    ${bfField('g_collection','Collection Name (ชื่อคอลเลกชัน)','text')}
+  </div>`;
+}
+function renderBriefPartG(){
+  gAutoPull();
+  const active = bfGet('g_activeForm') || 'primary';
+  const body = active==='unitbox' ? gFormUnitBox() : active==='sticker' ? gFormSticker() : gFormPrimary();
+  return `
+    <div class="brief-note-box no-print-hint">เลือกเมนูย่อยด้านล่าง — แต่ละหัวข้อเป็น <b>English (ภาษาไทย)</b> · ข้อมูลบางส่วน <b>ดึงจาก A2 อัตโนมัติ</b> (แก้ไขเพิ่มได้)</div>
+    <div class="cform-menu">
+      <button type="button" class="cform-tab ${active==='primary'?'active':''}" onclick="setGForm('primary')">🧴 Primary Packaging</button>
+      <button type="button" class="cform-tab ${active==='unitbox'?'active':''}" onclick="setGForm('unitbox')">📦 Unit Box</button>
+      <button type="button" class="cform-tab ${active==='sticker'?'active':''}" onclick="setGForm('sticker')">🏷️ Sticker</button>
+      <span style="margin-left:auto; align-self:center;">
+        <button type="button" class="brief-print-btn" onclick="printBriefPart('g')">🖨️ ปริ้นฟอร์มนี้</button>
+      </span>
+    </div>
+    ${gHeader()}
+    ${body}
+    ${briefSignBlock('g','ผู้จัดทำ Graphic Brief')}`;
+}
+function setGForm(w){ bfSet('g_activeForm', w); const b=document.getElementById('brief-part-body-g'); if(b){ b.innerHTML=renderBriefPartG(); b.dataset.rendered='1'; autoGrowIn(b); } }
+function setGStickerType(t){ bfSet('g_stickerType', t); const b=document.getElementById('brief-part-body-g'); if(b){ b.innerHTML=renderBriefPartG(); b.dataset.rendered='1'; autoGrowIn(b); } }
+
+const BRIEF_RENDERERS = {a:renderBriefPartA, b:renderBriefPartB, g:renderBriefPartG, c:renderBriefPartC, d:renderBriefPartD, e:renderBriefPartE, f:renderBriefPartF};
 
 /* ===== NPD Brief — save/load the whole brief to the shared backend ===== */
 async function postReadable(payload){
@@ -3860,7 +4151,7 @@ async function deleteBriefFromCloud(nprNo){
   }catch(e){ toast('ต่อ Sheet ไม่ได้: '+e.message,'err'); }
 }
 function rerenderBriefParts(){
-  ['a','b','c','d','e','f'].forEach(key=>{
+  ['a','b','g','c','d','e','f'].forEach(key=>{
     const body = document.getElementById('brief-part-body-'+key);
     if(body && BRIEF_RENDERERS[key]){ body.innerHTML = BRIEF_RENDERERS[key](); body.dataset.rendered='1'; autoGrowIn(body); if(key==='c') afterCRender(); }
   });
@@ -3907,10 +4198,11 @@ function toggleBriefPart(key){
   if(!isOpen && !body.dataset.rendered){
     body.innerHTML = BRIEF_RENDERERS[key]();
     body.dataset.rendered = '1';
-    autoGrowIn(body);
     if(key==='c') afterCRender();
   }
   part.classList.toggle('open');
+  // resize auto-grow fields now that the part is visible (scrollHeight is 0 while hidden)
+  if(part.classList.contains('open')) autoGrowIn(body);
 }
 
 function printBriefPart(key){
@@ -3975,6 +4267,8 @@ function printBriefPart(key){
   });
 
   clone.querySelectorAll('button').forEach(b=>b.remove());
+  // drop on-screen usage hints, the sub-form switcher, and attach controls — they're UI, not part of the brief
+  clone.querySelectorAll('.no-print-hint, .cform-menu, .no-print').forEach(el=>el.remove());
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(p.title)}</title>
@@ -4046,68 +4340,70 @@ function printBriefPartCFactory(){
     <tr><td class="k">Required Timeline</td><td>${g('c_timeline')}</td></tr>
     <tr><td class="k">Budget (if any)</td><td>${g('c_budget')}</td></tr>`;
 
+  // resolve which spec layout + which field-id prefix to print (accessories reuse a layout with its own ids)
+  let formType='primary', px='c_', accSuffix='';
+  if(active==='sticker'){ formType='sticker'; px='cs_'; }
+  else if(active==='box'){ formType='box'; px='cb_'; }
+  else if(active==='accessories'){
+    const acc=bfGet('c_accType')||'sticker';
+    if(acc==='keychain'){ formType='primary'; px='ca_key_'; accSuffix=' — Keychain'; }
+    else if(acc==='card'){ formType='box'; px='ca_card_'; accSuffix=' — Card'; }
+    else { formType='sticker'; px='ca_stk_'; accSuffix=' — งาน Sticker'; }
+  }
+  const refCommon = `
+      <tr><td class="k">Reference Sample Provided</td><td>${line('c_refSample',['Yes / มี (แนบมาด้วย)','No / ไม่มี'])}</td></tr>
+      <tr><td class="k">Reference Description</td><td>${g('c_refDesc')}</td></tr>
+      <tr><td class="k">Special Requirements / Notes</td><td>${g('c_specialReq')}</td></tr>`;
+  const refTests = `
+      <tr><td class="k">Functional Test</td><td>${line('c_funcTest',C_YNP)}</td></tr>
+      <tr><td class="k">Decoration Test</td><td>${line('c_decoTest',C_YNP)}</td></tr>`;
   let subttl, specSec, specRows, refRows;
-  if(active==='sticker'){
-    subttl='for Sticker';
+  if(formType==='sticker'){
+    subttl=(active==='accessories'?'for Accessories':'for Sticker')+accSuffix;
     specSec='Packaging Requirement Details for Sticker';
     specRows=`
-      <tr><td class="k">Packaging Type</td><td>${line('cs_type',CS_TYPE,'cs_typeOther')}</td></tr>
-      <tr><td class="k">Material</td><td>${line('cs_material',CS_MATERIAL,'cs_materialOther')}</td></tr>
-      <tr><td class="k">Size (mm)</td><td>${g('cs_size')}</td></tr>
-      <tr><td class="k">Quantity of Color</td><td>${line('cs_colorQty',C_COLORQTY)}</td></tr>
-      <tr><td class="k">Surface Finish</td><td>${line('cs_finish',CS_FINISH)}</td></tr>
-      <tr><td class="k">Decoration</td><td>${line('cs_deco',C_DECORATION,'cs_decoOther')}</td></tr>
-      <tr><td class="k">Inkjet Lot Batch Coding</td><td>${line('cs_inkjet',C_YN)}</td></tr>
+      <tr><td class="k">Packaging Type</td><td>${line(px+'type',CS_TYPE,px+'typeOther')}</td></tr>
+      <tr><td class="k">Material</td><td>${line(px+'material',CS_MATERIAL,px+'materialOther')}</td></tr>
+      <tr><td class="k">Size (mm)</td><td>${g(px+'size')}</td></tr>
+      <tr><td class="k">Quantity of Color</td><td>${line(px+'colorQty',C_COLORQTY)}</td></tr>
+      <tr><td class="k">Surface Finish</td><td>${line(px+'finish',CS_FINISH)}</td></tr>
+      <tr><td class="k">Decoration</td><td>${line(px+'deco',C_DECORATION,px+'decoOther')}</td></tr>
+      <tr><td class="k">Inkjet Lot Batch Coding</td><td>${line(px+'inkjet',C_YN)}</td></tr>
       ${metaRows}`;
-    refRows=`
-      <tr><td class="k">Reference Sample Provided</td><td>${line('c_refSample',['Yes / มี (แนบมาด้วย)','No / ไม่มี'])}</td></tr>
-      <tr><td class="k">Reference Description</td><td>${g('c_refDesc')}</td></tr>
-      <tr><td class="k">Special Requirements / Notes</td><td>${g('c_specialReq')}</td></tr>
-      <tr><td class="k">Functional Test</td><td>${line('c_funcTest',C_YNP)}</td></tr>
-      <tr><td class="k">Decoration Test</td><td>${line('c_decoTest',C_YNP)}</td></tr>`;
-  } else if(active==='box'){
-    subttl='for Individual Box (or Unit Box)';
+    refRows=`${refCommon}${refTests}`;
+  } else if(formType==='box'){
+    subttl=(active==='accessories'?'for Accessories':'for Individual Box (or Unit Box)')+accSuffix;
     specSec='Packaging Requirement Details for Individual Box (or Unit Box)';
     specRows=`
-      <tr><td class="k">Packaging Type</td><td>${line('cb_type',CB_TYPE)}</td></tr>
-      <tr><td class="k">Material</td><td>${line('cb_material',CB_MATERIAL,'cb_materialOther')}</td></tr>
-      <tr><td class="k">Open Size (mm)</td><td>Width ${g('cb_openW')||'______'} &nbsp;x&nbsp; Length ${g('cb_openL')||'______'}</td></tr>
-      <tr><td class="k">Finished Size (mm)</td><td>Width ${g('cb_finW')||'______'} &nbsp;x&nbsp; Length ${g('cb_finL')||'______'} &nbsp;x&nbsp; Height ${g('cb_finH')||'______'}</td></tr>
-      <tr><td class="k">Side of Printing</td><td>${line('cb_side',CB_SIDE)}</td></tr>
-      <tr><td class="k">Quantity of Color</td><td>${line('cb_colorQty',C_COLORQTY)}</td></tr>
-      <tr><td class="k">Types of Printing Inks</td><td>${line('cb_inks',CB_INKS)}</td></tr>
-      <tr><td class="k">Surface Finish</td><td>${line('cb_finish',CB_FINISH)}</td></tr>
-      <tr><td class="k">Decoration</td><td>${line('cb_deco',C_DECORATION,'cb_decoOther')}</td></tr>
-      <tr><td class="k">Inkjet Lot Batch Coding</td><td>${line('cb_inkjet',C_YN)}</td></tr>
+      <tr><td class="k">Packaging Type</td><td>${line(px+'type',CB_TYPE)}</td></tr>
+      <tr><td class="k">Material</td><td>${line(px+'material',CB_MATERIAL,px+'materialOther')}</td></tr>
+      <tr><td class="k">Open Size (mm)</td><td>Width ${g(px+'openW')||'______'} &nbsp;x&nbsp; Length ${g(px+'openL')||'______'}</td></tr>
+      <tr><td class="k">Finished Size (mm)</td><td>Width ${g(px+'finW')||'______'} &nbsp;x&nbsp; Length ${g(px+'finL')||'______'} &nbsp;x&nbsp; Height ${g(px+'finH')||'______'}</td></tr>
+      <tr><td class="k">Side of Printing</td><td>${line(px+'side',CB_SIDE)}</td></tr>
+      <tr><td class="k">Quantity of Color</td><td>${line(px+'colorQty',C_COLORQTY)}</td></tr>
+      <tr><td class="k">Types of Printing Inks</td><td>${line(px+'inks',CB_INKS)}</td></tr>
+      <tr><td class="k">Surface Finish</td><td>${line(px+'finish',CB_FINISH)}</td></tr>
+      <tr><td class="k">Decoration</td><td>${line(px+'deco',C_DECORATION,px+'decoOther')}</td></tr>
+      <tr><td class="k">Inkjet Lot Batch Coding</td><td>${line(px+'inkjet',C_YN)}</td></tr>
       ${metaRows}`;
-    refRows=`
-      <tr><td class="k">Reference Sample Provided</td><td>${line('c_refSample',['Yes / มี (แนบมาด้วย)','No / ไม่มี'])}</td></tr>
-      <tr><td class="k">Reference Description</td><td>${g('c_refDesc')}</td></tr>
-      <tr><td class="k">Special Requirements / Notes</td><td>${g('c_specialReq')}</td></tr>
-      <tr><td class="k">Required Certification</td><td>${line('cb_cert',CB_CERT,'cb_certOther')}</td></tr>
-      <tr><td class="k">Functional Test</td><td>${line('c_funcTest',C_YNP)}</td></tr>
-      <tr><td class="k">Decoration Test</td><td>${line('c_decoTest',C_YNP)}</td></tr>`;
+    refRows=`${refCommon}
+      <tr><td class="k">Required Certification</td><td>${line(px+'cert',CB_CERT,px+'certOther')}</td></tr>${refTests}`;
   } else {
-    subttl='for Primary Packaging';
+    subttl=(active==='accessories'?'for Accessories':'for Primary Packaging')+accSuffix;
     specSec='Packaging Requirement Details for Primary Packaging';
     specRows=`
-      <tr><td class="k">Packaging Type</td><td>${line('c_packType',C_PACK_TYPE,'c_packTypeOther')}</td></tr>
-      <tr><td class="k">Material</td><td>${line('c_material',C_MATERIAL,'c_materialOther')}</td></tr>
-      <tr><td class="k">Size / Volume (ml/g)</td><td>${g('c_size')}</td></tr>
-      <tr><td class="k">Body Color</td><td>${line('c_bodyColor',C_BODY_COLOR)}</td></tr>
-      <tr><td class="k">Cap / Closure Color</td><td>${line('c_capColor',C_CAP_COLOR)}</td></tr>
-      <tr><td class="k">Surface Finish</td><td>${line('c_finish',C_FINISH)}</td></tr>
-      <tr><td class="k">Printing Area</td><td>${line('c_printArea',C_PRINT_AREA)}</td></tr>
-      <tr><td class="k">Printing Method</td><td>${line('c_printMethod',C_PRINT_METHOD,'c_printMethodOther')}</td></tr>
+      <tr><td class="k">Packaging Type</td><td>${line(px+'packType',C_PACK_TYPE,px+'packTypeOther')}</td></tr>
+      <tr><td class="k">Material</td><td>${line(px+'material',C_MATERIAL,px+'materialOther')}</td></tr>
+      <tr><td class="k">Size / Volume (ml/g)</td><td>${g(px+'size')}</td></tr>
+      <tr><td class="k">Body Color</td><td>${line(px+'bodyColor',C_BODY_COLOR)}</td></tr>
+      <tr><td class="k">Cap / Closure Color</td><td>${line(px+'capColor',C_CAP_COLOR)}</td></tr>
+      <tr><td class="k">Surface Finish</td><td>${line(px+'finish',C_FINISH)}</td></tr>
+      <tr><td class="k">Printing Area</td><td>${line(px+'printArea',C_PRINT_AREA)}</td></tr>
+      <tr><td class="k">Printing Method</td><td>${line(px+'printMethod',C_PRINT_METHOD,px+'printMethodOther')}</td></tr>
       ${metaRows}`;
-    refRows=`
-      <tr><td class="k">Reference Sample Provided</td><td>${line('c_refSample',['Yes / มี (แนบมาด้วย)','No / ไม่มี'])}</td></tr>
-      <tr><td class="k">Reference Description</td><td>${g('c_refDesc')}</td></tr>
-      <tr><td class="k">Special Requirements / Notes</td><td>${g('c_specialReq')}</td></tr>
-      <tr><td class="k">Eco / Sustainable Packaging</td><td>${line('c_eco',['Yes / ต้องการ','No / ไม่ต้องการ','Preferred / ถ้ามี'])}</td></tr>
-      <tr><td class="k">Required Certification</td><td>${line('c_cert',C_CERT,'c_certOther')}</td></tr>
-      <tr><td class="k">Functional Test</td><td>${line('c_funcTest',C_YNP)}</td></tr>
-      <tr><td class="k">Decoration Test</td><td>${line('c_decoTest',C_YNP)}</td></tr>`;
+    refRows=`${refCommon}
+      <tr><td class="k">Eco / Sustainable Packaging</td><td>${line(px+'eco',['Yes / ต้องการ','No / ไม่ต้องการ','Preferred / ถ้ามี'])}</td></tr>
+      <tr><td class="k">Required Certification</td><td>${line(px+'cert',C_CERT,px+'certOther')}</td></tr>${refTests}`;
   }
 
   const win=window.open('','_blank');
