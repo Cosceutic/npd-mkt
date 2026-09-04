@@ -724,7 +724,10 @@
         <div class="mh-name" id="tl-title" style="font-size:15px;"></div>
         <div class="mh-sku" id="tl-subtitle"></div>
       </div>
-      <button class="modal-close" onclick="closeTrackLog()">✕</button>
+      <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+        <button class="btn-edit primary" id="tl-add-btn" style="display:none; font-size:12px; padding:7px 12px;">➕ เพิ่มอัปเดต</button>
+        <button class="modal-close" onclick="closeTrackLog()">✕</button>
+      </div>
     </div>
     <div class="modal-body" id="tl-list" style="padding:14px 20px 20px; display:flex; flex-direction:column; gap:16px;"></div>
   </div>
@@ -2084,6 +2087,12 @@ function openTrackLog(sku, track){
   const trackLabel = {rd:'Formulation (R&D)', pkg:'Packaging / Graphic'}[track] || track;
   document.getElementById('tl-title').textContent = nameForSku(sku);
   document.getElementById('tl-subtitle').textContent = `${trackLabel}${sku ? ' · '+sku : ''}`;
+  // "add update" button (edit mode) — prefills SKU + Track for this cell
+  const addBtn = document.getElementById('tl-add-btn');
+  if(addBtn){
+    addBtn.style.display = EDIT_MODE ? '' : 'none';
+    addBtn.onclick = ()=>{ closeTrackLog(); openUpdateEditor({sku, track}); };
+  }
 
   // Build the column list: canonical steps first, then anything extra found in the data
   const cols = [];
@@ -4273,12 +4282,15 @@ function initEditUi(){
 }
 
 /* ---------- Updates Log: add progress entry (append) ---------- */
+let uePrefill = null;
 function renderUpdateForm(){
+  const pfSku = uePrefill && uePrefill.sku ? uePrefill.sku : '';
+  const pfTrack = uePrefill && uePrefill.track ? ({rd:'R&D', pkg:'Packaging'}[uePrefill.track] || '') : '';
   const skuOpts = ['<option value="">— เลือกสินค้า —</option>'].concat(
-    PRODUCTS.map(p=>`<option value="${esc(p.sku)}">${esc(p.sku)} — ${esc(p.name)}</option>`)
+    PRODUCTS.map(p=>`<option value="${esc(p.sku)}"${p.sku===pfSku?' selected':''}>${esc(p.sku)} — ${esc(p.name)}</option>`)
   ).join('');
-  const trackOpts = ['R&D','FDA','Packaging','Graphic','Marketing','Cost','Production'].map(x=>`<option value="${x}">${x}</option>`).join('');
-  const byOpts = ['','Peet','Bonus','Ploy'].map(x=>`<option value="${x}">${x||'— ใครอัปเดต —'}</option>`).join('');
+  const trackOpts = ['R&D','FDA','Packaging','Graphic','Marketing','Cost','Production'].map(x=>`<option value="${x}"${x===pfTrack?' selected':''}>${x}</option>`).join('');
+  const byOpts = ['<option value="">— ใครอัปเดต —</option>'].concat(TEAM_NAMES.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`)).join('');
   const riskOpts = ['','Low','Medium','High'].map(r=>`<option value="${r}">${r||'— ไม่ระบุ —'}</option>`).join('');
   document.getElementById('ue-form').innerHTML = `
   <div class="pe-grid">
@@ -4305,7 +4317,7 @@ function collectUpdateForm(){
     UpdatedBy:g('UpdatedBy'), Risk:g('Risk'), NextDue:g('NextDue')
   };
 }
-function openUpdateEditor(){ renderUpdateForm(); document.getElementById('ue-overlay').classList.add('open'); }
+function openUpdateEditor(prefill){ uePrefill = prefill||null; renderUpdateForm(); document.getElementById('ue-overlay').classList.add('open'); }
 function closeUpdateEditor(){ document.getElementById('ue-overlay').classList.remove('open'); }
 function saveUpdateEntry(){
   const row=collectUpdateForm();
