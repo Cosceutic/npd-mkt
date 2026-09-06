@@ -99,6 +99,7 @@
   tbody td small{font-size:10px;}
 
   .link-btn{background:none; border:none; padding:0; font:inherit; color:var(--blue-ink); font-weight:600; cursor:pointer; text-align:left;}
+  .grp-tag{font-size:9px; background:#EEF2FF; color:#4457B5; border:1px solid #C9D3F5; border-radius:6px; padding:1px 5px; font-weight:700; white-space:nowrap; vertical-align:middle;}
   .link-btn:hover{text-decoration:underline;}
 
   /* Catalog */
@@ -1989,8 +1990,38 @@ function renderCatalog(){
   `).join('');
 }
 
+/* ===== Product grouping — one product can have many SKUs (variants/shades).
+   Group key is derived from the SKU base (everything before the last "-"), so
+   MK064-1 / MK064-2 → group "MK064"; FR001 (no "-") is its own group.
+   An optional per-SKU override (set in Product Info) wins when present. ===== */
+function getSkuGroupOverride(sku){ try{ return (JSON.parse(localStorage.getItem('npd_sku_groups')||'{}'))[sku]||''; }catch(e){ return ''; } }
+function setSkuGroupOverride(sku, group){
+  try{ const m=JSON.parse(localStorage.getItem('npd_sku_groups')||'{}'); if(group&&group!==sku) m[sku]=group; else delete m[sku]; localStorage.setItem('npd_sku_groups', JSON.stringify(m)); }catch(e){}
+}
+function productGroupOf(sku){
+  sku = String(sku||'').trim();
+  if(!sku) return '';
+  const ov = getSkuGroupOverride(sku);
+  if(ov) return ov;
+  const i = sku.lastIndexOf('-');
+  return i>0 ? sku.slice(0,i).trim() : sku;
+}
+function groupMembers(group){ return PRODUCTS.filter(p=>productGroupOf(p.sku)===group).map(p=>p.sku); }
+// a "group code" is a grouping key that has real member SKUs but isn't itself a product SKU
+function isGroupCode(code){ return !PRODUCTS.some(p=>p.sku===code) && groupMembers(code).length>0; }
+function groupDisplayName(grp){
+  const names = groupMembers(grp).map(nameForSku).filter(Boolean);
+  if(!names.length) return grp;
+  if(names.length===1) return names[0];
+  let lcp = names[0];
+  for(const n of names.slice(1)){ let i=0; while(i<lcp.length && i<n.length && lcp[i]===n[i]) i++; lcp=lcp.slice(0,i); }
+  lcp = lcp.replace(/[\s\-–_0-9]+$/,'').trim();
+  return lcp || names[0];
+}
+
 function logsFor(sku, track){
-  return UPDATE_LOGS.filter(l=>l.sku===sku && l.track===track)
+  const grp = productGroupOf(sku);
+  return UPDATE_LOGS.filter(l=> l.track===track && (l.sku===sku || l.sku===grp))
                      .sort((a,b)=> b.date.localeCompare(a.date));
 }
 function trackCellSummary(sku, track){
@@ -1998,13 +2029,16 @@ function trackCellSummary(sku, track){
   if(!entries.length) return '<span class="dash">-</span>';
   const latest = entries[0];
   const label = [latest.subCategory, latest.stage, latest.detail].filter(Boolean).join(' — ') || latest.note || '(update logged)';
-  return `<button class="link-btn" style="font-size:12.5px; text-align:left;" onclick="openTrackLog('${esc(sku)}','${track}')">${esc(label)}</button>`;
+  const shared = latest.sku && latest.sku!==sku && isGroupCode(latest.sku);
+  const tag = shared ? ` <span class="grp-tag" title="อัปเดตระดับกลุ่ม — ใช้ร่วมทุก SKU ในกลุ่ม">กลุ่ม</span>` : '';
+  return `<button class="link-btn" style="font-size:12.5px; text-align:left;" onclick="openTrackLog('${esc(sku)}','${track}')">${esc(label)}</button>${tag}`;
 }
 /* Falls back to the name recorded on an Updates Log row when the SKU hasn't
    been added to the main product Sheet yet — NPD work usually starts first. */
 function nameForSku(sku){
   const product = PRODUCTS.find(p=>p.sku===sku);
   if(product) return product.name;
+  if(isGroupCode(sku)) return groupDisplayName(sku) + ' · ทั้งกลุ่ม';
   const withName = UPDATE_LOGS.find(l=>l.sku===sku && l.productName);
   return withName ? withName.productName : sku;
 }
@@ -2181,8 +2215,9 @@ function renderTeamUpdates(){
   const headRow = document.getElementById('team-status-headrow');
   const skusWithLogs = new Set(UPDATE_LOGS.map(l=>l.sku));
   const knownSkus = new Set(PRODUCTS.map(p=>p.sku));
-  const pendingSkus = [...skusWithLogs].filter(sku=>!knownSkus.has(sku));
-  const relevant = PRODUCTS.filter(p=>skusWithLogs.has(p.sku));
+  // a product is relevant if it OR its group has any log; group codes never become phantom rows
+  const pendingSkus = [...skusWithLogs].filter(sku=>!knownSkus.has(sku) && !isGroupCode(sku));
+  const relevant = PRODUCTS.filter(p=>skusWithLogs.has(p.sku) || skusWithLogs.has(productGroupOf(p.sku)));
 
   const otherTracks = [...new Set(UPDATE_LOGS.map(l=>l.track).filter(Boolean))].filter(t=>t!=='rd'&&t!=='pkg').sort();
   const trackCols = ['rd','pkg', ...otherTracks];
@@ -4205,7 +4240,19 @@ function toggleBriefPart(key){
   if(part.classList.contains('open')) autoGrowIn(body);
 }
 
+/* Per-part accent colors (must mirror the .brief-part.pc-X CSS) so the printed PDF
+   of each form matches its on-screen color. */
+const PART_COLORS = {
+  a:{a:'#9CC0F7', ad:'#3E63B8', ap:'#EDF3FE', head:'#F5F9FF'},
+  b:{a:'#9ADCC4', ad:'#1F8F6B', ap:'#E8F8F1', head:'#F1FBF7'},
+  g:{a:'#E8CE73', ad:'#9A7A10', ap:'#FAF4D6', head:'#FEFBEC'},
+  c:{a:'#F8C795', ad:'#C07A20', ap:'#FDF2E4', head:'#FFF9F1'},
+  d:{a:'#C6B7F4', ad:'#6B52C4', ap:'#F2EDFD', head:'#F8F5FF'},
+  e:{a:'#F5B2D3', ad:'#C24C8B', ap:'#FCEAF3', head:'#FEF4F9'},
+  f:{a:'#9CDAE4', ad:'#1E8598', ap:'#E7F6F9', head:'#F1FBFD'},
+};
 function printBriefPart(key){
+  const col = PART_COLORS[key] || PART_COLORS.a;
   const body = document.getElementById('brief-part-body-'+key);
   if(!body.dataset.rendered){
     body.innerHTML = BRIEF_RENDERERS[key]();
@@ -4276,33 +4323,33 @@ function printBriefPart(key){
       @page{ margin:15mm 14mm; }
       *{ box-sizing:border-box; }
       body{font-family:'Sarabun',Arial,sans-serif; padding:0; color:#1F2937; font-size:12.5px; line-height:1.5;}
-      .pv-header{display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #334155; padding-bottom:10px; margin-bottom:18px;}
-      .pv-brand{font-family:'Prompt',Arial,sans-serif; font-weight:800; font-size:20px; color:#334155; letter-spacing:1px;}
-      .pv-title{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:14px; color:#475569; margin-top:3px;}
+      .pv-header{display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid ${col.ad}; padding-bottom:10px; margin-bottom:18px;}
+      .pv-brand{font-family:'Prompt',Arial,sans-serif; font-weight:800; font-size:20px; color:${col.ad}; letter-spacing:1px;}
+      .pv-title{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:14px; color:${col.ad}; margin-top:3px;}
       .pv-meta{font-size:10px; color:#94A3B8; text-align:right;}
-      .brief-section-h{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:11.5px; letter-spacing:.4px; text-transform:uppercase; color:#334155;
-        background:#F1F5F9; border-left:3px solid #64748B; padding:6px 11px; margin:18px 0 10px; border-radius:4px;}
-      .brief-sub-label{font-family:'Prompt',Arial,sans-serif; font-weight:600; font-size:12px; color:#64748B; margin:12px 0 6px;}
+      .brief-section-h{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:11.5px; letter-spacing:.4px; text-transform:uppercase; color:${col.ad};
+        background:${col.ap}; border-left:3px solid ${col.a}; padding:6px 11px; margin:18px 0 10px; border-radius:4px;}
+      .brief-sub-label{font-family:'Prompt',Arial,sans-serif; font-weight:600; font-size:12px; color:${col.ad}; margin:12px 0 6px;}
       table{width:100%; border-collapse:collapse; margin-bottom:8px; page-break-inside:avoid;}
       th,td{border:1px solid #CBD5E1; padding:6px 8px; font-size:11.5px; text-align:left; vertical-align:top;}
-      th{background:#334155; color:#fff; font-family:'Prompt',Arial,sans-serif; font-weight:600; font-size:11px;}
-      tr:nth-child(even) td{background:#F8FAFC;}
-      .label-cell{font-weight:600; background:#F1F5F9 !important; white-space:nowrap;}
+      th{background:${col.ad}; color:#fff; font-family:'Prompt',Arial,sans-serif; font-weight:600; font-size:11px;}
+      tr:nth-child(even) td{background:${col.head};}
+      .label-cell{font-weight:600; background:${col.head} !important; white-space:nowrap;}
       td .pv-box{border:none; padding:0; background:none; min-height:auto;}
       .brief-check-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:6px 14px; margin-bottom:12px;}
       .brief-check-item{font-size:12px; display:flex; align-items:center; gap:6px;}
       .pv-check{display:inline-block; width:14px; text-align:center; font-size:14px; color:#94A3B8;}
-      .pv-check.on{color:#0F766E; font-weight:700;}
-      .brief-note-box{background:#F1F5F9; border-left:3px solid #64748B; border-radius:6px; padding:9px 13px; font-size:11px; margin:10px 0; line-height:1.5; color:#334155;}
+      .pv-check.on{color:${col.ad}; font-weight:700;}
+      .brief-note-box{background:${col.ap}; border-left:3px solid ${col.a}; border-radius:6px; padding:9px 13px; font-size:11px; margin:10px 0; line-height:1.5; color:${col.ad};}
       .brief-field-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:9px 18px; margin-bottom:12px;}
       .brief-field{margin-bottom:2px;}
       .brief-field label{display:block; font-size:9.5px; text-transform:uppercase; letter-spacing:.3px; color:#94A3B8; margin-bottom:3px; font-weight:600;}
-      .pv-box{border:1px solid #E2E8F0; border-radius:5px; background:#F8FAFC; padding:6px 9px; font-size:12px; min-height:1.3em; color:#1F2937;}
+      .pv-box{border:1px solid ${col.a}; border-radius:5px; background:${col.head}; padding:6px 9px; font-size:12px; min-height:1.3em; color:#1F2937;}
       .brief-full{grid-column:1/-1;}
       .brief-sign{border:none; background:none; padding:0; margin-top:16px;}
-      .brief-sign-title{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:11.5px; color:#334155; margin-bottom:6px;}
+      .brief-sign-title{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:11.5px; color:${col.ad}; margin-bottom:6px;}
       .brief-sign-table{width:100%; border-collapse:collapse;}
-      .brief-sign-table th{background:#F1F5F9; color:#475569;}
+      .brief-sign-table th{background:${col.head}; color:${col.ad};}
       .sign-blank{min-height:46px; color:#94A3B8; display:flex; align-items:flex-end; justify-content:center; padding-bottom:4px;}
       img{max-width:150px; max-height:120px; border:1px solid #E2E8F0; border-radius:6px;}
       .brief-img-empty{color:#CBD5E1; font-size:11px;}
@@ -5110,7 +5157,8 @@ function renderUpdateForm(){
   document.getElementById('ue-form').innerHTML = `
   <div class="pe-grid">
     <div class="pe-field"><label>วันที่ *</label><input type="date" id="ue-Date" value="${esc(pf.Date||todayStr())}"></div>
-    <div class="pe-field"><label>สินค้า (SKU) *</label><select id="ue-SKU">${skuOpts}</select></div>
+    <div class="pe-field"><label>สินค้า (SKU) *</label><select id="ue-SKU" onchange="refreshUpdateScope()">${skuOpts}</select></div>
+    <div class="pe-field" id="ue-scope-cell">${updateScopeCellHtml(pfSku, pf.scope)}</div>
     <div class="pe-field"><label>สาย/แผนก (Track)</label><select id="ue-Track" onchange="updateSubStageFields()">${trackOpts}</select></div>
     <div class="pe-field" id="ue-subcat-cell">${ueSelectOrText('ue-SubCategory','หัวข้อย่อย (SubCategory)',subcatsForTrack(initTrack),pf.SubCategory||'','ระบุ (ถ้ามี)')}</div>
     <div class="pe-field" id="ue-stage-cell">${ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesForTrack(initTrack),pf.Stage||'','เช่น กำลังทำ, เสร็จ')}</div>
@@ -5122,11 +5170,34 @@ function renderUpdateForm(){
     <div class="pe-field full"><label>ลิงก์รูป (Images) — คั่นหลายรูปด้วย ; </label><input type="text" id="ue-Images" value="${esc(pf.Images||'')}" placeholder="วางลิงก์ Google Drive"></div>
   </div>`;
 }
+/* Scope selector — decides whether an update applies to every SKU in the group
+   (stored under the group code = shared) or to just this one SKU (specific). */
+function updateScopeCellHtml(sku, scope){
+  scope = scope || 'group';
+  if(!sku) return `<label>ขอบเขต (Scope)</label><select id="ue-Scope" disabled><option>— เลือกสินค้าก่อน —</option></select>`;
+  const grp = productGroupOf(sku);
+  const members = groupMembers(grp);
+  const multi = members.length > 1;
+  const groupLabel = multi ? `ทุก SKU ในกลุ่ม ${grp} (${members.length} SKU)` : `ทั้งกลุ่ม ${grp}`;
+  return `<label>ขอบเขต (Scope) — ใช้กับ SKU ไหน</label>
+    <select id="ue-Scope">
+      <option value="group"${scope==='group'?' selected':''}>📦 ${esc(groupLabel)}</option>
+      <option value="sku"${scope==='sku'?' selected':''}>🔀 เฉพาะ SKU นี้ (${esc(sku)})</option>
+    </select>`;
+}
+function refreshUpdateScope(){
+  const sel=document.getElementById('ue-SKU'); const cell=document.getElementById('ue-scope-cell');
+  if(!sel||!cell) return;
+  const cur=(document.getElementById('ue-Scope')||{}).value;
+  cell.innerHTML = updateScopeCellHtml(sel.value, cur);
+}
 function collectUpdateForm(){
   const g=id=>String((document.getElementById('ue-'+id)||{}).value||'').trim();
-  const sku=g('SKU');
+  const selSku=g('SKU');
+  const scope=g('Scope')||'group';
+  const sku = (scope==='group' && selSku) ? productGroupOf(selSku) : selSku;
   return {
-    Date:g('Date'), SKU:sku, ProductName: nameForSku(sku)||'',
+    Date:g('Date'), SKU:sku, ProductName: (nameForSku(selSku)||nameForSku(sku)||''),
     Track:g('Track'), SubCategory:g('SubCategory'), Stage:g('Stage'),
     Detail:g('Detail'), Note:g('Note'), Images:g('Images'),
     UpdatedBy:g('UpdatedBy'), Risk:g('Risk'), NextDue:g('NextDue')
@@ -5166,7 +5237,10 @@ function saveUpdateEntry(){
 function editUpdateEntry(id){
   const e=UPDATE_LOGS.find(x=>x.id===id); if(!e){ toast('ไม่พบบันทึก (บันทึกเก่าที่ไม่มี id แก้ได้ใน Sheet เท่านั้น)','err'); return; }
   closeTrackLog();
-  openUpdateEditor({ sku:e.sku, trackLabel:e.trackRaw||'', SubCategory:e.subCategory, Stage:e.stage, Date:e.date, UpdatedBy:e.updatedBy, Risk:e.risk, NextDue:e.nextDue, Detail:e.detail, Note:e.note, Images:e.imagesRaw||'' }, id);
+  // a group-scoped entry is stored under the group code — show a member SKU + scope=group so it edits cleanly
+  const grpMode = isGroupCode(e.sku);
+  const dispSku = grpMode ? (groupMembers(e.sku)[0] || e.sku) : e.sku;
+  openUpdateEditor({ sku:dispSku, scope: grpMode?'group':'sku', trackLabel:e.trackRaw||'', SubCategory:e.subCategory, Stage:e.stage, Date:e.date, UpdatedBy:e.updatedBy, Risk:e.risk, NextDue:e.nextDue, Detail:e.detail, Note:e.note, Images:e.imagesRaw||'' }, id);
 }
 function deleteUpdateEntry(id){
   if(!confirm('ลบบันทึกนี้ออกจาก Updates Log?')) return;
