@@ -512,7 +512,6 @@
       <div class="tab active" data-view="calendar">Calendar</div>
       <div class="tab" data-view="catalog">Product Info</div>
       <div class="tab" data-view="team">NPD Process</div>
-      <div class="tab" data-view="task">Task</div>
     </nav>
     <div class="updated-badge" id="updated-badge"></div>
     <a class="updated-badge" href="https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/edit"
@@ -1456,13 +1455,24 @@ function brandBadge(p, heightPx){
   return `<img src="${b.logo}" alt="${b.label}" title="${b.label}" style="max-height:${h}px; max-width:100%; width:auto; height:auto; display:block;">`;
 }
 
+/* One shared Product Type vocabulary — used in Part A (Project Brief) AND Product Info */
+const PRODUCT_TYPES = ['New Product','New Product (D.I.Y)','Re-Formula','Re-Packaging','ชุด Set','Update Cost'];
 const TYPE_DEFS = {
-  npd_goods:   {label:'NPD (Goods)',   th:'สินค้าใหม่ หมวดปกติ',              color:'var(--type-goods)'},
-  npd_diy:     {label:'NPD (D.I.Y)',   th:'สินค้าใหม่ หมวด D.I.Y',            color:'var(--type-diy)'},
-  npd_newsku:  {label:'NPD (New SKU)',th:'สินค้าเดิม เพิ่มรุ่น/สี/ขนาด',      color:'var(--type-newsku)'},
-  repackage:   {label:'Repackage',    th:'สินค้าเดิมเปลี่ยน Packaging',      color:'var(--type-repack)'},
-  update_cost: {label:'Update Cost',  th:'ปรับปรุงต้นทุน/ราคาสินค้าเดิม',    color:'var(--type-updatecost)'},
+  // canonical (keys = lowercased label; product.type is lowercased on read to match)
+  'new product':          {label:'New Product',          th:'สินค้าใหม่',                  color:'var(--type-goods)'},
+  'new product (d.i.y)':  {label:'New Product (D.I.Y)',  th:'สินค้าใหม่ D.I.Y',            color:'var(--type-diy)'},
+  're-formula':           {label:'Re-Formula',           th:'ปรับสูตรเดิม',                color:'var(--type-newsku)'},
+  're-packaging':         {label:'Re-Packaging',         th:'เปลี่ยน Packaging',           color:'var(--type-repack)'},
+  'ชุด set':              {label:'ชุด Set',              th:'สินค้าเซต',                   color:'var(--type-goods)'},
+  'update cost':          {label:'Update Cost',          th:'ปรับปรุงต้นทุน/ราคา',         color:'var(--type-updatecost)'},
+  // backward-compat: existing products saved with the old codes still show a badge
+  'npd_goods':   {label:'New Product',          th:'สินค้าใหม่ หมวดปกติ',              color:'var(--type-goods)'},
+  'npd_diy':     {label:'New Product (D.I.Y)',  th:'สินค้าใหม่ หมวด D.I.Y',            color:'var(--type-diy)'},
+  'npd_newsku':  {label:'New SKU',              th:'สินค้าเดิม เพิ่มรุ่น/สี/ขนาด',      color:'var(--type-newsku)'},
+  'repackage':   {label:'Re-Packaging',         th:'สินค้าเดิมเปลี่ยน Packaging',      color:'var(--type-repack)'},
+  'update_cost': {label:'Update Cost',          th:'ปรับปรุงต้นทุน/ราคาสินค้าเดิม',    color:'var(--type-updatecost)'},
 };
+const TYPE_ALIAS = { 'npd_goods':'New Product','npd_diy':'New Product (D.I.Y)','npd_newsku':'New SKU','repackage':'Re-Packaging','update_cost':'Update Cost' };
 function typeBadge(p){
   const t = TYPE_DEFS[p.type];
   return t ? `<span class="pill-soft" style="background:${t.color}" title="${t.th}">${t.label}</span>` : '<span class="dash">-</span>';
@@ -3263,7 +3273,7 @@ function renderBriefPartA(){
       ${bfField('a_projectName','Project Name','text')}
       ${bfField('a_briefVersion','Brief Version','text',{placeholder:'เช่น V1.0'})}
       ${bfField('a_brand','Brand / Company','select',{options:['Godmami','Glimmer Sisters']})}
-      ${bfField('a_objective','Product Type','select',{options:['New Product','Re-Formula','Re-Packaging','ชุด Set']})}
+      ${bfField('a_objective','Product Type','select',{options:PRODUCT_TYPES})}
       ${bfField('a_briefDate','Brief Date','date')}
       ${bfField('a_owner','NPD Owner','select',{options:['Peet','Bonus','Ploy']})}
       ${bfMultiField('a_channel','Sales Channel',['Online','Offline','Flagship'])}
@@ -4582,26 +4592,27 @@ function printBriefPartCFactory(){
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>Packaging Requirement Form</title>
   <style>
-    *{box-sizing:border-box;} body{font-family:'Sarabun','TH Sarabun New',sans-serif; font-size:13px; color:#111; margin:22px 26px; line-height:1.5;}
-    .brand-head{display:flex; align-items:center; gap:14px; padding-bottom:6px; margin-bottom:4px;}
-    .brand-head img{height:52px; width:auto;}
-    .brand-head .co{flex:1;} .brand-head .co-name{font-weight:700; font-size:15px; color:#111;} .brand-head .co-addr{font-size:10px; color:#555;}
-    .brand-head .ref{font-size:11px; text-align:right; white-space:nowrap; color:#333;}
-    h1{font-size:16px; text-align:center; margin:6px 0 2px; color:#111; font-weight:700;} .subttl{text-align:center; color:#555; font-size:12px; margin:0 0 10px;}
-    .hd{margin:5px 0;}
-    table{width:100%; border-collapse:collapse; margin-top:6px;}
-    td{border:1px solid #9DB0CE; padding:6px 8px; vertical-align:top;}
+    /* compact so the whole form fits on a single A4 page */
+    *{box-sizing:border-box;} body{font-family:'Sarabun','TH Sarabun New',sans-serif; font-size:10.5px; color:#111; margin:12px 16px; line-height:1.28;}
+    .brand-head{display:flex; align-items:center; gap:12px; padding-bottom:4px; margin-bottom:2px;}
+    .brand-head img{height:40px; width:auto;}
+    .brand-head .co{flex:1;} .brand-head .co-name{font-weight:700; font-size:12.5px; color:#111;} .brand-head .co-addr{font-size:8.5px; color:#555;}
+    .brand-head .ref{font-size:9.5px; text-align:right; white-space:nowrap; color:#333;}
+    h1{font-size:13px; text-align:center; margin:3px 0 1px; color:#111; font-weight:700;} .subttl{text-align:center; color:#555; font-size:10px; margin:0 0 5px;}
+    .hd{margin:2px 0;}
+    table{width:100%; border-collapse:collapse; margin-top:3px; page-break-inside:avoid;}
+    td{border:1px solid #9DB0CE; padding:3px 6px; vertical-align:top;}
     td.k{width:27%; background:#D9E1F2; font-weight:700; color:#1F2A44;}
-    .sec{font-weight:700; background:#4472C4; color:#fff; padding:7px 9px; border:1px solid #4472C4; text-align:center; margin-top:14px;}
+    .sec{font-weight:700; background:#4472C4; color:#fff; padding:4px 8px; border:1px solid #4472C4; text-align:center; margin-top:7px; page-break-after:avoid; font-size:11px;}
     .sec.teal{background:#38756B; border-color:#38756B;}
-    .sign{display:flex; gap:0; margin-top:30px;}
-    .sign > div{flex:1; border:1px solid #9DB0CE; border-right:none; padding:12px 14px 16px; font-size:12px;}
+    .sign{display:flex; gap:0; margin-top:12px; page-break-inside:avoid;}
+    .sign > div{flex:1; border:1px solid #9DB0CE; border-right:none; padding:7px 9px 8px; font-size:10px;}
     .sign > div:last-child{border-right:1px solid #9DB0CE;}
-    .sig-label{font-weight:700; margin-top:10px;}
+    .sig-label{font-weight:700; margin-top:6px;}
     .sig-label:first-child{margin-top:0;}
-    .sig-line{border-bottom:1px solid #333; min-height:22px; margin:6px 0 2px; text-align:center; padding:0 4px;}
-    .sig-role{text-align:center; font-size:11px; color:#333;}
-    @media print{ body{-webkit-print-color-adjust:exact; print-color-adjust:exact; margin:12mm;} }
+    .sig-line{border-bottom:1px solid #333; min-height:15px; margin:4px 0 2px; text-align:center; padding:0 4px;}
+    .sig-role{text-align:center; font-size:9.5px; color:#333;}
+    @media print{ body{-webkit-print-color-adjust:exact; print-color-adjust:exact; margin:8mm;} }
   </style></head><body>
   <div class="brand-head">
     <img src="${FACTORY_LOGO}" alt="Cosmania">
@@ -4680,8 +4691,12 @@ function printBriefPartBFactory(){
       .refbox{ font-size:11px; text-align:right; white-space:nowrap; }
       .rd-title{ font-weight:700; font-size:15px; text-align:center; margin:8px 0 10px; letter-spacing:.5px;}
       .obj-line{ font-size:11.5px; margin-bottom:6px; padding:0 2px; }
-      .rd-sign{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:26px; text-align:center;}
-      .rd-sign div{border-top:1px solid #000; padding-top:4px; font-size:10.5px;}
+      .rd-sign{display:grid; grid-template-columns:repeat(3,1fr); gap:0; margin-top:26px; text-align:center; border:1px solid #000; border-right:none;}
+      .rd-sign > div{border-right:1px solid #000; padding:8px 10px 10px; font-size:10.5px;}
+      .rd-sig-role{font-weight:700;}
+      .rd-sig-line{border-bottom:1px dotted #000; height:26px; margin:8px 6px 4px;}
+      .rd-sig-pos{margin-top:6px; font-weight:600;}
+      .doc-ctrl{position:fixed; bottom:6mm; right:12mm; font-size:9.5px; color:#000;}
       @media print{ body{-webkit-print-color-adjust:exact; print-color-adjust:exact;} }
     </style></head><body>
 
@@ -4756,10 +4771,11 @@ function printBriefPartBFactory(){
     </table>
 
     <div class="rd-sign">
-      <div>\u0e1c\u0e39\u0e49\u0e23\u0e49\u0e2d\u0e07\u0e02\u0e2d<br>(New Product Development)<br>Date: __/__/__</div>
-      <div>\u0e1c\u0e39\u0e49\u0e15\u0e23\u0e27\u0e08\u0e2a\u0e2d\u0e1a<br>(Sale Manager)<br>Date: __/__/__</div>
-      <div>\u0e1c\u0e39\u0e49\u0e2d\u0e19\u0e38\u0e21\u0e31\u0e15\u0e34<br>(R&D Supervisor)<br>Date: __/__/__</div>
+      <div><div class="rd-sig-role">ผู้ร้องขอ</div><div class="rd-sig-line"></div>Date: ....../....../......<div class="rd-sig-pos">( Sale )</div></div>
+      <div><div class="rd-sig-role">ผู้ตรวจสอบ</div><div class="rd-sig-line"></div>Date: ....../....../......<div class="rd-sig-pos">( Sale Manager )</div></div>
+      <div><div class="rd-sig-role">ผู้อนุมัติ</div><div class="rd-sig-line"></div>Date: ....../....../......<div class="rd-sig-pos">( R&D Suppervisor )</div></div>
     </div>
+    <div class="doc-ctrl">FM-RD-0001 Rev.01 Effective date&nbsp;&nbsp;25.06.2024</div>
 
     </body></html>`);
   win.document.close();
@@ -4871,7 +4887,8 @@ function renderProductForm(row, isEdit){
       ms += `<div class="pe-ms-cell" style="grid-column:1/-1;"><label>ลิงก์ไฟล์แนบ (ถ้ามี)</label><input type="text" id="pe-${lc}" value="${V(lc)}" placeholder="วางลิงก์ Google Drive / ไฟล์"></div>`;
     }
   });
-  const typeOpts = ['<option value="">— เลือก —</option>'].concat(Object.keys(TYPE_DEFS).map(k=>peOpt(k,TYPE_DEFS[k].label,(row.type||'').toLowerCase()))).join('');
+  const curType = TYPE_ALIAS[(row.type||'').toLowerCase()] || row.type || '';
+  const typeOpts = ['<option value="">— เลือก —</option>'].concat(PRODUCT_TYPES.map(t=>peOpt(t, t, curType))).join('');
   const catOpts  = ['<option value="">— เลือก —</option>'].concat(Object.keys(CATEGORY_DEFS).map(k=>peOpt(k,CATEGORY_DEFS[k].label,(row.category||'').toLowerCase()))).join('');
   const brandCur = brandToLabel(row.brand);
   const brandOpts = ['',"Godmami","Glimmer Sisters"].map(b=>peOpt(b, b||'— เลือก —', brandCur)).join('');
