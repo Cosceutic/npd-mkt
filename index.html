@@ -111,6 +111,18 @@
   .catalog-body .cname{font-weight:600; font-size:14.5px;}
   .catalog-body .csku{color:var(--ink-soft); font-size:12px;}
   .catalog-actions{display:flex; gap:8px; margin-top:auto; padding-top:8px;}
+  /* grouped product card (one product with many SKUs/shades) */
+  .cat-group{border-left:4px solid var(--blue-ink);}
+  .cgroup-count{font-size:11px; font-weight:700; color:#fff; background:var(--blue-ink); border-radius:999px; padding:1px 9px; vertical-align:middle; margin-left:4px;}
+  .cshades{display:flex; flex-direction:column; gap:5px; margin-top:8px;}
+  .shade-row{display:flex; align-items:center; gap:8px; padding:6px 9px; border:1px solid var(--line); border-radius:9px; background:#fff; cursor:pointer; font-size:12.5px; transition:background .12s, border-color .12s;}
+  .shade-row:hover{background:var(--blue-pale); border-color:var(--blue-ink);}
+  .shade-name{flex:1; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .shade-sku{font-size:11px; color:var(--ink-soft); white-space:nowrap;}
+  .shade-canva{text-decoration:none; font-size:14px; flex-shrink:0;}
+  .shade-edit{display:flex; gap:2px; flex-shrink:0;}
+  .shade-edit button{background:none; border:none; cursor:pointer; font-size:12px; padding:2px; border-radius:5px;}
+  .shade-edit button:hover{background:var(--blue-pale);}
   .btn-sm{flex:1; text-align:center; padding:7px 10px; border-radius:8px; font-size:12.5px; font-weight:600; text-decoration:none; cursor:pointer; border:none;}
   .btn-sm.primary{background:var(--blue-deep); color:#fff;}
   .btn-sm.primary:hover{background:var(--blue-ink);}
@@ -1045,7 +1057,7 @@ const PRODUCT_COLUMNS = [
   'platformDone_deadline','platformDone_actual','basketOpen_deadline','basketOpen_actual',
   'launch_deadline','launch_actual','prDate_deadline','prDate_actual',
   'refPhoto_link','productMedia_link','dataReady_link','platformDone_link',
-  'canva','lot','exp','remark','saleHalted','saleHaltDate','saleHaltNote','risk','nextDue','history','image'
+  'canva','lot','exp','remark','saleHalted','saleHaltDate','saleHaltNote','risk','nextDue','history','image','group'
 ];
 
 /* Human-friendly milestone groups for the editor (prefix -> Thai label). */
@@ -1179,6 +1191,7 @@ function dateObj(row, prefix){
 function rowToProduct(row){
   return {
     name: row.name||'', sku: row.sku||'', barcode: row.barcode||'',
+    group: (row.group||'').trim(),   // optional explicit product group (Sheet column "group")
     brand: normalizeBrand(row.brand),
     type: (row.type||'').trim().toLowerCase(),
     category: (row.category||'').trim().toLowerCase(),
@@ -1648,8 +1661,8 @@ function renderMilestoneTimeline(containerId, fieldKey, emptyLabel){
   const groups = {};
   withDates.forEach(p=>{
     const dstr = effectiveDate(p,fieldKey);
-    const key = baseName(p.name)+'|'+dstr;
-    if(!groups[key]) groups[key] = {base: baseName(p.name), date: new Date(dstr+"T00:00:00"), members:[]};
+    const key = productGroupKey(p)+'|'+dstr;
+    if(!groups[key]) groups[key] = {base: productGroupLabel(p), date: new Date(dstr+"T00:00:00"), members:[]};
     groups[key].members.push(p);
   });
   const grouped = Object.values(groups).sort((a,b)=>a.date-b.date);
@@ -1970,15 +1983,8 @@ function renderCalendar(){
   tbody.innerHTML = rows;
 }
 
-function renderCatalog(){
-  const grid = document.getElementById('catalog-grid');
-  if(!PRODUCTS.length){
-    grid.innerHTML = '';
-    document.getElementById('catalog-empty').style.display = 'block';
-    return;
-  }
-  document.getElementById('catalog-empty').style.display = 'none';
-  grid.innerHTML = PRODUCTS.map((p,idx)=>`
+function catalogSingleCard(p, idx){
+  return `
     <div class="catalog-card">
       ${p.image ? `<img class="thumb-lg" src="${esc(p.image)}" alt="${esc(p.name)}" style="cursor:pointer;" onclick="openLightbox('${esc(p.image)}',event)">` : `<div class="thumb-lg-empty">No image yet</div>`}
       <div class="catalog-body">
@@ -1997,8 +2003,61 @@ function renderCatalog(){
           <button class="btn-sm warn-ghost" onclick="deleteProduct('${attrJs(p.sku)}')">🗑️ ลบ</button>
         </div>` : ''}
       </div>
-    </div>
-  `).join('');
+    </div>`;
+}
+/* the distinguishing part of a variant's name (shade), i.e. name with the group base removed */
+function shadeLabel(name, gname){
+  let s = String(name||'').trim();
+  if(gname && s.toLowerCase().indexOf(gname.toLowerCase())===0) s = s.slice(gname.length).trim();
+  s = s.replace(/^[-–—#:·\s]+/,'').trim();
+  return s;
+}
+function catalogGroupCard(members){
+  const rep = (members.find(m=>m.p.image) || members[0]).p;
+  const gname = groupDisplayName(members[0].key);
+  const shadeRows = members.map(m=>{
+    const p=m.p; const short = shadeLabel(p.name, gname) || p.sku;
+    const edit = EDIT_MODE ? `<span class="shade-edit">
+        <button title="แก้ไข" onclick="event.stopPropagation(); openProductEditor('${attrJs(p.sku)}')">✏️</button>
+        <button title="ลบ" onclick="event.stopPropagation(); deleteProduct('${attrJs(p.sku)}')">🗑️</button>
+      </span>` : '';
+    return `<div class="shade-row" onclick="openTimeline(${m.idx})" title="${esc(p.name)}">
+      <span class="shade-name">${esc(short)}</span>
+      <span class="shade-sku">${esc(p.sku)}</span>
+      ${p.canva?`<a class="shade-canva" href="${esc(p.canva)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Presentation">🎞️</a>`:''}
+      ${edit}
+    </div>`;
+  }).join('');
+  return `
+    <div class="catalog-card cat-group">
+      ${rep.image ? `<img class="thumb-lg" src="${esc(rep.image)}" alt="${esc(gname)}" style="cursor:pointer;" onclick="openLightbox('${esc(rep.image)}',event)">` : `<div class="thumb-lg-empty">No image yet</div>`}
+      <div class="catalog-body">
+        <div class="cname">${esc(gname)} <span class="cgroup-count">${members.length} SKU</span></div>
+        <div class="csku">กลุ่ม ${esc(members[0].key)}</div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${brandBadge(rep,20)}${typeBadge(rep)}${categoryBadge(rep)}</div>
+        <div class="cshades">${shadeRows}</div>
+      </div>
+    </div>`;
+}
+function renderCatalog(){
+  const grid = document.getElementById('catalog-grid');
+  if(!PRODUCTS.length){
+    grid.innerHTML = '';
+    document.getElementById('catalog-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('catalog-empty').style.display = 'none';
+  // group products by group key, preserving first-seen order
+  const order=[], groups={};
+  PRODUCTS.forEach((p,idx)=>{
+    const key = productGroupOf(p.sku);
+    if(!groups[key]){ groups[key]=[]; order.push(key); }
+    groups[key].push({p, idx, key});
+  });
+  grid.innerHTML = order.map(key=>{
+    const members = groups[key];
+    return members.length>1 ? catalogGroupCard(members) : catalogSingleCard(members[0].p, members[0].idx);
+  }).join('');
 }
 
 /* ===== Product grouping — one product can have many SKUs (variants/shades).
@@ -2012,9 +2071,11 @@ function setSkuGroupOverride(sku, group){
 function productGroupOf(sku){
   sku = String(sku||'').trim();
   if(!sku) return '';
-  const ov = getSkuGroupOverride(sku);
+  const ov = getSkuGroupOverride(sku);           // 1) local override (this device)
   if(ov) return ov;
-  const i = sku.lastIndexOf('-');
+  const p = (typeof PRODUCTS!=='undefined') ? PRODUCTS.find(x=>x.sku===sku) : null;
+  if(p && p.group) return p.group;                // 2) explicit "group" column in the Sheet (shared)
+  const i = sku.lastIndexOf('-');                 // 3) auto: SKU base before the last "-"
   return i>0 ? sku.slice(0,i).trim() : sku;
 }
 function groupMembers(group){ return PRODUCTS.filter(p=>productGroupOf(p.sku)===group).map(p=>p.sku); }
@@ -2026,7 +2087,8 @@ function groupDisplayName(grp){
   if(names.length===1) return names[0];
   let lcp = names[0];
   for(const n of names.slice(1)){ let i=0; while(i<lcp.length && i<n.length && lcp[i]===n[i]) i++; lcp=lcp.slice(0,i); }
-  lcp = lcp.replace(/[\s\-–_0-9]+$/,'').trim();
+  lcp = lcp.replace(/\S*$/,'');                    // don't cut in the middle of a word
+  lcp = lcp.replace(/[\s\-–_#:·,0-9]+$/,'').trim(); // trim trailing separators/numbers
   return lcp || names[0];
 }
 
@@ -4743,6 +4805,9 @@ function isoVal(raw){ const s=(raw||'').trim(); if(/^\d{4}-\d{2}-\d{2}$/.test(s)
 
 function renderProductForm(row, isEdit){
   const V=(c)=>esc(row[c]!=null?row[c]:'');
+  const _sku=(row.sku||'').trim();
+  const _grp=(isEdit && _sku) ? productGroupOf(_sku) : '';
+  const _siblings=_grp ? groupMembers(_grp).filter(s=>s!==_sku) : [];
   let ms='';
   MILESTONE_FIELDS.forEach(([pfx,label])=>{
     ms += `<div class="pe-ms-label">${esc(label)}</div>
@@ -4769,6 +4834,7 @@ function renderProductForm(row, isEdit){
       <div class="pe-field"><label>Brand</label><select id="pe-brand">${brandOpts}</select></div>
       <div class="pe-field"><label>Type</label><select id="pe-type">${typeOpts}</select></div>
       <div class="pe-field"><label>Category</label><select id="pe-category">${catOpts}</select></div>
+      <div class="pe-field full"><label>กลุ่มสินค้า (Group) — SKU กลุ่มเดียวกันใส่ค่านี้เหมือนกัน · เว้นว่าง = ระบบเดาจากรหัส (${esc(_grp||'—')})</label><input type="text" id="pe-group" value="${V('group')}" placeholder="เช่น MK064 หรือ FR-perfume"></div>
     </div>
 
     <div class="pe-section">วันสำคัญ / Milestones (เว้นว่างได้ = ยังไม่กำหนด)</div>
@@ -4796,6 +4862,13 @@ function renderProductForm(row, isEdit){
       <div class="pe-field full"><label>ลิงก์รูปสินค้า (Google Drive share link หรือ URL รูป)</label><input type="text" id="pe-image" value="${V('image')}" placeholder="https://drive.google.com/file/d/…/view"></div>
       <div class="pe-field full"><label>ประวัติ (รูปแบบ: <code>2026-01-05: โน้ต | 2026-02-01: โน้ต</code>)</label><textarea id="pe-history" placeholder="ปล่อยว่างได้">${V('history')}</textarea></div>
     </div>
+    ${(isEdit && _siblings.length) ? `
+    <div class="pe-section">🔁 ใช้ข้อมูลร่วมกับทุก SKU ในกลุ่ม (${_siblings.length+1} SKU: ${esc(_grp)})</div>
+    <div class="pe-grid">
+      <div class="pe-field full"><div class="pe-check"><input type="checkbox" id="pe-applyGroupBasic"><label for="pe-applyGroupBasic" style="font-size:13px;">คัดลอก <b>แบรนด์ / ประเภท / หมวด</b> ไปทุก SKU ในกลุ่ม (${_siblings.length} SKU)</label></div></div>
+      <div class="pe-field full"><div class="pe-check"><input type="checkbox" id="pe-applyGroupDates"><label for="pe-applyGroupDates" style="font-size:13px;">คัดลอก <b>วันที่ Milestone ทั้งหมด</b> ไปทุก SKU (เลือกเมื่อทุกเฉดวันตรงกัน)</label></div></div>
+      <div class="pe-field full" style="font-size:11px; color:var(--ink-soft);">ℹ️ ข้อมูลเฉพาะตัว (ชื่อ/บาร์โค้ด/Lot/EXP/รูป/Canva) จะไม่ถูกแตะ</div>
+    </div>` : ''}
   `;
   document.getElementById('pe-hint').textContent = isEdit ? 'กำลังแก้ไขสินค้าที่มีอยู่' : 'สินค้าใหม่ — SKU ต้องไม่ซ้ำของเดิม';
 }
@@ -4840,11 +4913,34 @@ function saveProduct(){
   const store=getPendingStore();
   store.edits[sku]=row;
   store.deletes=(store.deletes||[]).filter(s=>s!==sku);
+
+  // Phase 2b — copy shared fields to every other SKU in the group (edit once → all SKUs)
+  const applyBasic = (document.getElementById('pe-applyGroupBasic')||{}).checked;
+  const applyDates = (document.getElementById('pe-applyGroupDates')||{}).checked;
+  let propagated=0;
+  if(applyBasic || applyDates){
+    const SHARED_BASIC=['brand','type','category'];
+    const SHARED_DATES=['arrival_deadline','arrival_actual','sampleToMkt_deadline','sampleToMkt_actual','refPhoto_deadline','refPhoto_actual','photoShoot_deadline','photoShoot_actual','productMedia_deadline','productMedia_actual','dataReady_deadline','dataReady_actual','platformDone_deadline','platformDone_actual','basketOpen_deadline','basketOpen_actual','launch_deadline','launch_actual','prDate_deadline','prDate_actual'];
+    const fields=[].concat(applyBasic?SHARED_BASIC:[], applyDates?SHARED_DATES:[]);
+    const grp=productGroupOf(sku);
+    groupMembers(grp).filter(s=>s!==sku).forEach(msku=>{
+      const base = store.edits[msku] || SHEET_ROWS.find(r=>(r.sku||'').trim()===msku);
+      if(!base) return;
+      const cur = Object.assign({}, base);
+      cur.sku = msku;
+      fields.forEach(f=>{ cur[f] = row[f]; });
+      store.edits[msku] = cur;
+      syncRowToSheet('upsert', cur);
+      propagated++;
+    });
+  }
+
   savePendingStore(store);
   rebuildProducts();
   renderAll();
   closeProductEditor();
   syncRowToSheet('upsert', row);
+  if(propagated) toast('อัปเดตข้อมูลร่วมให้ '+propagated+' SKU ในกลุ่มแล้ว','ok');
 }
 
 function deleteProduct(sku){
