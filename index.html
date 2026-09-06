@@ -114,6 +114,8 @@
   /* grouped product card (one product with many SKUs/shades) */
   .cat-group{border-left:4px solid var(--blue-ink);}
   .cgroup-count{font-size:11px; font-weight:700; color:#fff; background:var(--blue-ink); border-radius:999px; padding:1px 9px; vertical-align:middle; margin-left:4px;}
+  .cgroup-edit{width:100%; margin:4px 0 2px;}
+  .cgroup-hint{font-size:10.5px; color:var(--ink-soft); margin-top:6px; line-height:1.4;}
   .cshades{display:flex; flex-direction:column; gap:5px; margin-top:8px;}
   .shade-row{display:flex; align-items:center; gap:8px; padding:6px 9px; border:1px solid var(--line); border-radius:9px; background:#fff; cursor:pointer; font-size:12.5px; transition:background .12s, border-color .12s;}
   .shade-row:hover{background:var(--blue-pale); border-color:var(--blue-ink);}
@@ -2035,9 +2037,19 @@ function catalogGroupCard(members){
         <div class="cname">${esc(gname)} <span class="cgroup-count">${members.length} SKU</span></div>
         <div class="csku">กลุ่ม ${esc(members[0].key)}</div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${brandBadge(rep,20)}${typeBadge(rep)}${categoryBadge(rep)}</div>
+        ${EDIT_MODE ? `<button class="btn-sm primary cgroup-edit" onclick="editGroupShared('${attrJs(members[0].p.sku)}')">✏️ แก้ข้อมูลร่วมทั้งกลุ่ม (${members.length} SKU)</button>` : ''}
         <div class="cshades">${shadeRows}</div>
+        ${EDIT_MODE ? `<div class="cgroup-hint">แถว ✏️ = แก้เฉดเดียว · ปุ่มด้านบน = แก้ Timeline/แบรนด์/หมวด ครั้งเดียวลงทุก SKU</div>` : ''}
       </div>
     </div>`;
+}
+/* One-click "edit the shared data for the whole group" — opens the editor for a
+   representative SKU with the copy-to-all-SKU boxes pre-checked. */
+function editGroupShared(sku){
+  openProductEditor(sku);
+  ['pe-applyGroupBasic','pe-applyGroupDates'].forEach(id=>{ const el=document.getElementById(id); if(el) el.checked=true; });
+  const title=document.getElementById('pe-title'); if(title) title.textContent='✏️ แก้ข้อมูลร่วมทั้งกลุ่ม: '+groupDisplayName(productGroupOf(sku));
+  const hint=document.getElementById('pe-hint'); if(hint) hint.textContent='กรอก Timeline/แบรนด์/หมวด ครั้งเดียว → กด "บันทึก" จะลงให้ทุก SKU ในกลุ่ม (ชื่อ/บาร์โค้ด/Lot/EXP/รูป ไม่ถูกแตะ)';
 }
 function renderCatalog(){
   const grid = document.getElementById('catalog-grid');
@@ -2105,6 +2117,27 @@ function trackCellSummary(sku, track){
   const shared = latest.sku && latest.sku!==sku && isGroupCode(latest.sku);
   const tag = shared ? ` <span class="grp-tag" title="อัปเดตระดับกลุ่ม — ใช้ร่วมทุก SKU ในกลุ่ม">กลุ่ม</span>` : '';
   return `<button class="link-btn" style="font-size:12.5px; text-align:left;" onclick="openTrackLog('${esc(sku)}','${track}')">${esc(label)}</button>${tag}`;
+}
+/* Group-level cell: newest status across the whole group (group-scoped + every member's own).
+   Shows a "+N เฉด" tag when some shades have their own (differing) status. */
+function logsForGroup(group, track){
+  const set = new Set([group]); groupMembers(group).forEach(s=>set.add(s));
+  return UPDATE_LOGS.filter(l=>l.track===track && set.has(l.sku)).sort((a,b)=>b.date.localeCompare(a.date));
+}
+function groupTrackCellSummary(group, members, track){
+  const entries = logsForGroup(group, track);
+  if(!entries.length) return '<span class="dash">-</span>';
+  const latest = entries[0];
+  const label = [latest.subCategory, latest.stage, latest.detail].filter(Boolean).join(' — ') || latest.note || '(update logged)';
+  const specific = new Set(entries.filter(e=>e.sku!==group).map(e=>e.sku));
+  const tag = specific.size ? ` <span class="grp-tag" title="บางเฉดมีสถานะเฉพาะตัว — คลิกดูรายเฉด">+${specific.size} เฉด</span>` : '';
+  return `<button class="link-btn" style="font-size:12.5px; text-align:left;" onclick="openTrackLog('${esc(group)}','${track}')">${esc(label)}</button>${tag}`;
+}
+function groupRisk(group, members){
+  const rank={High:3,Medium:2,Low:1,'':0}; let best='';
+  members.forEach(p=>{ const r=riskForSku(p.sku); if((rank[r]||0)>(rank[best]||0)) best=r; });
+  const gr=riskForSku(group); if((rank[gr]||0)>(rank[best]||0)) best=gr;
+  return best;
 }
 /* Falls back to the name recorded on an Updates Log row when the SKU hasn't
    been added to the main product Sheet yet — NPD work usually starts first. */
@@ -2306,12 +2339,26 @@ function renderTeamUpdates(){
     document.getElementById('team-status-empty').style.display = 'block';
   } else {
     document.getElementById('team-status-empty').style.display = 'none';
-    const knownRows = relevant.map(p=>{
-      const idx = PRODUCTS.indexOf(p);
-      const imgCell = p.image
-        ? `<img src="${esc(p.image)}" alt="" style="width:36px; height:36px; border-radius:8px; object-fit:cover; cursor:pointer;" onclick="openLightbox('${esc(p.image)}',event)">`
-        : '<span class="dash">-</span>';
-      return rowFor(p.sku, imgCell, `<button class="link-btn" onclick="openTimeline(${idx})">${esc(p.name)}</button>`);
+    const imgOf = p => p.image
+      ? `<img src="${esc(p.image)}" alt="" style="width:36px; height:36px; border-radius:8px; object-fit:cover; cursor:pointer;" onclick="openLightbox('${esc(p.image)}',event)">`
+      : '<span class="dash">-</span>';
+    // group the relevant products, preserving order — one row per product (all SKUs together)
+    const order=[], grpMap={};
+    relevant.forEach(p=>{ const k=productGroupOf(p.sku); if(!grpMap[k]){ grpMap[k]=[]; order.push(k); } grpMap[k].push(p); });
+    const knownRows = order.map(key=>{
+      const members = grpMap[key];
+      if(members.length===1){
+        const p=members[0]; const idx=PRODUCTS.indexOf(p);
+        return rowFor(p.sku, imgOf(p), `<button class="link-btn" onclick="openTimeline(${idx})">${esc(p.name)}</button>`);
+      }
+      const rep = members.find(m=>m.image) || members[0];
+      const gname = groupDisplayName(key);
+      const nameCell = `<div style="font-weight:600;">${esc(gname)} <span class="grp-tag">${members.length} SKU</span></div>
+        <span class="sku" style="display:inline;">กลุ่ม ${esc(key)}</span>`;
+      return `<tr>
+        <td>${imgOf(rep)}</td><td>${nameCell}</td>
+        ${trackCols.map(t=>`<td>${groupTrackCellSummary(key, members, t)}</td>`).join('')}
+        <td>${riskBadge(groupRisk(key, members))}</td></tr>`;
     }).join('');
     const pendingRows = pendingSkus.map(sku=>{
       const name = nameForSku(sku);
@@ -2385,11 +2432,13 @@ function stepKey(s){
 }
 
 function openTrackLog(sku, track, focus){
-  const entries = logsFor(sku, track);
+  const isGrp = isGroupCode(sku);
+  const entries = isGrp ? logsForGroup(sku, track) : logsFor(sku, track);
   const product = PRODUCTS.find(p=>p.sku===sku);
   const trackLabel = {rd:'Formulation (R&D)', pkg:'Packaging / Graphic'}[track] || track;
   document.getElementById('tl-title').textContent = nameForSku(sku);
-  document.getElementById('tl-subtitle').textContent = `${trackLabel}${sku ? ' · '+sku : ''}`;
+  document.getElementById('tl-subtitle').textContent = `${trackLabel}${sku ? ' · '+(isGrp?('กลุ่ม '+sku):sku) : ''}`;
+  const _grpMembers = isGrp ? groupMembers(sku) : [];
 
   // Banner explaining exactly which calendar item was clicked (so the modal isn't ambiguous)
   let focusHtml = '';
@@ -2413,7 +2462,9 @@ function openTrackLog(sku, track, focus){
   const addBtn = document.getElementById('tl-add-btn');
   if(addBtn){
     addBtn.style.display = isTeamUnlocked() ? '' : 'none';
-    addBtn.onclick = ()=>{ closeTrackLog(); openUpdateEditor({sku, track}); };
+    // from a group view, default the new update to the whole group (scope=group)
+    const prefill = isGrp ? {sku: (_grpMembers[0]||sku), track, scope:'group'} : {sku, track};
+    addBtn.onclick = ()=>{ closeTrackLog(); openUpdateEditor(prefill); };
   }
 
   // Compact "completed steps" — only what's actually been logged (no ยังไม่เริ่ม clutter)
@@ -2457,9 +2508,11 @@ function openTrackLog(sku, track, focus){
     </div>` : (e.id ? '' : '<div class="tl-entry-actions"><span style="font-size:11px; color:#B0964F;">บันทึกเก่า (ไม่มี id)</span></div>');
     const isFocus = focus && focus.log && focus.log===e;
     const dueTag = (isFocus && focus.kind==='due') ? `<div class="tl-entry-due">⏰ กำหนดถัดไป: ${esc(focus.date?formatDate(new Date(focus.date+"T00:00:00")):'')}</div>` : '';
+    // in a group view, tag each entry with which shade/SKU it belongs to (or "ทั้งกลุ่ม")
+    const scopeTag = isGrp ? `<span class="grp-tag" style="margin-left:6px;">${e.sku===sku ? '📦 ทั้งกลุ่ม' : esc(shadeLabel(nameForSku(e.sku), groupDisplayName(sku))||e.sku)}</span>` : '';
     return `<div class="tl-entry${isFocus?' tl-entry-focus':''}"${isFocus?' id="tl-focus-entry"':''}>
       ${isFocus?'<div class="tl-focus-tag">🔎 รายการที่เลือกจากปฏิทิน</div>':''}
-      <div class="tl-entry-date">${e.date ? formatDate(new Date(e.date+"T00:00:00")) : 'Undated'}</div>
+      <div class="tl-entry-date">${e.date ? formatDate(new Date(e.date+"T00:00:00")) : 'Undated'}${scopeTag}</div>
       ${sub ? `<div class="tl-entry-sub">${esc(sub)}</div>` : ''}
       ${e.note ? `<div class="tl-entry-note">${esc(e.note)}</div>` : ''}
       ${dueTag}
