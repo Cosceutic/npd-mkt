@@ -998,8 +998,11 @@
 
 <script>
 /* ===== DATA — Claude updates this array directly when Ploy sends new info in chat ===== */
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=1762470958";
-const UPDATES_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=327758317";
+/* Reads use /export?format=csv (not gviz) — gviz auto-detects header rows and sometimes
+   MERGES the header row into the first data row ("sku FR001" …), which corrupts parsing.
+   /export dumps the CSV exactly as the sheet has it (row 1 = header) and supports CORS. */
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/export?format=csv&gid=1762470958";
+const UPDATES_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/export?format=csv&gid=327758317";
 const NOTICE_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=Notice";
 const BRIEFS_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=Briefs";
 
@@ -1013,7 +1016,7 @@ const NPR_FORM_ENTRIES = {
   launchPlan:  "entry.1803533697",
   owner:       "entry.1007106572",
 };
-const NPR_SUMMARY_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=936411881";
+const NPR_SUMMARY_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/export?format=csv&gid=936411881";
 
 /* Product photos stay embedded in the code (Sheet cells are too small for full images).
    Keyed by SKU. When a product's Sheet row has its own "image" column (a Drive share link),
@@ -1625,6 +1628,13 @@ function baseName(name){
   s = s.replace(/[\s,\-–—]+$/, '');
   return s.trim() || String(name||'').trim();
 }
+/* Calendar grouping key: prefer the robust SKU group (Phase 1) so variants of one
+   product merge accurately; fall back to name when there's no SKU. */
+function productGroupKey(p){ return (p && p.sku) ? productGroupOf(p.sku) : baseName(p && p.name); }
+function productGroupLabel(p){
+  const g = productGroupKey(p);
+  return (groupMembers(g).length > 1) ? (groupDisplayName(g) || baseName(p && p.name)) : baseName(p && p.name);
+}
 
 function renderMilestoneTimeline(containerId, fieldKey, emptyLabel){
   const container = document.getElementById(containerId);
@@ -1781,10 +1791,11 @@ function renderCalLegend(){
 function groupByBaseName(list){
   const map = {};
   list.forEach(p=>{
-    const key = baseName(p.name);
-    (map[key] = map[key] || []).push(p);
+    const key = productGroupKey(p);
+    if(!map[key]) map[key] = {base: productGroupLabel(p), members:[]};
+    map[key].members.push(p);
   });
-  return Object.entries(map).map(([base,members])=>({base, members}));
+  return Object.values(map).map(g=>({base:g.base, members:g.members}));
 }
 
 function renderStockCalendarGrid(){
@@ -2491,7 +2502,7 @@ function initTeamLock(){
    Reads the Google Form response tab. Submitting happens through the embedded form
    (Google handles the write), so no Apps Script is needed. Changing a task's Status
    is done in the Sheet — a static page can't write back on its own. */
-const TASKS_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&gid=141244138";
+const TASKS_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/export?format=csv&gid=141244138";
 const TASK_FORM_EMBED = "https://docs.google.com/forms/d/e/1FAIpQLSfvlAAWagFrFb6va4vgZVatgbK5VB3qjgAKJf6LVs64o2n7Xg/viewform?embedded=true";
 
 const TASK_STATUSES = ['ยังไม่ได้รับงาน','รับทราบรอตามคิว','กำลังทำ','เรียบร้อยแล้ว'];
