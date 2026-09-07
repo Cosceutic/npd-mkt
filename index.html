@@ -1050,7 +1050,7 @@ let SHEET_ROWS = [];   // raw rows straight from the Google Sheet (before local 
    Team-wide default endpoint — fill these once you've deployed the Apps Script and want
    EVERY teammate to sync to the same Sheet without pasting the URL themselves.
    Leave blank to configure per-browser via the "⚙️ ตั้งค่า Sheet Sync" panel. */
-const DEFAULT_WRITE_ENDPOINT = "https://script.google.com/macros/s/AKfycbxAZRAwfPWaotrcD4OFWi4TTNx5tn7-eLMwZtEsljbaEDgBBrJeOpyz7cf9adcOIl29/exec";
+const DEFAULT_WRITE_ENDPOINT = "https://script.google.com/macros/s/AKfycbwO23UeWbhI9GDuyJmFKRkZw4FUIQhwCXGfUkKg1xIe5a3NRnUWB_BHUT7dPhdX-6t-/exec";
 const DEFAULT_WRITE_TOKEN = "npd2026!";
 
 /* The exact column keys of the products tab, in a stable order. Used for the edit form,
@@ -4462,12 +4462,16 @@ function printBriefPart(key){
     rep.replaceWith(box);
   });
 
-  // 2) Checkbox items: plain checkmark + label, no interactive control
-  clone.querySelectorAll('.brief-check-item').forEach(item=>{
-    const input = item.querySelector('input[type="checkbox"]');
-    const checked = input && input.checked;
-    const labelText = item.textContent.trim();
-    item.innerHTML = `<span class="pv-check ${checked?'on':''}">${checked?'☑':'☐'}</span> ${esc(labelText)}`;
+  // 2) Multi-select grids: collapse to ONE compact box listing only the picked
+  //    options (paper doesn't need the full ☐ checklist — saves lots of space).
+  clone.querySelectorAll('.brief-check-grid').forEach(grid=>{
+    const picked = [...grid.querySelectorAll('.brief-check-item')]
+      .filter(item=>{ const i=item.querySelector('input[type="checkbox"]'); return i && i.checked; })
+      .map(item=>item.textContent.trim()).filter(Boolean);
+    const box = document.createElement('div');
+    box.className = 'pv-box';
+    box.textContent = picked.length ? picked.join(', ') : '–';
+    grid.replaceWith(box);
   });
 
   // 2b) Drop entirely-blank rows in "extra slot" tables (Market Comparison,
@@ -4508,8 +4512,10 @@ function printBriefPart(key){
       .pv-title{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:14px; color:${col.ad}; margin-top:3px;}
       .pv-meta{font-size:10px; color:#94A3B8; text-align:right;}
       .brief-section-h{font-family:'Prompt',Arial,sans-serif; font-weight:700; font-size:11.5px; letter-spacing:.4px; text-transform:uppercase; color:${col.ad};
-        background:${col.ap}; border-left:3px solid ${col.a}; padding:6px 11px; margin:18px 0 10px; border-radius:4px;}
-      .brief-sub-label{font-family:'Prompt',Arial,sans-serif; font-weight:600; font-size:12px; color:${col.ad}; margin:12px 0 6px;}
+        background:${col.ap}; border-left:3px solid ${col.a}; padding:6px 11px; margin:18px 0 10px; border-radius:4px;
+        break-inside:avoid; break-after:avoid; page-break-after:avoid;}
+      .brief-sub-label{font-family:'Prompt',Arial,sans-serif; font-weight:600; font-size:12px; color:${col.ad}; margin:12px 0 6px;
+        break-after:avoid; page-break-after:avoid;}
       table{width:100%; border-collapse:collapse; margin-bottom:8px; page-break-inside:avoid;}
       th,td{border:1px solid #CBD5E1; padding:6px 8px; font-size:11.5px; text-align:left; vertical-align:top;}
       th{background:${col.ad}; color:#fff; font-family:'Prompt',Arial,sans-serif; font-weight:600; font-size:11px;}
@@ -5114,7 +5120,7 @@ async function pushPendingToSheet(){
   try{
     for(const sku of edits){ const p={target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:store.edits[sku]}; await postToSheet(p); }
     for(const sku of dels){ await postToSheet({target:'products',action:'delete',token:cfg.token,keyValue:sku,sku}); }
-    for(const e of uStore){ await postToSheet({target:'updates',action:'append',token:cfg.token,row:e}); }
+    for(const e of uStore){ const r=Object.assign({}, e); if(!r['Next Due']) r['Next Due']=(r.NextDue||r.nextDue||''); await postToSheet({target:'updates',action:'append',token:cfg.token,row:r}); }
     for(const detail of Object.keys(tStore)){ await postToSheet({target:'task',action:'update',token:cfg.token,keyValue:detail,row:{Status:tStore[detail]}}); }
     for(const e of nStore.appends){ await postToSheet({target:'notice',action:'append',token:cfg.token,row:e}); }
     for(const msg of Object.keys(nStore.edits)){ await postToSheet({target:'notice',action:'upsert',token:cfg.token,keyValue:msg,row:nStore.edits[msg]}); }
@@ -5171,7 +5177,7 @@ const APPS_SCRIPT_CODE = `/**
  * รองรับ: สินค้า (products) / บันทึกความคืบหน้า (updates) / ประกาศ (notice) / งาน (task)
  */
 const SECRET = 'npd2026!';    // <-- ตั้งรหัสลับ แล้วใส่ให้ตรงกับในเว็บ
-const VER = 'multitab-6';      // เวอร์ชันโค้ด (ใช้เช็กว่า deploy โค้ดใหม่แล้วจริง)
+const VER = 'multitab-7';      // เวอร์ชันโค้ด (ใช้เช็กว่า deploy โค้ดใหม่แล้วจริง)
 
 // แต่ละแท็บ: gid = เลขท้าย URL ของแท็บ, key = คอลัมน์ที่ใช้จับคู่แถว ('' = ต่อท้ายอย่างเดียว)
 // create = ถ้าไม่มีแท็บนี้ ให้สร้างใหม่พร้อมหัวคอลัมน์ตามนี้
@@ -5209,8 +5215,19 @@ function getImgFolder_(body){
   }
   var sub = String(body.folder || '').trim();
   if(!sub) return root;
-  var subIt = root.getFoldersByName(sub);
-  return subIt.hasNext() ? subIt.next() : root.createFolder(sub);
+  // Serialize find-or-create so two near-simultaneous uploads can't each make a
+  // duplicate folder (Drive's search index lags behind a just-created folder).
+  var lock = LockService.getScriptLock();
+  try{ lock.waitLock(20000); }catch(e){}
+  try{
+    var subIt = root.getFoldersByName(sub);
+    var chosen = null;   // if duplicates already exist, always reuse the OLDEST one
+    while(subIt.hasNext()){
+      var f = subIt.next();
+      if(!chosen || f.getDateCreated() < chosen.getDateCreated()) chosen = f;
+    }
+    return chosen || root.createFolder(sub);
+  } finally { try{ lock.releaseLock(); }catch(e){} }
 }
 function uploadImage_(body){
   try{
@@ -5218,10 +5235,12 @@ function uploadImage_(body){
     var m = du.match(/^data:([^;]+);base64,([\\s\\S]*)$/);
     if(!m) return out_({ok:false, error:'bad dataUrl'});
     var blob = Utilities.newBlob(Utilities.base64Decode(m[2]), m[1], (body.name || 'file'));
-    var file = getImgFolder_(body).createFile(blob);
+    var folder = getImgFolder_(body);
+    var file = folder.createFile(blob);
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     var id = file.getId();
-    return out_({ok:true, id:id, url:'https://drive.google.com/file/d/' + id + '/view'});
+    // return folderId so the web app can reuse the exact folder for the next files
+    return out_({ok:true, id:id, folderId:folder.getId(), url:'https://drive.google.com/file/d/' + id + '/view'});
   }catch(err){ return out_({ok:false, error:String(err)}); }
 }
 function out_(o){
@@ -5391,6 +5410,11 @@ function uploadFolderNameForSku(sku){
   const nm = (groupMembers(grp).length>1) ? groupDisplayName(grp) : (nameForSku(sku)||sku);
   return String(nm||sku).replace(/[\\/:*?"<>|]+/g,' ').trim().slice(0,80);  // Drive-safe folder name
 }
+// Remember which Drive folder a product's files go into, so we upload straight
+// into it by id instead of asking the server to find-or-create every time
+// (that repeated find-or-create was what spawned duplicate folders).
+function getUploadFolderId(sku){ try{ const n=uploadFolderNameForSku(sku); return n ? (localStorage.getItem('npd_upfolder_'+n)||'') : ''; }catch(e){ return ''; } }
+function setUploadFolderId(sku, id){ try{ const n=uploadFolderNameForSku(sku); if(n&&id) localStorage.setItem('npd_upfolder_'+n, id); }catch(e){} }
 async function uploadUpdateFiles(inputEl){
   const files = inputEl.files ? Array.prototype.slice.call(inputEl.files) : [];
   if(!files.length) return;
@@ -5398,14 +5422,21 @@ async function uploadUpdateFiles(inputEl){
   if(!cfg.url){ toast('ยังไม่ได้ตั้ง Sheet Sync — อัปโหลดไม่ได้','err'); return; }
   const sku=(document.getElementById('ue-SKU')||{}).value||'';
   const folder=uploadFolderNameForSku(sku);
+  let folderId=getUploadFolderId(sku);   // reuse the same folder across files & sessions
   const st=document.getElementById('ue-upload-status');
   let done=0, fail=0;
   for(let i=0;i<files.length;i++){
     if(st) st.textContent=`⏳ กำลังอัป ${i+1}/${files.length} — ${files[i].name}`;
     try{
       const dataUrl=await fileToDataUrl(files[i]);
-      const r=await postReadable({action:'uploadImage', dataUrl, name:files[i].name, parentId:UPLOAD_PARENT_FOLDER_ID, folder});
-      if(r && r.ok && r.url){ ueAppendImage(r.url); done++; } else fail++;
+      // once we know the folder's id, target it directly (no sub → no find-or-create);
+      // until then, ask the server to resolve it by parent + name (once).
+      const loc = folderId ? {parentId:folderId} : {parentId:UPLOAD_PARENT_FOLDER_ID, folder};
+      const r=await postReadable(Object.assign({action:'uploadImage', dataUrl, name:files[i].name}, loc));
+      if(r && r.ok && r.url){
+        ueAppendImage(r.url); done++;
+        if(r.folderId && !folderId){ folderId=r.folderId; setUploadFolderId(sku, folderId); }
+      } else fail++;
     }catch(e){ fail++; }
   }
   if(st) st.textContent=`✅ อัปเสร็จ ${done} ไฟล์${fail?` · ⚠️ พลาด ${fail}`:''}${folder?` · โฟลเดอร์: ${folder}`:''}`;
@@ -5471,11 +5502,15 @@ function collectUpdateForm(){
   const selSku=g('SKU');
   const scope=g('Scope')||'group';
   const sku = (scope==='group' && selSku) ? productGroupOf(selSku) : selSku;
+  const nextDue=g('NextDue');
   return {
     Date:g('Date'), SKU:sku, ProductName: (nameForSku(selSku)||nameForSku(sku)||''),
     Track:g('Track'), SubCategory:g('SubCategory'), Stage:g('Stage'),
     Detail:g('Detail'), Note:g('Note'), Images:g('Images'),
-    UpdatedBy:g('UpdatedBy'), Risk:g('Risk'), NextDue:g('NextDue')
+    UpdatedBy:g('UpdatedBy'), Risk:g('Risk'),
+    // Sheet column is literally "Next Due" (with a space) — send that key so it
+    // actually writes to the column; keep "NextDue" too for tolerant local reads.
+    NextDue:nextDue, 'Next Due':nextDue
   };
 }
 function openUpdateEditor(prefill, editId){
