@@ -5124,8 +5124,8 @@ const APPS_SCRIPT_CODE = `/**
  * วางโค้ดนี้ใน Apps Script ของ Google Sheet หลัก แล้ว Deploy เป็น Web app
  * รองรับ: สินค้า (products) / บันทึกความคืบหน้า (updates) / ประกาศ (notice) / งาน (task)
  */
-const SECRET = 'CHANGE_ME';    // <-- ตั้งรหัสลับ แล้วใส่ให้ตรงกับในเว็บ
-const VER = 'multitab-5';      // เวอร์ชันโค้ด (ใช้เช็กว่า deploy โค้ดใหม่แล้วจริง)
+const SECRET = 'npd2026!';    // <-- ตั้งรหัสลับ แล้วใส่ให้ตรงกับในเว็บ
+const VER = 'multitab-6';      // เวอร์ชันโค้ด (ใช้เช็กว่า deploy โค้ดใหม่แล้วจริง)
 
 // แต่ละแท็บ: gid = เลขท้าย URL ของแท็บ, key = คอลัมน์ที่ใช้จับคู่แถว ('' = ต่อท้ายอย่างเดียว)
 // create = ถ้าไม่มีแท็บนี้ ให้สร้างใหม่พร้อมหัวคอลัมน์ตามนี้
@@ -5151,18 +5151,28 @@ function getSheetByCfg_(ss, cfg){
   if(!sh && cfg.name && cfg.create){ sh = ss.insertSheet(cfg.name); sh.appendRow(cfg.create); }
   return sh || null;
 }
-function getImgFolder_(){
-  var name = 'Godmami NPD Brief Images';
-  var it = DriveApp.getFoldersByName(name);
-  return it.hasNext() ? it.next() : DriveApp.createFolder(name);
+function getImgFolder_(body){
+  body = body || {};
+  var root = null;
+  var parentId = String(body.parentId || '').trim();
+  if(parentId){ try{ root = DriveApp.getFolderById(parentId); }catch(e){ root = null; } }
+  if(!root){
+    var name = 'Godmami NPD Brief Images';
+    var it = DriveApp.getFoldersByName(name);
+    root = it.hasNext() ? it.next() : DriveApp.createFolder(name);
+  }
+  var sub = String(body.folder || '').trim();
+  if(!sub) return root;
+  var subIt = root.getFoldersByName(sub);
+  return subIt.hasNext() ? subIt.next() : root.createFolder(sub);
 }
 function uploadImage_(body){
   try{
     var du = String(body.dataUrl || '');
     var m = du.match(/^data:([^;]+);base64,([\\s\\S]*)$/);
     if(!m) return out_({ok:false, error:'bad dataUrl'});
-    var blob = Utilities.newBlob(Utilities.base64Decode(m[2]), m[1], (body.name || 'brief-img'));
-    var file = getImgFolder_().createFile(blob);
+    var blob = Utilities.newBlob(Utilities.base64Decode(m[2]), m[1], (body.name || 'file'));
+    var file = getImgFolder_(body).createFile(blob);
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     var id = file.getId();
     return out_({ok:true, id:id, url:'https://drive.google.com/file/d/' + id + '/view'});
@@ -5320,6 +5330,41 @@ function updateSubStageFields(){
   const st=document.getElementById('ue-stage-cell'); if(st) st.innerHTML=ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesForTrack(t),'','เช่น กำลังทำ, เสร็จ');
 }
 let ueEditId = null;
+/* ===== Upload files (images / PDF / Doc / Excel …) straight to Google Drive from the web.
+   They land in this parent folder, inside a per-product subfolder (created if missing). ===== */
+const UPLOAD_PARENT_FOLDER_ID = '1oaRi7Bsu7G3FPUvl9rSN89L_q1-QW0Gb';
+function fileToDataUrl(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); }); }
+function ueAppendImage(link){
+  const el=document.getElementById('ue-Images'); if(!el) return;
+  const cur=(el.value||'').trim().replace(/;\s*$/,'');
+  el.value = cur ? (cur+' ; '+link) : link;
+}
+function uploadFolderNameForSku(sku){
+  if(!sku) return '';
+  const grp = productGroupOf(sku);
+  const nm = (groupMembers(grp).length>1) ? groupDisplayName(grp) : (nameForSku(sku)||sku);
+  return String(nm||sku).replace(/[\\/:*?"<>|]+/g,' ').trim().slice(0,80);  // Drive-safe folder name
+}
+async function uploadUpdateFiles(inputEl){
+  const files = inputEl.files ? Array.prototype.slice.call(inputEl.files) : [];
+  if(!files.length) return;
+  const cfg=getWriteConfig();
+  if(!cfg.url){ toast('ยังไม่ได้ตั้ง Sheet Sync — อัปโหลดไม่ได้','err'); return; }
+  const sku=(document.getElementById('ue-SKU')||{}).value||'';
+  const folder=uploadFolderNameForSku(sku);
+  const st=document.getElementById('ue-upload-status');
+  let done=0, fail=0;
+  for(let i=0;i<files.length;i++){
+    if(st) st.textContent=`⏳ กำลังอัป ${i+1}/${files.length} — ${files[i].name}`;
+    try{
+      const dataUrl=await fileToDataUrl(files[i]);
+      const r=await postReadable({action:'uploadImage', dataUrl, name:files[i].name, parentId:UPLOAD_PARENT_FOLDER_ID, folder});
+      if(r && r.ok && r.url){ ueAppendImage(r.url); done++; } else fail++;
+    }catch(e){ fail++; }
+  }
+  if(st) st.textContent=`✅ อัปเสร็จ ${done} ไฟล์${fail?` · ⚠️ พลาด ${fail}`:''}${folder?` · โฟลเดอร์: ${folder}`:''}`;
+  inputEl.value='';
+}
 function renderUpdateForm(){
   const pf = uePrefill || {};
   const pfSku = pf.sku || pf.SKU || '';
@@ -5344,7 +5389,14 @@ function renderUpdateForm(){
     <div class="pe-field"><label>กำหนดถัดไป (NextDue)</label><input type="text" id="ue-NextDue" value="${esc(pf.NextDue||'')}" placeholder="เช่น รอผล อย. / 15 ต.ค."></div>
     <div class="pe-field full"><label>รายละเอียด (Detail) *</label><textarea id="ue-Detail" placeholder="อัปเดตความคืบหน้า…">${esc(pf.Detail||'')}</textarea></div>
     <div class="pe-field full"><label>หมายเหตุ (Note)</label><input type="text" id="ue-Note" value="${esc(pf.Note||'')}"></div>
-    <div class="pe-field full"><label>ลิงก์รูป (Images) — คั่นหลายรูปด้วย ; </label><input type="text" id="ue-Images" value="${esc(pf.Images||'')}" placeholder="วางลิงก์ Google Drive"></div>
+    <div class="pe-field full"><label>ไฟล์แนบ / รูป (Images) — อัปโหลดในเว็บ หรือวางลิงก์เอง (คั่นหลายอันด้วย ; )</label>
+      <input type="text" id="ue-Images" value="${esc(pf.Images||'')}" placeholder="วางลิงก์ Google Drive หรือกด 📎 อัปโหลดไฟล์">
+      <div style="display:flex; align-items:center; gap:10px; margin-top:6px; flex-wrap:wrap;">
+        <label class="btn-edit primary" style="cursor:pointer; font-size:12.5px; padding:6px 12px;">📎 อัปโหลดไฟล์ (รูป/PDF/Doc/Excel — เลือกได้หลายไฟล์)
+          <input type="file" multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv" style="display:none;" onchange="uploadUpdateFiles(this)"></label>
+        <span id="ue-upload-status" style="font-size:11.5px; color:var(--ink-soft);"></span>
+      </div>
+    </div>
   </div>`;
 }
 /* Scope selector — decides whether an update applies to every SKU in the group
