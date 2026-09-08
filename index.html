@@ -5382,7 +5382,22 @@ async function syncToSheet(target, action, keyValue, row){
     toast('บันทึกในเครื่องแล้ว แต่ต่อ Sheet ไม่ได้ ('+err.message+') — เก็บไว้รอซิงค์','err');
   }
 }
-function syncRowToSheet(action, row){ return syncToSheet('products', action, row.sku, row); }
+// Send ONLY the columns that differ from the Sheet (+ sku). A full 39-column row is a big
+// enough POST that some office proxies/DLP silently drop it — which is exactly why editing an
+// EXISTING product (full row) failed while creating a NEW product (mostly-empty small row)
+// landed. For a brand-new sku (not in the Sheet) we keep the full row so the append has data.
+function minimizeProductRow(row){
+  if(!row || !row.sku) return row;
+  var base = (SHEET_ROWS||[]).find(function(r){ return (r.sku||'').trim() === (row.sku||'').trim(); });
+  if(!base) return row;
+  var min = {sku: row.sku};
+  Object.keys(row).forEach(function(k){
+    if(k==='sku') return;
+    if(String(row[k]==null?'':row[k]).trim() !== String(base[k]==null?'':base[k]).trim()) min[k]=row[k];
+  });
+  return min;
+}
+function syncRowToSheet(action, row){ return syncToSheet('products', action, row.sku, action==='delete'?row:minimizeProductRow(row)); }
 
 async function pushPendingToSheet(){
   const cfg=getWriteConfig();
@@ -5517,7 +5532,7 @@ async function flushPendingNow(){
   // one write, then a small gap — firing many no-cors POSTs back-to-back can make Apps
   // Script drop some (concurrent-execution limit), which looked like "nothing sent".
   const send1 = async (payload)=>{ const b=JSON.stringify(payload); if(b.length>maxBody) maxBody=b.length; await postToSheet(payload); await new Promise(r=>setTimeout(r,600)); };
-  for(const sku of Object.keys(ps.edits)){ const raw=ps.edits[sku]; if(raw && typeof raw.image==='string' && raw.image.length>maxImg) maxImg=raw.image.length; const s=sanitizeRowForSheet(raw); droppedImg+=s.droppedImg; await send1({target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:s.row}); }
+  for(const sku of Object.keys(ps.edits)){ const raw=ps.edits[sku]; if(raw && typeof raw.image==='string' && raw.image.length>maxImg) maxImg=raw.image.length; const s=sanitizeRowForSheet(minimizeProductRow(raw)); droppedImg+=s.droppedImg; await send1({target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:s.row}); }
   for(const sku of (ps.deletes||[])){ await send1({target:'products',action:'delete',token:cfg.token,keyValue:sku,sku}); }
   for(const e of getUpdatesLocal()){ const row=Object.assign({}, e); if(!row['Next Due']) row['Next Due']=(row.NextDue||row.nextDue||''); const s=sanitizeRowForSheet(row); droppedImg+=s.droppedImg; await send1({target:'updates',action:'append',token:cfg.token,row:s.row}); }
   const ts=getTaskOverrides(); for(const d of Object.keys(ts)){ await send1({target:'task',action:'update',token:cfg.token,keyValue:d,row:{Status:ts[d]}}); }
