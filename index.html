@@ -5525,15 +5525,9 @@ async function flushPendingNow(){
   if(banner) banner.innerHTML='⏳ ส่งแล้ว กำลังตรวจยืนยันกับ Google Sheet…';
   await new Promise(r=>setTimeout(r, 5000));
   await reloadEverything(true);
-  // The no-cors writes are proven to reach the Sheet; the field-by-field rowSig compare can
-  // still false-mismatch on cosmetic differences and leave pending stuck forever. So confirm
-  // by EXISTENCE: if a pending product's sku is now a row in the Sheet, our upsert reached it
-  // → drop it from pending. (A brand-new sku that isn't in the Sheet means its append didn't
-  // land, so keep it.)
-  const ps3=getPendingStore(); let clearedAny=false;
-  const sheetSkus=new Set((SHEET_ROWS||[]).map(r=>(r.sku||'').trim()).filter(Boolean));
-  Object.keys(ps3.edits).forEach(sku=>{ if(sheetSkus.has(sku)){ delete ps3.edits[sku]; clearedAny=true; } });
-  if(clearedAny){ savePendingStore(ps3); rebuildProducts(); renderAll(); }
+  // NOTE: we intentionally do NOT clear pending by sku-existence — for an existing product the
+  // sku is always present, so that wrongly dropped edits before the update was confirmed, which
+  // LOST data. Pending is only cleared by autoPrune when the Sheet's values actually match.
   if(typeof updateSyncStatus==='function') updateSyncStatus();
   const after = (typeof totalPending==='function') ? totalPending() : 0;
   const synced = Math.max(0, before - after);
@@ -5610,7 +5604,7 @@ const APPS_SCRIPT_CODE = `/**
  * รองรับ: สินค้า (products) / บันทึกความคืบหน้า (updates) / ประกาศ (notice) / งาน (task)
  */
 const SECRET = 'npd2026!';    // <-- ตั้งรหัสลับ แล้วใส่ให้ตรงกับในเว็บ
-const VER = 'multitab-7';      // เวอร์ชันโค้ด (ใช้เช็กว่า deploy โค้ดใหม่แล้วจริง)
+const VER = 'multitab-8';      // เวอร์ชันโค้ด (ใช้เช็กว่า deploy โค้ดใหม่แล้วจริง)
 
 // แต่ละแท็บ: gid = เลขท้าย URL ของแท็บ, key = คอลัมน์ที่ใช้จับคู่แถว ('' = ต่อท้ายอย่างเดียว)
 // create = ถ้าไม่มีแท็บนี้ ให้สร้างใหม่พร้อมหัวคอลัมน์ตามนี้
@@ -5741,15 +5735,17 @@ function doPost(e){
 
     // upsert = แทนที่คอลัมน์ที่ส่งมา (คงคอลัมน์อื่น) / update = แก้เฉพาะที่ส่ง (ห้ามสร้างใหม่)
     if(rowIdx > -1){
-      // write ONLY the columns that were sent (leaves timestamps/other cols untouched —
-      // more reliable on Form-Responses sheets than rewriting the whole row)
-      for(var c2=0; c2<header.length; c2++){
-        var h2 = header[c2];
-        if(h2 && Object.prototype.hasOwnProperty.call(incoming, h2)){
-          var cell = sh.getRange(rowIdx + 1, c2 + 1);
-          cell.setNumberFormat('@'); cell.setValue(incoming[h2]);
-        }
-      }
+      // Merge sent columns over the existing row, then write the WHOLE row in ONE setValues.
+      // (Cell-by-cell setValue did ~39 slow calls per edit — slow enough that some clients'
+      // requests were cut off before it finished, so existing-product edits never landed while
+      // brand-new rows did. One setValues is as fast as an append.)
+      var rng = sh.getRange(rowIdx + 1, 1, 1, header.length);
+      var existing = rng.getDisplayValues()[0];   // keep untouched cells exactly as shown (as text)
+      var merged = header.map(function(h, c){
+        return (h && Object.prototype.hasOwnProperty.call(incoming, h)) ? incoming[h] : existing[c];
+      });
+      rng.setNumberFormat('@');
+      rng.setValues([merged]);
       return out_({ok:true, mode:'update'});
     } else if(body.action === 'upsert'){
       var arr = header.map(function(h){ return (h && Object.prototype.hasOwnProperty.call(incoming, h)) ? incoming[h] : ''; });
