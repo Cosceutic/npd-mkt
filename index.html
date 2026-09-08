@@ -539,6 +539,7 @@
   </div>
 </header>
 
+<div id="sync-health-banner" style="display:none; background:#FDE2E2; color:#9B1C1C; border-bottom:2px solid #E88; padding:10px 16px; font-size:13px; font-weight:600; text-align:center;"></div>
 <div id="notice-container"></div>
 
 <main>
@@ -1645,6 +1646,7 @@ async function init(){
   renderTaskBoard();
   initEditUi();
   startAutoSync();   // keep every open tab in sync with the Sheet without a manual reload
+  checkSheetHealth();   // warn loudly if THIS machine can't write to the Sheet
 }
 
 function renderCategoryChart(items){
@@ -5202,7 +5204,16 @@ function renderProductForm(row, isEdit){
 
     <div class="pe-section">รูปภาพ & ประวัติ</div>
     <div class="pe-grid">
-      <div class="pe-field full"><label>ลิงก์รูปสินค้า (Google Drive share link หรือ URL รูป)</label><input type="text" id="pe-image" value="${V('image')}" placeholder="https://drive.google.com/file/d/…/view"></div>
+      <div class="pe-field full">
+        <label>รูปสินค้า — อัปโหลดในเว็บ หรือวางลิงก์ Google Drive เอง</label>
+        <input type="text" id="pe-image" value="${V('image')}" placeholder="https://drive.google.com/file/d/…/view" oninput="pePreviewImage()">
+        <div style="display:flex; align-items:center; gap:10px; margin-top:6px; flex-wrap:wrap;">
+          <label class="btn-edit ghost" style="cursor:pointer; margin:0;">📎 อัปโหลดรูปจากเครื่อง
+            <input type="file" id="pe-image-file" accept="image/*" style="display:none;" onchange="uploadProductImage(this)"></label>
+          <span id="pe-image-status" style="font-size:12px; color:var(--ink-soft);"></span>
+        </div>
+        <div id="pe-image-preview" style="margin-top:8px;">${row.image ? `<img src="${esc(resolveDriveLink(row.image)||row.image)}" style="max-width:120px; max-height:120px; border-radius:8px; border:1px solid var(--line);">` : ''}</div>
+      </div>
       <div class="pe-field full"><label>ประวัติ (รูปแบบ: <code>2026-01-05: โน้ต | 2026-02-01: โน้ต</code>)</label><textarea id="pe-history" placeholder="ปล่อยว่างได้">${V('history')}</textarea></div>
     </div>
     ${(isEdit && _siblings.length) ? `
@@ -5224,6 +5235,36 @@ function collectProductForm(){
     row[c]= el ? String(el.value||'').trim() : '';
   });
   return row;
+}
+// Live preview of the product image (from a Drive link or direct URL)
+function pePreviewImage(){
+  const box=document.getElementById('pe-image-preview'); if(!box) return;
+  const link=(document.getElementById('pe-image')||{}).value||'';
+  const src=resolveDriveLink(link) || (link.startsWith('http')?link:'');
+  box.innerHTML = src ? `<img src="${esc(src)}" style="max-width:120px; max-height:120px; border-radius:8px; border:1px solid var(--line);">` : '';
+}
+// Upload a product photo straight to Drive (into the product's folder) and drop the link into the field
+async function uploadProductImage(inputEl){
+  const file=inputEl.files && inputEl.files[0];
+  if(!file) return;
+  const cfg=getWriteConfig();
+  if(!cfg.url){ toast('ยังไม่ได้ตั้ง Sheet Sync — อัปโหลดไม่ได้','err'); return; }
+  const nameV=(document.getElementById('pe-name')||{}).value||'';
+  const skuV=(document.getElementById('pe-sku')||{}).value||'';
+  const folder=String(nameV||skuV).replace(/[\\/:*?"<>|]+/g,' ').trim().slice(0,80);
+  const st=document.getElementById('pe-image-status');
+  if(st) st.textContent='⏳ กำลังอัปโหลด…';
+  try{
+    const dataUrl=await fileToDataUrl(file);
+    const loc = folder ? {parentId:UPLOAD_PARENT_FOLDER_ID, folder} : {parentId:UPLOAD_PARENT_FOLDER_ID};
+    const r=await postReadable(Object.assign({action:'uploadImage', dataUrl, name:file.name}, loc));
+    if(r && r.ok && r.url){
+      const inp=document.getElementById('pe-image'); if(inp) inp.value=r.url;
+      pePreviewImage();
+      if(st) st.textContent='✅ อัปโหลดแล้ว · ใส่ลิงก์ให้อัตโนมัติ — กด 💾 บันทึก เพื่อให้ทั้งทีมเห็น';
+    } else { if(st) st.textContent='⚠️ อัปโหลดไม่สำเร็จ'+(r&&r.error?': '+r.error:''); }
+  }catch(e){ if(st) st.textContent='⚠️ อัปโหลดไม่สำเร็จ: '+e.message; }
+  inputEl.value='';
 }
 
 function openProductEditor(sku){
@@ -5395,6 +5436,46 @@ function startAutoSync(){
   setInterval(autoRefreshTick, 60000);
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) autoRefreshTick(); });
   window.addEventListener('focus', autoRefreshTick);
+}
+
+/* ===== Sheet-connection health check =====
+   The #1 cause of "I entered data but teammates don't see it" is that THIS machine
+   can't actually write to the Sheet (a stale endpoint URL or wrong token saved in
+   ⚙️ Sheet Sync). Silent no-cors used to hide it. On load we ping the endpoint and,
+   if it's broken, show a loud banner — and offer a one-click reset to the built-in
+   default endpoint when that one works. */
+async function pingEndpoint(url, token){
+  try{
+    const res=await fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({token, action:'ping'})});
+    const j=JSON.parse(await res.text());
+    return {ok: !!(j && j.ok), error: (j && j.error) || ''};
+  }catch(e){ return {ok:false, error:'ต่อไม่ได้ ('+e.message+')'}; }
+}
+async function checkSheetHealth(){
+  const banner=document.getElementById('sync-health-banner'); if(!banner) return;
+  const cfg=getWriteConfig();
+  if(!cfg.url){ banner.style.display='none'; return; }
+  const r=await pingEndpoint(cfg.url, cfg.token);
+  if(r.ok){ banner.style.display='none'; return; }
+  // broken — does the built-in default endpoint work? then offer a one-click fix
+  let defaultOk=false;
+  if(cfg.url!==DEFAULT_WRITE_ENDPOINT || cfg.token!==DEFAULT_WRITE_TOKEN){
+    defaultOk=(await pingEndpoint(DEFAULT_WRITE_ENDPOINT, DEFAULT_WRITE_TOKEN)).ok;
+  }
+  banner.style.display='';
+  banner.innerHTML = defaultOk
+    ? `⚠️ เครื่องนี้ตั้งค่า Sheet Sync ผิด (${esc(r.error||'ต่อไม่ได้')}) — ข้อมูลที่แก้จะ<b>ไม่ขึ้นให้ทีม</b>&nbsp; <button onclick="autoFixSyncEndpoint()" style="background:#9B1C1C; color:#fff; border:none; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">🔧 แก้อัตโนมัติ</button>`
+    : `⚠️ เชื่อมต่อ Google Sheet ไม่ได้ (${esc(r.error||'ต่อไม่ได้')}) — ข้อมูลที่แก้จะ<b>ไม่ขึ้นให้ทีม</b> · กด “Edit Data → ⚙️ ตั้งค่า Sheet Sync” แล้วตรวจ URL/รหัสให้ถูก`;
+}
+function autoFixSyncEndpoint(){
+  try{ localStorage.removeItem('npd_write_cfg'); }catch(e){}   // fall back to the built-in default (known-good) endpoint
+  toast('รีเซ็ตการตั้งค่าเป็นค่ากลางแล้ว — กำลังส่งข้อมูลที่ค้าง + ตรวจใหม่','ok');
+  setTimeout(async ()=>{
+    await checkSheetHealth();
+    // push whatever was stuck locally (unsynced edits) up to the Sheet now that it works
+    if(typeof totalPending==='function' && totalPending()>0 && typeof pushPendingToSheet==='function'){ pushPendingToSheet(); }
+    else reloadEverything(true);
+  }, 400);
 }
 function clearLocalEdits(){
   if(totalPending()===0){ toast('ไม่มีข้อมูลที่แก้ในเครื่อง','info'); return; }
