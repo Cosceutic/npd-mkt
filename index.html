@@ -1158,7 +1158,7 @@ function rebuildProducts(){
 
 /* Once the Sheet reflects a local change, drop it from the pending overlay (self-healing,
    so a stale local copy never masks a teammate's newer Sheet edit). */
-function rowSig(r){ return PRODUCT_COLUMNS.map(c=>String((r&&r[c])!=null?r[c]:'').trim()).join(''); }
+function rowSig(r){ return PRODUCT_COLUMNS.filter(c=>c!=='image').map(c=>String((r&&r[c])!=null?r[c]:'').trim()).join('|'); }
 function autoPrunePending(){
   const store = getPendingStore(); let changed = false;
   const sheetBySku = {};
@@ -5343,16 +5343,17 @@ function deleteProduct(sku){
   else toast('ลบรายการที่เพิ่มไว้ในเครื่องแล้ว','ok');
 }
 
-/* ---------- talking to the Apps Script endpoint ---------- */
+/* ---------- talking to the Apps Script endpoint ----------
+   Writes go out with mode:'no-cors'. Reading the reply back (a plain fetch) works in some
+   browsers but Chrome BLOCKS it here — Apps Script /exec 302-redirects to
+   script.googleusercontent.com, whose response carries no Access-Control-Allow-Origin, so a
+   readable fetch dies with "Failed to fetch" and the write never lands. no-cors sends the
+   same request without ever trying to read the reply, so it is delivered every time; we
+   confirm what actually landed by RE-READING the Sheet CSV afterwards (autoPrune). */
 async function postToSheet(payload){
   const cfg=getWriteConfig();
-  // A "simple" text/plain POST needs no CORS preflight, and this deployment returns a
-  // readable JSON reply — so we CAN confirm the write actually landed (a silent no-cors
-  // write used to report success even when the Sheet rejected it → "saved" but teammates
-  // never saw it). We read {ok:...} back and let callers surface real failures.
-  const res = await fetch(cfg.url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload)});
-  const txt = await res.text();
-  try{ return JSON.parse(txt); }catch(e){ return {sent:true, unreadable:true}; }
+  await fetch(cfg.url, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload)});
+  return {sent:true};
 }
 /* One sender for every tab. `target` selects the Sheet tab; `sku` is kept alongside
    keyValue for products so an older (products-only) Apps Script deployment still works. */
@@ -5448,17 +5449,18 @@ async function pingEndpoint(url, token){
   try{
     const res=await fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({token, action:'ping'})});
     const j=JSON.parse(await res.text());
-    return {ok: !!(j && j.ok), error: (j && j.error) || ''};
-  }catch(e){ return {ok:false, error:'ต่อไม่ได้ ('+e.message+')'}; }
+    return {ok: !!(j && j.ok), error: (j && j.error) || '', unreachable:false};
+  }catch(e){ return {ok:false, error:e.message, unreachable:true}; }   // Chrome may CORS-block the reply; the write itself (no-cors) still works
 }
 async function checkSheetHealth(){
   const banner=document.getElementById('sync-health-banner'); if(!banner) return;
   const cfg=getWriteConfig();
   if(!cfg.url){ banner.style.display='none'; return; }
   const r=await pingEndpoint(cfg.url, cfg.token);
-  if(r.ok){
-    // endpoint works — but is there stuck local data that never reached the Sheet?
-    // (data entered on an older version can sit in the local store and only show HERE.)
+  // r.ok = confirmed good. r.unreachable = couldn't READ the reply (CORS block) but no-cors
+  // writes still land — so treat it as usable, never red. Only a real readable {ok:false}
+  // (e.g. bad token) is a genuine config error.
+  if(r.ok || r.unreachable){
     const pc = (typeof totalPending==='function') ? totalPending() : 0;
     if(pc>0){
       banner.style.display='';
@@ -5499,69 +5501,48 @@ function sanitizeRowForSheet(row){
 async function flushPendingNow(){
   const banner=document.getElementById('sync-health-banner'); if(banner) banner.innerHTML='⏳ กำลังส่งข้อมูลขึ้น Google Sheet…';
   const cfg=getWriteConfig();
-  let ok=0, fail=0, firstErr='', droppedImg=0; const failList=[];
-  const send = async (payload, label)=>{
-    try{ const r=await postToSheet(payload);
-      if(r && r.ok===true) return true;
-      fail++; const why=(r && r.error) || 'ปฏิเสธ'; if(!firstErr) firstErr=why; failList.push((label||'')+': '+why);
-      console.error('flush failed', label, r); return false;
-    }catch(e){ fail++; if(!firstErr) firstErr=e.message; failList.push((label||'')+': '+e.message); console.error('flush threw', label, e); return false; }
-  };
-  // 1) products — upsert is idempotent, safe to remove on confirmed success
+  if(!cfg.url){ toast('ยังไม่ได้ตั้ง Sheet Sync','err'); return; }
+  const before = (typeof totalPending==='function') ? totalPending() : 0;
+  let droppedImg=0;
+  // Fire every pending write with no-cors (delivered even when Chrome blocks reading the
+  // reply). We do NOT read a per-write result — instead we RE-READ the Sheet afterwards and
+  // let autoPrune drop whatever actually landed. That read is the source of truth.
   const ps=getPendingStore();
-  for(const sku of Object.keys(ps.edits)){
-    const s=sanitizeRowForSheet(ps.edits[sku]); droppedImg+=s.droppedImg;
-    if(await send({target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:s.row}, sku)){ delete ps.edits[sku]; ok++; }
-  }
-  const keepDel=[];
-  for(const sku of (ps.deletes||[])){
-    if(await send({target:'products',action:'delete',token:cfg.token,keyValue:sku,sku}, 'ลบ '+sku)){ ok++; } else { keepDel.push(sku); }
-  }
-  ps.deletes=keepDel; savePendingStore(ps);
-  // 2) updates (milestone progress) — append; drop on success so it isn't re-appended
-  const keepU=[];
-  for(const e of getUpdatesLocal()){
-    const row=Object.assign({}, e); if(!row['Next Due']) row['Next Due']=(row.NextDue||row.nextDue||'');
-    const s=sanitizeRowForSheet(row); droppedImg+=s.droppedImg;
-    if(await send({target:'updates',action:'append',token:cfg.token,row:s.row}, 'อัปเดต '+(e.SKU||''))){ ok++; } else { keepU.push(e); }
-  }
-  saveUpdatesLocal(keepU);
-  // 3) task status overrides
-  const ts=getTaskOverrides(); const keepT={};
-  for(const detail of Object.keys(ts)){
-    if(await send({target:'task',action:'update',token:cfg.token,keyValue:detail,row:{Status:ts[detail]}}, 'งาน')){ ok++; } else { keepT[detail]=ts[detail]; }
-  }
-  saveTaskOverrides(keepT);
-  // 4) notices
+  for(const sku of Object.keys(ps.edits)){ const s=sanitizeRowForSheet(ps.edits[sku]); droppedImg+=s.droppedImg; await postToSheet({target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:s.row}); }
+  for(const sku of (ps.deletes||[])){ await postToSheet({target:'products',action:'delete',token:cfg.token,keyValue:sku,sku}); }
+  for(const e of getUpdatesLocal()){ const row=Object.assign({}, e); if(!row['Next Due']) row['Next Due']=(row.NextDue||row.nextDue||''); const s=sanitizeRowForSheet(row); droppedImg+=s.droppedImg; await postToSheet({target:'updates',action:'append',token:cfg.token,row:s.row}); }
+  const ts=getTaskOverrides(); for(const d of Object.keys(ts)){ await postToSheet({target:'task',action:'update',token:cfg.token,keyValue:d,row:{Status:ts[d]}}); }
   const ns=getNoticeStore();
-  const keepA=[]; for(const e of ns.appends){ if(await send({target:'notice',action:'append',token:cfg.token,row:e}, 'ประกาศ')){ ok++; } else keepA.push(e); }
-  const keepE={}; for(const m of Object.keys(ns.edits)){ if(await send({target:'notice',action:'upsert',token:cfg.token,keyValue:m,row:ns.edits[m]}, 'ประกาศ')){ ok++; } else keepE[m]=ns.edits[m]; }
-  const keepD=[]; for(const m of ns.deletes){ if(await send({target:'notice',action:'delete',token:cfg.token,keyValue:m}, 'ลบประกาศ')){ ok++; } else keepD.push(m); }
-  saveNoticeStore({edits:keepE, appends:keepA, deletes:keepD});
-  // refresh local views
-  rebuildProducts(); if(typeof rebuildUpdateLogs==='function') rebuildUpdateLogs();
-  renderAll(); if(typeof renderTeamUpdates==='function') renderTeamUpdates();
+  for(const e of ns.appends){ await postToSheet({target:'notice',action:'append',token:cfg.token,row:e}); }
+  for(const m of Object.keys(ns.edits)){ await postToSheet({target:'notice',action:'upsert',token:cfg.token,keyValue:m,row:ns.edits[m]}); }
+  for(const m of ns.deletes){ await postToSheet({target:'notice',action:'delete',token:cfg.token,keyValue:m}); }
+  saveTaskOverrides({});   // tasks have no auto-prune-on-read; they were just sent
+  // Give the Sheet time to commit, then re-read — each loader auto-prunes its pending.
+  if(banner) banner.innerHTML='⏳ ส่งแล้ว กำลังตรวจยืนยันกับ Google Sheet…';
+  await new Promise(r=>setTimeout(r, 5000));
+  await reloadEverything(true);
   if(typeof updateSyncStatus==='function') updateSyncStatus();
-  const imgNote = droppedImg ? ` · ⚠️ ข้ามรูปในเครื่อง ${droppedImg} รูป (อัปใหม่ด้วยปุ่ม 📎)` : '';
-  if(fail){
+  const after = (typeof totalPending==='function') ? totalPending() : 0;
+  const synced = Math.max(0, before - after);
+  const imgNote = droppedImg ? ` · ข้ามรูปในเครื่อง ${droppedImg} รูป (อัปใหม่ด้วยปุ่ม 📎)` : '';
+  if(after>0){
     if(banner){
-      banner.style.display=''; banner.style.background='#FDE2E2'; banner.style.color='#9B1C1C'; banner.style.borderBottomColor='#E88';
-      banner.innerHTML = `⚠️ ส่งขึ้น Sheet ไม่สำเร็จ <b>${fail}</b> รายการ — สาเหตุ: <b>${esc(firstErr||'ไม่ทราบ')}</b>${imgNote}&nbsp; <button onclick="flushPendingNow()" style="background:#9B1C1C; color:#fff; border:none; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">↻ ลองอีกครั้ง</button>`;
+      banner.style.display=''; banner.style.background='#FEF3C7'; banner.style.color='#92400E'; banner.style.borderBottomColor='#F0C040';
+      banner.innerHTML = `ส่งขึ้นแล้ว ${synced} · ยังไม่ยืนยัน <b>${after}</b> รายการ (Sheet อาจยังอัปเดตช้า)${imgNote}&nbsp; <button onclick="flushPendingNow()" style="background:#92400E; color:#fff; border:none; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">↻ ลองอีกครั้ง</button>`;
     }
-    toast('ส่งไม่สำเร็จ '+fail+' รายการ — สาเหตุ: '+(firstErr||'?'),'err');
+    toast('ส่งขึ้นแล้ว '+synced+' · ยังเหลือ '+after+' รายการ — รอสักครู่แล้วกด "ลองอีกครั้ง"','info');
   } else {
-    toast('✅ ส่งขึ้น Google Sheet สำเร็จ '+ok+' รายการ — ทั้งทีมเห็นแล้ว'+imgNote, 'ok');
-    setTimeout(()=>checkSheetHealth(), 700);
+    if(banner) banner.style.display='none';
+    toast('✅ ส่งขึ้น Google Sheet สำเร็จทั้งหมด — ทั้งทีมเห็นแล้ว'+imgNote,'ok');
   }
 }
 function autoFixSyncEndpoint(){
   try{ localStorage.removeItem('npd_write_cfg'); }catch(e){}   // fall back to the built-in default (known-good) endpoint
   toast('รีเซ็ตการตั้งค่าเป็นค่ากลางแล้ว — กำลังส่งข้อมูลที่ค้าง + ตรวจใหม่','ok');
   setTimeout(async ()=>{
-    await checkSheetHealth();
     // push whatever was stuck locally (unsynced edits) up to the Sheet now that it works
-    if(typeof totalPending==='function' && totalPending()>0 && typeof pushPendingToSheet==='function'){ pushPendingToSheet(); }
-    else reloadEverything(true);
+    if(typeof totalPending==='function' && totalPending()>0){ flushPendingNow(); }
+    else { await reloadEverything(true); checkSheetHealth(); }
   }, 400);
 }
 function clearLocalEdits(){
