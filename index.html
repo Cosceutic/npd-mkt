@@ -5361,7 +5361,12 @@ async function syncToSheet(target, action, keyValue, row){
   const cfg=getWriteConfig();
   updateSyncStatus(); updateEditControls();
   if(!cfg.url){ toast('บันทึกในเครื่องนี้แล้ว · ยังไม่ได้ตั้ง Sheet Sync (กด ⚙️ เพื่อแชร์ทั้งทีม)','info'); return; }
-  const payload={target, action, token:cfg.token, keyValue, row: action==='delete'?undefined:row};
+  // Strip any local base64 image before sending — a full product row carrying one is hundreds
+  // of KB, and office proxies/Apps Script drop the oversized POST, so editing an EXISTING
+  // product (whose row includes the image) silently failed while small new-product rows landed.
+  let sendRow = row;
+  if(target==='products' && action!=='delete' && row && typeof sanitizeRowForSheet==='function'){ sendRow = sanitizeRowForSheet(row).row; }
+  const payload={target, action, token:cfg.token, keyValue, row: action==='delete'?undefined:sendRow};
   if(target==='products') payload.sku=keyValue;
   try{
     const r = await postToSheet(payload);
