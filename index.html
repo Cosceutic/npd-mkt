@@ -5456,16 +5456,34 @@ async function checkSheetHealth(){
   const cfg=getWriteConfig();
   if(!cfg.url){ banner.style.display='none'; return; }
   const r=await pingEndpoint(cfg.url, cfg.token);
-  if(r.ok){ banner.style.display='none'; return; }
+  if(r.ok){
+    // endpoint works — but is there stuck local data that never reached the Sheet?
+    // (data entered on an older version can sit in the local store and only show HERE.)
+    const pc = (typeof totalPending==='function') ? totalPending() : 0;
+    if(pc>0){
+      banner.style.display='';
+      banner.style.background='#FEF3C7'; banner.style.color='#92400E'; banner.style.borderBottomColor='#F0C040';
+      banner.innerHTML = `💾 เครื่องนี้มีข้อมูล <b>${pc}</b> รายการที่ยัง<b>ไม่ขึ้น Google Sheet</b> — คนอื่นจะยังไม่เห็น&nbsp; <button onclick="flushPendingNow()" style="background:#92400E; color:#fff; border:none; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">⬆️ ส่งขึ้น Sheet เลย</button>`;
+    } else {
+      banner.style.display='none';
+    }
+    return;
+  }
   // broken — does the built-in default endpoint work? then offer a one-click fix
   let defaultOk=false;
   if(cfg.url!==DEFAULT_WRITE_ENDPOINT || cfg.token!==DEFAULT_WRITE_TOKEN){
     defaultOk=(await pingEndpoint(DEFAULT_WRITE_ENDPOINT, DEFAULT_WRITE_TOKEN)).ok;
   }
   banner.style.display='';
+  banner.style.background='#FDE2E2'; banner.style.color='#9B1C1C'; banner.style.borderBottomColor='#E88';
   banner.innerHTML = defaultOk
     ? `⚠️ เครื่องนี้ตั้งค่า Sheet Sync ผิด (${esc(r.error||'ต่อไม่ได้')}) — ข้อมูลที่แก้จะ<b>ไม่ขึ้นให้ทีม</b>&nbsp; <button onclick="autoFixSyncEndpoint()" style="background:#9B1C1C; color:#fff; border:none; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">🔧 แก้อัตโนมัติ</button>`
     : `⚠️ เชื่อมต่อ Google Sheet ไม่ได้ (${esc(r.error||'ต่อไม่ได้')}) — ข้อมูลที่แก้จะ<b>ไม่ขึ้นให้ทีม</b> · กด “Edit Data → ⚙️ ตั้งค่า Sheet Sync” แล้วตรวจ URL/รหัสให้ถูก`;
+}
+// push everything stuck in this browser up to the Sheet, then re-check
+function flushPendingNow(){
+  const b=document.getElementById('sync-health-banner'); if(b) b.innerHTML='⏳ กำลังส่งข้อมูลขึ้น Sheet…';
+  Promise.resolve(pushPendingToSheet()).then(()=>setTimeout(checkSheetHealth, 3500));
 }
 function autoFixSyncEndpoint(){
   try{ localStorage.removeItem('npd_write_cfg'); }catch(e){}   // fall back to the built-in default (known-good) endpoint
