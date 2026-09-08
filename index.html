@@ -5480,52 +5480,79 @@ async function checkSheetHealth(){
     ? `⚠️ เครื่องนี้ตั้งค่า Sheet Sync ผิด (${esc(r.error||'ต่อไม่ได้')}) — ข้อมูลที่แก้จะ<b>ไม่ขึ้นให้ทีม</b>&nbsp; <button onclick="autoFixSyncEndpoint()" style="background:#9B1C1C; color:#fff; border:none; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">🔧 แก้อัตโนมัติ</button>`
     : `⚠️ เชื่อมต่อ Google Sheet ไม่ได้ (${esc(r.error||'ต่อไม่ได้')}) — ข้อมูลที่แก้จะ<b>ไม่ขึ้นให้ทีม</b> · กด “Edit Data → ⚙️ ตั้งค่า Sheet Sync” แล้วตรวจ URL/รหัสให้ถูก`;
 }
+// A base64 image (data:...) can be MBs — far past a Sheet cell's ~50k char limit, so a row
+// carrying one fails to write. Drop such fields from the payload (omit the key so the Sheet
+// keeps any existing value); the image can be re-added later with the 📎 upload button.
+function sanitizeRowForSheet(row){
+  const out={}; let droppedImg=0;
+  for(const k in row){
+    const v=row[k];
+    if(typeof v==='string' && v.indexOf('data:')===0 && v.length>2000){ droppedImg++; continue; }  // skip huge base64
+    if(typeof v==='string' && v.length>45000){ out[k]=v.slice(0,45000); }                           // clamp anything near the cell limit
+    else out[k]=v;
+  }
+  return {row:out, droppedImg};
+}
 // Push everything stuck in this browser up to the Sheet — VERIFIED, one item at a time,
 // so one bad item can't abort the rest, and each item is dropped from the local store only
 // after the Sheet confirms {ok:true}. Reports exactly what failed and why.
 async function flushPendingNow(){
   const banner=document.getElementById('sync-health-banner'); if(banner) banner.innerHTML='⏳ กำลังส่งข้อมูลขึ้น Google Sheet…';
   const cfg=getWriteConfig();
-  let ok=0, fail=0, firstErr='';
-  const noteFail = r => { fail++; if(!firstErr) firstErr = (r && r.error) || 'ปฏิเสธ'; };
-  const send = async (payload)=>{ try{ const r=await postToSheet(payload); if(r && r.ok===true) return true; noteFail(r); return false; }catch(e){ fail++; if(!firstErr) firstErr=e.message; return false; } };
+  let ok=0, fail=0, firstErr='', droppedImg=0; const failList=[];
+  const send = async (payload, label)=>{
+    try{ const r=await postToSheet(payload);
+      if(r && r.ok===true) return true;
+      fail++; const why=(r && r.error) || 'ปฏิเสธ'; if(!firstErr) firstErr=why; failList.push((label||'')+': '+why);
+      console.error('flush failed', label, r); return false;
+    }catch(e){ fail++; if(!firstErr) firstErr=e.message; failList.push((label||'')+': '+e.message); console.error('flush threw', label, e); return false; }
+  };
   // 1) products — upsert is idempotent, safe to remove on confirmed success
   const ps=getPendingStore();
   for(const sku of Object.keys(ps.edits)){
-    if(await send({target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:ps.edits[sku]})){ delete ps.edits[sku]; ok++; }
+    const s=sanitizeRowForSheet(ps.edits[sku]); droppedImg+=s.droppedImg;
+    if(await send({target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:s.row}, sku)){ delete ps.edits[sku]; ok++; }
   }
   const keepDel=[];
   for(const sku of (ps.deletes||[])){
-    if(await send({target:'products',action:'delete',token:cfg.token,keyValue:sku,sku})){ ok++; } else { keepDel.push(sku); }
+    if(await send({target:'products',action:'delete',token:cfg.token,keyValue:sku,sku}, 'ลบ '+sku)){ ok++; } else { keepDel.push(sku); }
   }
   ps.deletes=keepDel; savePendingStore(ps);
   // 2) updates (milestone progress) — append; drop on success so it isn't re-appended
   const keepU=[];
   for(const e of getUpdatesLocal()){
     const row=Object.assign({}, e); if(!row['Next Due']) row['Next Due']=(row.NextDue||row.nextDue||'');
-    if(await send({target:'updates',action:'append',token:cfg.token,row})){ ok++; } else { keepU.push(e); }
+    const s=sanitizeRowForSheet(row); droppedImg+=s.droppedImg;
+    if(await send({target:'updates',action:'append',token:cfg.token,row:s.row}, 'อัปเดต '+(e.SKU||''))){ ok++; } else { keepU.push(e); }
   }
   saveUpdatesLocal(keepU);
   // 3) task status overrides
   const ts=getTaskOverrides(); const keepT={};
   for(const detail of Object.keys(ts)){
-    if(await send({target:'task',action:'update',token:cfg.token,keyValue:detail,row:{Status:ts[detail]}})){ ok++; } else { keepT[detail]=ts[detail]; }
+    if(await send({target:'task',action:'update',token:cfg.token,keyValue:detail,row:{Status:ts[detail]}}, 'งาน')){ ok++; } else { keepT[detail]=ts[detail]; }
   }
   saveTaskOverrides(keepT);
   // 4) notices
   const ns=getNoticeStore();
-  const keepA=[]; for(const e of ns.appends){ if(await send({target:'notice',action:'append',token:cfg.token,row:e})){ ok++; } else keepA.push(e); }
-  const keepE={}; for(const m of Object.keys(ns.edits)){ if(await send({target:'notice',action:'upsert',token:cfg.token,keyValue:m,row:ns.edits[m]})){ ok++; } else keepE[m]=ns.edits[m]; }
-  const keepD=[]; for(const m of ns.deletes){ if(await send({target:'notice',action:'delete',token:cfg.token,keyValue:m})){ ok++; } else keepD.push(m); }
+  const keepA=[]; for(const e of ns.appends){ if(await send({target:'notice',action:'append',token:cfg.token,row:e}, 'ประกาศ')){ ok++; } else keepA.push(e); }
+  const keepE={}; for(const m of Object.keys(ns.edits)){ if(await send({target:'notice',action:'upsert',token:cfg.token,keyValue:m,row:ns.edits[m]}, 'ประกาศ')){ ok++; } else keepE[m]=ns.edits[m]; }
+  const keepD=[]; for(const m of ns.deletes){ if(await send({target:'notice',action:'delete',token:cfg.token,keyValue:m}, 'ลบประกาศ')){ ok++; } else keepD.push(m); }
   saveNoticeStore({edits:keepE, appends:keepA, deletes:keepD});
-  // refresh local views + banner
+  // refresh local views
   rebuildProducts(); if(typeof rebuildUpdateLogs==='function') rebuildUpdateLogs();
   renderAll(); if(typeof renderTeamUpdates==='function') renderTeamUpdates();
   if(typeof updateSyncStatus==='function') updateSyncStatus();
-  toast(fail
-    ? ('ส่งสำเร็จ '+ok+' · ยังส่งไม่ได้ '+fail+' รายการ'+(firstErr?(' ('+firstErr+')'):'')+' — ลองกดอีกครั้ง')
-    : ('✅ ส่งขึ้น Google Sheet สำเร็จ '+ok+' รายการ — ทั้งทีมเห็นแล้ว'), fail?'err':'ok');
-  setTimeout(()=>checkSheetHealth(), 700);
+  const imgNote = droppedImg ? ` · ⚠️ ข้ามรูปในเครื่อง ${droppedImg} รูป (อัปใหม่ด้วยปุ่ม 📎)` : '';
+  if(fail){
+    if(banner){
+      banner.style.display=''; banner.style.background='#FDE2E2'; banner.style.color='#9B1C1C'; banner.style.borderBottomColor='#E88';
+      banner.innerHTML = `⚠️ ส่งขึ้น Sheet ไม่สำเร็จ <b>${fail}</b> รายการ — สาเหตุ: <b>${esc(firstErr||'ไม่ทราบ')}</b>${imgNote}&nbsp; <button onclick="flushPendingNow()" style="background:#9B1C1C; color:#fff; border:none; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">↻ ลองอีกครั้ง</button>`;
+    }
+    toast('ส่งไม่สำเร็จ '+fail+' รายการ — สาเหตุ: '+(firstErr||'?'),'err');
+  } else {
+    toast('✅ ส่งขึ้น Google Sheet สำเร็จ '+ok+' รายการ — ทั้งทีมเห็นแล้ว'+imgNote, 'ok');
+    setTimeout(()=>checkSheetHealth(), 700);
+  }
 }
 function autoFixSyncEndpoint(){
   try{ localStorage.removeItem('npd_write_cfg'); }catch(e){}   // fall back to the built-in default (known-good) endpoint
