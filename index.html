@@ -1644,6 +1644,7 @@ async function init(){
   initTaskForm();
   renderTaskBoard();
   initEditUi();
+  startAutoSync();   // keep every open tab in sync with the Sheet without a manual reload
 }
 
 function renderCategoryChart(items){
@@ -5369,6 +5370,31 @@ async function reloadEverything(silent){
   renderTeamUpdates(); renderTaskBoard();
   if(typeof renderTrackingCalendar==='function' && document.getElementById('tcal-host')) renderTrackingCalendar();
   if(!silent) toast('รีเฟรชจาก Google Sheet แล้ว','ok');
+}
+
+/* ===== Auto-sync — pick up other people's Sheet changes without a manual page reload.
+   The app used to read the Sheet ONLY on page load, so a teammate who already had the
+   tab open never saw new edits. Now it re-reads when the tab regains focus/visibility,
+   and on a gentle 60s poll while visible — skipping any moment a dialog or edit mode is
+   open so it never disrupts an in-progress edit, and keeping the scroll position. ===== */
+let lastAutoRefresh = Date.now();
+let autoSyncStarted = false;
+function anyDialogOpen(){ return !!document.querySelector('[id$="overlay"].open'); }
+async function autoRefreshTick(){
+  if(document.hidden) return;
+  if(typeof EDIT_MODE!=='undefined' && EDIT_MODE) return;   // don't refresh mid-edit
+  if(anyDialogOpen()) return;                               // don't disrupt an open dialog
+  if(totalPending && totalPending()>0) return;              // don't fight unsynced local edits
+  if(Date.now() - lastAutoRefresh < 15000) return;          // throttle bursts of focus events
+  lastAutoRefresh = Date.now();
+  const y = window.scrollY;
+  try{ await reloadEverything(true); window.scrollTo(0, y); }catch(e){}
+}
+function startAutoSync(){
+  if(autoSyncStarted) return; autoSyncStarted = true;
+  setInterval(autoRefreshTick, 60000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) autoRefreshTick(); });
+  window.addEventListener('focus', autoRefreshTick);
 }
 function clearLocalEdits(){
   if(totalPending()===0){ toast('ไม่มีข้อมูลที่แก้ในเครื่อง','info'); return; }
