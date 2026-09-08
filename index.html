@@ -179,6 +179,11 @@
   .sg-item img{width:32px; height:32px; border-radius:8px; object-fit:cover; flex-shrink:0;}
   .sg-item .sg-name{font-size:13px; font-weight:600; color:var(--ink);}
   .sg-item .sg-sku{font-size:11px; color:var(--ink-soft);}
+  /* milestone badge in the group popup + timeline focus (which status was clicked) */
+  .sg-ms-badge{display:inline-block; font-family:'Prompt',sans-serif; font-weight:700; font-size:11px; color:#fff; background:var(--c); padding:3px 9px; border-radius:999px;}
+  .sg-ms-status{display:block; font-size:11px; color:var(--ink-soft); margin-top:4px;}
+  .tm-focus-banner{background:color-mix(in srgb, var(--fc) 14%, #fff); border:1px solid var(--fc); border-left:4px solid var(--fc); color:var(--ink); border-radius:8px; padding:8px 12px; font-size:12px; margin-bottom:14px; line-height:1.5;}
+  .t-item-focus{background:color-mix(in srgb, var(--accent, #6C8EBF) 9%, transparent); border-radius:8px; box-shadow:0 0 0 2px color-mix(in srgb, var(--accent, #6C8EBF) 22%, transparent); padding:6px 8px; margin:2px 0 22px -8px;}
   .tl-entry{border-left:3px solid var(--blue); padding-left:12px;}
   .tl-section-label{font-family:'Prompt'; font-weight:600; font-size:12px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.4px; margin-top:4px;}
   .tl-chip-row{display:flex; flex-wrap:wrap; gap:7px; margin:8px 0 14px;}
@@ -212,6 +217,17 @@
   .tev{display:flex; flex-direction:column; line-height:1.2;}
   .tev-sub{font-weight:500; font-size:9px; opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   @media(max-width:640px){ .tcal-cell{min-height:60px;} .tev{font-size:9.5px; padding:1px 4px;} .tev-sub{display:none;} }
+  /* ===== user-added calendar events (holidays / meetings) ===== */
+  .cal-events{display:flex; flex-direction:column; gap:2px; margin:2px 0;}
+  .ev-chip{font-size:10px; line-height:1.25; padding:1px 6px; border-radius:6px; cursor:pointer; font-weight:700;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
+    background:var(--evbg); color:var(--ev); border:1px solid var(--ev);}
+  .ev-chip:hover{filter:brightness(.96);}
+  .ev-span{border-radius:0;}
+  .ev-span.ev-start{border-top-left-radius:6px; border-bottom-left-radius:6px;}
+  .ev-span.ev-end{border-top-right-radius:6px; border-bottom-right-radius:6px;}
+  .cal-holiday{background:repeating-linear-gradient(135deg,#FEF2F2,#FEF2F2 8px,#FEE2E2 8px,#FEE2E2 16px) !important;}
+  @media(max-width:640px){ .ev-chip{font-size:9px; padding:1px 4px;} }
   /* focus banner + highlighted entry when arriving from the calendar */
   .tl-focus-banner{border-radius:11px; padding:11px 14px; margin-bottom:14px; border:1px solid;}
   .tl-focus-banner.due{background:#FEF0F0; border-color:#F3B4B4;}
@@ -561,8 +577,9 @@
 
     <div class="panel">
       <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-        <h3 style="margin-top:16px;">Milestone Calendar<span style="color:var(--ink-soft); font-weight:400; font-size:11px; margin-left:6px;">ปฏิทินรวมกิจกรรมสำคัญ</span></h3>
+        <h3 style="margin-top:16px;">NPD &amp; Marketing Calendar<span style="color:var(--ink-soft); font-weight:400; font-size:11px; margin-left:6px;">ปฏิทินงาน NPD &amp; Marketing</span></h3>
         <div style="display:flex; align-items:center; gap:10px;">
+          <button class="btn-sm primary" id="btn-add-event-cal" onclick="openEventEditor()" style="display:none;">📅 เพิ่มวันหยุด/นัด</button>
           <button class="btn-sm ghost" onclick="shiftCalMonth(-1)">&larr;</button>
           <span id="stock-cal-label" style="font-family:'Prompt'; font-weight:600; font-size:13.5px; min-width:120px; text-align:center; display:inline-block;"></span>
           <button class="btn-sm ghost" onclick="shiftCalMonth(1)">&rarr;</button>
@@ -788,11 +805,13 @@
       <span id="tcal-label" class="tcal-label"></span>
       <button class="btn-sm ghost" onclick="tcalMove(1)">เดือนถัดไป ›</button>
       <button class="btn-sm ghost" onclick="tcalToday()">วันนี้</button>
+      <button class="btn-sm primary" id="btn-add-event-track" onclick="openEventEditor()" style="display:none;">📅 เพิ่มวันหยุด/นัด</button>
       <span class="tcal-legend">
         <span class="tev tev-rd">R&amp;D</span>
         <span class="tev tev-pkg">Packaging</span>
         <span class="tev tev-other">อื่นๆ</span>
         <span class="tev tev-due">⏰ ครบกำหนด</span>
+        <span class="tev" style="background:#FEE2E2; color:#B91C1C;">🏖️ วันหยุด/นัด</span>
       </span>
     </div>
     <div class="panel" style="padding:12px;"><div id="tcal-host"></div></div>
@@ -836,7 +855,10 @@
 <div class="modal-overlay" id="stockgroup-overlay" style="z-index:60;" onclick="if(event.target===this) closeStockGroup()">
   <div class="modal-box" style="max-width:320px;">
     <div class="modal-header">
-      <div class="mh-name" id="sg-title" style="font-size:14px;"></div>
+      <div>
+        <div class="mh-name" id="sg-title" style="font-size:14px;"></div>
+        <div id="sg-milestone" style="display:none; margin-top:6px;"></div>
+      </div>
       <button class="modal-close" onclick="closeStockGroup()">✕</button>
     </div>
     <div class="modal-body" id="sg-list" style="padding:10px 14px 16px; display:flex; flex-direction:column; gap:6px;"></div>
@@ -964,6 +986,26 @@
       <span style="flex:1;"></span>
       <button class="btn-edit ghost" onclick="closeUpdateEditor()">ยกเลิก</button>
       <button class="btn-edit primary" onclick="saveUpdateEntry()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Calendar event editor modal ===== -->
+<div class="modal-overlay" id="ev-overlay" style="z-index:72;" onclick="if(event.target===this) closeEventEditor()">
+  <div class="modal-box pe-box">
+    <div class="modal-header">
+      <div>
+        <div class="mh-name" id="ev-title-h">📅 เพิ่มวันหยุด / นัด / ประชุม</div>
+        <div class="mh-sku">โผล่ทั้งใน Milestone Calendar และ Tracking Calendar · ทั้งทีมเห็นตรงกัน</div>
+      </div>
+      <button class="modal-close" onclick="closeEventEditor()">✕</button>
+    </div>
+    <div class="modal-body pe-body" id="ev-form"><!-- built by openEventEditor() --></div>
+    <div class="pe-footer">
+      <button class="btn-edit ghost" id="ev-delete-btn" onclick="deleteEventEntry()" style="display:none; color:#DC2626;">🗑️ ลบ</button>
+      <span style="flex:1;"></span>
+      <button class="btn-edit ghost" onclick="closeEventEditor()">ยกเลิก</button>
+      <button class="btn-edit primary" onclick="saveEventEntry()">💾 บันทึก</button>
     </div>
   </div>
 </div>
@@ -1590,7 +1632,7 @@ document.querySelectorAll('#nav .tab').forEach(t=>{
 
 async function init(){
   document.getElementById('updated-badge').textContent = 'Loading data…';
-  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet(), loadNPRSummaryFromSheet()]);
+  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet(), loadNPRSummaryFromSheet(), loadEventsFromSheet()]);
   renderNotices();
 
   currentYear = new Date().getFullYear();
@@ -1790,11 +1832,23 @@ function renderStockTimeline(items){
   renderMilestoneTimeline('pr-timeline', 'prDate', 'No Public Relations dates logged yet for this year');
 }
 
-function openMemberGroup(title, members){
+function openMemberGroup(title, members, typeKey, isActual){
   document.getElementById('sg-title').textContent = title;
+  // Show WHICH milestone/status these items belong to (fixes "can't tell the status on click")
+  const def = (typeof CAL_LEGEND!=='undefined' && typeKey && CAL_LEGEND[typeKey]) ? CAL_LEGEND[typeKey] : null;
+  const badgeEl = document.getElementById('sg-milestone');
+  if(badgeEl){
+    if(def){
+      const statusTxt = isActual ? '✓ เกิดขึ้นแล้ว (actual)' : '◻ ยังเป็นกำหนดการ (deadline)';
+      badgeEl.innerHTML = `<span class="sg-ms-badge" style="--c:${def.color};">${esc(def.label)} · ${esc(def.th)}</span>`
+        + `<span class="sg-ms-status">${statusTxt}</span>`;
+      badgeEl.style.display = '';
+    } else { badgeEl.style.display = 'none'; badgeEl.innerHTML = ''; }
+  }
+  const tk = typeKey || '', act = !!isActual;
   document.getElementById('sg-list').innerHTML = members.map(p=>{
     const idx = PRODUCTS.indexOf(p);
-    return `<button class="sg-item" onclick="closeStockGroup(); openTimeline(${idx})">
+    return `<button class="sg-item" onclick="closeStockGroup(); openTimeline(${idx}, '${tk}', ${act})">
       ${p.image ? `<img src="${esc(p.image)}" alt="">` : `<div style="width:32px;height:32px;border-radius:8px;background:var(--blue-pale);flex-shrink:0;"></div>`}
       <span><span class="sg-name">${esc(p.name)}</span><br><span class="sg-sku">${esc(p.sku)||''}</span></span>
     </button>`;
@@ -1847,6 +1901,154 @@ function groupByBaseName(list){
   return Object.values(map).map(g=>({base:g.base, members:g.members}));
 }
 
+/* ===== Custom calendar events (holidays / meetings / appointments) =====
+   Team-shared via a "Events" tab (auto-created by the Apps Script on first save,
+   read via gviz-by-name). Local overlay makes the author's own adds instant. */
+const EVENTS_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=Events";
+const EVENTS_LOCAL_KEY = 'npd_events_v1';
+const EVENT_TYPES = {
+  holiday: {label:'วันหยุด',    emoji:'🏖️', color:'#EF4444', bg:'#FEE2E2'},
+  meeting: {label:'ประชุม/นัด',  emoji:'📌', color:'#6366F1', bg:'#E0E7FF'},
+  other:   {label:'อื่นๆ',        emoji:'📎', color:'#0EA5E9', bg:'#E0F2FE'},
+};
+const EVENT_HEADERS = ['id','title','type','start','end','note','updatedBy','updatedAt'];
+function eventTypeDef(t){ return EVENT_TYPES[t] || EVENT_TYPES.other; }
+function getEventsLocal(){ try{ return JSON.parse(localStorage.getItem(EVENTS_LOCAL_KEY))||[]; }catch(e){ return []; } }
+function saveEventsLocal(a){ try{ localStorage.setItem(EVENTS_LOCAL_KEY, JSON.stringify(a)); }catch(e){} }
+let SHEET_EVENTS_RAW = [];
+let ALL_EVENTS = [];
+function normEventRow(r){
+  const start = normalizeDueDate(r.start||r.Start||'') || '';
+  let end = normalizeDueDate(r.end||r.End||'') || start;
+  if(start && end && end < start) end = start;
+  return {
+    id:(r.id||r.ID||'').trim(),
+    title:(r.title||r.Title||'').trim(),
+    type:((r.type||r.Type||'other').trim().toLowerCase()) || 'other',
+    start, end,
+    note:(r.note||r.Note||'').trim(),
+    updatedBy:(r.updatedBy||r.UpdatedBy||'').trim()
+  };
+}
+function rebuildEvents(){
+  const sheetIds = new Set(SHEET_EVENTS_RAW.map(e=>e.id).filter(Boolean));
+  const local = getEventsLocal().map(normEventRow).filter(e=>!sheetIds.has(e.id));
+  ALL_EVENTS = SHEET_EVENTS_RAW.concat(local).filter(e=>e.title && e.start);
+}
+async function loadEventsFromSheet(){
+  try{
+    const res = await fetch(EVENTS_CSV_URL + '&_cb=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) throw new Error('fetch failed: '+res.status);
+    const csvText = await res.text();
+    // gviz silently falls back to the FIRST sheet when "Events" doesn't exist yet —
+    // so only trust the data if a real Events header (title + start columns) is present.
+    const hasHeader = /(^|,)\s*"?title"?\s*(,|$)/im.test(csvText) && /(^|,)\s*"?start"?\s*(,|$)/im.test(csvText);
+    SHEET_EVENTS_RAW = hasHeader
+      ? parseCsvByHeader(csvText, ['title','start']).map(normEventRow).filter(e=>e.id && e.title && e.start)
+      : [];
+  }catch(err){
+    console.error('Events load failed (fine if the Events tab does not exist yet)', err);
+    SHEET_EVENTS_RAW = [];
+  }
+  // drop local rows already confirmed on the sheet
+  const sheetIds = new Set(SHEET_EVENTS_RAW.map(e=>e.id).filter(Boolean));
+  const local = getEventsLocal();
+  const kept = local.filter(e=>!sheetIds.has((e.id||'').trim()));
+  if(kept.length !== local.length) saveEventsLocal(kept);
+  rebuildEvents();
+}
+// events active on a given yyyy-mm-dd (within [start,end] inclusive)
+function eventsOnDay(iso){
+  if(!iso) return [];
+  return ALL_EVENTS.filter(e=> e.start && iso>=e.start && iso<=(e.end||e.start));
+}
+function eventById(id){ return ALL_EVENTS.find(e=>e.id===id) || null; }
+// small chip markup shared by both calendars
+function eventChipHtml(e, iso){
+  const def = eventTypeDef(e.type);
+  const multi = e.end && e.end!==e.start;
+  const isStart = iso===e.start, isEnd = iso===e.end;
+  const cls = multi ? ('ev-chip ev-span'+(isStart?' ev-start':'')+(isEnd?' ev-end':'')) : 'ev-chip';
+  const tip = `${def.emoji} ${def.label}: ${e.title}`+(multi?` (${e.start} → ${e.end})`:'')+(e.note?` · ${e.note}`:'');
+  const label = (multi && !isStart) ? '' : `${def.emoji} ${esc(e.title)}`;
+  return `<div class="${cls}" style="--ev:${def.color}; --evbg:${def.bg};" title="${esc(tip)}" onclick="event.stopPropagation(); openEventEditor(null,'${attrJs(e.id)}')">${label||'&nbsp;'}</div>`;
+}
+
+/* ---- Event editor modal ---- */
+let evEditId = null;
+function openEventEditor(prefill, editId){
+  if(!isTeamUnlocked()){ toast('เข้าโหมดแก้ไข (🔓) ก่อนจึงจะเพิ่ม/แก้ Event ได้','info'); return; }
+  evEditId = editId || null;
+  const e = editId ? (eventById(editId) || {}) : (prefill || {});
+  const typeOpts = Object.entries(EVENT_TYPES).map(([k,d])=>`<option value="${k}"${(e.type||'holiday')===k?' selected':''}>${d.emoji} ${d.label}</option>`).join('');
+  document.getElementById('ev-title-h').textContent = editId ? '✏️ แก้ไข Event' : '📅 เพิ่มวันหยุด / นัด / ประชุม';
+  document.getElementById('ev-form').innerHTML = `
+    <div class="pe-grid">
+      <div class="pe-field full"><label>หัวข้อ (Title) *</label><input type="text" id="ev-title" value="${esc(e.title||'')}" placeholder="เช่น วันหยุดสงกรานต์ / ประชุมทีม NPD"></div>
+      <div class="pe-field"><label>ประเภท (Type)</label><select id="ev-type">${typeOpts}</select></div>
+      <div class="pe-field"><label>&nbsp;</label><div style="font-size:11px; color:var(--muted); padding-top:8px;">🏖️ วันหยุด = แรเงาทั้งช่อง · 📌 นัด/ประชุม</div></div>
+      <div class="pe-field"><label>วันเริ่ม (Start) *</label><input type="date" id="ev-start" value="${esc(e.start||todayStr())}"></div>
+      <div class="pe-field"><label>วันจบ (End) — ว่าง = วันเดียว</label><input type="date" id="ev-end" value="${esc(e.end&&e.end!==e.start?e.end:'')}"></div>
+      <div class="pe-field full"><label>หมายเหตุ (Note)</label><input type="text" id="ev-note" value="${esc(e.note||'')}" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"></div>
+    </div>`;
+  document.getElementById('ev-delete-btn').style.display = editId ? '' : 'none';
+  document.getElementById('ev-overlay').classList.add('open');
+}
+function closeEventEditor(){ document.getElementById('ev-overlay').classList.remove('open'); evEditId=null; }
+function collectEventForm(){
+  const g=id=>String((document.getElementById(id)||{}).value||'').trim();
+  const start=g('ev-start');
+  let end=g('ev-end'); if(!end) end=start; if(end<start) end=start;
+  return { title:g('ev-title'), type:g('ev-type')||'other', start, end, note:g('ev-note') };
+}
+function saveEventEntry(){
+  const f=collectEventForm();
+  if(!f.title){ toast('กรอกหัวข้อ (Title) ก่อน','err'); return; }
+  if(!f.start){ toast('เลือกวันเริ่ม (Start) ก่อน','err'); return; }
+  const id = evEditId || ('ev'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+  const ev = Object.assign({id}, f, {updatedBy:''});
+  const arr=getEventsLocal();
+  const li=arr.findIndex(x=>x.id===id);
+  if(li>-1) arr[li]=ev; else arr.push(ev);
+  saveEventsLocal(arr);
+  rebuildEvents();
+  refreshCalendarsAfterEvent();
+  closeEventEditor();
+  syncEventToSheet('upsert', ev);
+  toast(evEditId?'แก้ไข Event แล้ว':'เพิ่ม Event แล้ว','ok');
+}
+function deleteEventEntry(){
+  if(!evEditId) return;
+  if(!confirm('ลบ Event นี้?')) return;
+  const id=evEditId;
+  saveEventsLocal(getEventsLocal().filter(x=>x.id!==id));
+  SHEET_EVENTS_RAW = SHEET_EVENTS_RAW.filter(x=>x.id!==id);   // hide immediately even if it came from the sheet
+  rebuildEvents();
+  refreshCalendarsAfterEvent();
+  closeEventEditor();
+  syncEventToSheet('delete', {id});
+  toast('ลบ Event แล้ว','ok');
+}
+function refreshCalendarsAfterEvent(){
+  if(typeof renderStockCalendarGrid==='function' && document.getElementById('stock-calendar-grid')) renderStockCalendarGrid();
+  if(typeof renderTrackingCalendar==='function' && document.getElementById('tcal-host') && document.getElementById('tcal-host').innerHTML) renderTrackingCalendar();
+}
+async function syncEventToSheet(action, ev){
+  const cfg=getWriteConfig();
+  if(!cfg.url){ toast('บันทึกในเครื่องแล้ว · ยังไม่ได้ตั้ง Sheet Sync (ทั้งทีมจะยังไม่เห็น)','info'); return; }
+  const payload = {
+    target:'events', sheetName:'Events', key:'id', create:EVENT_HEADERS,
+    action, keyValue: ev.id,
+    row: action==='delete' ? undefined : {
+      id:ev.id, title:ev.title||'', type:ev.type||'other',
+      start:ev.start||'', end:ev.end||ev.start||'', note:ev.note||'',
+      updatedBy:ev.updatedBy||'', updatedAt: todayStr()
+    }
+  };
+  try{ await postReadable(payload); }
+  catch(e){ toast('บันทึกในเครื่องแล้ว แต่ต่อ Sheet ไม่ได้ — จะซิงค์เมื่อรีเฟรช','err'); }
+}
+
 function renderStockCalendarGrid(){
   const label = document.getElementById('stock-cal-label');
   const grid = document.getElementById('stock-calendar-grid');
@@ -1891,13 +2093,13 @@ function renderStockCalendarGrid(){
     const isToday = cellDateObj.getTime() === today.getTime();
     const dayData = byDay[day] || {};
 
-    function registerClick(base, members){
+    function registerClick(base, members, typeKey, isActual){
       if(members.length>1){
         const gi = window.CAL_GROUPS.length;
-        window.CAL_GROUPS.push({title:`${base} — ${formatDate(cellDateObj)}`, members});
-        return `openMemberGroup(CAL_GROUPS[${gi}].title, CAL_GROUPS[${gi}].members)`;
+        window.CAL_GROUPS.push({title:`${base} — ${formatDate(cellDateObj)}`, members, typeKey, isActual});
+        return `openMemberGroup(CAL_GROUPS[${gi}].title, CAL_GROUPS[${gi}].members, '${typeKey}', ${!!isActual})`;
       }
-      return `openTimeline(${PRODUCTS.indexOf(members[0])})`;
+      return `openTimeline(${PRODUCTS.indexOf(members[0])}, '${typeKey}', ${!!isActual})`;
     }
 
     // Every milestone type renders as a product photo; the ring colour says which type it
@@ -1914,15 +2116,21 @@ function renderStockCalendarGrid(){
           ? `<img src="${esc(rep.image)}" alt="">`
           : `<div class="fallback" style="background:${ring};">${esc((g.base||'?').charAt(0).toUpperCase())}</div>`;
         const badge = g.members.length>1 ? `<div class="badge" style="background:${ring};">${g.members.length}</div>` : '';
-        const click = registerClick(g.base, g.members);
+        const click = registerClick(g.base, g.members, typeKey, isActual);
         const statusTxt = isActual ? 'actual — done' : 'deadline — not yet';
         const title = `${CAL_LEGEND[typeKey].label} (${statusTxt}): ${g.base}${g.members.length>1 ? ' ×'+g.members.length : ''}`;
         return `<div class="cal-avatar ${shapeClass}" style="--dot-color:${ring};" title="${esc(title)}" onclick="${click}">${inner}${badge}</div>`;
       });
     }).join('');
 
-    html += `<div class="cal-cell ${isToday?'today':''}">
+    const iso = `${calDisplayYear}-${String(calMonthIndex+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const dayEvents = eventsOnDay(iso);
+    const hasHoliday = dayEvents.some(e=>e.type==='holiday');
+    const evHtml = dayEvents.length ? `<div class="cal-events">${dayEvents.map(e=>eventChipHtml(e, iso)).join('')}</div>` : '';
+
+    html += `<div class="cal-cell ${isToday?'today':''}${hasHoliday?' cal-holiday':''}">
       <div class="cal-daynum">${day}</div>
+      ${evHtml}
       <div class="cal-avatars">${avatars}</div>
     </div>`;
   }
@@ -2280,7 +2488,11 @@ function renderTrackingCalendar(){
       const short = e.label ? (e.label.length>22 ? e.label.slice(0,22)+'…' : e.label) : e.name;
       return `<div class="tev ${tevClass(e)}" title="${esc(tip)}" onclick="openTrackEventFromCal(${idx})">${esc(pfx+e.name)}<span class="tev-sub">${esc(short)}</span></div>`;
     }).join('');
-    html+=`<div class="tcal-cell ${isToday?'today':''}"><div class="tcal-daynum">${day}</div><div class="tev-list">${chips}</div></div>`;
+    const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const dayEvents = eventsOnDay(iso);
+    const hasHoliday = dayEvents.some(e=>e.type==='holiday');
+    const evHtml = dayEvents.map(e=>eventChipHtml(e, iso)).join('');
+    html+=`<div class="tcal-cell ${isToday?'today':''}${hasHoliday?' cal-holiday':''}"><div class="tcal-daynum">${day}</div><div class="tev-list">${evHtml}${chips}</div></div>`;
   }
   host.innerHTML = `<div class="tcal-grid">${html}</div>`;
   const lbl=document.getElementById('tcal-label'); if(lbl) lbl.textContent = `${MONTH_NAMES[m]} ${y}`;
@@ -2594,7 +2806,8 @@ function trackChecklistHtml(entries, track){
   const steps = track==='rd' ? FORMULATION_STAGES : track==='pkg' ? PACKAGING_STAGES : [];
   if(!steps.length) return '';
   const hay = entries.map(e=>[e.stage, e.subCategory, e.detail].filter(Boolean).join(' ').toLowerCase());
-  const isDone = st => { const k=st.toLowerCase().trim(); return hay.some(h=> h===k || h.includes(k)); };
+  // match on the English part before the " (ไทย)" so old English-only entries still count
+  const isDone = st => { const k=st.split(' (')[0].toLowerCase().trim(); return hay.some(h=> h.includes(k)); };
   const doneCount = steps.filter(isDone).length;
   const items = steps.map(st=>{ const d=isDone(st); return `<div class="tl-check-item ${d?'done':''}"><span class="tl-check-box">${d?'✓':'○'}</span> ${esc(st)}</div>`; }).join('');
   return `<div class="tl-section-label">เช็คลิสต์ขั้นตอน (${doneCount}/${steps.length}) — ○ = ยังไม่ได้ทำ</div><div class="tl-checklist">${items}</div>`;
@@ -2782,9 +2995,11 @@ const MILESTONES = [
   {key:'launch', label:'Official Launch Date', th:'วันเปิดตัวสินค้าอย่างเป็นทางการ'},
 ];
 
-function openTimeline(idx){
+function openTimeline(idx, focusKey, focusActual){
   const p = PRODUCTS[idx];
   if(!p) return;
+  const focusDef = (focusKey && typeof CAL_LEGEND!=='undefined' && CAL_LEGEND[focusKey]) ? CAL_LEGEND[focusKey] : null;
+  const focusField = focusDef ? focusDef.field : '';
   document.getElementById('tm-name').textContent = p.name;
   document.getElementById('tm-sku').textContent = [p.sku, p.barcode].filter(Boolean).join(' · ') || 'SKU / Barcode TBC';
   document.getElementById('tm-type').innerHTML = brandBadge(p,22) + typeBadge(p) + categoryBadge(p);
@@ -2819,8 +3034,12 @@ function openTimeline(idx){
   const sorted = MILESTONES.map(m=>({...m, d: milestoneDate(p, m.key)}))
                             .sort((a,b)=>((a.d.actual||a.d.deadline)||'9999').localeCompare((b.d.actual||b.d.deadline)||'9999'));
 
-  document.getElementById('tm-timeline').innerHTML = sorted.map(m=>{
+  const focusBanner = focusDef
+    ? `<div class="tm-focus-banner" style="--fc:${focusDef.color};">🔎 คลิกมาจากปฏิทิน · <b>${esc(focusDef.label)}</b> <span style="opacity:.75;">(${esc(focusDef.th)})</span> — ${focusActual ? '✓ เกิดขึ้นแล้ว (actual)' : '◻ ยังเป็นกำหนดการ (deadline)'}</div>`
+    : '';
+  document.getElementById('tm-timeline').innerHTML = focusBanner + sorted.map(m=>{
     const d = m.d;
+    const isFocus = focusField && m.key===focusField;
     let dotClass = 'tbc', mainHtml = '<span class="t-date tbc">TBC</span>', subHtml = '';
     if(d.deadline || d.actual){
       const eff = d.actual || d.deadline;
@@ -2840,7 +3059,7 @@ function openTimeline(idx){
     const fileHtml = fileUrl
       ? `<a href="${esc(fileUrl)}" target="_blank" rel="noopener" style="font-size:11.5px; color:var(--blue-deep); font-weight:600; text-decoration:none;">🔗 เปิดไฟล์แนบ</a>`
       : '';
-    return `<div class="t-item">
+    return `<div class="t-item${isFocus?' t-item-focus':''}"${isFocus?' id="tm-focus-item"':''}>
       <div class="t-dot ${dotClass}"></div>
       <div class="t-label">${m.label}<small>${m.th}</small></div>
       ${mainHtml}
@@ -2848,6 +3067,7 @@ function openTimeline(idx){
       ${fileHtml}
     </div>`;
   }).join('');
+  if(focusField){ setTimeout(()=>{ const fe=document.getElementById('tm-focus-item'); if(fe){ try{ fe.scrollIntoView({block:'center', behavior:'smooth'}); }catch(e){} } }, 140); }
 
   const historyEl = document.getElementById('tm-history');
   if(p.history && p.history.length){
@@ -4898,6 +5118,8 @@ function updateEditControls(){
   show('btn-export', EDIT_MODE);
   show('btn-notices', EDIT_MODE);
   show('btn-add-update', isTeamUnlocked());
+  show('btn-add-event-cal', isTeamUnlocked());
+  show('btn-add-event-track', isTeamUnlocked());
   show('btn-sync-setup', EDIT_MODE);
   show('btn-push', EDIT_MODE && !!cfg.url && pc>0);
   show('btn-clear-local', EDIT_MODE && pc>0);
@@ -5082,11 +5304,13 @@ function deleteProduct(sku){
 /* ---------- talking to the Apps Script endpoint ---------- */
 async function postToSheet(payload){
   const cfg=getWriteConfig();
-  // Apps Script web apps don't answer CORS preflight, so send a "simple" text/plain
-  // request with no-cors. The write still lands; we just can't read the reply here,
-  // which is why the auto-prune-on-reload confirms it on the next Sheet refresh.
-  await fetch(cfg.url, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload)});
-  return {sent:true};
+  // A "simple" text/plain POST needs no CORS preflight, and this deployment returns a
+  // readable JSON reply — so we CAN confirm the write actually landed (a silent no-cors
+  // write used to report success even when the Sheet rejected it → "saved" but teammates
+  // never saw it). We read {ok:...} back and let callers surface real failures.
+  const res = await fetch(cfg.url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload)});
+  const txt = await res.text();
+  try{ return JSON.parse(txt); }catch(e){ return {sent:true, unreadable:true}; }
 }
 /* One sender for every tab. `target` selects the Sheet tab; `sku` is kept alongside
    keyValue for products so an older (products-only) Apps Script deployment still works. */
@@ -5097,8 +5321,14 @@ async function syncToSheet(target, action, keyValue, row){
   const payload={target, action, token:cfg.token, keyValue, row: action==='delete'?undefined:row};
   if(target==='products') payload.sku=keyValue;
   try{
-    await postToSheet(payload);
-    toast('ส่งขึ้น Google Sheet แล้ว · จะยืนยันอัตโนมัติเมื่อรีเฟรช','ok');
+    const r = await postToSheet(payload);
+    if(r && r.ok===false){
+      // the Sheet actively rejected it (bad token, wrong URL, key issue) — was previously
+      // invisible with no-cors, which is why "team updated but others don't see it" happened
+      toast('❌ Google Sheet ปฏิเสธการบันทึก: '+(r.error||'ไม่ทราบสาเหตุ')+' — ข้อมูลยังไม่ขึ้นให้ทีม (เก็บในเครื่องไว้) · ตรวจ ⚙️ ตั้งค่า Sheet Sync','err');
+      return;
+    }
+    toast(r && r.unreadable ? 'ส่งขึ้น Google Sheet แล้ว · จะยืนยันเมื่อรีเฟรช' : '✓ บันทึกขึ้น Google Sheet แล้ว · ทั้งทีมเห็นเมื่อรีเฟรช','ok');
     setTimeout(()=>reloadEverything(true), 6000);
   }catch(err){
     toast('บันทึกในเครื่องแล้ว แต่ต่อ Sheet ไม่ได้ ('+err.message+') — เก็บไว้รอซิงค์','err');
@@ -5117,23 +5347,27 @@ async function pushPendingToSheet(){
   const total=edits.length+dels.length+uCnt+tCnt+nCnt;
   if(!total){ toast('ไม่มีรายการค้าง','info'); return; }
   toast('กำลังส่ง '+total+' รายการขึ้น Sheet…','info');
+  let rejected=0, firstErr='';
+  const chk = r => { if(r && r.ok===false){ rejected++; if(!firstErr) firstErr = r.error||'ไม่ทราบสาเหตุ'; } };
   try{
-    for(const sku of edits){ const p={target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:store.edits[sku]}; await postToSheet(p); }
-    for(const sku of dels){ await postToSheet({target:'products',action:'delete',token:cfg.token,keyValue:sku,sku}); }
-    for(const e of uStore){ const r=Object.assign({}, e); if(!r['Next Due']) r['Next Due']=(r.NextDue||r.nextDue||''); await postToSheet({target:'updates',action:'append',token:cfg.token,row:r}); }
-    for(const detail of Object.keys(tStore)){ await postToSheet({target:'task',action:'update',token:cfg.token,keyValue:detail,row:{Status:tStore[detail]}}); }
-    for(const e of nStore.appends){ await postToSheet({target:'notice',action:'append',token:cfg.token,row:e}); }
-    for(const msg of Object.keys(nStore.edits)){ await postToSheet({target:'notice',action:'upsert',token:cfg.token,keyValue:msg,row:nStore.edits[msg]}); }
-    for(const msg of nStore.deletes){ await postToSheet({target:'notice',action:'delete',token:cfg.token,keyValue:msg}); }
-    toast('ส่งครบแล้ว · กำลังตรวจยืนยัน…','ok');
+    for(const sku of edits){ chk(await postToSheet({target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:store.edits[sku]})); }
+    for(const sku of dels){ chk(await postToSheet({target:'products',action:'delete',token:cfg.token,keyValue:sku,sku})); }
+    for(const e of uStore){ const r=Object.assign({}, e); if(!r['Next Due']) r['Next Due']=(r.NextDue||r.nextDue||''); chk(await postToSheet({target:'updates',action:'append',token:cfg.token,row:r})); }
+    for(const detail of Object.keys(tStore)){ chk(await postToSheet({target:'task',action:'update',token:cfg.token,keyValue:detail,row:{Status:tStore[detail]}})); }
+    for(const e of nStore.appends){ chk(await postToSheet({target:'notice',action:'append',token:cfg.token,row:e})); }
+    for(const msg of Object.keys(nStore.edits)){ chk(await postToSheet({target:'notice',action:'upsert',token:cfg.token,keyValue:msg,row:nStore.edits[msg]})); }
+    for(const msg of nStore.deletes){ chk(await postToSheet({target:'notice',action:'delete',token:cfg.token,keyValue:msg})); }
+    if(rejected){ toast('⚠️ Google Sheet ปฏิเสธ '+rejected+' รายการ ('+firstErr+') — ยังไม่ขึ้นให้ทีม · ตรวจ ⚙️ ตั้งค่า Sheet Sync','err'); }
+    else toast('ส่งครบแล้ว · กำลังตรวจยืนยัน…','ok');
     setTimeout(()=>reloadEverything(true), 6000);
   }catch(err){ toast('ส่งไม่สำเร็จบางรายการ: '+err.message,'err'); }
 }
 async function refreshFromSheet(silent){ return reloadEverything(silent); }
 async function reloadEverything(silent){
-  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet()]);
+  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet(), loadEventsFromSheet()]);
   renderNotices(); renderAll();
   renderTeamUpdates(); renderTaskBoard();
+  if(typeof renderTrackingCalendar==='function' && document.getElementById('tcal-host')) renderTrackingCalendar();
   if(!silent) toast('รีเฟรชจาก Google Sheet แล้ว','ok');
 }
 function clearLocalEdits(){
@@ -5379,20 +5613,75 @@ function initEditUi(){
 /* ---------- Updates Log: add progress entry (append) ---------- */
 let uePrefill = null;
 const UPDATE_TRACKS = ['R&D','Purchase','Technical Packaging','Warehouse','Supply Chain','Accounting','Branding','Marketing','Cosmania OEM'];
-const FORMULATION_STAGES = ['Concept Approved','Formulation Development','Sample Preparation','Sample Submitted','Sample Under Review','Reformulation Required','Reformulation in Progress','Formulation Approved','Quotation in Progress','Quotation Approved','FDA Registration in Progress','FDA Registration Completed'];
-const PACKAGING_STAGES = ['BM Selection','Sourcing','Sup. Sample','Sample Received','Design Approved','Artwork Design','Final AW','Price Confirm','PPS Sample','Online Proof','On-site Proof','PPS Approved','Mass Production','Delivery Confirm','Photo Sample','PKG Spec','Completed'];
-const PACKAGING_SUBCATS = ['Primary Packaging','Box','Label','Sticker','Insert','Shipper','Other Packaging'];
-const RD_SUBCATS = ['1st Revision','2nd Revision','3rd Revision'];
-function stagesForTrack(t){ return t==='R&D'?FORMULATION_STAGES : t==='Technical Packaging'?PACKAGING_STAGES : []; }
+const FORMULATION_STAGES = ['Concept Approved (อนุมัติคอนเซ็ปต์)','Formulation Development (พัฒนาสูตร)','Sample Preparation (เตรียมตัวอย่าง)','Sample Submitted (ส่งตัวอย่าง)','Sample Under Review (อยู่ระหว่างรีวิว)','Reformulation Required (ต้องปรับสูตร)','Reformulation in Progress (กำลังปรับสูตร)','Formulation Approved (อนุมัติสูตร)','Quotation in Progress (กำลังทำใบเสนอราคา)','Quotation Approved (อนุมัติราคา)','FDA Registration in Progress (กำลังจด อย.)','FDA Registration Completed (จด อย. เสร็จ)'];
+const PACKAGING_STAGES = ['BM Selection (เลือกแบบ/วัสดุ)','Sourcing (จัดหา)','Sup. Sample (ตัวอย่างซัพพลายเออร์)','Sample Received (รับตัวอย่างแล้ว)','Design Approved (อนุมัติดีไซน์)','Artwork Design (ออกแบบอาร์ตเวิร์ก)','Final AW (อาร์ตเวิร์กสุดท้าย)','Price Confirm (ยืนยันราคา)','PPS Sample (ตัวอย่างก่อนผลิต)','Online Proof (พรูฟออนไลน์)','On-site Proof (พรูฟหน้างาน)','PPS Approved (อนุมัติ PPS)','Mass Production (ผลิตจำนวนมาก)','Delivery Confirm (ยืนยันการส่ง)','Photo Sample (ตัวอย่างถ่ายรูป)','PKG Spec (สเปกบรรจุภัณฑ์)','Completed (เสร็จสิ้น)'];
+// "ตรวจ Artwork" subcats share ONE work-order workflow across both R&D and Technical Packaging
+const ARTWORK_STAGES = ['เปิดงาน','ติดตาม','กำลังดำเนินการ','เสร็จสิ้น'];
+const ARTWORK_SUBCATS = ['ตรวจ Artwork Box (กล่อง)','ตรวจ Artwork PKG (บรรจุภัณฑ์)','ตรวจ Artwork Sticker (สติกเกอร์)'];
+const RD_REVISIONS = ['1st Revision (แก้ครั้งที่ 1)','2nd Revision (แก้ครั้งที่ 2)','3rd Revision (แก้ครั้งที่ 3)','4th Revision (แก้ครั้งที่ 4)','5th Revision (แก้ครั้งที่ 5)','6th Revision (แก้ครั้งที่ 6)','7th Revision (แก้ครั้งที่ 7)','8th Revision (แก้ครั้งที่ 8)','9th Revision (แก้ครั้งที่ 9)','10th Revision (แก้ครั้งที่ 10)'];
+const PACKAGING_SUBCATS = ARTWORK_SUBCATS.concat(['Primary Packaging (บรรจุภัณฑ์หลัก)','Box (กล่อง)','Label (ฉลาก)','Sticker (สติกเกอร์)','Insert (ใบแทรก)','Shipper (กล่องขนส่ง)','Other Packaging (บรรจุภัณฑ์อื่นๆ)']);
+const RD_SUBCATS = ARTWORK_SUBCATS.concat(RD_REVISIONS);
+function isArtworkSubcat(sc){ return /^\s*ตรวจ\s*Artwork/i.test(sc||''); }
+// Stages depend on BOTH track and subcategory. An "ตรวจ Artwork …" subcat gets the shared
+// artwork-check workflow no matter which department is doing it.
+function stagesFor(track, subcat){
+  if(isArtworkSubcat(subcat)) return ARTWORK_STAGES;
+  if(track==='R&D') return FORMULATION_STAGES;
+  if(track==='Technical Packaging') return PACKAGING_STAGES;
+  return [];
+}
+function stagesForTrack(t){ return stagesFor(t, ''); }
 function subcatsForTrack(t){ return t==='R&D'?RD_SUBCATS : t==='Technical Packaging'?PACKAGING_SUBCATS : []; }
-function ueSelectOrText(id, label, list, cur, ph){
-  if(list.length) return `<label>${label}</label><select id="${id}"><option value="">— เลือก —</option>${list.map(x=>`<option${x===cur?' selected':''}>${esc(x)}</option>`).join('')}</select>`;
-  return `<label>${label}</label><input type="text" id="${id}" value="${esc(cur||'')}" placeholder="${esc(ph||'')}">`;
+function ueSelectOrText(id, label, list, cur, ph, onChange){
+  const oc = onChange ? ` onchange="${onChange}"` : '';
+  if(list.length) return `<label>${label}</label><select id="${id}"${oc}><option value="">— เลือก —</option>${list.map(x=>`<option${x===cur?' selected':''}>${esc(x)}</option>`).join('')}</select>`;
+  return `<label>${label}</label><input type="text" id="${id}" value="${esc(cur||'')}" placeholder="${esc(ph||'')}"${oc}>`;
+}
+// Subcategory dropdown with a "พิมพ์เอง" escape hatch (e.g. Revision ครั้งที่ 11+ or any custom topic)
+const SUBCAT_CUSTOM = '✎ อื่นๆ / พิมพ์เอง';
+function subcatCellHtml(track, cur){
+  const list = subcatsForTrack(track);
+  const label = 'หัวข้อย่อย (SubCategory)';
+  if(!list.length) return ueSelectOrText('ue-SubCategory',label,[],cur||'','ระบุ (ถ้ามี)','refreshStageForSubcat()');
+  // an existing value that's not in the list → show it as free text so it stays editable
+  if(cur && !list.includes(cur)){
+    return `<label>${label}</label><input type="text" id="ue-SubCategory" value="${esc(cur)}" placeholder="พิมพ์หัวข้อย่อย" onchange="refreshStageForSubcat()">
+      <div style="font-size:11px; color:var(--muted); margin-top:3px;">พิมพ์เอง · <a href="#" onclick="event.preventDefault(); backToSubcatList()">↩ เลือกจากรายการ</a></div>`;
+  }
+  const opts = ['<option value="">— เลือก —</option>']
+    .concat(list.map(x=>`<option${x===cur?' selected':''}>${esc(x)}</option>`))
+    .concat(`<option value="${SUBCAT_CUSTOM}">${SUBCAT_CUSTOM}</option>`)
+    .join('');
+  return `<label>${label}</label><select id="ue-SubCategory" onchange="onSubcatChange()">${opts}</select>`;
+}
+function onSubcatChange(){
+  const sel=document.getElementById('ue-SubCategory');
+  if(sel && sel.value===SUBCAT_CUSTOM){
+    const cell=document.getElementById('ue-subcat-cell');
+    cell.innerHTML=`<label>หัวข้อย่อย (SubCategory)</label><input type="text" id="ue-SubCategory" value="" placeholder="พิมพ์หัวข้อย่อย เช่น แก้ครั้งที่ 11" onchange="refreshStageForSubcat()">
+      <div style="font-size:11px; color:var(--muted); margin-top:3px;">พิมพ์เอง · <a href="#" onclick="event.preventDefault(); backToSubcatList()">↩ เลือกจากรายการ</a></div>`;
+    const inp=document.getElementById('ue-SubCategory'); if(inp) inp.focus();
+  }
+  refreshStageForSubcat();
+}
+function backToSubcatList(){
+  const t=(document.getElementById('ue-Track')||{}).value||'';
+  const cell=document.getElementById('ue-subcat-cell'); if(cell) cell.innerHTML=subcatCellHtml(t,'');
+  refreshStageForSubcat();
 }
 function updateSubStageFields(){
   const t=(document.getElementById('ue-Track')||{}).value||'';
-  const sc=document.getElementById('ue-subcat-cell'); if(sc) sc.innerHTML=ueSelectOrText('ue-SubCategory','หัวข้อย่อย (SubCategory)',subcatsForTrack(t),'','ระบุ (ถ้ามี)');
-  const st=document.getElementById('ue-stage-cell'); if(st) st.innerHTML=ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesForTrack(t),'','เช่น กำลังทำ, เสร็จ');
+  const sc=document.getElementById('ue-subcat-cell'); if(sc) sc.innerHTML=subcatCellHtml(t,'');
+  const st=document.getElementById('ue-stage-cell'); if(st) st.innerHTML=ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesFor(t,''),'','เช่น กำลังทำ, เสร็จ');
+}
+// The Stage options depend on the chosen SubCategory (e.g. R&D "ตรวจ Artwork …" → work-order statuses)
+function refreshStageForSubcat(){
+  const t=(document.getElementById('ue-Track')||{}).value||'';
+  const sub=(document.getElementById('ue-SubCategory')||{}).value||'';
+  const cur=(document.getElementById('ue-Stage')||{}).value||'';
+  const list=stagesFor(t, sub);
+  const keep=list.includes(cur)?cur:'';
+  const st=document.getElementById('ue-stage-cell'); if(st) st.innerHTML=ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',list,keep,'เช่น กำลังทำ, เสร็จ');
 }
 let ueEditId = null;
 /* ===== Upload files (images / PDF / Doc / Excel …) straight to Google Drive from the web.
@@ -5459,8 +5748,8 @@ function renderUpdateForm(){
     <div class="pe-field"><label>สินค้า (SKU) *</label><select id="ue-SKU" onchange="refreshUpdateScope()">${skuOpts}</select></div>
     <div class="pe-field" id="ue-scope-cell">${updateScopeCellHtml(pfSku, pf.scope)}</div>
     <div class="pe-field"><label>สาย/แผนก (Track)</label><select id="ue-Track" onchange="updateSubStageFields()">${trackOpts}</select></div>
-    <div class="pe-field" id="ue-subcat-cell">${ueSelectOrText('ue-SubCategory','หัวข้อย่อย (SubCategory)',subcatsForTrack(initTrack),pf.SubCategory||'','ระบุ (ถ้ามี)')}</div>
-    <div class="pe-field" id="ue-stage-cell">${ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesForTrack(initTrack),pf.Stage||'','เช่น กำลังทำ, เสร็จ')}</div>
+    <div class="pe-field" id="ue-subcat-cell">${subcatCellHtml(initTrack, pf.SubCategory||'')}</div>
+    <div class="pe-field" id="ue-stage-cell">${ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesFor(initTrack, pf.SubCategory||''),pf.Stage||'','เช่น กำลังทำ, เสร็จ')}</div>
     <div class="pe-field"><label>ผู้อัปเดต (UpdatedBy)</label><select id="ue-UpdatedBy">${byOpts}</select></div>
     <div class="pe-field"><label>Risk</label><select id="ue-Risk">${riskOpts}</select></div>
     <div class="pe-field"><label>กำหนดถัดไป (Next Due) — วันที่</label><input type="date" id="ue-NextDue" value="${esc(normalizeDueDate(pf.NextDue))}"><div style="font-size:11px; color:var(--muted); margin-top:3px;">เลือกเฉพาะ "วันที่" ครบกำหนด — ส่วนว่าทำอะไร ให้พิมพ์ในช่อง รายละเอียด (Detail)</div></div>
