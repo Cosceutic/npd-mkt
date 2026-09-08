@@ -5362,12 +5362,7 @@ async function syncToSheet(target, action, keyValue, row){
   const cfg=getWriteConfig();
   updateSyncStatus(); updateEditControls();
   if(!cfg.url){ toast('บันทึกในเครื่องนี้แล้ว · ยังไม่ได้ตั้ง Sheet Sync (กด ⚙️ เพื่อแชร์ทั้งทีม)','info'); return; }
-  // Strip any local base64 image before sending — a full product row carrying one is hundreds
-  // of KB, and office proxies/Apps Script drop the oversized POST, so editing an EXISTING
-  // product (whose row includes the image) silently failed while small new-product rows landed.
-  let sendRow = row;
-  if(target==='products' && action!=='delete' && row && typeof sanitizeRowForSheet==='function'){ sendRow = sanitizeRowForSheet(row).row; }
-  const payload={target, action, token:cfg.token, keyValue, row: action==='delete'?undefined:sendRow};
+  const payload={target, action, token:cfg.token, keyValue, row: action==='delete'?undefined:row};
   if(target==='products') payload.sku=keyValue;
   try{
     const r = await postToSheet(payload);
@@ -5401,7 +5396,7 @@ function minimizeProductRow(row){
   });
   return min;
 }
-function syncRowToSheet(action, row){ return syncToSheet('products', action, row.sku, action==='delete'?row:minimizeProductRow(row)); }
+function syncRowToSheet(action, row){ return syncToSheet('products', action, row.sku, row); }
 
 async function pushPendingToSheet(){
   const cfg=getWriteConfig();
@@ -5476,6 +5471,25 @@ async function pingEndpoint(url, token){
     return {ok: !!(j && j.ok), error: (j && j.error) || '', unreachable:false};
   }catch(e){ return {ok:false, error:e.message, unreachable:true}; }   // Chrome may CORS-block the reply; the write itself (no-cors) still works
 }
+// The exact list of products that haven't synced yet (so nobody has to check them one by one):
+// each pending product's SKU + name + which columns differ from the Sheet.
+function unsyncedProductsReport(){
+  const ps=getPendingStore();
+  return Object.keys(ps.edits).map(function(sku){
+    const row=ps.edits[sku];
+    const nm=((typeof nameForSku==='function')?nameForSku(sku):'')||row.name||'';
+    const base=(SHEET_ROWS||[]).find(function(r){ return (r.sku||'').trim()===sku; });
+    let fields='';
+    if(base){ const diff=Object.keys(row).filter(function(k){ return k!=='sku'&&k!=='image'&&normFieldForCompare(k,row[k])!==normFieldForCompare(k,base[k]); }); if(diff.length) fields=' → แก้ช่อง: '+diff.join(', '); }
+    else { fields=' → สินค้าใหม่ (ยังไม่อยู่ใน Sheet)'; }
+    return sku+(nm?(' ('+nm+')'):'')+fields;
+  });
+}
+function showUnsyncedProducts(){
+  const lines=unsyncedProductsReport();
+  if(!lines.length){ toast('ไม่มีสินค้าค้าง — ซิงค์ครบแล้ว ✅','ok'); return; }
+  alert('📋 สินค้าที่ยังไม่ขึ้น Google Sheet ('+lines.length+' รายการ):\n\n'+lines.join('\n')+'\n\n👉 แก้เฉพาะตัวเหล่านี้ในชีต (ตามช่องที่บอก) — ไม่ต้องเช็กตัวอื่น');
+}
 async function checkSheetHealth(){
   const banner=document.getElementById('sync-health-banner'); if(!banner) return;
   const cfg=getWriteConfig();
@@ -5489,7 +5503,7 @@ async function checkSheetHealth(){
     if(pc>0){
       banner.style.display='';
       banner.style.background='#FEF3C7'; banner.style.color='#92400E'; banner.style.borderBottomColor='#F0C040';
-      banner.innerHTML = `💾 เครื่องนี้มีข้อมูล <b>${pc}</b> รายการที่ยัง<b>ไม่ขึ้น Google Sheet</b> — คนอื่นจะยังไม่เห็น&nbsp; <button onclick="flushPendingNow()" style="background:#92400E; color:#fff; border:none; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">⬆️ ส่งขึ้น Sheet เลย</button>`;
+      banner.innerHTML = `💾 เครื่องนี้มีข้อมูล <b>${pc}</b> รายการที่ยัง<b>ไม่ขึ้น Google Sheet</b> — คนอื่นจะยังไม่เห็น&nbsp; <button onclick="showUnsyncedProducts()" style="background:#fff; color:#92400E; border:1px solid #92400E; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">📋 ดูว่าตัวไหน</button>&nbsp; <button onclick="flushPendingNow()" style="background:#92400E; color:#fff; border:none; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">⬆️ ส่งขึ้น Sheet เลย</button>`;
     } else {
       banner.style.display='none';
     }
@@ -5536,7 +5550,7 @@ async function flushPendingNow(){
   // one write, then a small gap — firing many no-cors POSTs back-to-back can make Apps
   // Script drop some (concurrent-execution limit), which looked like "nothing sent".
   const send1 = async (payload)=>{ const b=JSON.stringify(payload); if(b.length>maxBody) maxBody=b.length; await postToSheet(payload); await new Promise(r=>setTimeout(r,600)); };
-  for(const sku of Object.keys(ps.edits)){ const raw=ps.edits[sku]; if(raw && typeof raw.image==='string' && raw.image.length>maxImg) maxImg=raw.image.length; const s=sanitizeRowForSheet(minimizeProductRow(raw)); droppedImg+=s.droppedImg; await send1({target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:s.row}); }
+  for(const sku of Object.keys(ps.edits)){ const raw=ps.edits[sku]; if(raw && typeof raw.image==='string' && raw.image.length>maxImg) maxImg=raw.image.length; const s=sanitizeRowForSheet(raw); droppedImg+=s.droppedImg; await send1({target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:s.row}); }
   for(const sku of (ps.deletes||[])){ await send1({target:'products',action:'delete',token:cfg.token,keyValue:sku,sku}); }
   for(const e of getUpdatesLocal()){ const row=Object.assign({}, e); if(!row['Next Due']) row['Next Due']=(row.NextDue||row.nextDue||''); const s=sanitizeRowForSheet(row); droppedImg+=s.droppedImg; await send1({target:'updates',action:'append',token:cfg.token,row:s.row}); }
   const ts=getTaskOverrides(); for(const d of Object.keys(ts)){ await send1({target:'task',action:'update',token:cfg.token,keyValue:d,row:{Status:ts[d]}}); }
