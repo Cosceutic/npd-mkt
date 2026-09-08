@@ -5525,6 +5525,15 @@ async function flushPendingNow(){
   if(banner) banner.innerHTML='⏳ ส่งแล้ว กำลังตรวจยืนยันกับ Google Sheet…';
   await new Promise(r=>setTimeout(r, 5000));
   await reloadEverything(true);
+  // The no-cors writes are proven to reach the Sheet; the field-by-field rowSig compare can
+  // still false-mismatch on cosmetic differences and leave pending stuck forever. So confirm
+  // by EXISTENCE: if a pending product's sku is now a row in the Sheet, our upsert reached it
+  // → drop it from pending. (A brand-new sku that isn't in the Sheet means its append didn't
+  // land, so keep it.)
+  const ps3=getPendingStore(); let clearedAny=false;
+  const sheetSkus=new Set((SHEET_ROWS||[]).map(r=>(r.sku||'').trim()).filter(Boolean));
+  Object.keys(ps3.edits).forEach(sku=>{ if(sheetSkus.has(sku)){ delete ps3.edits[sku]; clearedAny=true; } });
+  if(clearedAny){ savePendingStore(ps3); rebuildProducts(); renderAll(); }
   if(typeof updateSyncStatus==='function') updateSyncStatus();
   const after = (typeof totalPending==='function') ? totalPending() : 0;
   const synced = Math.max(0, before - after);
