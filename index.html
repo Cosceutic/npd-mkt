@@ -1158,7 +1158,7 @@ function rebuildProducts(){
 
 /* Once the Sheet reflects a local change, drop it from the pending overlay (self-healing,
    so a stale local copy never masks a teammate's newer Sheet edit). */
-function rowSig(r){ return PRODUCT_COLUMNS.filter(c=>c!=='image').map(c=>String((r&&r[c])!=null?r[c]:'').trim()).join('|'); }
+function rowSig(r){ return PRODUCT_COLUMNS.filter(function(c){return c!=='image';}).map(function(c){ var v=String((r&&r[c])!=null?r[c]:'').trim(); if(/_deadline$|_actual$/.test(c)||c==='exp'||c==='saleHaltDate'){ v=parseSheetDate(v)||v; } return v; }).join('|'); }
 function autoPrunePending(){
   const store = getPendingStore(); let changed = false;
   const sheetBySku = {};
@@ -5526,11 +5526,21 @@ async function flushPendingNow(){
   const synced = Math.max(0, before - after);
   const imgNote = droppedImg ? ` · ข้ามรูปในเครื่อง ${droppedImg} รูป (อัปใหม่ด้วยปุ่ม 📎)` : '';
   if(after>0){
+    // diagnose IN-APP why each remaining product didn't confirm (so no console is needed)
+    const ps2=getPendingStore();
+    const bySku={}; (SHEET_ROWS||[]).forEach(r=>{ const k=(r.sku||'').trim(); if(k) bySku[k]=r; });
+    const diag=Object.keys(ps2.edits).slice(0,4).map(sku=>{
+      const s=bySku[sku];
+      if(!s) return sku+' → ยังไม่อยู่ใน Sheet';
+      const d=PRODUCT_COLUMNS.filter(c=>c!=='image').find(c=>{ let a=String(ps2.edits[sku][c]||'').trim(), b=String(s[c]||'').trim(); if(/_deadline$|_actual$/.test(c)||c==='exp'||c==='saleHaltDate'){ a=parseSheetDate(a)||a; b=parseSheetDate(b)||b; } return a!==b; });
+      return sku+(d?(' → ต่างที่ '+d):' → ตรง (รอ Sheet)');
+    }).join(' · ');
+    console.log('[flush] ยังไม่ยืนยัน:', diag);
     if(banner){
       banner.style.display=''; banner.style.background='#FEF3C7'; banner.style.color='#92400E'; banner.style.borderBottomColor='#F0C040';
-      banner.innerHTML = `ส่งขึ้นแล้ว ${synced} · ยังไม่ยืนยัน <b>${after}</b> รายการ (Sheet อาจยังอัปเดตช้า)${imgNote}&nbsp; <button onclick="flushPendingNow()" style="background:#92400E; color:#fff; border:none; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">↻ ลองอีกครั้ง</button>`;
+      banner.innerHTML = `ส่งขึ้นแล้ว ${synced} · ยังไม่ยืนยัน <b>${after}</b>: ${esc(diag)}${imgNote}&nbsp; <button onclick="flushPendingNow()" style="background:#92400E; color:#fff; border:none; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">↻ ลองอีกครั้ง</button>`;
     }
-    toast('ส่งขึ้นแล้ว '+synced+' · ยังเหลือ '+after+' รายการ — รอสักครู่แล้วกด "ลองอีกครั้ง"','info');
+    toast('ส่งขึ้นแล้ว '+synced+' · ยังเหลือ '+after+' รายการ','info');
   } else {
     if(banner) banner.style.display='none';
     toast('✅ ส่งขึ้น Google Sheet สำเร็จทั้งหมด — ทั้งทีมเห็นแล้ว'+imgNote,'ok');
