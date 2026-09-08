@@ -1158,7 +1158,7 @@ function rebuildProducts(){
 
 /* Once the Sheet reflects a local change, drop it from the pending overlay (self-healing,
    so a stale local copy never masks a teammate's newer Sheet edit). */
-function rowSig(r){ return PRODUCT_COLUMNS.filter(function(c){return c!=='image';}).map(function(c){ var v=String((r&&r[c])!=null?r[c]:'').trim(); if(/_deadline$|_actual$/.test(c)||c==='exp'||c==='saleHaltDate'){ v=parseSheetDate(v)||v; } return v; }).join('|'); }
+function rowSig(r){ return PRODUCT_COLUMNS.filter(function(c){return c!=='image';}).map(function(c){ var v=String((r&&r[c])!=null?r[c]:'').trim(); if(/_deadline$|_actual$/.test(c)||c==='exp'||c==='saleHaltDate'){ v=parseSheetDate(v)||v; } else if(c==='category'||c==='type'||c==='brand'){ v=v.toLowerCase(); } return v; }).join('|'); }
 function autoPrunePending(){
   const store = getPendingStore(); let changed = false;
   const sheetBySku = {};
@@ -5536,7 +5536,7 @@ async function flushPendingNow(){
     const diag=Object.keys(ps2.edits).slice(0,4).map(sku=>{
       const s=bySku[sku];
       if(!s) return sku+' → ยังไม่อยู่ใน Sheet';
-      const d=PRODUCT_COLUMNS.filter(c=>c!=='image').find(c=>{ let a=String(ps2.edits[sku][c]||'').trim(), b=String(s[c]||'').trim(); if(/_deadline$|_actual$/.test(c)||c==='exp'||c==='saleHaltDate'){ a=parseSheetDate(a)||a; b=parseSheetDate(b)||b; } return a!==b; });
+      const d=PRODUCT_COLUMNS.filter(c=>c!=='image').find(c=>{ let a=String(ps2.edits[sku][c]||'').trim(), b=String(s[c]||'').trim(); if(/_deadline$|_actual$/.test(c)||c==='exp'||c==='saleHaltDate'){ a=parseSheetDate(a)||a; b=parseSheetDate(b)||b; } else if(c==='category'||c==='type'||c==='brand'){ a=a.toLowerCase(); b=b.toLowerCase(); } return a!==b; });
       return sku+(d?(' → ต่างที่ '+d):' → ตรง (รอ Sheet)');
     }).join(' · ');
     const sizeNote = ` · [ข้อมูลส่งใหญ่สุด ${maxBody.toLocaleString()} ตัว · รูปในเครื่องยาวสุด ${maxImg.toLocaleString()} ตัว]`;
