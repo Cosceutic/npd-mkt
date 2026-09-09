@@ -201,6 +201,10 @@
   .tcal-label{font-family:'Prompt'; font-weight:700; font-size:15px; min-width:150px; text-align:center; color:var(--ink);}
   .tcal-legend{display:flex; gap:6px; margin-left:auto; flex-wrap:wrap; align-items:center;}
   .tcal-legend .tev{cursor:default;}
+  /* legend อยู่บรรทัดล่างของ toolbar เอง จะได้ไม่แออัด */
+  .tcal-legend-row{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:-2px 0 12px;}
+  .tcal-legend-row .tev{cursor:default;}
+  .tcal-legend-lead{font-size:11.5px; color:var(--ink-soft); font-weight:600; margin-right:2px;}
   .tcal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
   .tcal-weekday{font-family:'Prompt'; font-weight:600; font-size:11px; color:var(--ink-soft); text-align:center; padding:4px 0;}
   .tcal-cell{border:1px solid var(--line); border-radius:9px; min-height:82px; padding:5px; background:#fff; display:flex; flex-direction:column; gap:3px; overflow:hidden;}
@@ -817,17 +821,18 @@
       <button class="btn-sm ghost" onclick="tcalMove(1)">เดือนถัดไป ›</button>
       <button class="btn-sm ghost" onclick="tcalToday()">วันนี้</button>
       <button class="btn-sm primary" id="btn-add-event-track" onclick="openEventEditor()" style="display:none;">📅 เพิ่มวันหยุด/นัด</button>
-      <span class="tcal-legend" style="flex-wrap:wrap;">
-        <span class="tev tev-st-open">เปิดใบงาน</span>
-        <span class="tev tev-st-notify">แจ้งดำเนินการ</span>
-        <span class="tev tev-st-wip">กำลังดำเนินการ</span>
-        <span class="tev tev-st-wait">รอการอนุมัติ</span>
-        <span class="tev tev-st-paid">ชำระเงินแล้ว</span>
-        <span class="tev tev-st-done">เรียบร้อย/เสร็จสิ้น</span>
-        <span class="tev tev-st-ack">รับทราบ</span>
-        <span class="tev tev-due">⏰ Next Due</span>
-        <span class="tev" style="background:#FEE2E2; color:#B91C1C;">🏖️ วันหยุด/นัด</span>
-      </span>
+    </div>
+    <div class="tcal-legend-row">
+      <span class="tcal-legend-lead">แยกสีตาม Stage:</span>
+      <span class="tev tev-st-open">เปิดใบงาน</span>
+      <span class="tev tev-st-notify">แจ้งดำเนินการ</span>
+      <span class="tev tev-st-wip">กำลังดำเนินการ</span>
+      <span class="tev tev-st-wait">รอการอนุมัติ</span>
+      <span class="tev tev-st-paid">ชำระเงินแล้ว</span>
+      <span class="tev tev-st-done">เรียบร้อย/เสร็จสิ้น</span>
+      <span class="tev tev-st-ack">รับทราบ</span>
+      <span class="tev tev-due">⏰ Next Due</span>
+      <span class="tev" style="background:#FEE2E2; color:#B91C1C;">🏖️ วันหยุด/นัด</span>
     </div>
     <div class="panel" style="padding:12px;"><div id="tcal-host"></div></div>
     <p class="section-title">⏰ กำหนดส่งถัดไป (Next Due)</p>
