@@ -52,6 +52,19 @@
   .kpi-card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px;}
   .kpi-card .stat-num{font-size:24px; font-weight:700; color:var(--blue-deep);}
   .kpi-card .stat-label{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  /* แยกตามแบรนด์ (By Brand) */
+  .brand-groups{display:flex; flex-direction:column; gap:14px;}
+  .brand-group-head{display:flex; align-items:center; gap:8px; font-family:'Prompt',sans-serif; font-weight:700; font-size:14px; color:var(--ink); margin-bottom:8px;}
+  .brand-dot{width:11px; height:11px; border-radius:50%; flex:none;}
+  .brand-count{font-family:inherit; font-weight:600; font-size:11.5px; color:var(--ink-soft); background:var(--bg); border:1px solid var(--line); border-radius:999px; padding:1px 9px;}
+  .brand-chips{display:flex; flex-wrap:wrap; gap:7px;}
+  .brand-chip{display:inline-flex; align-items:baseline; gap:5px; font-size:12.5px; font-weight:600; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:9px; padding:6px 11px; cursor:pointer; transition:background .12s, border-color .12s;}
+  .brand-chip:hover{background:var(--bg); border-color:var(--blue);}
+  .brand-chip-sku{font-weight:500; font-size:11px; color:var(--ink-soft);}
+  /* multi-SKU checklist: keep checkboxes small (global input{width:100%} would stretch them) */
+  #ue-sku-multi-list input[type="checkbox"]{width:16px; min-width:16px; flex:none; margin:0;}
+  .ue-multi-item{transition:background .1s;}
+  .ue-multi-item:hover{background:var(--bg);}
 
   .panel{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px 20px 18px; margin-bottom:18px;}
   .panel h3{margin:16px 0 12px; font-size:14.5px;}
@@ -561,6 +574,7 @@
   <div class="view active" id="view-calendar">
     <div class="year-tabs" id="year-tabs"></div>
     <div class="kpi-grid" id="kpi-grid"></div>
+    <div id="brand-breakdown"></div>
 
     <div class="panel">
       <div class="dash-row">
@@ -2875,6 +2889,33 @@ function cellDate(p, key){
   return `${eff} ${link}<br><small class="dash">(deadline)</small>`;
 }
 
+// แยกสินค้าปีปัจจุบันตามแบรนด์ → โชว์ชื่อสินค้า (SKU) กดเปิดไทม์ไลน์ได้
+const BRAND_TINT = { godmami:'#E9557F', glimmer:'#7A5AF8', mamilabo:'#0E9AA7' };
+function renderBrandBreakdown(items){
+  const host=document.getElementById('brand-breakdown'); if(!host) return;
+  const groups={};
+  (items||[]).forEach(p=>{ const k=(p.brand||'other'); (groups[k]=groups[k]||[]).push(p); });
+  const order=['godmami','glimmer','mamilabo'];
+  const keys=Object.keys(groups).sort((a,b)=>{ const ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib) || a.localeCompare(b); });
+  if(!keys.length){ host.innerHTML=''; return; }
+  const brandLabel=k=>((typeof BRAND_DEFS!=='undefined'&&BRAND_DEFS[k]&&BRAND_DEFS[k].label)|| (k&&k!=='other'?k.replace(/\b\w/g,c=>c.toUpperCase()):'ไม่ระบุแบรนด์'));
+  const sec=keys.map(k=>{
+    const list=groups[k].slice().sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+    const color=BRAND_TINT[k]||'#6B7280';
+    const chips=list.map(p=>{
+      const idx=PRODUCTS.indexOf(p);
+      return `<button class="brand-chip" onclick="openTimeline(${idx})" title="${esc((p.name||'')+' ('+p.sku+')')}">${esc(p.name||'(ไม่มีชื่อ)')} <span class="brand-chip-sku">(${esc(p.sku)})</span></button>`;
+    }).join('');
+    return `<div class="brand-group">
+      <div class="brand-group-head"><span class="brand-dot" style="background:${color}"></span>${esc(brandLabel(k))} <span class="brand-count">${list.length} รายการ</span></div>
+      <div class="brand-chips">${chips}</div>
+    </div>`;
+  }).join('');
+  host.innerHTML=`<div class="panel" style="margin-top:0;">
+    <h3 style="margin-top:0;">แยกตามแบรนด์ (By Brand)<span style="color:var(--ink-soft); font-weight:400; font-size:11px; margin-left:6px;">สินค้าปี ${currentYear} แยกตามแบรนด์ · ชื่อสินค้า (SKU) — กดเพื่อดูไทม์ไลน์</span></h3>
+    <div class="brand-groups">${sec}</div>
+  </div>`;
+}
 function renderCalendar(){
   const items = PRODUCTS.filter(p=>getYear(p)===currentYear)
                          .sort((a,b)=> (effectiveDate(a,'launch')||effectiveDate(a,'arrival')).localeCompare(effectiveDate(b,'launch')||effectiveDate(b,'arrival')));
@@ -2891,6 +2932,7 @@ function renderCalendar(){
     <div class="kpi-card"><div class="stat-num">${upcoming}</div><div class="stat-label">Upcoming Launches</div></div>
   `;
 
+  renderBrandBreakdown(items);
   renderCategoryChart(items);
   renderQuarterGrid(items);
   renderStockTimeline(items);
@@ -6776,8 +6818,21 @@ function renderUpdateForm(){
   document.getElementById('ue-form').innerHTML = `
   <div class="pe-grid">
     <div class="pe-field"><label>วันที่ *</label><input type="date" id="ue-Date" value="${esc(pf.Date||todayStr())}" onchange="maybeAutoNextDue()"></div>
-    <div class="pe-field"><label>สินค้า (SKU) *</label><select id="ue-SKU" onchange="refreshUpdateScope()">${skuOpts}</select></div>
+    ${ueEditId ? '' : `<div class="pe-field full"><label class="ue-multi-toggle" style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; color:var(--accent-deep);"><input type="checkbox" id="ue-multi" onchange="toggleMultiSku()"> ✅ อัปเดตหลายสินค้าพร้อมกัน (บันทึก Timeline เดียวกันให้ทุกตัวที่เลือก)</label></div>`}
+    <div class="pe-field" id="ue-sku-single-cell"><label>สินค้า (SKU) *</label><select id="ue-SKU" onchange="refreshUpdateScope()">${skuOpts}</select></div>
     <div class="pe-field" id="ue-scope-cell">${updateScopeCellHtml(pfSku, pf.scope)}</div>
+    <div class="pe-field full" id="ue-sku-multi-cell" style="display:none;">
+      <label>เลือกสินค้าหลายรายการ (อัปเดตพร้อมกัน) *</label>
+      <input type="text" id="ue-multi-search" placeholder="🔍 ค้นหาชื่อ หรือ SKU…" oninput="filterMultiSku()">
+      <div style="display:flex; gap:8px; margin:6px 0; flex-wrap:wrap; align-items:center;">
+        <button type="button" class="btn-sm ghost" onclick="multiSkuAll(true)">เลือกทั้งหมดที่เห็น</button>
+        <button type="button" class="btn-sm ghost" onclick="multiSkuAll(false)">ล้างที่เลือก</button>
+        <span id="ue-multi-count" style="font-size:12px; color:var(--accent-deep); font-weight:600;">เลือก 0 รายการ</span>
+      </div>
+      <div id="ue-sku-multi-list" style="max-height:220px; overflow:auto; border:1px solid var(--line); border-radius:10px; padding:8px;">
+        ${PRODUCTS.map(p=>`<label class="ue-multi-item" data-search="${esc((p.name+' '+p.sku).toLowerCase())}" style="display:flex; align-items:center; gap:8px; padding:4px 6px; border-radius:7px; cursor:pointer; font-size:13px;"><input type="checkbox" value="${esc(p.sku)}" onchange="updateMultiCount()"> <span>${esc(p.name)} <span style="color:var(--ink-soft); font-size:11px;">(${esc(p.sku)})</span></span></label>`).join('')}
+      </div>
+    </div>
     <div class="pe-field"><label>สาย/แผนก (Track)</label><select id="ue-Track" onchange="updateSubStageFields()">${trackOpts}</select></div>
     <div class="pe-field" id="ue-subcat-cell">${subcatCellHtml(initTrack, pf.SubCategory||'')}</div>
     <div class="pe-field" id="ue-stage-cell">${ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesFor(initTrack, pf.SubCategory||''),pf.Stage||'','เช่น กำลังทำ, เสร็จ','maybeAutoNextDue()')}</div>
@@ -6818,14 +6873,12 @@ function refreshUpdateScope(){
   const cur=(document.getElementById('ue-Scope')||{}).value;
   cell.innerHTML = updateScopeCellHtml(sel.value, cur);
 }
-function collectUpdateForm(){
+// ทุกฟิลด์ยกเว้น SKU/ProductName — ใช้ร่วมกันทั้งโหมดเดี่ยวและหลายสินค้า
+function collectUpdateBase(){
   const g=id=>String((document.getElementById('ue-'+id)||{}).value||'').trim();
-  const selSku=g('SKU');
-  const scope=g('Scope')||'group';
-  const sku = (scope==='group' && selSku) ? productGroupOf(selSku) : selSku;
   const nextDue=g('NextDue');
   return {
-    Date:g('Date'), SKU:sku, ProductName: (nameForSku(selSku)||nameForSku(sku)||''),
+    Date:g('Date')||todayStr(),
     Track:g('Track'), SubCategory:g('SubCategory'), Stage:g('Stage'),
     Detail:g('Detail'), Note:g('Note'), Images:g('Images'),
     UpdatedBy:g('UpdatedBy'), PIC:g('PIC'), Risk:g('Risk'),
@@ -6833,6 +6886,56 @@ function collectUpdateForm(){
     // actually writes to the column; keep "NextDue" too for tolerant local reads.
     NextDue:nextDue, 'Next Due':nextDue
   };
+}
+function collectUpdateForm(){
+  const g=id=>String((document.getElementById('ue-'+id)||{}).value||'').trim();
+  const selSku=g('SKU');
+  const scope=g('Scope')||'group';
+  const sku = (scope==='group' && selSku) ? productGroupOf(selSku) : selSku;
+  return Object.assign(collectUpdateBase(), { SKU:sku, ProductName: (nameForSku(selSku)||nameForSku(sku)||'') });
+}
+/* ===== โหมดหลายสินค้า (multi-SKU) — บันทึก Timeline เดียวกันให้ทุกตัวที่เลือก ===== */
+function toggleMultiSku(){
+  const on = !!(document.getElementById('ue-multi')||{}).checked;
+  const single=document.getElementById('ue-sku-single-cell');
+  const scope=document.getElementById('ue-scope-cell');
+  const multi=document.getElementById('ue-sku-multi-cell');
+  if(single) single.style.display = on?'none':'';
+  if(scope)  scope.style.display  = on?'none':'';
+  if(multi)  multi.style.display  = on?'':'none';
+}
+function filterMultiSku(){
+  const q=((document.getElementById('ue-multi-search')||{}).value||'').toLowerCase().trim();
+  document.querySelectorAll('#ue-sku-multi-list .ue-multi-item').forEach(el=>{
+    el.style.display = (!q || (el.dataset.search||'').includes(q)) ? 'flex' : 'none';
+  });
+}
+function multiSkuAll(on){
+  document.querySelectorAll('#ue-sku-multi-list .ue-multi-item').forEach(el=>{
+    if(el.style.display!=='none'){ const cb=el.querySelector('input'); if(cb) cb.checked=on; }
+  });
+  updateMultiCount();
+}
+function updateMultiCount(){
+  const n=document.querySelectorAll('#ue-sku-multi-list input:checked').length;
+  const el=document.getElementById('ue-multi-count'); if(el) el.textContent='เลือก '+n+' รายการ';
+}
+function saveMultiUpdateEntries(){
+  const skus=[...document.querySelectorAll('#ue-sku-multi-list input:checked')].map(c=>c.value).filter(Boolean);
+  if(!skus.length){ toast('เลือกสินค้าอย่างน้อย 1 รายการ','err'); return; }
+  const base=collectUpdateBase();
+  if(!base.Detail){ toast('กรอกรายละเอียด (Detail) ก่อน','err'); return; }
+  const arr=getUpdatesLocal();
+  const rows=skus.map((sku,i)=>{
+    const row=Object.assign({}, base, { SKU:sku, ProductName:(nameForSku(sku)||''), id:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+i });
+    arr.push(row); return row;
+  });
+  saveUpdatesLocal(arr);
+  rebuildUpdateLogs(); renderTeamUpdates(); updateSyncStatus(); updateEditControls();
+  closeUpdateEditor();
+  // ส่งขึ้น Sheet ทีละตัว เว้นระยะ ~350ms กันชนกัน/โดน network ตัด (append เล็ก ~300 ตัวอักษร ผ่านชัวร์)
+  rows.forEach((row,i)=> setTimeout(()=>syncToSheet('updates','append', null, row), i*350));
+  toast('เพิ่มบันทึกแล้ว '+rows.length+' สินค้า (Timeline เดียวกัน)','ok');
 }
 function openUpdateEditor(prefill, editId){
   uePrefill = prefill||null; ueEditId = editId||null;
@@ -6842,6 +6945,8 @@ function openUpdateEditor(prefill, editId){
 }
 function closeUpdateEditor(){ document.getElementById('ue-overlay').classList.remove('open'); ueEditId=null; uePrefill=null; }
 function saveUpdateEntry(){
+  // โหมดหลายสินค้า (เฉพาะตอนเพิ่มใหม่ ไม่ใช่ตอนแก้ไข)
+  if(!ueEditId && (document.getElementById('ue-multi')||{}).checked){ return saveMultiUpdateEntries(); }
   const row=collectUpdateForm();
   if(!row.SKU){ toast('เลือกสินค้า (SKU) ก่อน','err'); return; }
   if(!row.Detail){ toast('กรอกรายละเอียด (Detail) ก่อน','err'); return; }
