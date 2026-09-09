@@ -532,6 +532,7 @@
       <div class="tab active" data-view="calendar">NPD &amp; MKT Calendar</div>
       <div class="tab" data-view="catalog">Product Info</div>
       <div class="tab" data-view="team">NPD Process</div>
+      <div class="tab" data-view="workflow">NPD Work Flow</div>
     </nav>
     <div class="updated-badge" id="updated-badge"></div>
     <a class="updated-badge" href="https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/edit"
@@ -821,6 +822,7 @@
     <div class="panel"><div id="tcal-upcoming"></div></div>
     </div>
   </div>
+  </div>
 
   <div class="view" id="view-task">
     <p class="section-title" style="margin-top:0;">ฝากงาน NPD</p>
@@ -844,6 +846,13 @@
       </select>
     </div>
     <div class="kanban" id="task-board"></div>
+  </div>
+
+  <div class="view" id="view-workflow">
+    <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+      <button class="btn-sm ghost" onclick="printWorkflow()" style="padding:7px 14px;">🖨️ พิมพ์ / บันทึก PDF</button>
+    </div>
+    <iframe id="wf-frame" title="NPD Work Flow" style="width:100%; border:none; display:block; min-height:80vh; border-radius:12px; background:#FAFAF7; box-shadow:0 1px 3px rgba(0,0,0,.06);"></iframe>
   </div>
 
 </main>
@@ -1629,8 +1638,683 @@ document.querySelectorAll('#nav .tab').forEach(t=>{
     document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');
     document.getElementById('view-'+t.dataset.view).classList.add('active');
+    if(t.dataset.view==='workflow'){ loadWorkflowFrame(); }
   });
 });
+
+const WORKFLOW_HTML = `<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NPD End-to-End Workflow — Cosceutic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16202B;
+  --ink-soft:#4E5A68;
+  --ink-faint:#8A94A0;
+  --paper:#FAFAF7;
+  --card:#FFFFFF;
+  --rule:#DDDED8;
+  --rule-strong:#B9BBB3;
+
+  --gate:#8A5A00;
+  --gate-bg:#FDF3DF;
+  --gate-rule:#E2C88A;
+
+  --rd:#0B6E63;
+  --rd-bg:#E6F2F0;
+  --pkg:#4B3FA8;
+  --pkg-bg:#ECEAFB;
+  --com:#A63A2A;
+  --com-bg:#FAEBE7;
+
+  --neutral:#33404E;
+  --neutral-bg:#EFF1F3;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"IBM Plex Sans Thai",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-weight:400;
+  font-size:15px;
+  line-height:1.65;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:56px 28px 96px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:2px solid var(--ink);padding-bottom:22px;margin-bottom:12px}
+.masthead h1{
+  font-size:clamp(30px,4.4vw,46px);
+  font-weight:600;
+  letter-spacing:-.02em;
+  line-height:1.15;
+  margin:0 0 6px;
+}
+.masthead .en{
+  display:block;
+  font-size:clamp(14px,1.6vw,17px);
+  font-weight:400;
+  color:var(--ink-soft);
+  letter-spacing:.01em;
+}
+.meta{
+  display:flex;flex-wrap:wrap;gap:6px 26px;
+  margin-top:16px;font-size:13.5px;color:var(--ink-soft);
+}
+.meta b{font-weight:500;color:var(--ink)}
+
+.premise{
+  margin:22px 0 40px;
+  padding:18px 22px;
+  background:var(--card);
+  border:1px solid var(--rule);
+  border-left:4px solid var(--ink);
+}
+.premise p{margin:0;font-size:15px}
+.premise p + p{margin-top:8px;color:var(--ink-soft);font-size:14px}
+.premise strong{font-weight:600}
+
+/* ---------- legend ---------- */
+.legend{
+  display:flex;flex-wrap:wrap;gap:10px 22px;
+  margin-bottom:34px;font-size:13.5px;color:var(--ink-soft);
+  padding-bottom:20px;border-bottom:1px solid var(--rule);
+}
+.legend span{display:flex;align-items:center;gap:8px}
+.swatch{width:13px;height:13px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.14)}
+
+/* ---------- flow spine ---------- */
+.link{
+  width:1px;height:26px;background:var(--rule-strong);
+  margin:0 auto;position:relative;
+}
+.link::after{
+  content:"";position:absolute;bottom:0;left:50%;
+  width:7px;height:7px;border-right:1px solid var(--rule-strong);border-bottom:1px solid var(--rule-strong);
+  transform:translate(-50%,2px) rotate(45deg);
+}
+
+/* ---------- stage ---------- */
+.stage{background:var(--card);border:1px solid var(--rule);padding:20px 22px}
+.stage-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.phase-tag{
+  font-size:12px;font-weight:500;color:var(--ink-faint);
+  border:1px solid var(--rule);border-radius:20px;padding:1px 10px;flex:none;
+}
+.stage h2{margin:0;font-size:19px;font-weight:600;letter-spacing:-.01em}
+.stage h2 em{font-style:normal;font-weight:400;color:var(--ink-soft);font-size:15px}
+.owner{margin:2px 0 0;font-size:13px;color:var(--ink-faint)}
+
+ul.pts{margin:12px 0 0;padding:0;list-style:none}
+ul.pts li{position:relative;padding-left:16px;font-size:14.5px;color:var(--ink-soft);margin-bottom:3px}
+ul.pts li::before{content:"";position:absolute;left:0;top:11px;width:6px;height:1px;background:var(--rule-strong)}
+ul.pts li b{font-weight:500;color:var(--ink)}
+ul.pts li.sla{color:#7A3510}
+ul.pts li.sla b{color:#7A3510;font-weight:600}
+ul.pts li.sla::before{background:#C08A5A;width:8px;height:2px;top:10px}
+.step p.sla{color:#7A3510;font-weight:500;border-top:1px solid var(--rule);padding-top:7px}
+.step p.sla b{color:#7A3510;font-weight:600}
+
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.trio .stage{padding:16px 18px}
+.trio .stage h2{font-size:16.5px}
+
+/* ---------- gate ---------- */
+.gate{
+  display:grid;grid-template-columns:74px 1fr;
+  background:var(--gate-bg);border:1px solid var(--gate-rule);
+}
+.gate .num{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border-right:1px solid var(--gate-rule);color:var(--gate);padding:14px 0;
+}
+.gate .num i{font-style:normal;font-size:11.5px;letter-spacing:.06em;font-weight:500}
+.gate .num b{font-size:32px;font-weight:600;line-height:1}
+.gate .body{padding:16px 22px}
+.gate h3{margin:0;font-size:18px;font-weight:600;color:#5E3D00;letter-spacing:-.01em}
+.gate h3 em{font-style:normal;font-weight:400;font-size:14.5px;color:var(--gate)}
+.gate .need{margin:8px 0 0;font-size:14.5px;color:#6B4A0B}
+.stopline{
+  margin-top:12px;padding-top:11px;border-top:1px dashed var(--gate-rule);
+  font-size:14px;color:#7A3510;font-weight:500;
+}
+.stopline span{font-weight:600}
+
+/* ---------- parallel band ---------- */
+.band{
+  margin:0;padding:26px 22px 24px;
+  border:1px dashed var(--rule-strong);background:rgba(255,255,255,.55);
+}
+.band-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.band-head h2{margin:0;font-size:19px;font-weight:600;letter-spacing:-.01em}
+.band-note{margin:0 0 22px;font-size:14px;color:var(--ink-soft);max-width:74ch}
+.tracks{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.track{display:flex;flex-direction:column}
+.track-title{
+  font-size:14px;font-weight:600;padding:7px 12px;color:#fff;margin-bottom:12px;
+}
+.track-title em{font-style:normal;font-weight:400;opacity:.82;font-size:12.5px;display:block}
+.t-rd .track-title{background:var(--rd)}
+.t-pkg .track-title{background:var(--pkg)}
+.t-com .track-title{background:var(--com)}
+
+.step{border:1px solid var(--rule);background:var(--card);padding:12px 14px;border-left-width:3px}
+.t-rd .step{border-left-color:var(--rd)}
+.t-pkg .step{border-left-color:var(--pkg)}
+.t-com .step{border-left-color:var(--com)}
+.step h4{margin:0;font-size:15px;font-weight:600;letter-spacing:-.005em}
+.step h4 em{font-style:normal;font-weight:400;font-size:12.5px;color:var(--ink-faint);display:block;margin-top:1px}
+.step p{margin:7px 0 0;font-size:13.5px;color:var(--ink-soft);line-height:1.55}
+.step p b{font-weight:500;color:var(--ink)}
+.branch{
+  margin-top:8px;padding-top:8px;border-top:1px solid var(--rule);
+  font-size:13px;color:var(--ink-soft);
+}
+.branch b{display:block;font-weight:600;color:var(--ink);font-size:13px;margin-bottom:2px}
+
+.minigate{
+  border:1px solid var(--gate-rule);background:var(--gate-bg);padding:11px 14px;
+}
+.minigate h4{margin:0;font-size:14.5px;font-weight:600;color:#5E3D00}
+.minigate p{margin:5px 0 0;font-size:13px;color:#7A3510;font-weight:500}
+.tlink{width:1px;height:16px;background:var(--rule-strong);margin:0 auto}
+
+.merge{
+  text-align:center;font-size:13.5px;color:var(--ink-soft);
+  padding:18px 0 0;margin-top:22px;border-top:1px solid var(--rule);
+}
+.merge b{font-weight:600;color:var(--ink)}
+
+/* ---------- timing rail ---------- */
+.rail{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.rail .stage{border-top:3px solid var(--neutral)}
+.when{
+  display:inline-block;font-size:12px;font-weight:600;color:var(--neutral);
+  background:var(--neutral-bg);padding:1px 9px;border-radius:20px;margin-bottom:6px;
+}
+
+.stage.anchor{border-left:4px solid var(--neutral)}
+.stage.anchor h2{font-size:17.5px}
+
+.launch{
+  background:var(--ink);color:#fff;padding:22px 26px;text-align:center;
+}
+.launch h2{margin:0;font-size:24px;font-weight:600;letter-spacing:.01em}
+.launch p{margin:6px 0 0;font-size:14px;color:#B9C2CC}
+
+/* ---------- rules ---------- */
+.rules{margin-top:64px;padding-top:28px;border-top:2px solid var(--ink)}
+.rules h2{margin:0 0 18px;font-size:20px;font-weight:600}
+.rulegrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.rule{background:var(--card);border:1px solid var(--rule);padding:15px 18px}
+.rule h3{margin:0 0 5px;font-size:15.5px;font-weight:600}
+.rule p{margin:0;font-size:14px;color:var(--ink-soft)}
+.sla-h{margin:38px 0 14px;font-size:20px;font-weight:600}
+.slatab{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--rule);font-size:14px}
+.slatab th{text-align:left;font-weight:600;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);padding:10px 16px;border-bottom:1px solid var(--rule)}
+.slatab td{padding:10px 16px;border-bottom:1px solid var(--rule);color:var(--ink-soft);vertical-align:top}
+.slatab tr:last-child td{border-bottom:none}
+.slatab td:first-child{width:82px;color:#7A3510;white-space:nowrap}
+.slatab td:nth-child(2){color:var(--ink);font-weight:500}
+@media (max-width:600px){.slatab{font-size:13px}.slatab th:nth-child(3),.slatab td:nth-child(3){display:none}}
+.hardline{
+  margin-top:14px;background:#2A1508;color:#F3E4CB;padding:16px 20px;
+  display:flex;flex-wrap:wrap;gap:6px 34px;font-size:15px;font-weight:500;
+}
+
+@media (max-width:860px){
+  .wrap{padding:36px 18px 72px}
+  .trio,.tracks,.rail,.rulegrid{grid-template-columns:1fr}
+  .band{padding:20px 14px}
+  .gate{grid-template-columns:60px 1fr}
+  .gate .num b{font-size:26px}
+}
+@media print{
+  body{background:#fff}
+  .wrap{padding:0;max-width:none}
+  .stage,.gate,.band,.rule{break-inside:avoid}
+  .launch{background:#fff;color:var(--ink);border:2px solid var(--ink)}
+  .launch p{color:var(--ink-soft)}
+  .hardline{background:#fff;color:var(--ink);border:2px solid var(--gate)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <h1>โฟลว์การทำงาน NPD ตั้งแต่ต้นจนถึงวันเปิดขาย
+    <span class="en">NPD end-to-end workflow — concept to launch</span>
+  </h1>
+  <div class="meta">
+    <span><b>เจ้าของกระบวนการ</b> ทีม NPD</span>
+    <span><b>ผู้เกี่ยวข้อง</b> Brand · Marketing · Sales · Purchasing · R&amp;D · Supply Chain · Factory</span>
+    <span><b>ฉบับ</b> ปรับปรุงล่าสุด</span>
+  </div>
+</header>
+
+<div class="premise">
+  <p><strong>NPD คือ Project Owner ตั้งแต่ Concept จนถึง Commercial Handover</strong> ไม่ใช่แค่คนตามสูตรหรือตาม packaging ทุกโปรเจกต์ต้องคุม 5 เรื่องพร้อมกัน — Concept / Cost / Quality / Timeline / Commercial Readiness</p>
+  <p>โฟลว์นี้ไม่ได้เดินทีละ phase หลาย phase วิ่งขนานกัน สิ่งที่ห้ามข้ามคือ <strong>Gate</strong> ไม่ใช่ลำดับงาน ถ้าข้อมูลใน Gate ยังไม่ final ห้ามให้โปรเจกต์เดินต่อ</p>
+  <p>เลข phase จัดใหม่ให้ตรงกับลำดับ trigger จริง — Brand requirement เดิม Phase 5 → <strong>1.5</strong> · Raw Material PO เดิม Phase 7 → <strong>5</strong> · Assembly Spec คง <strong>6</strong> · Commercial Handover เดิม Phase 8 → <strong>7</strong> · <strong>Phase 2 (NPR Form) ยุบรวมเข้า Phase 3</strong> เลข 2 จึงว่างไว้โดยตั้งใจ ไม่ใช่ตกหล่น</p>
+</div>
+
+<div class="legend">
+  <span><i class="swatch" style="background:var(--gate-bg);border-color:var(--gate-rule)"></i> Gate — จุดตัดสินใจ ห้ามผ่านถ้าข้อมูลไม่ครบ</span>
+  <span><i class="swatch" style="background:var(--rd)"></i> Track สูตร / R&amp;D</span>
+  <span><i class="swatch" style="background:var(--pkg)"></i> Track packaging</span>
+  <span><i class="swatch" style="background:var(--com)"></i> Track brand &amp; supply chain</span>
+</div>
+
+<!-- PHASE 1 -->
+<div class="trio">
+  <div class="stage">
+    <div class="stage-head"><span class="phase-tag">Phase 1.1</span></div>
+    <h2>สำรวจตลาด <em>Market survey</em></h2>
+    <ul class="pts">
+      <li>หา inspiration จาก Kalodata / e-commerce / ช่องทาง offline</li>
+      <li>สรุปผลเป็นเอกสารก่อนเข้าที่ประชุม</li>
+    </ul>
+  </div>
+  <div class="stage">
+    <div class="stage-head"><span class="phase-tag">Phase 1.2</span></div>
+    <h2>Product concept <em>คอนเซปต์สินค้า</em></h2>
+    <p class="owner">ผู้เข้าร่วม: <b>NPD + Graphic</b></p>
+    <ul class="pts">
+      <li>สินค้าคืออะไร จุดขายหลักคืออะไร</li>
+      <li>Target customer / key benefit / claim เบื้องต้น</li>
+      <li>รูปแบบ formula และ packaging ที่ต้องการ</li>
+      <li>จำนวน SKU / shade / size</li>
+      <li><b>ราคาที่ต้องการขาย</b> — ตั้งไว้ตั้งแต่ตรงนี้ เพื่อให้ Phase 1.3 ทำงานย้อนกลับหา target cost ได้</li>
+      <li><b>กำหนด packaging direction</b> — decoration / special technique: printing, spray, silk screen, hot stamp, coating</li>
+      <li class="sla"><b>SLA 7 วัน</b> — หลังสรุป concept แล้ว Graphic ต้องขึ้น <b>1st draft</b> ภายใน 7 วัน เพื่อใช้ประเมินราคาใน 1.3 และนำเสนอใน 1.4</li>
+    </ul>
+  </div>
+  <div class="stage">
+    <div class="stage-head"><span class="phase-tag">Phase 1.3</span></div>
+    <h2>Target cost, ราคาขาย และ project timeline</h2>
+    <ul class="pts">
+      <li>แตก target cost: bulk, main pkg, unit box/label, decoration, premium</li>
+      <li>ส่ง Packaging Requirement Form ให้ Purchasing ประเมิน</li>
+      <li><b>ใช้ AW 1st draft จาก Phase 1.2</b> ให้จัดซื้อประเมินราคา decoration จากภาพจริง ไม่ใช่จากคำอธิบาย</li>
+      <li>ตรวจว่า target cost ที่ได้ รองรับ <b>ราคาที่ต้องการขายจาก 1.2</b> ที่ GP margin เป้าหมายหรือไม่</li>
+      <li>เปิดใบพัฒนาสูตรให้ R&amp;D ประเมินราคา + ขึ้นเนื้อดราฟแรก</li>
+      <li>คำนวณ DIO สำหรับ MOQ ของ 1st lot</li>
+      <li><b>Marketing requirement (ประมาณการ)</b> — photo / PR / seeding / tester / display / event sample กี่ชิ้น ต้องการเมื่อไร แล้วบวกเข้า production qty ตั้งแต่ตอนคิดต้นทุน</li>
+      <li><b>จัดทำ Project Timeline</b> — วางวันของทุก gate ย้อนจาก target launch date เพื่อใช้เป็นฐานประชุม Phase 1.4</li>
+    </ul>
+  </div>
+</div>
+
+<div class="link"></div>
+
+<div class="stage">
+  <div class="stage-head"><span class="phase-tag">Phase 1.4</span></div>
+  <h2>ประชุม cross-functional + ล็อก sales commitment</h2>
+  <p class="owner">NPD เป็นคนนัด · เข้าร่วม: <b>ผู้บริหาร</b>, Brand, Marketing, Sales, Purchasing, R&amp;D, Supply Chain, Graphic</p>
+  <ul class="pts">
+    <li>นำเสนอ <b>AW 1st draft</b> จาก Graphic พร้อม target cost และ project timeline</li>
+    <li>ราคาขายเหมาะสมหรือไม่ ต้นทุนทำได้จริงหรือไม่</li>
+    <li>Marketability / selling point แข็งพอไหม</li>
+    <li>ปริมาณที่จะผลิตสัมพันธ์กับยอดขายหรือไม่ — <b>ตัวเลขที่เสนอต้องรวมของแจกจากประมาณการใน 1.3 แล้ว</b></li>
+    <li><b>Brand / Marketing / Sales ต้อง commit ยอดขายรายช่องทาง</b> และรับผิดชอบต่อยอดที่ commit เพื่อใช้เป็นฐานกำหนด production qty</li>
+  </ul>
+</div>
+
+<div class="link"></div>
+
+<!-- GATE 1 -->
+<div class="gate">
+  <div class="num"><i>GATE</i><b>1</b></div>
+  <div class="body">
+    <h3>ผู้บริหารอนุมัติ <em>Management approval</em></h3>
+    <p class="need">เสนอผู้บริหารอนุมัติ concept + target cost + selling price + production qty (รวม marketing sample แล้ว) + sales commitment ก่อนเริ่ม development</p>
+    <p class="stopline"><span>ห้ามผ่านถ้า</span> ยอด commitment ยังไม่มีชื่อผู้รับผิดชอบ หรือ target cost ยังเป็น TBD</p>
+  </div>
+</div>
+
+<div class="link"></div>
+
+<div class="stage anchor">
+  <div class="stage-head"><span class="phase-tag">Phase 1.5</span></div>
+  <h2>ยืนยัน brand / marketing requirement <em>Confirm ตัวเลขที่ประมาณไว้ใน 1.3</em></h2>
+  <p class="owner">เจ้าของ: Brand &amp; Marketing · เดิมคือ Phase 5 — เลื่อนมาที่นี่เพราะเป็นงานทันทีหลัง Gate 1 ไม่ใช่งานกลางโปรเจกต์</p>
+  <ul class="pts">
+    <li class="sla"><b>SLA 7 วัน</b> — Brand &amp; Marketing ต้องยืนยัน requirement ทั้งหมดภายใน 7 วันหลัง Gate 1 ผ่าน</li>
+    <li><b>1.3 = ประมาณการ · 1.5 = ตัวเลขจริงที่ผูกพัน</b> ยืนยันทีละรายการเทียบกับที่ประมาณไว้: photo / content · PR · influencer &amp; seeding · tester · display · event</li>
+    <li>ยืนยันวันที่ต้องการ sample แต่ละกลุ่ม และ target launch date</li>
+    <li><b>ถ้าตัวเลขจริงเกินประมาณการเกิน 10%</b> ต้องกลับไปแจ้งผู้บริหารก่อน ห้าม NPD เปิด lot เพิ่มเอง เพราะกระทบ COGS ที่อนุมัติไว้แล้ว</li>
+    <li>ยืนยันแล้ว NPD แจ้ง Purchasing และโรงงานรวมเข้า master timeline · ถ้า timeline เปลี่ยน NPD เป็นเจ้าของการ update ทุกฝ่าย</li>
+  </ul>
+</div>
+
+<div class="link"></div>
+
+<!-- PARALLEL BAND -->
+<div class="stage">
+  <div class="stage-head"><span class="phase-tag">Phase 3</span></div>
+  <h2>NPD Kick-off <em>เปิดงานพัฒนาอย่างเป็นทางการ · รวม Phase 2 เดิม</em></h2>
+  <p class="owner">NPD เป็นคนเปิดประชุม · ส่งมอบ New Product Request Form ให้ R&amp;D และ Technical Packaging พร้อมกันในที่ประชุมเดียว</p>
+  <ul class="pts">
+    <li><b>NPD จัดทำ New Product Request Form ตาม template กลาง</b> ส่งข้อมูล development อย่างเป็นทางการ</li>
+    <li><b>ข้อมูลในฟอร์มต้องเป็น final brief เดียวกัน</b> กันแต่ละฝ่ายทำงานคนละเวอร์ชัน · ไม่อยู่ในฟอร์ม = ไม่อยู่ใน scope</li>
+    <li><b>R&amp;D</b> พัฒนาสูตรต่อจากเนื้อดราฟแรกที่ขึ้นไว้ใน Phase 1.3 ไม่ได้เริ่มนับหนึ่งใหม่</li>
+    <li><b>Technical Packaging</b> ประสานขอตัวอย่าง PKG และ component อื่น ๆ ตาม direction จาก Phase 1.2</li>
+    <li>ยืนยัน project timeline จาก Phase 1.3 ให้ทุกฝ่ายรับทราบวันของแต่ละ gate ตรงกัน</li>
+  </ul>
+</div>
+
+<div class="link"></div>
+
+<div class="band">
+  <div class="band-head"><h2>Phase 3–5 · เดินขนานกัน 3 track</h2></div>
+  <p class="band-note">สาม track นี้เริ่มพร้อมกันทันทีหลัง NPD Kick-off ไม่ต้องรอกันจบทีละอัน แต่ทุก track ต้องรายงานวันของเข้าเข้ามาที่ NPD เพราะ NPD เป็นคนล็อก production timeline</p>
+
+  <div class="tracks">
+
+    <!-- TRACK 1 -->
+    <div class="track t-rd">
+      <div class="track-title">สูตรและการทดสอบ<em>Phase 3 · R&amp;D / formula</em></div>
+
+      <div class="step">
+        <h4>พัฒนาสูตร<em>Formula development</em></h4>
+        <p>R&amp;D พัฒนาต่อจาก<b>เนื้อดราฟแรกที่ขึ้นไว้ใน Phase 1.3</b> ไม่ได้เริ่มใหม่ พร้อมประเมินต้นทุนต่อ kg เทียบ target cost</p>
+      </div>
+      <div class="tlink"></div>
+
+      <div class="step">
+        <h4>Confirmation sample<em>ตัวอย่างยืนยันสูตร</em></h4>
+        <p>R&amp;D ส่งตัวอย่าง → NPD ตรวจและเซ็น approve</p>
+        <p><b>การเก็บ standard:</b> NPD 3 ชิ้น · R&amp;D 1 ชิ้น · โรงงาน 1 ชิ้น แล้วส่ง approved confirmation กลับโรงงาน 2 ชิ้น</p>
+      </div>
+      <div class="tlink"></div>
+
+      <div class="minigate">
+        <h4>Gate 2 — Formula approval</h4>
+        <p>ไม่มีลายเซ็น approve = ไม่เข้าทดสอบ</p>
+      </div>
+      <div class="tlink"></div>
+
+      <div class="step">
+        <h4>Stability &amp; compatibility<em>ทดสอบความคงตัว</em></h4>
+        <p><b>Normal:</b> รอผล 3 เดือนก่อนผลิตตามมาตรฐาน</p>
+        <div class="branch">
+          <b>กรณี fast-track</b>
+          ชุดที่ 1 — 14 วันในสภาวะเร่ง ผ่านแล้วจดแจ้ง อย. ได้เลย<br>
+          ชุดที่ 2 — 3 เดือน ตามปกติ<br>
+          โรงงาน/R&amp;D ต้องส่ง <b>risk assessment เป็นลายลักษณ์อักษรทางอีเมล</b> ให้ NPD รับทราบก่อน proceed — เร่ง timeline ได้ แต่ห้ามข้าม test โดยไม่มีเอกสาร
+        </div>
+      </div>
+      <div class="tlink"></div>
+
+      <div class="step">
+        <h4>จดแจ้ง อย.<em>FDA notification</em></h4>
+        <p>ดำเนินการทันทีที่ผลชุด 14 วันผ่าน เป็นเงื่อนไขก่อนเปิด PO สาร</p>
+      </div>
+    </div>
+
+    <!-- TRACK 2 -->
+    <div class="track t-pkg">
+      <div class="track-title">บรรจุภัณฑ์<em>Phase 4 &amp; 4.1 · Packaging</em></div>
+
+      <div class="step">
+        <h4>ขอตัวอย่าง PKG / component<em>Sample request</em></h4>
+        <p>Technical Packaging ประสาน supplier ขอตัวอย่าง packaging และ component อื่น ๆ ตาม direction ที่ล็อกไว้แล้วใน <b>Phase 1.2</b></p>
+      </div>
+      <div class="tlink"></div>
+
+      <div class="step">
+        <h4>Artwork<em>AW draft → final AW</em></h4>
+        <p>ต่อยอดจาก <b>AW draft ที่สั่งไว้ใน Phase 1.3</b> → final artwork ต้องมีลายเซ็นผู้มีอำนาจของแบรนด์ → ส่งตรวจ AW</p>
+        <p><b>Godmami</b> ต้องมีลายเซ็นคุณยาหรือพลอย · <b>Glimmer Sister</b> ต้องมีลายเซ็นคุณจ๋าหรือแพรว</p>
+      </div>
+      <div class="tlink"></div>
+
+      <div class="step">
+        <h4>เลือก supplier<em>Quotation &amp; feasibility</em></h4>
+        <p>Technical Packaging / Purchasing ขอราคาและทำเอกสารเปรียบเทียบ → เซ็นเอกสารเลือก supplier</p>
+      </div>
+      <div class="tlink"></div>
+
+      <div class="step">
+        <h4>Phase 4.1 · PR / PO packaging<em>ขอ timeline จากจัดซื้อ</em></h4>
+        <p>NPD ขอจากจัดซื้อ: packaging แต่ละรายการเข้าวันไหน · ตัวไหน longest lead time · มี risk item อะไร</p>
+        <div class="branch">
+          <b>ถ้าต้องชำระเงินก่อนได้ PPS</b>
+          จัดซื้อแจ้งกำหนดการ PPS ภายใน 7 วัน → เปิด PR ให้โรงงานผ่าน Task Manawork และ Line กลุ่ม → NPD ตาม status การชำระเงินภายใน 5 วัน
+        </div>
+        <div class="branch">
+          <b>ถ้าไม่ต้องชำระก่อน</b>
+          รอ PPS sample ตามคู่มือ แล้วค่อยเปิด PR ตามขั้นตอนเดียวกัน
+        </div>
+        <p><b>ก่อนเปิด PR ทุกครั้ง NPD ต้องเช็คความพร้อมของทุก component</b></p>
+      </div>
+      <div class="tlink"></div>
+
+      <div class="minigate">
+        <h4>Gate 3 — PPS approval</h4>
+        <p>No PPS approval = No mass production</p>
+      </div>
+      <div class="tlink"></div>
+
+      <div class="step">
+        <h4>Standard book<em>Approved packaging standard</em></h4>
+        <p>Supplier จัดทำพร้อมระบุ min–max acceptance criteria ต้องได้รับก่อนโรงงานรับ mass product อย่างน้อย 1 วัน หรือส่งมาพร้อมของ</p>
+        <p>ใช้เป็นมาตรฐานตรวจรับและเป็น reference เมื่อเกิด quality issue</p>
+      </div>
+    </div>
+
+    <!-- TRACK 3 -->
+    <div class="track t-com">
+      <div class="track-title">แบรนด์และซัพพลายเชน<em>Phase 1.5 ต่อเนื่อง &amp; Phase 5</em></div>
+
+      <div class="step">
+        <h4>Phase 1.5 · ยืนยัน brand requirement<em>ล็อกไว้ตั้งแต่ concept stage แล้วตามต่อเนื่อง</em></h4>
+        <p>Photo / content sample · PR sample · influencer &amp; seeding sample · tester / display / event sample · วันที่ต้องการ sample · target launch date</p>
+        <p><b>NPD ต้องแจ้งจำนวนเหล่านี้ให้ Purchasing และโรงงานตั้งแต่ต้น</b> เพื่อรวมเข้า master timeline ไม่ใช่มาขอเพิ่มทีหลัง</p>
+      </div>
+      <div class="tlink"></div>
+
+      <div class="step">
+        <h4>Phase 5 · Raw Material PO<em>เปิด PR/PO สาร</em></h4>
+        <p><b>เงื่อนไขก่อนเริ่ม:</b> CF สูตรแล้ว และจดแจ้ง อย. แล้ว</p>
+        <p>NPD แจ้ง Supply Chain ว่า CF สูตร + จด FDA เรียบร้อย → เช็ค stock สาร → เปิด PR/PO สาร</p>
+        <p class="sla"><b>SLA 7 วัน</b> — Supply Chain ต้องยืนยันความพร้อมวัตถุดิบภายใน 7 วันนับจากวันที่ NPD แจ้ง</p>
+      </div>
+      <div class="tlink"></div>
+
+      <div class="step">
+        <h4>ยืนยันความพร้อมวัตถุดิบ</h4>
+        <p>Supply Chain ต้องตอบ 3 ข้อ:</p>
+        <p>· bulk / raw material พร้อมเมื่อไร<br>· raw material complete date — ตัวสุดท้ายเข้าครบวันไหน<br>· มี risk ตัวไหนหรือไม่</p>
+      </div>
+      <div class="tlink"></div>
+
+      <div class="step">
+        <h4>ติดตามวันของเข้า<em>Arrival tracking</em></h4>
+        <p><b>ถ้า timeline เลื่อน ต้อง update NPD ทันที ไม่รอจนถึงวันกำหนดส่งเดิม</b></p>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="merge"><b>ทั้ง 3 track มารวมกันที่จุดเดียว</b> — NPD ใช้ <b>latest arrival date</b> ของ packaging component และ raw material เป็นฐานในการวาง production timeline</p>
+</div>
+
+<div class="link"></div>
+
+<!-- GATE 4 -->
+<div class="gate">
+  <div class="num"><i>GATE</i><b>4</b></div>
+  <div class="body">
+    <h3>ยืนยันความพร้อมวัตถุดิบและบรรจุภัณฑ์ <em>Material readiness</em></h3>
+    <p class="need">ยืนยันความพร้อมภายใน 7 วัน แล้วล็อกวันผลิตจาก latest arrival date ของทั้ง packaging และ raw material</p>
+    <p class="stopline"><span>ห้ามผ่านถ้า</span> ยังมี component ตัวใดไม่มีวันของเข้าที่ยืนยันได้ หรือยังไม่มี approved PPS</p>
+  </div>
+</div>
+
+<div class="link"></div>
+
+<!-- PHASE 6 -->
+<div class="trio">
+  <div class="stage">
+    <div class="stage-head"><span class="phase-tag">Phase 6.1</span></div>
+    <h2>Assembly spec</h2>
+    <ul class="pts">
+      <li>ระบุว่า 1 FG ประกอบจากอะไรและประกอบอย่างไร</li>
+      <li>Bulk → primary pkg → shade sticker → label → unit box → seal → insert → premium → shipper</li>
+    </ul>
+  </div>
+  <div class="stage">
+    <div class="stage-head"><span class="phase-tag">Phase 6.2</span></div>
+    <h2>Handover meeting</h2>
+    <ul class="pts">
+      <li>NPD นัดประชุมกับ<b>ไอซ์</b>อย่างน้อย 1 ครั้ง</li>
+      <li><b>ต้อง walk-through ลำดับการประกอบ ไม่ใช่ส่งเอกสารให้ไปทำเอง</b></li>
+      <li>จุดไหนไม่ชัด ผู้รับผิดชอบต้อง feedback กลับ NPD ให้เคลียร์ก่อนเริ่มเตรียมผลิต</li>
+    </ul>
+  </div>
+  <div class="stage">
+    <div class="stage-head"><span class="phase-tag">Phase 6.3</span></div>
+    <h2>Production planning</h2>
+    <ul class="pts">
+      <li class="sla"><b>SLA 3 วัน</b> — Supply Chain ต้อง CF วันเริ่มผลิต mass product ภายใน 3 วันหลัง handover meeting</li>
+      <li>วางแผนผลิตจากวันที่ล็อกไว้ที่ Gate 4</li>
+      <li>เริ่ม mass production</li>
+    </ul>
+  </div>
+</div>
+
+<div class="link"></div>
+
+<!-- PHASE 8 -->
+<div class="stage anchor">
+  <div class="stage-head"><span class="phase-tag">Phase 7 · การนับวัน</span></div>
+  <h2>จุดตั้งต้นของ Phase 7 คือวันประชุม ไม่ใช่วันทำเอกสาร</h2>
+  <ul class="pts">
+    <li><b>วันประชุม training</b> ต้องอยู่ก่อนวันเปิดขาย 60 วัน (normal) หรือ 30 วัน (เร่งด่วน)</li>
+    <li><b>ส่งเอกสารให้รีวิว</b> = วันประชุม ลบ 7 วัน</li>
+    <li>เพราะฉะนั้นเอกสาร product knowledge ต้อง final ก่อนเปิดขาย <b>67 วัน</b> (normal) หรือ <b>37 วัน</b> (เร่งด่วน)</li>
+    <li>ตั้งวันประชุมก่อน แล้วนับย้อนกลับมาหาวันปิดเอกสาร ห้ามนับไปข้างหน้าจากวันที่เอกสารเสร็จ</li>
+  </ul>
+</div>
+
+<div class="link"></div>
+
+<div class="rail">
+  <div class="stage">
+    <span class="when">ก่อนวันประชุม</span>
+    <div class="stage-head"><span class="phase-tag">Phase 7.1</span></div>
+    <h2>ทำ Product Knowledge ฉบับ final</h2>
+    <ul class="pts">
+      <li>Product concept · USP · benefit · formula highlight · ingredient story · texture &amp; usage · packaging highlight</li>
+      <li>Claim ที่ใช้ได้ · จุดต่างจากสินค้าเดิมและคู่แข่ง · <b>ข้อจำกัดและสิ่งที่ห้าม claim</b></li>
+      <li>ต้องปิดให้เสร็จก่อนถึงวันส่งรีวิว</li>
+    </ul>
+  </div>
+  <div class="stage">
+    <span class="when">วันประชุม – 7 วัน</span>
+    <div class="stage-head"><span class="phase-tag">Phase 7.2</span></div>
+    <h2>ส่งข้อมูลให้รีวิวก่อน</h2>
+    <ul class="pts">
+      <li>ส่งเอกสารให้ <b>Sales + Marketing + Brand</b> รีวิวล่วงหน้า 7 วันก่อนวันประชุม</li>
+      <li>ให้แต่ละทีมเตรียมคำถามมาก่อน ไม่ใช่มาเปิดอ่านครั้งแรกในห้องประชุม</li>
+    </ul>
+  </div>
+  <div class="stage">
+    <span class="when">เปิดขาย – 60 / – 30 วัน</span>
+    <div class="stage-head"><span class="phase-tag">Phase 7.3</span></div>
+    <h2>วันประชุม Training &amp; Q&amp;A</h2>
+    <ul class="pts">
+      <li><b>Normal: ก่อนเปิดขาย 60 วัน · เร่งด่วน: ก่อนเปิดขาย 30 วัน</b></li>
+      <li>NPD อธิบายสินค้าให้ Sales / Marketing / Brand</li>
+      <li><b>ต้องมี Q&amp;A session ท้ายประชุม</b> ให้ถามจนเข้าใจตรงกันก่อนเอาไปขายหรือทำ communication</li>
+    </ul>
+  </div>
+</div>
+
+<div class="link"></div>
+
+<!-- GATE 5 -->
+<div class="gate">
+  <div class="num"><i>GATE</i><b>5</b></div>
+  <div class="body">
+    <h3>ความพร้อมด้านการขาย <em>Commercial readiness</em></h3>
+    <p class="need">ทุกทีมที่ต้องขายและสื่อสารสินค้าเข้าใจตรงกันแล้ว ทั้ง selling point และสิ่งที่ห้าม claim</p>
+    <p class="stopline"><span>ห้ามผ่านถ้า</span> วันประชุมชิดวันเปิดขายน้อยกว่า 30 วัน หรือส่งเอกสารให้รีวิวช้ากว่า 7 วันก่อนประชุม หรือยังไม่ได้ทำ Q&amp;A</p>
+  </div>
+</div>
+
+<div class="link"></div>
+
+<div class="launch">
+  <h2>เปิดขาย</h2>
+  <p>Launch</p>
+</div>
+
+<!-- RULES -->
+<section class="rules">
+  <h2>กติกาที่ใช้ตลอดทั้งโปรเจกต์</h2>
+  <div class="rulegrid">
+    <div class="rule">
+      <h3>Secondary packaging — digital proof ก่อนเสมอ</h3>
+      <p>Final artwork → digital proof → final approval → production · ผลิต 500–1,000 pcs approve online ได้ · ตั้งแต่ 3,000 pcs ขึ้นไปต้อง proof หน้าเครื่องก่อน run mass และต้องได้ตัวอย่างงานจริงที่ยังไม่เคลือบอย่างน้อย 1 ชิ้นในวันนั้น ตัวที่เคลือบแล้วตามมาภายใน 3 วัน</p>
+    </div>
+    <div class="rule">
+      <h3>Incoming QC</h3>
+      <p>โรงงานตรวจรับตาม incoming QC protocol ร่วมกับ approved PPS และ standard book · ความเสี่ยงที่อยู่ในเกณฑ์โรงงานจัดการได้เอง · นอกเกณฑ์หรือกระทบ quality / cost / production / timeline ต้องแจ้ง NPD และ Brand ทันที</p>
+    </div>
+    <div class="rule">
+      <h3>Order tolerance</h3>
+      <p>Main packaging allowance/loss ไม่เกิน 3% · soft component ไม่เกิน 5% · เกินเกณฑ์หรือมีความเสี่ยงกระทบ timeline ต้องให้ Brand approve ก่อนสั่งซื้อ</p>
+    </div>
+    <div class="rule">
+      <h3>อำนาจอนุมัติและความรับผิดชอบ</h3>
+      <p>Authorized signature บน approval file — พีท และ โบนัส (final PKG, เล่ม standard) · ผู้ที่ review/approve เป็นผู้รับผิดชอบต่อ decision นั้น · ทีม NPD ดำเนินการตาม approved decision ได้ แต่ถ้าเจอประเด็นนอก approved standard ให้ hold แล้ว escalate ทุกครั้ง ห้ามปล่อยผ่านเอง</p>
+    </div>
+  </div>
+  <h2 class="sla-h">SLA ที่ต้องคุมตลอดโปรเจกต์</h2>
+  <table class="slatab">
+    <thead><tr><th>เวลา</th><th>ใครต้องทำ</th><th>นับจากอะไร</th></tr></thead>
+    <tbody>
+      <tr><td><b>7 วัน</b></td><td>Graphic ส่ง AW 1st draft</td><td>สรุป concept ใน Phase 1.2</td></tr>
+      <tr><td><b>7 วัน</b></td><td>Brand &amp; Marketing ยืนยัน requirement</td><td>ผู้บริหาร approve ที่ Gate 1</td></tr>
+      <tr><td><b>7 วัน</b></td><td>จัดซื้อแจ้งกำหนดการ PPS</td><td>กรณีต้องชำระเงินก่อนได้ PPS</td></tr>
+      <tr><td><b>5 วัน</b></td><td>NPD ตาม status การชำระเงิน</td><td>เปิด PR ให้โรงงาน</td></tr>
+      <tr><td><b>7 วัน</b></td><td>Supply Chain ยืนยันความพร้อมวัตถุดิบ</td><td>NPD แจ้ง CF สูตร + จด FDA</td></tr>
+      <tr><td><b>7 วัน</b></td><td>ยืนยันความพร้อม packaging + RM ที่ Gate 4</td><td>ครบทุก component</td></tr>
+      <tr><td><b>3 วัน</b></td><td>Supply Chain CF วันเริ่มผลิต mass</td><td>Handover meeting</td></tr>
+      <tr><td><b>3 วัน</b></td><td>Supplier ส่งตัวอย่างงานที่เคลือบแล้ว</td><td>วัน proof หน้าเครื่อง</td></tr>
+      <tr><td><b>1 วัน</b></td><td>Standard book ถึงโรงงาน</td><td>ก่อนโรงงานรับ mass product</td></tr>
+      <tr><td><b>7 วัน</b></td><td>NPD ส่ง product knowledge ให้รีวิว</td><td>ก่อนวันประชุม training</td></tr>
+    </tbody>
+  </table>
+
+  <div class="hardline">
+    <span>No PPS approval = No mass production</span>
+    <span>No clear standard = No acceptance</span>
+    <span>Any risk = Escalate before approval</span>
+  </div>
+</section>
+
+</div>
+</body>
+</html>
+`;
+function loadWorkflowFrame(){
+  const f=document.getElementById('wf-frame'); if(!f || f.dataset.loaded) return;
+  f.dataset.loaded='1';
+  f.addEventListener('load', function(){ try{ var h=f.contentDocument.documentElement.scrollHeight; if(h) f.style.height=(h+24)+'px'; }catch(e){} });
+  f.srcdoc = WORKFLOW_HTML;
+}
+function printWorkflow(){ var f=document.getElementById('wf-frame'); if(f && f.contentWindow){ try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){ window.print(); } } }
 
 async function init(){
   document.getElementById('updated-badge').textContent = 'Loading data…';
@@ -5550,7 +6234,7 @@ async function flushPendingNow(){
   // one write, then a small gap — firing many no-cors POSTs back-to-back can make Apps
   // Script drop some (concurrent-execution limit), which looked like "nothing sent".
   const send1 = async (payload)=>{ const b=JSON.stringify(payload); if(b.length>maxBody) maxBody=b.length; await postToSheet(payload); await new Promise(r=>setTimeout(r,600)); };
-  for(const sku of Object.keys(ps.edits)){ const raw=ps.edits[sku]; if(raw && typeof raw.image==='string' && raw.image.length>maxImg) maxImg=raw.image.length; const s=sanitizeRowForSheet(raw); droppedImg+=s.droppedImg; await send1({target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:s.row}); }
+  for(const sku of Object.keys(ps.edits)){ const raw=ps.edits[sku]; if(raw && typeof raw.image==='string' && raw.image.length>maxImg) maxImg=raw.image.length; const s=sanitizeRowForSheet(minimizeProductRow(raw)); droppedImg+=s.droppedImg; await send1({target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:s.row}); }
   for(const sku of (ps.deletes||[])){ await send1({target:'products',action:'delete',token:cfg.token,keyValue:sku,sku}); }
   for(const e of getUpdatesLocal()){ const row=Object.assign({}, e); if(!row['Next Due']) row['Next Due']=(row.NextDue||row.nextDue||''); const s=sanitizeRowForSheet(row); droppedImg+=s.droppedImg; await send1({target:'updates',action:'append',token:cfg.token,row:s.row}); }
   const ts=getTaskOverrides(); for(const d of Object.keys(ts)){ await send1({target:'task',action:'update',token:cfg.token,keyValue:d,row:{Status:ts[d]}}); }
