@@ -5396,7 +5396,7 @@ function minimizeProductRow(row){
   });
   return min;
 }
-function syncRowToSheet(action, row){ return syncToSheet('products', action, row.sku, row); }
+function syncRowToSheet(action, row){ return syncToSheet('products', action, row.sku, action==='delete'?row:minimizeProductRow(row)); }
 
 async function pushPendingToSheet(){
   const cfg=getWriteConfig();
