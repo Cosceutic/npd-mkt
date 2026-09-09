@@ -213,7 +213,16 @@
   .tev-rd{background:#E7F0FE; color:#1D4FB0; border:1px solid #C9DCFB;}
   .tev-pkg{background:#FCEFD8; color:#B26A00; border:1px solid #F3D9A6;}
   .tev-other{background:#EEE9FD; color:#5B3FC0; border:1px solid #D8CCF7;}
-  .tev-due{background:#FDE7E7; color:#C0392B; border:1px solid #F3B4B4;}
+  /* Next Due = yellow (ตามที่ขอ); ทุกหัวข้ออื่นแยกสีตาม Stage */
+  .tev-due{background:#FFF3C4; color:#8A6D00; border:1px solid #F2DE8E;}
+  .tev-st-open{background:#E7F0FE; color:#1D4FB0; border:1px solid #C9DCFB;}
+  .tev-st-notify{background:#DCF3F4; color:#0E7C86; border:1px solid #B7E5E8;}
+  .tev-st-wip{background:#FCEFD8; color:#B26A00; border:1px solid #F3D9A6;}
+  .tev-st-wait{background:#EEE9FD; color:#5B3FC0; border:1px solid #D8CCF7;}
+  .tev-st-paid{background:#DEF3E7; color:#1E7C4B; border:1px solid #BEE6CE;}
+  .tev-st-done{background:#E3F3E1; color:#2E7D32; border:1px solid #C4E6BE;}
+  .tev-st-ack{background:#EAECEF; color:#455468; border:1px solid #D2D7DE;}
+  .tev-st-other{background:#ECEEF1; color:#556; border:1px solid #DADEE3;}
   .tev{display:flex; flex-direction:column; line-height:1.2;}
   .tev-sub{font-weight:500; font-size:9px; opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   @media(max-width:640px){ .tcal-cell{min-height:60px;} .tev{font-size:9.5px; padding:1px 4px;} .tev-sub{display:none;} }
@@ -808,11 +817,15 @@
       <button class="btn-sm ghost" onclick="tcalMove(1)">เดือนถัดไป ›</button>
       <button class="btn-sm ghost" onclick="tcalToday()">วันนี้</button>
       <button class="btn-sm primary" id="btn-add-event-track" onclick="openEventEditor()" style="display:none;">📅 เพิ่มวันหยุด/นัด</button>
-      <span class="tcal-legend">
-        <span class="tev tev-rd">R&amp;D</span>
-        <span class="tev tev-pkg">Packaging</span>
-        <span class="tev tev-other">อื่นๆ</span>
-        <span class="tev tev-due">⏰ ครบกำหนด</span>
+      <span class="tcal-legend" style="flex-wrap:wrap;">
+        <span class="tev tev-st-open">เปิดใบงาน</span>
+        <span class="tev tev-st-notify">แจ้งดำเนินการ</span>
+        <span class="tev tev-st-wip">กำลังดำเนินการ</span>
+        <span class="tev tev-st-wait">รอการอนุมัติ</span>
+        <span class="tev tev-st-paid">ชำระเงินแล้ว</span>
+        <span class="tev tev-st-done">เรียบร้อย/เสร็จสิ้น</span>
+        <span class="tev tev-st-ack">รับทราบ</span>
+        <span class="tev tev-due">⏰ Next Due</span>
         <span class="tev" style="background:#FEE2E2; color:#B91C1C;">🏖️ วันหยุด/นัด</span>
       </span>
     </div>
@@ -1308,8 +1321,19 @@ function normalizeTrack(raw){
   const s = (raw||'').trim().toLowerCase();
   const has = (...words) => words.some(w=>s.includes(w));
 
+  // Explicit departments first (each is chosen from the Track dropdown by label)
+  if(has('graphic','กราฟฟิก','กราฟิก','กราฟฟิค','ออกแบบ aw')) return 'graphic';
+  if(has('purchase','จัดซื้อ','สั่งซื้อ')) return 'purchase';
+  if(has('supply','ซัพพลาย','ห่วงโซ่')) return 'supply chain';
+  if(s==='data' || has('new sku','แจ้งสร้าง sku')) return 'data';
+  if(has('branding','แบรนด์')) return 'branding';
+  if(has('sales','marketing','การตลาด','เซลล์','เซล')) return 'marketing';
+  if(has('npd')) return 'npd';
+  if(has('warehouse','คลังสินค้า')) return 'warehouse';
+  if(has('accounting','บัญชี')) return 'accounting';
+  if(has('cosmania')) return 'cosmania oem';
+
   if(has('pack','บรรจุ','กล่อง','box','sticker','สติ๊กเกอร์','สติกเกอร์',
-         'graphic','กราฟิก','กราฟฟิค','design','ดีไซน์','ออกแบบ',
          'shrink','ฟิล์ม','primary','ปฐมภูมิ','ขวด','หลอด','ฉลาก','ปรับ pkg','pkg')) return 'pkg';
 
   // FDA now lives as a sub-topic under Formulation (R&D), not its own track
@@ -1404,6 +1428,7 @@ function mapUpdateRow(r){
     images: resolveImageList(r.Images),
     imagesRaw: (r.Images||'').trim(),
     updatedBy: (r.UpdatedBy||'').trim(),
+    pic: (r.PIC || r.Pic || '').trim(),
     risk: (r.Risk||'').trim(),
     nextDue: (r.NextDue || r['Next Due'] || '').trim(),
     id: (r.id || r.ID || '').trim(),
@@ -3151,7 +3176,20 @@ function trackingEvents(){
   return evs;
 }
 function rebuildTrackEvents(){ ALL_TRACK_EVENTS = trackingEvents(); }  // stable order → indices are reusable across month moves
-function tevClass(e){ return e.kind==='due' ? 'tev-due' : (e.track==='rd'?'tev-rd':e.track==='pkg'?'tev-pkg':'tev-other'); }
+// สีของ chip แยกตาม "Stage" (ไม่ใช่แผนก) — Next Due เป็นสีเหลืองเสมอ
+function stageClass(stage){
+  const s=(stage||'').trim();
+  if(!s) return 'tev-st-other';
+  if(/เรียบร้อย|เสร็จ|ได้ของ/.test(s)) return 'tev-st-done';
+  if(/ชำระเงิน/.test(s)) return 'tev-st-paid';
+  if(/รอ.*อนุมัติ/.test(s)) return 'tev-st-wait';
+  if(/กำลัง/.test(s)) return 'tev-st-wip';
+  if(/แจ้งดำเนินการ/.test(s)) return 'tev-st-notify';
+  if(/รับทราบ/.test(s)) return 'tev-st-ack';
+  if(/เปิดใบงาน|เปิดงาน/.test(s)) return 'tev-st-open';
+  return 'tev-st-other';
+}
+function tevClass(e){ return e.kind==='due' ? 'tev-due' : stageClass(e.log && e.log.stage); }
 // clicking any calendar chip / upcoming row opens the full history AND highlights the exact entry
 function openTrackEventFromCal(idx){ const e=ALL_TRACK_EVENTS[idx]; if(!e) return; openTrackLog(e.sku, e.track, e); }
 function renderTrackingCalendar(){
@@ -3200,7 +3238,7 @@ function renderTrackingUpcoming(){
     return `<div class="mini-row"><span>⏰ <button class="link-btn" style="font-weight:600;" onclick="openTrackEventFromCal(${idx})">${esc(e.name)}</button> <span class="sku" style="display:inline;">(${esc(trackLabelShort(e.track))})</span> — <b>${esc(e.label)}</b> <span ${urgent}>· ${formatDate(d)} · ${dLabel}</span></span></div>`;
   }).join('');
 }
-function trackLabelShort(t){ return t==='rd'?'R&D':t==='pkg'?'Packaging':t||''; }
+function trackLabelShort(t){ const m={npd:'NPD',rd:'R&D',pkg:'Packaging',graphic:'Graphic',purchase:'Purchase','supply chain':'Supply',data:'Data',branding:'Branding',marketing:'Sales&Mkt',warehouse:'Warehouse',accounting:'Acct','cosmania oem':'Cosmania'}; return m[t]||t||''; }
 
 function saveToNPRSummary(){
   const params = new URLSearchParams();
@@ -3257,7 +3295,7 @@ async function deleteBriefFromSummary(nprNo){
   renderNPRSummary();
 }
 
-const TRACK_LABELS = { rd:'Formulation (R&D)', pkg:'Packaging', purchase:'Purchase', warehouse:'Warehouse', 'supply chain':'Supply Chain', accounting:'Accounting', branding:'Branding', marketing:'Marketing', 'cosmania oem':'Cosmania OEM' };
+const TRACK_LABELS = { npd:'NPD', rd:'R&D (วิจัยพัฒนา)', purchase:'Purchase (จัดซื้อ)', pkg:'Technical Packaging', graphic:'Graphic (กราฟฟิก)', 'supply chain':'Supply Chain', data:'Data (ข้อมูลสินค้า)', branding:'Branding', marketing:'Sales & Marketing', warehouse:'Warehouse', accounting:'Accounting', 'cosmania oem':'Cosmania OEM' };
 function trackLabelOf(t){ return TRACK_LABELS[t] || (t ? t.replace(/\b\w/g,c=>c.toUpperCase()) : t); }
 function renderTeamUpdates(){
   // Current Status table — one column per track that has updates (R&D + Packaging always shown)
@@ -3318,7 +3356,7 @@ function renderTeamUpdates(){
     const noteText = [label, l.note].filter(Boolean).join(': ');
     return {date:l.date, note:noteText || '(update logged)', product, sku:l.sku,
       productName:l.productName,
-            track:l.track, updatedBy:l.updatedBy, images:l.images};
+            track:l.track, updatedBy:l.updatedBy, pic:l.pic, images:l.images};
   });
   feed.sort((a,b)=> b.date.localeCompare(a.date));
 
@@ -3343,7 +3381,7 @@ function renderTeamUpdates(){
       ? `<button class="link-btn" style="font-weight:600; font-size:13px;" onclick="openTimeline(${PRODUCTS.indexOf(f.product)})">${esc(displayName)}</button>`
       : `<strong style="font-size:13px;">${esc(displayName)}</strong>`;
     const skuHtml = f.sku ? ` <span class="sku" style="display:inline;">(${esc(f.sku)})</span>` : '';
-    const byHtml = f.updatedBy ? ` <span class="tl-entry-by">— ${esc(f.updatedBy)}</span>` : '';
+    const byHtml = (f.pic||f.updatedBy) ? ` <span class="tl-entry-by">— ${esc([f.pic?('👤 '+f.pic):'', f.updatedBy].filter(Boolean).join(' · '))}</span>` : '';
     const thumbs = (f.images||[]).slice(0,4).map(src=>`<img src="${esc(src)}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;cursor:pointer;margin-left:4px;" onclick="openLightbox('${esc(src)}',event)">`).join('');
     html += `<div class="mini-row">
       <span>${nameHtml}${skuHtml} — ${esc(f.note)}${byHtml}${thumbs}</span>
@@ -3471,7 +3509,7 @@ function openTrackLog(sku, track, focus){
       ${e.note ? `<div class="tl-entry-note">${esc(e.note)}</div>` : ''}
       ${dueTag}
       ${imgHtml}
-      ${e.updatedBy ? `<div class="tl-entry-by">${esc(e.updatedBy)}</div>` : ''}
+      ${(e.pic||e.updatedBy) ? `<div class="tl-entry-by">${esc([e.pic?('👤 PIC: '+e.pic):'', e.updatedBy?('อัปเดตโดย '+e.updatedBy):''].filter(Boolean).join(' · '))}</div>` : ''}
       ${actions}
     </div>`;
   }).join('') : '<div class="empty" style="padding:14px 0;">ยังไม่มีการอัปเดต</div>';
@@ -3491,7 +3529,8 @@ function openTrackLog(sku, track, focus){
 /* Checklist of every canonical step for the track, marking which are done.
    A step counts as done if any logged entry's stage/subcategory/detail matches it. */
 function trackChecklistHtml(entries, track){
-  const steps = track==='rd' ? FORMULATION_STAGES : track==='pkg' ? PACKAGING_STAGES : [];
+  const cfg = (typeof TRACK_CONFIG!=='undefined') ? TRACK_CONFIG[track] : null;
+  const steps = cfg ? cfg.subcats : [];
   if(!steps.length) return '';
   const hay = entries.map(e=>[e.stage, e.subCategory, e.detail].filter(Boolean).join(' ').toLowerCase());
   // match on the English part before the " (ไทย)" so old English-only entries still count
@@ -5941,7 +5980,9 @@ async function uploadProductImage(inputEl){
   if(st) st.textContent='⏳ กำลังอัปโหลด…';
   try{
     const dataUrl=await fileToDataUrl(file);
-    const loc = folder ? {parentId:UPLOAD_PARENT_FOLDER_ID, folder} : {parentId:UPLOAD_PARENT_FOLDER_ID};
+    const brandSel=(document.getElementById('pe-brand')||{}).value||'';
+    const parentId=uploadParentForBrand(brandSel);   // Glimmer Sisters → its own Drive folder, else default
+    const loc = folder ? {parentId, folder} : {parentId};
     const r=await postReadable(Object.assign({action:'uploadImage', dataUrl, name:file.name}, loc));
     if(r && r.ok && r.url){
       const inp=document.getElementById('pe-image'); if(inp) inp.value=r.url;
@@ -6529,26 +6570,76 @@ function initEditUi(){
 
 /* ---------- Updates Log: add progress entry (append) ---------- */
 let uePrefill = null;
-const UPDATE_TRACKS = ['R&D','Purchase','Technical Packaging','Warehouse','Supply Chain','Accounting','Branding','Marketing','Cosmania OEM'];
-const FORMULATION_STAGES = ['Concept Approved (อนุมัติคอนเซ็ปต์)','Formulation Development (พัฒนาสูตร)','Sample Preparation (เตรียมตัวอย่าง)','Sample Submitted (ส่งตัวอย่าง)','Sample Under Review (อยู่ระหว่างรีวิว)','Reformulation Required (ต้องปรับสูตร)','Reformulation in Progress (กำลังปรับสูตร)','Formulation Approved (อนุมัติสูตร)','Quotation in Progress (กำลังทำใบเสนอราคา)','Quotation Approved (อนุมัติราคา)','FDA Registration in Progress (กำลังจด อย.)','FDA Registration Completed (จด อย. เสร็จ)'];
-const PACKAGING_STAGES = ['BM Selection (เลือกแบบ/วัสดุ)','Sourcing (จัดหา)','Sup. Sample (ตัวอย่างซัพพลายเออร์)','Sample Received (รับตัวอย่างแล้ว)','Design Approved (อนุมัติดีไซน์)','Artwork Design (ออกแบบอาร์ตเวิร์ก)','Final AW (อาร์ตเวิร์กสุดท้าย)','Price Confirm (ยืนยันราคา)','PPS Sample (ตัวอย่างก่อนผลิต)','Online Proof (พรูฟออนไลน์)','On-site Proof (พรูฟหน้างาน)','PPS Approved (อนุมัติ PPS)','Mass Production (ผลิตจำนวนมาก)','Delivery Confirm (ยืนยันการส่ง)','Photo Sample (ตัวอย่างถ่ายรูป)','PKG Spec (สเปกบรรจุภัณฑ์)','Completed (เสร็จสิ้น)'];
-// "ตรวจ Artwork" subcats share ONE work-order workflow across both R&D and Technical Packaging
-const ARTWORK_STAGES = ['เปิดงาน','ติดตาม','กำลังดำเนินการ','เสร็จสิ้น'];
-const ARTWORK_SUBCATS = ['ตรวจ Artwork Box (กล่อง)','ตรวจ Artwork PKG (บรรจุภัณฑ์)','ตรวจ Artwork Sticker (สติกเกอร์)'];
-const RD_REVISIONS = ['1st Revision (แก้ครั้งที่ 1)','2nd Revision (แก้ครั้งที่ 2)','3rd Revision (แก้ครั้งที่ 3)','4th Revision (แก้ครั้งที่ 4)','5th Revision (แก้ครั้งที่ 5)','6th Revision (แก้ครั้งที่ 6)','7th Revision (แก้ครั้งที่ 7)','8th Revision (แก้ครั้งที่ 8)','9th Revision (แก้ครั้งที่ 9)','10th Revision (แก้ครั้งที่ 10)'];
-const PACKAGING_SUBCATS = ARTWORK_SUBCATS.concat(['Primary Packaging (บรรจุภัณฑ์หลัก)','Box (กล่อง)','Label (ฉลาก)','Sticker (สติกเกอร์)','Insert (ใบแทรก)','Shipper (กล่องขนส่ง)','Other Packaging (บรรจุภัณฑ์อื่นๆ)']);
-const RD_SUBCATS = ARTWORK_SUBCATS.concat(RD_REVISIONS);
-function isArtworkSubcat(sc){ return /^\s*ตรวจ\s*Artwork/i.test(sc||''); }
-// Stages depend on BOTH track and subcategory. An "ตรวจ Artwork …" subcat gets the shared
-// artwork-check workflow no matter which department is doing it.
-function stagesFor(track, subcat){
-  if(isArtworkSubcat(subcat)) return ARTWORK_STAGES;
-  if(track==='R&D') return FORMULATION_STAGES;
-  if(track==='Technical Packaging') return PACKAGING_STAGES;
-  return [];
-}
+// รายชื่อแผนก (Track) ที่โชว์ใน dropdown — เรียงตามลำดับการทำงาน
+const UPDATE_TRACKS = ['R&D','Purchase','Technical Packaging','Graphic (กราฟฟิก)','Data','Supply Chain','Branding','Sales & Marketing','NPD','Warehouse','Accounting','Cosmania OEM'];
+
+/* ===== Stage sets (ขั้น/สถานะ) — ใช้ร่วมกันหลายแผนก ===== */
+const STAGE_OPEN='เปิดใบงาน', STAGE_WIP='กำลังดำเนินการ', STAGE_DONE='เรียบร้อย';
+const S_BASIC = [STAGE_OPEN, STAGE_WIP, STAGE_DONE];                       // R&D / Graphic / Data / Branding / NPD
+const S_PKG   = [STAGE_OPEN, 'แจ้งดำเนินการ', STAGE_WIP, STAGE_DONE];       // Technical Packaging
+const S_PURCH = [STAGE_OPEN, 'กำลังสั่งซื้อ', 'ชำระเงินแล้ว', 'ได้ของเรียบร้อย']; // Purchase
+const S_SUPPLY= ['รับทราบ', STAGE_WIP, 'รอการอนุมัติ', STAGE_DONE];          // Supply Chain
+const S_MKT   = [STAGE_WIP, STAGE_DONE];                                    // Sales & Marketing
+
+/* ===== SubCategory sets (หัวข้อย่อย) per department ===== */
+// R&D: ขั้นตอนสูตร (ย้ายมาจาก Stage เดิม) + ตรวจ Artwork (แต่ละแผนกตรวจเอง) + Revision 3 ครั้ง (+พิมพ์เอง)
+const RD_STEPS = ['Concept Approved (อนุมัติคอนเซ็ปต์)','Formulation Development (พัฒนาสูตร)','Sample Preparation (เตรียมตัวอย่าง)','Sample Submitted (ส่งตัวอย่าง)','Sample Under Review (อยู่ระหว่างรีวิว)','Reformulation Required (ต้องปรับสูตร)','Reformulation in Progress (กำลังปรับสูตร)','Formulation Approved (อนุมัติสูตร)','Quotation in Progress (กำลังทำใบเสนอราคา)','Quotation Approved (อนุมัติราคา)','FDA Registration in Progress (กำลังจด อย.)','FDA Registration Completed (จด อย. เสร็จ)'];
+const ARTWORK_SUBCATS = ['ตรวจ Artwork Box (ตรวจอาร์ตเวิร์กกล่อง)','ตรวจ Artwork PKG (ตรวจอาร์ตเวิร์กบรรจุภัณฑ์)','ตรวจ Artwork Sticker (ตรวจอาร์ตเวิร์กสติกเกอร์)'];
+const RD_REVISIONS = ['1st Revision (แก้ครั้งที่ 1)','2nd Revision (แก้ครั้งที่ 2)','3rd Revision (แก้ครั้งที่ 3)'];
+const RD_SUBCATS = RD_STEPS.concat(ARTWORK_SUBCATS, RD_REVISIONS);
+// Technical Packaging: ย้าย Stage เดิมมาเป็นหัวข้อย่อย (สลับ BM/จัดหา, เพิ่มขอราคา ก่อนยืนยันราคา,
+// เพิ่ม Decoration/Function Test ก่อนอนุมัติ PPS, ลบ Design Approved/Final AW/Completed)
+const PKG_SUBCATS = ['Sourcing (จัดหา)','BM Selection (เลือกแบบ/วัสดุ)','Sup. Sample (ตัวอย่างซัพพลายเออร์)','Sample Received (รับตัวอย่างแล้ว)','Artwork Design (ออกแบบอาร์ตเวิร์ก)','Request Quote (ขอราคา)','Price Confirm (ยืนยันราคา)','PPS Sample (ตัวอย่างก่อนผลิต)','Online Proof (พรูฟออนไลน์)','On-site Proof (พรูฟหน้างาน)','Decoration Test (ทดสอบงานพิมพ์/ตกแต่ง)','Function Test (ทดสอบการใช้งาน)','PPS Approved (อนุมัติ PPS)','Mass Production (ผลิตจำนวนมาก)','Delivery Confirm (ยืนยันการส่ง)','Photo Sample (ตัวอย่างถ่ายรูป)','PKG Spec (สเปกบรรจุภัณฑ์)'];
+const PURCHASE_SUBCATS = ['สั่งซื้อสินค้าเพื่องานวิจัย (Purchase for R&D)','สั่งซื้อ Box (สั่งซื้อกล่อง)','สั่งซื้อ Packaging (สั่งซื้อบรรจุภัณฑ์)'];
+const GRAPHIC_SUBCATS = ['ออกแบบ AW (Artwork Design)','1st Draft (ร่างที่ 1)','2nd Draft (ร่างที่ 2)','3rd Draft (ร่างที่ 3)','Final AW (อาร์ตเวิร์กสุดท้าย)','Design Approved / Branding (อนุมัติดีไซน์)','ส่งมอบไฟล์ Ai (ส่งไฟล์ Ai)'];
+const SUPPLY_SUBCATS = ['ส่งมอบต้นทุนสินค้า (ส่งต้นทุน)','อัปเดตต้นทุนสินค้า (อัปเดตต้นทุน)','ส่งมอบรายละเอียดการผลิตสินค้า (ส่งรายละเอียดการผลิต)'];
+const DATA_SUBCATS = ['แจ้งสร้าง NEW SKU','แจ้งเปลี่ยน Barcode','แจ้งเปลี่ยนราคา','แจ้งแก้ไขรายละเอียดสินค้า'];
+const BRANDING_SUBCATS = ['สั่งทำ Display Tester','สั่งทำ Display POSM','ตรวจสอบ (Review)'];
+const MKT_SUBCATS = ['ส่งมอบข้อมูล Pay Back (ส่งข้อมูล Pay Back)','Pay Back Commitment Approved (อนุมัติ Commitment)','ส่งมอบข้อมูลสินค้า (7 วันก่อน Training)','Product Training (เทรนสินค้า)'];
+const NPD_SUBCATS = ['นำเสนอ Concept (เสนอคอนเซ็ปต์)','จัดทำ Cost (ทำต้นทุน)','คำนวน Pay Back (คำนวณ Pay Back)'];
+
+// ตารางแผนก → { subcats, stages } (key = ผลลัพธ์ของ normalizeTrack)
+const TRACK_CONFIG = {
+  rd:            {subcats:RD_SUBCATS,       stages:S_BASIC},
+  purchase:      {subcats:PURCHASE_SUBCATS, stages:S_PURCH},
+  pkg:           {subcats:PKG_SUBCATS,      stages:S_PKG},
+  graphic:       {subcats:GRAPHIC_SUBCATS,  stages:S_BASIC},
+  data:          {subcats:DATA_SUBCATS,     stages:S_BASIC},
+  'supply chain':{subcats:SUPPLY_SUBCATS,   stages:S_SUPPLY},
+  branding:      {subcats:BRANDING_SUBCATS, stages:S_BASIC},
+  marketing:     {subcats:MKT_SUBCATS,      stages:S_MKT},
+  npd:           {subcats:NPD_SUBCATS,      stages:S_BASIC},
+  warehouse:     {subcats:[],               stages:S_BASIC},
+  accounting:    {subcats:[],               stages:S_BASIC},
+  'cosmania oem':{subcats:[],               stages:S_BASIC}
+};
+function trackCfg(trackLabel){ return TRACK_CONFIG[normalizeTrack(trackLabel)] || null; }
+// Stage ขึ้นกับ "แผนก" อย่างเดียว (เลิกใช้ workflow พิเศษของ ตรวจ Artwork แล้ว)
+function stagesFor(track, subcat){ const c=trackCfg(track); return c?c.stages:[]; }
 function stagesForTrack(t){ return stagesFor(t, ''); }
-function subcatsForTrack(t){ return t==='R&D'?RD_SUBCATS : t==='Technical Packaging'?PACKAGING_SUBCATS : []; }
+function subcatsForTrack(t){ const c=trackCfg(t); return c?c.subcats:[]; }
+
+/* ===== Auto Next Due — คำนวณวันครบกำหนดถัดไปให้อัตโนมัติจาก Stage =====
+   Purchase (เฉพาะ สั่งซื้อ Box / สั่งซื้อ Packaging): เปิดใบงาน → +1 วัน, กำลังสั่งซื้อ → +4 วัน */
+function autoNextDueDays(trackLabel, subcat, stage){
+  const k = normalizeTrack(trackLabel);
+  if(k==='purchase' && /(box|packaging)/i.test(subcat||'')){
+    if(stage===STAGE_OPEN) return 1;
+    if(stage==='กำลังสั่งซื้อ') return 4;
+  }
+  return null;
+}
+function addDaysIso(iso, n){ const d=new Date((iso||todayStr())+'T00:00:00'); if(isNaN(d)) return ''; d.setDate(d.getDate()+n); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function maybeAutoNextDue(){
+  const g = id => String((document.getElementById('ue-'+id)||{}).value||'').trim();
+  const days = autoNextDueDays(g('Track'), g('SubCategory'), g('Stage'));
+  const nd = document.getElementById('ue-NextDue');
+  const hint = document.getElementById('ue-nextdue-hint');
+  if(nd && days!=null){
+    nd.value = addDaysIso(g('Date'), days);
+    if(hint) hint.textContent = `⚡ ตั้งอัตโนมัติ +${days} วันจากวันที่ (Stage: ${g('Stage')}) — แก้ไขเองได้`;
+  } else if(hint){ hint.textContent=''; }
+}
 function ueSelectOrText(id, label, list, cur, ph, onChange){
   const oc = onChange ? ` onchange="${onChange}"` : '';
   if(list.length) return `<label>${label}</label><select id="${id}"${oc}><option value="">— เลือก —</option>${list.map(x=>`<option${x===cur?' selected':''}>${esc(x)}</option>`).join('')}</select>`;
@@ -6589,21 +6680,35 @@ function backToSubcatList(){
 function updateSubStageFields(){
   const t=(document.getElementById('ue-Track')||{}).value||'';
   const sc=document.getElementById('ue-subcat-cell'); if(sc) sc.innerHTML=subcatCellHtml(t,'');
-  const st=document.getElementById('ue-stage-cell'); if(st) st.innerHTML=ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesFor(t,''),'','เช่น กำลังทำ, เสร็จ');
+  const st=document.getElementById('ue-stage-cell'); if(st) st.innerHTML=ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesFor(t,''),'','เช่น กำลังทำ, เสร็จ','maybeAutoNextDue()');
+  maybeAutoNextDue();
 }
-// The Stage options depend on the chosen SubCategory (e.g. R&D "ตรวจ Artwork …" → work-order statuses)
+// Stage ขึ้นกับแผนก; เปลี่ยน SubCategory/Stage แล้วคำนวณ Auto Next Due ให้ด้วย
 function refreshStageForSubcat(){
   const t=(document.getElementById('ue-Track')||{}).value||'';
   const sub=(document.getElementById('ue-SubCategory')||{}).value||'';
   const cur=(document.getElementById('ue-Stage')||{}).value||'';
   const list=stagesFor(t, sub);
   const keep=list.includes(cur)?cur:'';
-  const st=document.getElementById('ue-stage-cell'); if(st) st.innerHTML=ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',list,keep,'เช่น กำลังทำ, เสร็จ');
+  const st=document.getElementById('ue-stage-cell'); if(st) st.innerHTML=ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',list,keep,'เช่น กำลังทำ, เสร็จ','maybeAutoNextDue()');
+  maybeAutoNextDue();
 }
 let ueEditId = null;
 /* ===== Upload files (images / PDF / Doc / Excel …) straight to Google Drive from the web.
    They land in this parent folder, inside a per-product subfolder (created if missing). ===== */
 const UPLOAD_PARENT_FOLDER_ID = '1oaRi7Bsu7G3FPUvl9rSN89L_q1-QW0Gb';
+// แบรนด์ Glimmer Sisters เก็บไฟล์แยกในโฟลเดอร์ Drive ของตัวเอง (โฟลเดอร์ต่อสินค้าจะถูกสร้างในนี้)
+const GLIMMER_PARENT_FOLDER_ID = '1YhtT9Ji0wMz67qElBdn9htgCPRJn8sSj';
+function isGlimmerBrand(raw){ return String(raw||'').toLowerCase().includes('glimmer'); }
+function uploadParentForBrand(raw){ return isGlimmerBrand(raw) ? GLIMMER_PARENT_FOLDER_ID : UPLOAD_PARENT_FOLDER_ID; }
+function brandOfSku(sku){
+  const key=String(sku||'').trim(); if(!key) return '';
+  const p=(typeof PRODUCTS!=='undefined'?PRODUCTS:[]).find(x=>(x.sku||'').trim()===key);
+  if(p) return p.brand||'';
+  const r=(typeof SHEET_ROWS!=='undefined'?SHEET_ROWS:[]).find(x=>(x.sku||'').trim()===key);
+  return r ? (r.brand||'') : '';
+}
+function uploadParentForSku(sku){ return uploadParentForBrand(brandOfSku(sku)); }
 function fileToDataUrl(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); }); }
 function ueAppendImage(link){
   const el=document.getElementById('ue-Images'); if(!el) return;
@@ -6619,8 +6724,8 @@ function uploadFolderNameForSku(sku){
 // Remember which Drive folder a product's files go into, so we upload straight
 // into it by id instead of asking the server to find-or-create every time
 // (that repeated find-or-create was what spawned duplicate folders).
-function getUploadFolderId(sku){ try{ const n=uploadFolderNameForSku(sku); return n ? (localStorage.getItem('npd_upfolder_'+n)||'') : ''; }catch(e){ return ''; } }
-function setUploadFolderId(sku, id){ try{ const n=uploadFolderNameForSku(sku); if(n&&id) localStorage.setItem('npd_upfolder_'+n, id); }catch(e){} }
+function getUploadFolderId(sku, parentId){ try{ const n=uploadFolderNameForSku(sku); return n ? (localStorage.getItem('npd_upfolder_'+(parentId||'')+'_'+n)||'') : ''; }catch(e){ return ''; } }
+function setUploadFolderId(sku, parentId, id){ try{ const n=uploadFolderNameForSku(sku); if(n&&id) localStorage.setItem('npd_upfolder_'+(parentId||'')+'_'+n, id); }catch(e){} }
 async function uploadUpdateFiles(inputEl){
   const files = inputEl.files ? Array.prototype.slice.call(inputEl.files) : [];
   if(!files.length) return;
@@ -6628,7 +6733,8 @@ async function uploadUpdateFiles(inputEl){
   if(!cfg.url){ toast('ยังไม่ได้ตั้ง Sheet Sync — อัปโหลดไม่ได้','err'); return; }
   const sku=(document.getElementById('ue-SKU')||{}).value||'';
   const folder=uploadFolderNameForSku(sku);
-  let folderId=getUploadFolderId(sku);   // reuse the same folder across files & sessions
+  const parentId=uploadParentForSku(sku);   // Glimmer Sisters → its own Drive folder, else default
+  let folderId=getUploadFolderId(sku, parentId);   // reuse the same folder across files & sessions
   const st=document.getElementById('ue-upload-status');
   let done=0, fail=0;
   for(let i=0;i<files.length;i++){
@@ -6637,17 +6743,19 @@ async function uploadUpdateFiles(inputEl){
       const dataUrl=await fileToDataUrl(files[i]);
       // once we know the folder's id, target it directly (no sub → no find-or-create);
       // until then, ask the server to resolve it by parent + name (once).
-      const loc = folderId ? {parentId:folderId} : {parentId:UPLOAD_PARENT_FOLDER_ID, folder};
+      const loc = folderId ? {parentId:folderId} : {parentId, folder};
       const r=await postReadable(Object.assign({action:'uploadImage', dataUrl, name:files[i].name}, loc));
       if(r && r.ok && r.url){
         ueAppendImage(r.url); done++;
-        if(r.folderId && !folderId){ folderId=r.folderId; setUploadFolderId(sku, folderId); }
+        if(r.folderId && !folderId){ folderId=r.folderId; setUploadFolderId(sku, parentId, folderId); }
       } else fail++;
     }catch(e){ fail++; }
   }
   if(st) st.textContent=`✅ อัปเสร็จ ${done} ไฟล์${fail?` · ⚠️ พลาด ${fail}`:''}${folder?` · โฟลเดอร์: ${folder}`:''}`;
   inputEl.value='';
 }
+// รายชื่อ PIC (ผู้รับผิดชอบงาน) — เลือกจาก dropdown หรือพิมพ์เองได้ (อื่นๆโปรดระบุ)
+const PIC_NAMES = ['มณ','นิ่ม','มีน','โดนัท','เดียร์','คูณ','ลิง','มิ้นท์','เหมียวGP','ไอซ์SC','ไอซ์GP','ข้าวหอม','พลอย','แพรว','คุณอ้น','คุณจ๋า','โบนัส','พีท','คุณยา','คุณกอล์ฟ','คุณเบส','ไนท์','ออม','แนน','สมายด์','เก็จ','โย','คิ้วท์'];
 function renderUpdateForm(){
   const pf = uePrefill || {};
   const pfSku = pf.sku || pf.SKU || '';
@@ -6658,18 +6766,20 @@ function renderUpdateForm(){
   ).join('');
   const trackOpts = UPDATE_TRACKS.map(x=>`<option value="${esc(x)}"${x===initTrack?' selected':''}>${esc(x)}</option>`).join('');
   const byOpts = ['<option value="">— ใครอัปเดต —</option>'].concat(TEAM_NAMES.map(x=>`<option value="${esc(x)}"${x===(pf.UpdatedBy||'')?' selected':''}>${esc(x)}</option>`)).join('');
+  const picList = PIC_NAMES.map(n=>`<option value="${esc(n)}"></option>`).join('');
   const riskOpts = ['','Low','Medium','High'].map(r=>`<option value="${r}"${r===(pf.Risk||'')?' selected':''}>${r||'— ไม่ระบุ —'}</option>`).join('');
   document.getElementById('ue-form').innerHTML = `
   <div class="pe-grid">
-    <div class="pe-field"><label>วันที่ *</label><input type="date" id="ue-Date" value="${esc(pf.Date||todayStr())}"></div>
+    <div class="pe-field"><label>วันที่ *</label><input type="date" id="ue-Date" value="${esc(pf.Date||todayStr())}" onchange="maybeAutoNextDue()"></div>
     <div class="pe-field"><label>สินค้า (SKU) *</label><select id="ue-SKU" onchange="refreshUpdateScope()">${skuOpts}</select></div>
     <div class="pe-field" id="ue-scope-cell">${updateScopeCellHtml(pfSku, pf.scope)}</div>
     <div class="pe-field"><label>สาย/แผนก (Track)</label><select id="ue-Track" onchange="updateSubStageFields()">${trackOpts}</select></div>
     <div class="pe-field" id="ue-subcat-cell">${subcatCellHtml(initTrack, pf.SubCategory||'')}</div>
-    <div class="pe-field" id="ue-stage-cell">${ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesFor(initTrack, pf.SubCategory||''),pf.Stage||'','เช่น กำลังทำ, เสร็จ')}</div>
+    <div class="pe-field" id="ue-stage-cell">${ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesFor(initTrack, pf.SubCategory||''),pf.Stage||'','เช่น กำลังทำ, เสร็จ','maybeAutoNextDue()')}</div>
+    <div class="pe-field"><label>PIC (ผู้รับผิดชอบ)</label><input type="text" id="ue-PIC" list="ue-pic-list" value="${esc(pf.PIC||'')}" placeholder="เลือกหรือพิมพ์ชื่อ (อื่นๆพิมพ์เองได้)"><datalist id="ue-pic-list">${picList}</datalist></div>
     <div class="pe-field"><label>ผู้อัปเดต (UpdatedBy)</label><select id="ue-UpdatedBy">${byOpts}</select></div>
     <div class="pe-field"><label>Risk</label><select id="ue-Risk">${riskOpts}</select></div>
-    <div class="pe-field"><label>กำหนดถัดไป (Next Due) — วันที่</label><input type="date" id="ue-NextDue" value="${esc(normalizeDueDate(pf.NextDue))}"><div style="font-size:11px; color:var(--muted); margin-top:3px;">เลือกเฉพาะ "วันที่" ครบกำหนด — ส่วนว่าทำอะไร ให้พิมพ์ในช่อง รายละเอียด (Detail)</div></div>
+    <div class="pe-field"><label>กำหนดถัดไป (Next Due) — วันที่</label><input type="date" id="ue-NextDue" value="${esc(normalizeDueDate(pf.NextDue))}"><div id="ue-nextdue-hint" style="font-size:11px; color:#B26A00; font-weight:600; margin-top:3px;"></div><div style="font-size:11px; color:var(--muted); margin-top:3px;">เลือกเฉพาะ "วันที่" ครบกำหนด — ส่วนว่าทำอะไร ให้พิมพ์ในช่อง รายละเอียด (Detail)</div></div>
     <div class="pe-field full"><label>รายละเอียด (Detail) *</label><textarea id="ue-Detail" placeholder="อัปเดตความคืบหน้า…">${esc(pf.Detail||'')}</textarea></div>
     <div class="pe-field full"><label>หมายเหตุ (Note)</label><input type="text" id="ue-Note" value="${esc(pf.Note||'')}"></div>
     <div class="pe-field full"><label>ไฟล์แนบ / รูป (Images) — อัปโหลดในเว็บ หรือวางลิงก์เอง (คั่นหลายอันด้วย ; )</label>
@@ -6713,7 +6823,7 @@ function collectUpdateForm(){
     Date:g('Date'), SKU:sku, ProductName: (nameForSku(selSku)||nameForSku(sku)||''),
     Track:g('Track'), SubCategory:g('SubCategory'), Stage:g('Stage'),
     Detail:g('Detail'), Note:g('Note'), Images:g('Images'),
-    UpdatedBy:g('UpdatedBy'), Risk:g('Risk'),
+    UpdatedBy:g('UpdatedBy'), PIC:g('PIC'), Risk:g('Risk'),
     // Sheet column is literally "Next Due" (with a space) — send that key so it
     // actually writes to the column; keep "NextDue" too for tolerant local reads.
     NextDue:nextDue, 'Next Due':nextDue
@@ -6756,7 +6866,7 @@ function editUpdateEntry(id){
   // a group-scoped entry is stored under the group code — show a member SKU + scope=group so it edits cleanly
   const grpMode = isGroupCode(e.sku);
   const dispSku = grpMode ? (groupMembers(e.sku)[0] || e.sku) : e.sku;
-  openUpdateEditor({ sku:dispSku, scope: grpMode?'group':'sku', trackLabel:e.trackRaw||'', SubCategory:e.subCategory, Stage:e.stage, Date:e.date, UpdatedBy:e.updatedBy, Risk:e.risk, NextDue:e.nextDue, Detail:e.detail, Note:e.note, Images:e.imagesRaw||'' }, id);
+  openUpdateEditor({ sku:dispSku, scope: grpMode?'group':'sku', trackLabel:e.trackRaw||'', SubCategory:e.subCategory, Stage:e.stage, Date:e.date, UpdatedBy:e.updatedBy, PIC:e.pic, Risk:e.risk, NextDue:e.nextDue, Detail:e.detail, Note:e.note, Images:e.imagesRaw||'' }, id);
 }
 function deleteUpdateEntry(id){
   if(!confirm('ลบบันทึกนี้ออกจาก Updates Log?')) return;
