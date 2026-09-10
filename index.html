@@ -28,7 +28,18 @@
   header{
     background:linear-gradient(120deg,var(--blue) 0%, var(--blue-deep) 100%);
     color:#fff; padding:14px 28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    position:sticky; top:0; z-index:40;   /* เมนูบนติดขอบ เลื่อนตามตลอด */
   }
+  /* ปุ่มกลับขึ้นบน (ลอยมุมขวาล่าง โผล่เมื่อเลื่อนลงไกล) */
+  #back-to-top{
+    position:fixed; right:22px; bottom:22px; width:46px; height:46px; border-radius:50%;
+    border:none; background:var(--blue-deep); color:#fff; font-size:22px; line-height:1; cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,.28); z-index:45; display:none; align-items:center; justify-content:center;
+    transition:opacity .2s, transform .15s, background .15s;
+  }
+  #back-to-top:hover{ background:var(--blue-ink); transform:translateY(-2px); }
+  #back-to-top.show{ display:flex; }
+  @media(max-width:640px){ #back-to-top{ right:16px; bottom:16px; width:42px; height:42px; font-size:20px; } }
   .brand{font-weight:700; font-size:18px; display:flex; align-items:center; gap:10px;}
   .brand img{height:34px; width:34px; border-radius:8px; background:#fff; padding:3px;}
   .brand .name{display:flex; flex-direction:column; line-height:1.15;}
@@ -620,6 +631,7 @@
 
 <div id="sync-health-banner" style="display:none; background:#FDE2E2; color:#9B1C1C; border-bottom:2px solid #E88; padding:10px 16px; font-size:13px; font-weight:600; text-align:center;"></div>
 <div id="notice-container"></div>
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="กลับขึ้นบนสุด" aria-label="กลับขึ้นบนสุด">↑</button>
 
 <main>
 
@@ -2462,8 +2474,15 @@ function setAppFavicon(){
     });
   }catch(e){}
 }
+// โชว์ปุ่ม "กลับขึ้นบน" เมื่อเลื่อนลงเกิน 400px
+function setupBackToTop(){
+  const upd=()=>{ const b=document.getElementById('back-to-top'); if(b) b.classList.toggle('show', (window.scrollY||document.documentElement.scrollTop||0)>400); };
+  window.addEventListener('scroll', upd, {passive:true});
+  upd();
+}
 async function init(){
   setAppFavicon();
+  setupBackToTop();
   document.getElementById('updated-badge').textContent = 'Loading data…';
   await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet(), loadNPRSummaryFromSheet(), loadEventsFromSheet(), loadBannersFromSheet()]);
   renderNotices();
@@ -2887,7 +2906,7 @@ async function syncEventToSheet(action, ev){
 /* ===================== Banner Carousel — สไลด์รูปสินค้าใหม่ให้ทีมอิน (แยกแบรนด์) ===================== */
 const BANNERS_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=Banners";
 const BANNERS_LOCAL_KEY = 'npd_banners_v1';
-const BANNER_HEADERS = ['id','brand','image','title','caption','link','sort','updatedBy','updatedAt'];
+const BANNER_HEADERS = ['id','brand','image','title','caption','link','pos','sort','updatedBy','updatedAt'];
 let SHEET_BANNERS_RAW = [], ALL_BANNERS = [];
 function getBannersLocal(){ try{ return JSON.parse(localStorage.getItem(BANNERS_LOCAL_KEY))||[]; }catch(e){ return []; } }
 function saveBannersLocal(a){ try{ localStorage.setItem(BANNERS_LOCAL_KEY, JSON.stringify(a)); }catch(e){} }
@@ -2899,6 +2918,7 @@ function normBannerRow(r){
     title:(r.title||r.Title||'').trim(),
     caption:(r.caption||r.Caption||'').trim(),
     link:(r.link||r.Link||'').trim(),
+    pos:((r.pos||r.Pos||'').trim()) || '50% 50%',   // ตำแหน่งภาพในกรอบ (object-position)
     sort: parseInt(r.sort||r.Sort||'0',10)||0,
     updatedBy:(r.updatedBy||r.UpdatedBy||'').trim()
   };
@@ -2949,7 +2969,7 @@ function renderBanner(){
     const editBtns = editable ? `<div class="banner-edit"><button onclick="event.stopPropagation(); openBannerEditor('${attrJs(b.id)}')" title="แก้ไข">✏️</button></div>` : '';
     const click = b.link ? `onclick="window.open('${attrJs(b.link)}','_blank','noopener')" style="cursor:pointer;"` : '';
     return `<div class="banner-slide${idx===i?' active':''}" ${click}>
-      <img src="${esc(src)}" alt="${esc(b.title||'banner')}" onerror="this.closest('.banner-slide').classList.add('banner-broken')">
+      <img src="${esc(src)}" alt="${esc(b.title||'banner')}" style="object-position:${esc(b.pos||'50% 50%')};" onerror="this.closest('.banner-slide').classList.add('banner-broken')">
       ${brandTag}${cap}${editBtns}
     </div>`;
   }).join('');
@@ -2977,17 +2997,28 @@ function openBannerEditor(editId){
   const b = editId ? (ALL_BANNERS.find(x=>x.id===editId)||{}) : {};
   const brandOpts = [['','ทุกแบรนด์ (โชว์ทุกมุมมอง)'],['godmami','Godmami'],['glimmer','Glimmer Sisters'],['mamilabo','Mamilabo']]
     .map(([v,l])=>`<option value="${v}"${(b.brand||'')===v?' selected':''}>${esc(l)}</option>`).join('');
+  const pm = (b.pos||'50% 50%').replace(/%/g,'').trim().split(/\s+/);
+  const px = parseInt(pm[0],10); const py = parseInt(pm[1],10);
+  const posX = isNaN(px)?50:px, posY = isNaN(py)?50:py;
   document.getElementById('bn-title-h').textContent = editId ? '✏️ แก้ไขแบนเนอร์' : '🖼️ เพิ่มแบนเนอร์สินค้าใหม่';
   document.getElementById('bn-form').innerHTML = `
     <div class="pe-grid">
-      <div class="pe-field full"><label>รูปแบนเนอร์ * (แนวนอนสวยสุด ~1000×300)</label>
-        <input type="text" id="bn-image" value="${esc(b.image||'')}" placeholder="วางลิงก์ Google Drive หรือกด 📎 อัปโหลด" oninput="bnPreview()">
-        <div style="display:flex; align-items:center; gap:10px; margin-top:6px; flex-wrap:wrap;">
-          <label class="btn-edit primary" style="cursor:pointer; margin:0; font-size:12.5px; padding:6px 12px;">📎 อัปโหลดรูปจากเครื่อง
-            <input type="file" accept="image/*" style="display:none;" onchange="uploadBannerImage(this)"></label>
+      <div class="pe-field full"><label>รูปแบนเนอร์ *</label>
+        <div style="display:flex; align-items:center; gap:10px; margin:2px 0 6px; flex-wrap:wrap;">
+          <label class="btn-edit primary" style="cursor:pointer; margin:0; font-size:12.5px; padding:6px 12px;">📎 อัปโหลดรูป (เลือกได้หลายรูป)
+            <input type="file" accept="image/*" multiple style="display:none;" onchange="uploadBannerImage(this)"></label>
           <span id="bn-image-status" style="font-size:12px; color:var(--ink-soft);"></span>
         </div>
-        <div id="bn-image-preview" style="margin-top:8px;"></div>
+        <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">เลือก <b>1 รูป</b> = แบนเนอร์เดียว (ใส่หัวข้อ/ปรับตำแหน่งได้) · เลือก <b>หลายรูป</b> = เพิ่มทีเดียวหลายสไลด์ (สไลด์อัตโนมัติทุก 5 วิ)</div>
+        <input type="text" id="bn-image" value="${esc(b.image||'')}" placeholder="หรือวางลิงก์ Google Drive เอง" oninput="bnPreview()">
+        <div id="bn-crop-wrap" style="aspect-ratio:1000/300; width:100%; max-width:560px; border-radius:12px; overflow:hidden; border:1px solid var(--line); background:var(--bg); margin-top:8px; display:none;">
+          <img id="bn-crop-img" alt="preview" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; display:block;">
+        </div>
+        <div id="bn-pos-controls" style="display:none; margin-top:8px; max-width:560px;">
+          <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:4px;">📐 ปรับตำแหน่งภาพในกรอบแบนเนอร์ (ลากสไลเดอร์)</div>
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;"><span style="font-size:11.5px; width:78px;">แนวนอน</span><input type="range" id="bn-posx" min="0" max="100" value="${posX}" oninput="bnPosUpdate()" style="flex:1;"></div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="font-size:11.5px; width:78px;">แนวตั้ง</span><input type="range" id="bn-posy" min="0" max="100" value="${posY}" oninput="bnPosUpdate()" style="flex:1;"></div>
+        </div>
       </div>
       <div class="pe-field"><label>แบรนด์ (Brand)</label><select id="bn-brand">${brandOpts}</select></div>
       <div class="pe-field"><label>ลำดับ (Sort) — น้อยมาก่อน</label><input type="number" id="bn-sort" value="${esc(String(b.sort||0))}"></div>
@@ -3000,17 +3031,52 @@ function openBannerEditor(editId){
   document.getElementById('bn-overlay').classList.add('open');
 }
 function closeBannerEditor(){ document.getElementById('bn-overlay').classList.remove('open'); bnEditId=null; }
-function bnPreview(){ const box=document.getElementById('bn-image-preview'); if(!box) return; const link=(document.getElementById('bn-image')||{}).value||''; const src=resolveDriveLink(link)||(link.startsWith('http')?link:''); box.innerHTML = src?`<img src="${esc(src)}" style="max-width:100%; max-height:150px; border-radius:10px; border:1px solid var(--line);">`:''; }
+// อัปเดต object-position ของรูปพรีวิวสดตามสไลเดอร์
+function bnPosUpdate(){ const x=(document.getElementById('bn-posx')||{}).value||50, y=(document.getElementById('bn-posy')||{}).value||50; const img=document.getElementById('bn-crop-img'); if(img) img.style.objectPosition = x+'% '+y+'%'; }
+function bnPreview(){
+  const link=(document.getElementById('bn-image')||{}).value||'';
+  const src=resolveDriveLink(link)||(link.startsWith('http')?link:'');
+  const wrap=document.getElementById('bn-crop-wrap'), ctrl=document.getElementById('bn-pos-controls'), img=document.getElementById('bn-crop-img');
+  if(src && img){ img.src=src; if(wrap) wrap.style.display=''; if(ctrl) ctrl.style.display=''; bnPosUpdate(); }
+  else { if(wrap) wrap.style.display='none'; if(ctrl) ctrl.style.display='none'; }
+}
 async function uploadBannerImage(inputEl){
-  const file=inputEl.files&&inputEl.files[0]; if(!file) return;
+  const files = inputEl.files ? Array.prototype.slice.call(inputEl.files) : [];
+  if(!files.length) return;
   const cfg=getWriteConfig(); if(!cfg.url){ toast('ยังไม่ได้ตั้ง Sheet Sync — อัปโหลดไม่ได้','err'); return; }
-  const st=document.getElementById('bn-image-status'); if(st) st.textContent='⏳ กำลังอัปโหลด…';
-  try{
-    const dataUrl=await fileToUploadDataUrl(file);
-    const r=await postReadable({action:'uploadImage', dataUrl, name:file.name, parentId:UPLOAD_PARENT_FOLDER_ID, folder:'Banners'});
-    if(r&&r.ok&&r.url){ const inp=document.getElementById('bn-image'); if(inp) inp.value=r.url; bnPreview(); if(st) st.textContent='✅ อัปโหลดแล้ว — กดบันทึกได้เลย'; }
-    else { if(st) st.textContent='❌ อัปโหลดไม่สำเร็จ'+(r&&r.error?': '+r.error:'')+' — ลองใหม่'; }
-  }catch(e){ if(st) st.textContent='❌ อัปโหลดไม่สำเร็จ: '+e.message; }
+  const st=document.getElementById('bn-image-status');
+  const upOne = async (file)=>{ const dataUrl=await fileToUploadDataUrl(file); return postReadable({action:'uploadImage', dataUrl, name:file.name, parentId:UPLOAD_PARENT_FOLDER_ID, folder:'Banners'}); };
+
+  // 1 รูป → เติมในฟอร์ม (ตั้งหัวข้อ/ปรับตำแหน่ง แล้วกดบันทึก)
+  if(files.length===1){
+    if(st) st.textContent='⏳ กำลังอัปโหลด…';
+    try{
+      const r=await upOne(files[0]);
+      if(r&&r.ok&&r.url){ const inp=document.getElementById('bn-image'); if(inp) inp.value=r.url; bnPreview(); if(st) st.textContent='✅ อัปโหลดแล้ว — ปรับตำแหน่ง/ใส่หัวข้อ แล้วกดบันทึก'; }
+      else { if(st) st.textContent='❌ อัปโหลดไม่สำเร็จ'+(r&&r.error?': '+r.error:'')+' — ลองใหม่'; }
+    }catch(e){ if(st) st.textContent='❌ อัปโหลดไม่สำเร็จ: '+e.message; }
+    inputEl.value=''; return;
+  }
+
+  // หลายรูป → สร้างหลายแบนเนอร์รวดเดียว (brand/หัวข้อ/คำโปรย จากฟอร์มร่วมกัน · ตำแหน่งกลาง แก้ทีหลังได้)
+  const g=id=>String((document.getElementById(id)||{}).value||'').trim();
+  const brand=g('bn-brand'), title=g('bn-title'), caption=g('bn-caption'), link=g('bn-link');
+  const baseSort=parseInt(g('bn-sort'),10)||0;
+  const arr=getBannersLocal(); const created=[]; let done=0, fail=0;
+  for(let i=0;i<files.length;i++){
+    if(st) st.textContent=`⏳ กำลังอัป ${i+1}/${files.length}…`;
+    try{
+      const r=await upOne(files[i]);
+      if(r&&r.ok&&r.url){
+        const b={ id:'bn'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+i, brand, image:r.url, title, caption, link, pos:'50% 50%', sort:baseSort+i, updatedBy:'' };
+        arr.push(b); created.push(b); done++;
+      } else fail++;
+    }catch(e){ fail++; }
+  }
+  saveBannersLocal(arr); rebuildBanners(); bannerState.idx=0; renderBanner();
+  created.forEach((b,i)=> setTimeout(()=>syncBannerToSheet(b), i*350));   // ส่งขึ้น Sheet ทีละอันเว้นระยะ
+  if(st) st.textContent = done ? `✅ เพิ่ม ${done} แบนเนอร์${fail?` · ❌ พลาด ${fail}`:''}` : `❌ อัปโหลดไม่สำเร็จ (${fail}) — ลองใหม่`;
+  if(done){ toast(`เพิ่ม ${done} แบนเนอร์แล้ว · สไลด์อัตโนมัติทุก 5 วิ`,'ok'); closeBannerEditor(); }
   inputEl.value='';
 }
 function saveBannerEntry(){
@@ -3020,7 +3086,8 @@ function saveBannerEntry(){
   const st=(document.getElementById('bn-image-status')||{}).textContent||'';
   if(/❌|⏳|กำลังอัป/.test(st) && !confirm('รูปยังอัปไม่สำเร็จ/ไม่เสร็จ — บันทึกต่อไหม?')) return;
   const id=bnEditId || ('bn'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
-  const b={ id, brand:g('bn-brand'), image, title:g('bn-title'), caption:g('bn-caption'), link:g('bn-link'), sort: parseInt(g('bn-sort'),10)||0, updatedBy:'' };
+  const pos = (g('bn-posx')||'50')+'% '+(g('bn-posy')||'50')+'%';
+  const b={ id, brand:g('bn-brand'), image, title:g('bn-title'), caption:g('bn-caption'), link:g('bn-link'), pos, sort: parseInt(g('bn-sort'),10)||0, updatedBy:'' };
   const arr=getBannersLocal(); const li=arr.findIndex(x=>x.id===id); if(li>-1) arr[li]=b; else arr.push(b);
   saveBannersLocal(arr); rebuildBanners(); bannerState.idx=0; renderBanner(); closeBannerEditor();
   syncBannerToSheet(b);
@@ -3041,7 +3108,7 @@ async function syncBannerToSheet(b, action){
   const isDel = action==='delete';
   const payload={ target:'banners', sheetName:'Banners', key:'id', create:BANNER_HEADERS,
     action: isDel?'delete':'upsert', keyValue:b.id,
-    row: isDel?undefined:{ id:b.id, brand:b.brand||'', image:b.image||'', title:b.title||'', caption:b.caption||'', link:b.link||'', sort:String(b.sort||0), updatedBy:b.updatedBy||'', updatedAt: todayStr() } };
+    row: isDel?undefined:{ id:b.id, brand:b.brand||'', image:b.image||'', title:b.title||'', caption:b.caption||'', link:b.link||'', pos:b.pos||'50% 50%', sort:String(b.sort||0), updatedBy:b.updatedBy||'', updatedAt: todayStr() } };
   try{ await postToSheet(payload); }catch(e){}
 }
 
