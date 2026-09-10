@@ -133,6 +133,12 @@
 
   /* Catalog */
   .catalog-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px;}
+  /* หมวดสินค้า (category sections) ในหน้า Product Info */
+  .cat-section{margin-bottom:22px;}
+  .cat-section-head{display:flex; align-items:center; gap:8px; font-family:'Prompt',sans-serif; font-size:15px; font-weight:700; color:var(--ink); margin:4px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line);}
+  .cat-dot{width:12px; height:12px; border-radius:50%; flex:none;}
+  .cat-section-count{font-size:12px; font-weight:600; color:var(--ink-soft); background:var(--bg); border:1px solid var(--line); border-radius:999px; padding:1px 10px;}
+  .coll-badge{display:inline-flex; align-items:center; gap:3px; font-size:10.5px; font-weight:600; color:#8A5A00; background:#FFF3D6; border:1px solid #F1DCA0; border-radius:6px; padding:1px 7px;}
   .catalog-card{background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; display:flex; flex-direction:column;}
   .catalog-card .thumb-lg{width:100%; height:180px; object-fit:cover; background:var(--blue-pale); display:block;}
   .catalog-card .thumb-lg-empty{width:100%; height:180px; background:var(--blue-pale); display:flex; align-items:center; justify-content:center; color:var(--blue-deep); font-family:'Prompt'; font-size:13px;}
@@ -712,8 +718,9 @@
       <button class="btn-edit danger" id="btn-clear-local" onclick="clearLocalEdits()" style="display:none;">🧹 ล้างที่แก้ในเครื่อง</button>
       <button class="btn-edit ghost" id="btn-sync-setup" onclick="openSyncSetup()" style="display:none;">⚙️ ตั้งค่า Sheet Sync</button>
     </div>
-    <div style="margin-bottom:14px;"><input type="text" id="catalog-search" class="catalog-search" oninput="renderCatalog()" placeholder="🔍 ค้นหาสินค้า (ชื่อ / SKU / บาร์โค้ด)"></div>
-    <div class="catalog-grid" id="catalog-grid"></div>
+    <div class="brand-filter-bar" id="catalog-brand-bar"></div>
+    <div style="margin-bottom:14px;"><input type="text" id="catalog-search" class="catalog-search" oninput="renderCatalog()" placeholder="🔍 ค้นหาสินค้า (ชื่อ / SKU / บาร์โค้ด / Collection)"></div>
+    <div id="catalog-grid"></div>
     <div id="catalog-empty" class="empty" style="display:none;">No products yet.</div>
   </div>
 
@@ -1164,7 +1171,7 @@ const PRODUCT_COLUMNS = [
   'platformDone_deadline','platformDone_actual','basketOpen_deadline','basketOpen_actual',
   'launch_deadline','launch_actual','prDate_deadline','prDate_actual',
   'refPhoto_link','productMedia_link','dataReady_link','platformDone_link',
-  'canva','lot','exp','remark','saleHalted','saleHaltDate','saleHaltNote','risk','nextDue','history','image','group'
+  'canva','lot','exp','remark','saleHalted','saleHaltDate','saleHaltNote','risk','nextDue','history','image','group','collection'
 ];
 
 /* Human-friendly milestone groups for the editor (prefix -> Thai label). */
@@ -1301,6 +1308,7 @@ function rowToProduct(row){
   return {
     name: row.name||'', sku: row.sku||'', barcode: row.barcode||'',
     group: (row.group||'').trim(),   // optional explicit product group (Sheet column "group")
+    collection: (row.collection||'').trim(),   // ชื่อ Collection การตลาด (Sheet column "collection")
     brand: normalizeBrand(row.brand),
     type: (row.type||'').trim().toLowerCase(),
     category: (row.category||'').trim().toLowerCase(),
@@ -3068,7 +3076,7 @@ function catalogSingleCard(p, idx){
       <div class="catalog-body">
         <div class="cname">${isNewProduct(p)?'<span class="new-badge">🆕 ใหม่</span> ':''}${esc(p.name)}</div>
         <div class="csku">${esc(p.sku)||'SKU TBC'}${p.barcode?` · ${esc(p.barcode)}`:''}</div>
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${brandBadge(p,20)}${typeBadge(p)}${categoryBadge(p)}</div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${brandBadge(p,20)}${typeBadge(p)}${categoryBadge(p)}${collectionBadge(p.collection)}</div>
         ${(p.lot||p.exp) ? `<div class="csku">${p.lot?`Lot ${esc(p.lot)}`:''}${p.exp?` · EXP ${formatDate(new Date(p.exp+"T00:00:00"))}`:''}</div>` : ''}
         <div class="catalog-actions">
           <button class="btn-sm ghost" onclick="openTimeline(${idx})">Timeline</button>
@@ -3112,7 +3120,7 @@ function catalogGroupCard(members){
       <div class="catalog-body">
         <div class="cname">${groupIsNew(members)?'<span class="new-badge">🆕 ใหม่</span> ':''}${esc(gname)} <span class="cgroup-count">${members.length} SKU</span></div>
         <div class="csku">กลุ่ม ${esc(members[0].key)}</div>
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${brandBadge(rep,20)}${typeBadge(rep)}${categoryBadge(rep)}</div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${brandBadge(rep,20)}${typeBadge(rep)}${categoryBadge(rep)}${collectionBadge((members.map(m=>(m.p.collection||'').trim()).find(Boolean)||''))}</div>
         ${EDIT_MODE ? `<button class="btn-sm primary cgroup-edit" onclick="editGroupShared('${attrJs(members[0].p.sku)}')">✏️ แก้ข้อมูลร่วมทั้งกลุ่ม (${members.length} SKU)</button>` : ''}
         <div class="cshades">${shadeRows}</div>
         ${EDIT_MODE ? `<div class="cgroup-hint">แถว ✏️ = แก้เฉดเดียว · ปุ่มด้านบน = แก้ Timeline/แบรนด์/หมวด ครั้งเดียวลงทุก SKU</div>` : ''}
@@ -3127,34 +3135,84 @@ function editGroupShared(sku){
   const title=document.getElementById('pe-title'); if(title) title.textContent='✏️ แก้ข้อมูลร่วมทั้งกลุ่ม: '+groupDisplayName(productGroupOf(sku));
   const hint=document.getElementById('pe-hint'); if(hint) hint.textContent='กรอก Timeline/แบรนด์/หมวด ครั้งเดียว → กด "บันทึก" จะลงให้ทุก SKU ในกลุ่ม (ชื่อ/บาร์โค้ด/Lot/EXP/รูป ไม่ถูกแตะ)';
 }
+// มุมมองแบรนด์ของหน้า Product Info
+let catalogBrandFilter='all';
+function setCatalogBrandFilter(b){ catalogBrandFilter=b||'all'; renderCatalog(); }
+function renderCatalogBrandBar(brands){
+  const host=document.getElementById('catalog-brand-bar'); if(!host) return;
+  if(!brands.length){ host.innerHTML=''; return; }
+  const btn=(val,label,color)=>`<button class="brand-filter-btn${catalogBrandFilter===val?' active':''}" onclick="setCatalogBrandFilter('${val}')">${color?`<span class="brand-dot" style="background:${color}"></span>`:''}${esc(label)}</button>`;
+  let html=btn('all','ทั้งหมด (รวมทุกแบรนด์)','');
+  brands.forEach(k=> html+=btn(k, brandDisplayLabel(k), BRAND_TINT[k]||'#6B7280'));
+  host.innerHTML=`<div class="brand-filter-bar-inner"><span class="brand-filter-lead">มุมมองแบรนด์:</span>${html}</div>`;
+}
+// วันล่าสุดของสินค้า (launch หรือ arrival) → ใช้เรียง "สินค้าใหม่อยู่บน"
+function productNewestTime(p){ const d=effectiveDate(p,'launch')||effectiveDate(p,'arrival')||''; const t=d?new Date(d+'T00:00:00').getTime():0; return isNaN(t)?0:t; }
+function groupNewestTime(members){ return Math.max(0, ...members.map(m=>productNewestTime(m.p))); }
+function collectionBadge(coll){ return coll ? `<span class="coll-badge" title="Collection: ${esc(coll)}">🎁 ${esc(coll)}</span>` : ''; }
 function renderCatalog(){
   const grid = document.getElementById('catalog-grid');
   if(!PRODUCTS.length){
     grid.innerHTML = '';
     document.getElementById('catalog-empty').style.display = 'block';
+    if(document.getElementById('catalog-brand-bar')) document.getElementById('catalog-brand-bar').innerHTML='';
     return;
   }
   document.getElementById('catalog-empty').style.display = 'none';
   const q = ((document.getElementById('catalog-search')||{}).value||'').trim().toLowerCase();
-  // group products by group key, preserving first-seen order; apply search filter
+
+  // ปุ่มกรองแบรนด์
+  const bOrder=['godmami','glimmer','mamilabo'];
+  const brandsPresent=[...new Set(PRODUCTS.map(p=>p.brand||'other'))]
+    .sort((a,b)=>{ const ia=bOrder.indexOf(a),ib=bOrder.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib) || a.localeCompare(b); });
+  if(catalogBrandFilter!=='all' && !brandsPresent.includes(catalogBrandFilter)) catalogBrandFilter='all';
+  renderCatalogBrandBar(brandsPresent);
+
+  // จับกลุ่มตาม shade-group + กรองแบรนด์/ค้นหา
   const order=[], groups={};
   PRODUCTS.forEach((p,idx)=>{
-    if(q && ![p.name,p.sku,p.barcode].some(v=>String(v||'').toLowerCase().includes(q))) return;
+    if(catalogBrandFilter!=='all' && (p.brand||'other')!==catalogBrandFilter) return;
+    if(q && ![p.name,p.sku,p.barcode,p.collection].some(v=>String(v||'').toLowerCase().includes(q))) return;
     const key = productGroupOf(p.sku);
     if(!groups[key]){ groups[key]=[]; order.push(key); }
     groups[key].push({p, idx, key});
   });
-  if(!order.length){ grid.innerHTML = '<div class="empty" style="grid-column:1/-1; padding:24px 0;">ไม่พบสินค้าที่ค้นหา</div>'; return; }
-  // sort: (1) just-added within 24h on top (newest first) · (2) then by SKU/group code
-  order.sort((a,b)=>{
-    const ra = groupAddedRecently(groups[a]), rb = groupAddedRecently(groups[b]);
-    if(ra !== rb) return ra ? -1 : 1;
-    if(ra && rb) return groupAddedTime(groups[b]) - groupAddedTime(groups[a]);
-    return String(a).localeCompare(String(b), undefined, {numeric:true, sensitivity:'base'});
+  if(!order.length){ grid.innerHTML = '<div class="empty" style="padding:24px 0;">ไม่พบสินค้าที่ค้นหา</div>'; return; }
+
+  // ข้อมูลต่อกลุ่ม: หมวด, collection, ใหม่ล่าสุด
+  const gInfo=order.map(key=>{
+    const members=groups[key];
+    const rep=(members.find(m=>m.p.image)||members[0]).p;
+    return { key, members,
+      category:(rep.category||'').trim(),
+      collection:(members.map(m=>(m.p.collection||'').trim()).find(Boolean)||''),
+      recent:groupAddedRecently(members),
+      newest:groupNewestTime(members) };
   });
-  grid.innerHTML = order.map(key=>{
-    const members = groups[key];
-    return members.length>1 ? catalogGroupCard(members) : catalogSingleCard(members[0].p, members[0].idx);
+
+  // แยกหมวด (category sections) — หมวดที่รู้จักก่อน แล้วอื่นๆ ท้ายสุด
+  const catOrder=Object.keys(CATEGORY_DEFS);
+  const catsPresent=[...new Set(gInfo.map(g=>g.category))];
+  const orderedCats=catOrder.filter(c=>catsPresent.includes(c)).concat(catsPresent.filter(c=>!catOrder.includes(c)));
+
+  grid.innerHTML = orderedCats.map(cat=>{
+    const inCat=gInfo.filter(g=>g.category===cat);
+    // จัด collection ให้อยู่ติดกัน (เรียง collection ตามชิ้นใหม่สุดของ collection นั้น) + สินค้าใหม่อยู่บน
+    const collDate={};
+    inCat.forEach(g=>{ const ck=g.collection||(' '+g.key); collDate[ck]=Math.max(collDate[ck]||0, g.newest); });
+    inCat.sort((a,b)=>{
+      if(a.recent!==b.recent) return a.recent?-1:1;
+      const ca=a.collection||(' '+a.key), cb=b.collection||(' '+b.key);
+      if(ca!==cb) return (collDate[cb]-collDate[ca]) || ca.localeCompare(cb);
+      return (b.newest-a.newest) || String(a.key).localeCompare(String(b.key),undefined,{numeric:true,sensitivity:'base'});
+    });
+    const cards=inCat.map(g=> g.members.length>1 ? catalogGroupCard(g.members) : catalogSingleCard(g.members[0].p, g.members[0].idx)).join('');
+    const cdef=CATEGORY_DEFS[cat];
+    const label= cdef ? `${esc(cdef.label)} <span style="color:var(--ink-soft); font-weight:400; font-size:12px;">${esc(cdef.th)}</span>` : 'อื่นๆ / ไม่ระบุหมวด';
+    return `<div class="cat-section">
+      <h3 class="cat-section-head"><span class="cat-dot" style="background:${cdef?cdef.color:'#C7CDD6'}"></span>${label} <span class="cat-section-count">${inCat.length} รายการ</span></h3>
+      <div class="catalog-grid">${cards}</div>
+    </div>`;
   }).join('');
 }
 
@@ -6014,6 +6072,8 @@ function renderProductForm(row, isEdit){
   const brandOpts = ['',"Godmami","Glimmer Sisters"].map(b=>peOpt(b, b||'— เลือก —', brandCur)).join('');
   const riskCur = riskToVal(row.risk);
   const riskOpts = ['','Low','Medium','High'].map(r=>peOpt(r, r||'— ไม่ระบุ —', riskCur)).join('');
+  // รายชื่อ Collection ที่มีอยู่แล้ว → autocomplete
+  const collOpts = [...new Set(PRODUCTS.map(p=>(p.collection||'').trim()).filter(Boolean))].sort().map(c=>`<option value="${esc(c)}"></option>`).join('');
 
   document.getElementById('pe-form').innerHTML = `
     <div class="pe-section">ข้อมูลหลัก</div>
@@ -6025,6 +6085,7 @@ function renderProductForm(row, isEdit){
       <div class="pe-field"><label>Type</label><select id="pe-type">${typeOpts}</select></div>
       <div class="pe-field"><label>Category</label><select id="pe-category">${catOpts}</select></div>
       <div class="pe-field full"><label>กลุ่มสินค้า (Group) — SKU กลุ่มเดียวกันใส่ค่านี้เหมือนกัน · เว้นว่าง = ระบบเดาจากรหัส (${esc(_grp||'—')})</label><input type="text" id="pe-group" value="${V('group')}" placeholder="เช่น MK064 หรือ FR-perfume"></div>
+      <div class="pe-field full"><label>🎁 Collection (คอลเลกชัน) — สินค้าชุดเดียวกันใส่ชื่อเหมือนกัน แม้ SKU/กลุ่มต่างกัน · เว้นว่างได้</label><input type="text" id="pe-collection" list="pe-collection-list" value="${V('collection')}" placeholder="เช่น Halloween 2026, Princess Hour"><datalist id="pe-collection-list">${collOpts}</datalist></div>
     </div>
 
     <div class="pe-section">วันสำคัญ / Milestones (เว้นว่างได้ = ยังไม่กำหนด)</div>
