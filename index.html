@@ -52,6 +52,28 @@
   .kpi-card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px;}
   .kpi-card .stat-num{font-size:24px; font-weight:700; color:var(--blue-deep);}
   .kpi-card .stat-label{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  /* Banner สไลด์รูปสินค้าใหม่ (แยกแบรนด์) */
+  .banner-wrap{position:relative; width:100%; aspect-ratio:1000/300; max-height:300px; border-radius:16px; overflow:hidden; margin-bottom:16px; background:var(--bg); box-shadow:0 2px 12px rgba(0,0,0,.08);}
+  .banner-slide{position:absolute; inset:0; opacity:0; transition:opacity .6s ease; pointer-events:none;}
+  .banner-slide.active{opacity:1; pointer-events:auto;}
+  .banner-slide img{width:100%; height:100%; object-fit:cover; display:block;}
+  .banner-slide.banner-broken img{display:none;}
+  .banner-slide.banner-broken::after{content:'🖼️ รูปโหลดไม่ขึ้น (กดแก้ไขเพื่อแนบใหม่)'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-size:13px;}
+  .banner-cap{position:absolute; left:0; right:0; bottom:0; padding:16px 18px 14px; background:linear-gradient(transparent, rgba(0,0,0,.62)); color:#fff;}
+  .banner-cap-t{font-family:'Prompt',sans-serif; font-weight:700; font-size:18px; text-shadow:0 1px 4px rgba(0,0,0,.45); line-height:1.3;}
+  .banner-cap-s{font-size:13px; opacity:.96; text-shadow:0 1px 3px rgba(0,0,0,.45); margin-top:2px;}
+  .banner-brand{position:absolute; top:12px; left:12px; color:#fff; font-size:11px; font-weight:700; padding:3px 11px; border-radius:999px; box-shadow:0 1px 4px rgba(0,0,0,.25);}
+  .banner-arrow{position:absolute; top:50%; transform:translateY(-50%); width:36px; height:36px; border-radius:50%; border:none; background:rgba(255,255,255,.82); color:#333; font-size:22px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 5px rgba(0,0,0,.22); z-index:3;}
+  .banner-arrow.left{left:10px;} .banner-arrow.right{right:10px;}
+  .banner-arrow:hover{background:#fff;}
+  .banner-dots{position:absolute; bottom:11px; left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:3;}
+  .banner-dot{width:8px; height:8px; border-radius:50%; border:none; background:rgba(255,255,255,.6); cursor:pointer; padding:0; transition:width .2s;}
+  .banner-dot.on{background:#fff; width:18px; border-radius:4px;}
+  .banner-add{position:absolute; top:12px; right:12px; width:34px; height:34px; border-radius:50%; border:none; background:rgba(255,255,255,.9); color:var(--blue-deep); font-size:19px; font-weight:700; cursor:pointer; z-index:3;}
+  .banner-edit{position:absolute; top:12px; right:54px; z-index:3;}
+  .banner-edit button{width:34px; height:34px; border-radius:50%; border:none; background:rgba(255,255,255,.9); cursor:pointer; font-size:15px;}
+  .banner-empty{display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; padding:20px; border:2px dashed var(--line); border-radius:16px; color:var(--ink-soft); font-size:13.5px; margin-bottom:16px;}
+  @media(max-width:640px){ .banner-wrap{aspect-ratio:16/9; max-height:220px;} .banner-cap-t{font-size:15px;} }
   /* ปุ่มกรองแบรนด์ (มุมมองรวม/แยกแบรนด์) */
   .brand-filter-bar{margin-bottom:12px;}
   .brand-filter-bar:empty{display:none;}
@@ -132,7 +154,7 @@
   .link-btn:hover{text-decoration:underline;}
 
   /* Catalog */
-  .catalog-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px;}
+  .catalog-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; align-items:start;}
   /* หมวดสินค้า (category sections) ในหน้า Product Info */
   .cat-section{margin-bottom:22px;}
   .cat-section-head{display:flex; align-items:center; gap:8px; font-family:'Prompt',sans-serif; font-size:15px; font-weight:700; color:var(--ink); margin:4px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line);}
@@ -604,6 +626,7 @@
   <div class="view active" id="view-calendar">
     <div class="year-tabs" id="year-tabs"></div>
     <div class="brand-filter-bar" id="brand-filter-bar"></div>
+    <div id="banner-carousel"></div>
     <div class="kpi-grid" id="kpi-grid"></div>
     <div id="brand-breakdown"></div>
 
@@ -1080,6 +1103,25 @@
       <span style="flex:1;"></span>
       <button class="btn-edit ghost" onclick="closeEventEditor()">ยกเลิก</button>
       <button class="btn-edit primary" onclick="saveEventEntry()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="bn-overlay" style="z-index:72;" onclick="if(event.target===this) closeBannerEditor()">
+  <div class="modal-box pe-box">
+    <div class="modal-header">
+      <div>
+        <div class="mh-name" id="bn-title-h">🖼️ เพิ่มแบนเนอร์สินค้าใหม่</div>
+        <div class="mh-sku">โชว์เป็นสไลด์บนหน้า NPD &amp; MKT Calendar · ทั้งทีมเห็นตรงกัน · แยกตามแบรนด์ได้</div>
+      </div>
+      <button class="modal-close" onclick="closeBannerEditor()">✕</button>
+    </div>
+    <div class="modal-body pe-body" id="bn-form"><!-- built by openBannerEditor() --></div>
+    <div class="pe-footer">
+      <button class="btn-edit ghost" id="bn-delete-btn" onclick="deleteBannerEntry()" style="display:none; color:#DC2626;">🗑️ ลบ</button>
+      <span style="flex:1;"></span>
+      <button class="btn-edit ghost" onclick="closeBannerEditor()">ยกเลิก</button>
+      <button class="btn-edit primary" onclick="saveBannerEntry()">💾 บันทึก</button>
     </div>
   </div>
 </div>
@@ -2423,7 +2465,7 @@ function setAppFavicon(){
 async function init(){
   setAppFavicon();
   document.getElementById('updated-badge').textContent = 'Loading data…';
-  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet(), loadNPRSummaryFromSheet(), loadEventsFromSheet()]);
+  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet(), loadNPRSummaryFromSheet(), loadEventsFromSheet(), loadBannersFromSheet()]);
   renderNotices();
 
   currentYear = new Date().getFullYear();
@@ -2842,6 +2884,167 @@ async function syncEventToSheet(action, ev){
   catch(e){ toast('บันทึกในเครื่องแล้ว แต่ต่อ Sheet ไม่ได้ — จะซิงค์เมื่อรีเฟรช','err'); }
 }
 
+/* ===================== Banner Carousel — สไลด์รูปสินค้าใหม่ให้ทีมอิน (แยกแบรนด์) ===================== */
+const BANNERS_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=Banners";
+const BANNERS_LOCAL_KEY = 'npd_banners_v1';
+const BANNER_HEADERS = ['id','brand','image','title','caption','link','sort','updatedBy','updatedAt'];
+let SHEET_BANNERS_RAW = [], ALL_BANNERS = [];
+function getBannersLocal(){ try{ return JSON.parse(localStorage.getItem(BANNERS_LOCAL_KEY))||[]; }catch(e){ return []; } }
+function saveBannersLocal(a){ try{ localStorage.setItem(BANNERS_LOCAL_KEY, JSON.stringify(a)); }catch(e){} }
+function normBannerRow(r){
+  return {
+    id:(r.id||r.ID||'').trim(),
+    brand: normalizeBrand((r.brand||r.Brand||'').trim()),   // '' = ทุกแบรนด์
+    image:(r.image||r.Image||'').trim(),
+    title:(r.title||r.Title||'').trim(),
+    caption:(r.caption||r.Caption||'').trim(),
+    link:(r.link||r.Link||'').trim(),
+    sort: parseInt(r.sort||r.Sort||'0',10)||0,
+    updatedBy:(r.updatedBy||r.UpdatedBy||'').trim()
+  };
+}
+function rebuildBanners(){
+  const ids = new Set(SHEET_BANNERS_RAW.map(b=>b.id).filter(Boolean));
+  const local = getBannersLocal().map(normBannerRow).filter(b=>!ids.has(b.id));
+  ALL_BANNERS = SHEET_BANNERS_RAW.concat(local).filter(b=>b.image);   // ต้องมีรูป
+}
+async function loadBannersFromSheet(){
+  try{
+    const res = await fetch(BANNERS_CSV_URL + '&_cb=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) throw new Error('fetch failed: '+res.status);
+    const csvText = await res.text();
+    // gviz falls back to the FIRST sheet if "Banners" doesn't exist yet → trust only when a real header shows
+    const hasHeader = /(^|,)\s*"?image"?\s*(,|$)/im.test(csvText) && /(^|,)\s*"?id"?\s*(,|$)/im.test(csvText);
+    SHEET_BANNERS_RAW = hasHeader ? parseCsvByHeader(csvText, ['image','id']).map(normBannerRow).filter(b=>b.id && b.image) : [];
+  }catch(err){ console.error('Banners load failed (fine if the Banners tab does not exist yet)', err); SHEET_BANNERS_RAW=[]; }
+  const ids = new Set(SHEET_BANNERS_RAW.map(b=>b.id).filter(Boolean));
+  const local = getBannersLocal(); const kept = local.filter(b=>!ids.has((b.id||'').trim()));
+  if(kept.length !== local.length) saveBannersLocal(kept);
+  rebuildBanners();
+}
+// แบนเนอร์ที่จะโชว์ตามมุมมองแบรนด์ (brand ว่าง = โชว์ทุกมุมมอง)
+function bannersForView(){
+  const f = (typeof calBrandFilter!=='undefined') ? calBrandFilter : 'all';
+  return ALL_BANNERS.filter(b=> !b.brand || f==='all' || b.brand===f).sort((a,b)=> (a.sort-b.sort) || 0);
+}
+let bannerState = { idx:0, timer:null, slides:[] };
+function renderBanner(){
+  const host=document.getElementById('banner-carousel'); if(!host) return;
+  const slides = bannersForView(); bannerState.slides = slides;
+  if(bannerState.idx >= slides.length) bannerState.idx = 0;
+  const editable = (typeof isTeamUnlocked==='function') && isTeamUnlocked();
+  if(!slides.length){
+    stopBannerAuto();
+    host.innerHTML = editable
+      ? `<div class="banner-empty"><span>🖼️ ยังไม่มีแบนเนอร์ — เพิ่มรูปสินค้าใหม่ให้ทีมอินกับแบรนด์</span><button class="btn-sm primary" onclick="openBannerEditor()">➕ เพิ่มแบนเนอร์</button></div>`
+      : '';
+    return;
+  }
+  const i = bannerState.idx;
+  const slidesHtml = slides.map((b,idx)=>{
+    const src = resolveDriveLink(b.image) || b.image;
+    const tint = BRAND_TINT[b.brand] || '#6B7280';
+    const brandTag = b.brand ? `<span class="banner-brand" style="background:${tint}">${esc(brandDisplayLabel(b.brand))}</span>` : '';
+    const cap = (b.title||b.caption) ? `<div class="banner-cap">${b.title?`<div class="banner-cap-t">${esc(b.title)}</div>`:''}${b.caption?`<div class="banner-cap-s">${esc(b.caption)}</div>`:''}</div>` : '';
+    const editBtns = editable ? `<div class="banner-edit"><button onclick="event.stopPropagation(); openBannerEditor('${attrJs(b.id)}')" title="แก้ไข">✏️</button></div>` : '';
+    const click = b.link ? `onclick="window.open('${attrJs(b.link)}','_blank','noopener')" style="cursor:pointer;"` : '';
+    return `<div class="banner-slide${idx===i?' active':''}" ${click}>
+      <img src="${esc(src)}" alt="${esc(b.title||'banner')}" onerror="this.closest('.banner-slide').classList.add('banner-broken')">
+      ${brandTag}${cap}${editBtns}
+    </div>`;
+  }).join('');
+  const dots = slides.length>1 ? `<div class="banner-dots">${slides.map((_,idx)=>`<button class="banner-dot${idx===i?' on':''}" onclick="gotoBanner(${idx})"></button>`).join('')}</div>` : '';
+  const arrows = slides.length>1 ? `<button class="banner-arrow left" onclick="moveBanner(-1)">‹</button><button class="banner-arrow right" onclick="moveBanner(1)">›</button>` : '';
+  const addBtn = editable ? `<button class="banner-add" onclick="openBannerEditor()" title="เพิ่มแบนเนอร์">➕</button>` : '';
+  host.innerHTML = `<div class="banner-wrap" onmouseenter="stopBannerAuto()" onmouseleave="startBannerAuto()">${slidesHtml}${arrows}${dots}${addBtn}</div>`;
+  startBannerAuto();
+}
+function gotoBanner(idx){ bannerState.idx = idx; renderBanner(); }
+function moveBanner(d){ const n=bannerState.slides.length; if(!n) return; bannerState.idx=(bannerState.idx+d+n)%n; renderBanner(); }
+function stopBannerAuto(){ if(bannerState.timer){ clearInterval(bannerState.timer); bannerState.timer=null; } }
+function startBannerAuto(){ stopBannerAuto(); if(bannerState.slides.length>1){ bannerState.timer=setInterval(()=>{ const n=bannerState.slides.length; if(!n){ stopBannerAuto(); return; } bannerState.idx=(bannerState.idx+1)%n; bannerSlideOnly(); }, 5000); } }
+// เลื่อนสไลด์เฉยๆ ไม่ rebuild ทั้งก้อน (กัน timer ซ้อน)
+function bannerSlideOnly(){
+  const host=document.getElementById('banner-carousel'); if(!host) return;
+  host.querySelectorAll('.banner-slide').forEach((el,idx)=>el.classList.toggle('active', idx===bannerState.idx));
+  host.querySelectorAll('.banner-dot').forEach((el,idx)=>el.classList.toggle('on', idx===bannerState.idx));
+}
+/* ---- Banner editor ---- */
+let bnEditId=null;
+function openBannerEditor(editId){
+  if(!isTeamUnlocked()){ toast('เข้าโหมดแก้ไข (🔓) ก่อนจึงจะเพิ่ม/แก้แบนเนอร์ได้','info'); return; }
+  bnEditId = editId||null;
+  const b = editId ? (ALL_BANNERS.find(x=>x.id===editId)||{}) : {};
+  const brandOpts = [['','ทุกแบรนด์ (โชว์ทุกมุมมอง)'],['godmami','Godmami'],['glimmer','Glimmer Sisters'],['mamilabo','Mamilabo']]
+    .map(([v,l])=>`<option value="${v}"${(b.brand||'')===v?' selected':''}>${esc(l)}</option>`).join('');
+  document.getElementById('bn-title-h').textContent = editId ? '✏️ แก้ไขแบนเนอร์' : '🖼️ เพิ่มแบนเนอร์สินค้าใหม่';
+  document.getElementById('bn-form').innerHTML = `
+    <div class="pe-grid">
+      <div class="pe-field full"><label>รูปแบนเนอร์ * (แนวนอนสวยสุด ~1000×300)</label>
+        <input type="text" id="bn-image" value="${esc(b.image||'')}" placeholder="วางลิงก์ Google Drive หรือกด 📎 อัปโหลด" oninput="bnPreview()">
+        <div style="display:flex; align-items:center; gap:10px; margin-top:6px; flex-wrap:wrap;">
+          <label class="btn-edit primary" style="cursor:pointer; margin:0; font-size:12.5px; padding:6px 12px;">📎 อัปโหลดรูปจากเครื่อง
+            <input type="file" accept="image/*" style="display:none;" onchange="uploadBannerImage(this)"></label>
+          <span id="bn-image-status" style="font-size:12px; color:var(--ink-soft);"></span>
+        </div>
+        <div id="bn-image-preview" style="margin-top:8px;"></div>
+      </div>
+      <div class="pe-field"><label>แบรนด์ (Brand)</label><select id="bn-brand">${brandOpts}</select></div>
+      <div class="pe-field"><label>ลำดับ (Sort) — น้อยมาก่อน</label><input type="number" id="bn-sort" value="${esc(String(b.sort||0))}"></div>
+      <div class="pe-field full"><label>หัวข้อ (Title)</label><input type="text" id="bn-title" value="${esc(b.title||'')}" placeholder="เช่น 🎉 เปิดตัว All Over Stick 4 เฉดใหม่!"></div>
+      <div class="pe-field full"><label>คำโปรย (Caption)</label><input type="text" id="bn-caption" value="${esc(b.caption||'')}" placeholder="ข้อความสั้นๆ ให้ทีมอิน (ถ้ามี)"></div>
+      <div class="pe-field full"><label>ลิงก์เมื่อคลิก (ถ้ามี)</label><input type="text" id="bn-link" value="${esc(b.link||'')}" placeholder="เช่น ลิงก์ Canva / เพจสินค้า"></div>
+    </div>`;
+  bnPreview();
+  document.getElementById('bn-delete-btn').style.display = editId ? '' : 'none';
+  document.getElementById('bn-overlay').classList.add('open');
+}
+function closeBannerEditor(){ document.getElementById('bn-overlay').classList.remove('open'); bnEditId=null; }
+function bnPreview(){ const box=document.getElementById('bn-image-preview'); if(!box) return; const link=(document.getElementById('bn-image')||{}).value||''; const src=resolveDriveLink(link)||(link.startsWith('http')?link:''); box.innerHTML = src?`<img src="${esc(src)}" style="max-width:100%; max-height:150px; border-radius:10px; border:1px solid var(--line);">`:''; }
+async function uploadBannerImage(inputEl){
+  const file=inputEl.files&&inputEl.files[0]; if(!file) return;
+  const cfg=getWriteConfig(); if(!cfg.url){ toast('ยังไม่ได้ตั้ง Sheet Sync — อัปโหลดไม่ได้','err'); return; }
+  const st=document.getElementById('bn-image-status'); if(st) st.textContent='⏳ กำลังอัปโหลด…';
+  try{
+    const dataUrl=await fileToUploadDataUrl(file);
+    const r=await postReadable({action:'uploadImage', dataUrl, name:file.name, parentId:UPLOAD_PARENT_FOLDER_ID, folder:'Banners'});
+    if(r&&r.ok&&r.url){ const inp=document.getElementById('bn-image'); if(inp) inp.value=r.url; bnPreview(); if(st) st.textContent='✅ อัปโหลดแล้ว — กดบันทึกได้เลย'; }
+    else { if(st) st.textContent='❌ อัปโหลดไม่สำเร็จ'+(r&&r.error?': '+r.error:'')+' — ลองใหม่'; }
+  }catch(e){ if(st) st.textContent='❌ อัปโหลดไม่สำเร็จ: '+e.message; }
+  inputEl.value='';
+}
+function saveBannerEntry(){
+  const g=id=>String((document.getElementById(id)||{}).value||'').trim();
+  const image=g('bn-image');
+  if(!image){ toast('ใส่รูปแบนเนอร์ก่อน (อัปโหลด หรือวางลิงก์)','err'); return; }
+  const st=(document.getElementById('bn-image-status')||{}).textContent||'';
+  if(/❌|⏳|กำลังอัป/.test(st) && !confirm('รูปยังอัปไม่สำเร็จ/ไม่เสร็จ — บันทึกต่อไหม?')) return;
+  const id=bnEditId || ('bn'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+  const b={ id, brand:g('bn-brand'), image, title:g('bn-title'), caption:g('bn-caption'), link:g('bn-link'), sort: parseInt(g('bn-sort'),10)||0, updatedBy:'' };
+  const arr=getBannersLocal(); const li=arr.findIndex(x=>x.id===id); if(li>-1) arr[li]=b; else arr.push(b);
+  saveBannersLocal(arr); rebuildBanners(); bannerState.idx=0; renderBanner(); closeBannerEditor();
+  syncBannerToSheet(b);
+  toast(bnEditId?'แก้ไขแบนเนอร์แล้ว':'เพิ่มแบนเนอร์แล้ว','ok');
+}
+function deleteBannerEntry(){
+  if(!bnEditId) return; if(!confirm('ลบแบนเนอร์นี้?')) return;
+  const id=bnEditId;
+  saveBannersLocal(getBannersLocal().filter(x=>x.id!==id));
+  SHEET_BANNERS_RAW=SHEET_BANNERS_RAW.filter(x=>x.id!==id);
+  rebuildBanners(); bannerState.idx=0; renderBanner(); closeBannerEditor();
+  syncBannerToSheet({id}, 'delete');
+  toast('ลบแบนเนอร์แล้ว','ok');
+}
+// เขียนขึ้น Sheet ด้วย no-cors (เส้นทางที่ยืนยันแล้วว่าผ่านเน็ตออฟฟิศ) · แท็บ Banners สร้างอัตโนมัติ
+async function syncBannerToSheet(b, action){
+  const cfg=getWriteConfig(); if(!cfg.url){ toast('บันทึกในเครื่องแล้ว · ยังไม่ได้ตั้ง Sheet Sync (ทั้งทีมจะยังไม่เห็น)','info'); return; }
+  const isDel = action==='delete';
+  const payload={ target:'banners', sheetName:'Banners', key:'id', create:BANNER_HEADERS,
+    action: isDel?'delete':'upsert', keyValue:b.id,
+    row: isDel?undefined:{ id:b.id, brand:b.brand||'', image:b.image||'', title:b.title||'', caption:b.caption||'', link:b.link||'', sort:String(b.sort||0), updatedBy:b.updatedBy||'', updatedAt: todayStr() } };
+  try{ await postToSheet(payload); }catch(e){}
+}
+
 function renderStockCalendarGrid(){
   const label = document.getElementById('stock-cal-label');
   const grid = document.getElementById('stock-calendar-grid');
@@ -3019,6 +3222,7 @@ function renderCalendar(){
     .sort((a,b)=>{ const ia=order.indexOf(a),ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib) || a.localeCompare(b); });
   if(calBrandFilter!=='all' && !brandsPresent.includes(calBrandFilter)) calBrandFilter='all';
   renderBrandFilterBar(brandsPresent);
+  renderBanner();
 
   // items = ตามมุมมองแบรนด์ที่เลือก (KPI/Category/Quarter/Timeline/ตาราง จะกรองตามนี้)
   const items = (calBrandFilter==='all') ? yearItems : yearItems.filter(p=>(p.brand||'other')===calBrandFilter);
@@ -6354,7 +6558,7 @@ async function pushPendingToSheet(){
 }
 async function refreshFromSheet(silent){ return reloadEverything(silent); }
 async function reloadEverything(silent){
-  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet(), loadEventsFromSheet()]);
+  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet(), loadEventsFromSheet(), loadBannersFromSheet()]);
   renderNotices(); renderAll();
   renderTeamUpdates(); renderTaskBoard();
   if(typeof renderTrackingCalendar==='function' && document.getElementById('tcal-host')) renderTrackingCalendar();
@@ -6913,20 +7117,25 @@ function brandOfSku(sku){
 }
 function uploadParentForSku(sku){ return uploadParentForBrand(brandOfSku(sku)); }
 function fileToDataUrl(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); }); }
-/* ย่อรูปก่อนอัปโหลด — รูปจากมือถือมักหลาย MB ทำให้ body ใหญ่ แล้วเน็ตออฟฟิศตัดการอัปทิ้ง
-   ย่อด้านยาวสุดเหลือ ~1600px + JPEG 0.82 (ไฟล์อื่นๆ เช่น PDF/Doc ส่งตามเดิม) */
+/* เตรียมรูปก่อนอัปโหลด — เน้น "คงคุณภาพ" ให้มากที่สุด แต่กันไฟล์มือถือใหญ่มากๆ (หลาย MB) โดนเน็ตออฟฟิศตัดทิ้ง
+   หลักการ: ถ้ารูปไม่ใหญ่มาก (≤3200px และไฟล์ ≤~3.5MB) → ส่งของเดิมทั้งดุ้น ไม่ลดสเปคเลย
+            ถ้าใหญ่จริงๆ → ย่อด้านยาวสุดเหลือ 3200px + JPEG คุณภาพสูง 0.95 (ยังคมชัด) · ไฟล์อื่น (PDF/Doc) ส่งตามเดิม */
 async function fileToUploadDataUrl(file){
   if(!file || !/^image\//i.test(file.type||'')) return fileToDataUrl(file);
   try{
     const dataUrl = await fileToDataUrl(file);
+    const approxBytes = dataUrl.length * 0.75;
     const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=dataUrl; });
-    const maxDim = 1600;
     let w = img.naturalWidth||img.width, h = img.naturalHeight||img.height;
     if(!w || !h) return dataUrl;
-    if(Math.max(w,h) > maxDim){ const s = maxDim/Math.max(w,h); w = Math.round(w*s); h = Math.round(h*s); }
+    const MAXDIM = 3200, PASS_BYTES = 3.5*1024*1024;
+    // รูปไม่ใหญ่มาก → ส่งไฟล์เดิม (คุณภาพเต็ม ไม่ re-encode)
+    if(Math.max(w,h) <= MAXDIM && approxBytes <= PASS_BYTES) return dataUrl;
+    // ใหญ่เกิน → ย่อลงพอประมาณ ด้วยคุณภาพสูง
+    if(Math.max(w,h) > MAXDIM){ const s = MAXDIM/Math.max(w,h); w = Math.round(w*s); h = Math.round(h*s); }
     const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
-    const ctx = canvas.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
-    const out = canvas.toDataURL('image/jpeg', 0.82);
+    const ctx = canvas.getContext('2d'); ctx.imageSmoothingQuality='high'; ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+    const out = canvas.toDataURL('image/jpeg', 0.95);   // คุณภาพสูง คมชัด
     return (out && out.length < dataUrl.length) ? out : dataUrl;   // ใช้ตัวย่อเฉพาะเมื่อเล็กลงจริง
   }catch(e){ return fileToDataUrl(file); }
 }
