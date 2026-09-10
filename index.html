@@ -139,6 +139,12 @@
     opacity:0; visibility:hidden; transition:opacity .12s; pointer-events:none; z-index:70;
   }
   thead th .th-info:hover::after, thead th .th-info:hover::before{opacity:1; visibility:visible;}
+  /* ปุ่ม ? อธิบายทั่วไป (ใช้บนการ์ด KPI ฯลฯ) */
+  .info-tip{display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; margin-left:5px; border-radius:50%; background:var(--blue-pale); color:var(--blue-deep); cursor:help; font-size:10px; font-weight:700; position:relative; vertical-align:middle;}
+  .info-tip:hover{background:var(--blue); color:#fff;}
+  .info-tip::after{ content:attr(data-tip); position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; padding:7px 11px; border-radius:8px; font-family:'Sarabun',sans-serif; font-size:11.5px; font-weight:400; line-height:1.45; white-space:normal; width:max-content; max-width:240px; text-align:left; opacity:0; visibility:hidden; transition:opacity .12s; pointer-events:none; z-index:60; box-shadow:0 3px 12px rgba(0,0,0,.2);}
+  .info-tip::before{ content:''; position:absolute; top:calc(100% + 3px); left:50%; transform:translateX(-50%); border:5px solid transparent; border-bottom-color:var(--ink); opacity:0; visibility:hidden; transition:opacity .12s; pointer-events:none; z-index:60;}
+  .info-tip:hover::after, .info-tip:hover::before{opacity:1; visibility:visible;}
   tbody td{padding:8px 6px; border-bottom:1px solid var(--line); font-size:13px; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word;}
   .td-date{font-size:10.5px; line-height:1.35;}
   tbody tr:last-child td{border-bottom:none;}
@@ -3241,43 +3247,25 @@ function renderBrandBreakdown(items){
   const order=['godmami','glimmer','mamilabo'];
   const keys=Object.keys(groups).sort((a,b)=>{ const ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib) || a.localeCompare(b); });
   if(!keys.length){ host.innerHTML=''; return; }
-  const total=(items||[]).length;
+  // นับเป็น "Item" (รวมเฉด/SKU กลุ่มเดียวกันเป็นตัวเดียว) + โชว์จำนวน SKU กำกับ
+  const itemsOf = arr => new Set((arr||[]).map(p=>productGroupOf(p.sku))).size;
+  const totalItems = itemsOf(items||[]);
+  const totalSku = (items||[]).length;
   const brandLabel=k=>((typeof BRAND_DEFS!=='undefined'&&BRAND_DEFS[k]&&BRAND_DEFS[k].label)|| (k&&k!=='other'?k.replace(/\b\w/g,c=>c.toUpperCase()):'ไม่ระบุแบรนด์'));
-  // แดชบอร์ดสรุป: การ์ดจำนวนสินค้าต่อแบรนด์ + การ์ดรวม
-  const totalCard=`<div class="brand-kpi-card total"><div class="brand-kpi-num">${total}</div><div class="brand-kpi-label">รวมทุกแบรนด์</div><div class="brand-kpi-sub">สินค้าปี ${currentYear}</div></div>`;
+  const totalCard=`<div class="brand-kpi-card total"><div class="brand-kpi-num">${totalItems}</div><div class="brand-kpi-label">รวมทุกแบรนด์ (All)</div><div class="brand-kpi-sub">${totalSku} SKU · ปี ${currentYear}</div></div>`;
   const cards=keys.map(k=>{
-    const n=groups[k].length; const color=BRAND_TINT[k]||'#6B7280';
-    const pct=total?Math.round(n/total*100):0;
+    const nItem=itemsOf(groups[k]), nSku=groups[k].length, color=BRAND_TINT[k]||'#6B7280';
+    const pct=totalItems?Math.round(nItem/totalItems*100):0;
     return `<div class="brand-kpi-card" style="border-top:3px solid ${color}">
-      <div class="brand-kpi-num">${n}</div>
+      <div class="brand-kpi-num">${nItem}</div>
       <div class="brand-kpi-label"><span class="brand-dot" style="background:${color}"></span>${esc(brandLabel(k))}</div>
-      <div class="brand-kpi-sub">${pct}% ของทั้งหมด</div>
-    </div>`;
-  }).join('');
-  // รายชื่อสินค้าต่อแบรนด์ (ซ่อนไว้ กดดูได้)
-  const detail=keys.map(k=>{
-    const list=groups[k].slice().sort((a,b)=>(a.name||'').localeCompare(b.name||''));
-    const color=BRAND_TINT[k]||'#6B7280';
-    const chips=list.map(p=>{
-      const idx=PRODUCTS.indexOf(p);
-      return `<button class="brand-chip" onclick="openTimeline(${idx})" title="${esc((p.name||'')+' ('+p.sku+')')}">${esc(p.name||'(ไม่มีชื่อ)')} <span class="brand-chip-sku">(${esc(p.sku)})</span></button>`;
-    }).join('');
-    return `<div class="brand-group">
-      <div class="brand-group-head"><span class="brand-dot" style="background:${color}"></span>${esc(brandLabel(k))} <span class="brand-count">${list.length} รายการ</span></div>
-      <div class="brand-chips">${chips}</div>
+      <div class="brand-kpi-sub">${pct}% · ${nSku} SKU</div>
     </div>`;
   }).join('');
   host.innerHTML=`<div class="panel" style="margin-top:0;">
-    <h3 style="margin-top:0;">สรุปจำนวนสินค้าตามแบรนด์ (By Brand)<span style="color:var(--ink-soft); font-weight:400; font-size:11px; margin-left:6px;">ปี ${currentYear}</span></h3>
+    <h3 style="margin-top:0;">สรุปจำนวนสินค้าตามแบรนด์ (Products by Brand)<span style="color:var(--ink-soft); font-weight:400; font-size:11px; margin-left:6px;">ปี ${currentYear}</span></h3>
     <div class="brand-kpi-grid">${totalCard}${cards}</div>
-    <div style="margin-top:12px;"><a href="#" class="link-btn" style="font-size:12.5px; font-weight:600;" onclick="event.preventDefault(); toggleBrandDetail()"><span id="brand-detail-label">▸ ดูรายชื่อสินค้าแต่ละแบรนด์</span></a></div>
-    <div id="brand-detail" style="display:none; margin-top:10px;"><div class="brand-groups">${detail}</div></div>
   </div>`;
-}
-function toggleBrandDetail(){
-  const d=document.getElementById('brand-detail'); const l=document.getElementById('brand-detail-label'); if(!d) return;
-  const show=(d.style.display==='none'); d.style.display=show?'':'none';
-  if(l) l.textContent= show?'▾ ซ่อนรายชื่อสินค้า':'▸ ดูรายชื่อสินค้าแต่ละแบรนด์';
 }
 function renderCalendar(){
   const yearItems = PRODUCTS.filter(p=>getYear(p)===currentYear)
@@ -3301,10 +3289,11 @@ function renderCalendar(){
     const l = effectiveDate(p,'launch');
     return l && new Date(l+"T00:00:00") > today;
   }).length;
+  const itemCount = new Set(items.map(p=>productGroupOf(p.sku))).size;   // นับเป็น Item (รวมเฉด/SKU กลุ่มเดียวกัน)
   document.getElementById('kpi-grid').innerHTML = `
-    <div class="kpi-card"><div class="stat-num">${items.length}</div><div class="stat-label">Products in ${currentYear}${brandSuffix}</div></div>
-    <div class="kpi-card"><div class="stat-num">${newCount}</div><div class="stat-label">Currently within 120-day "New"${brandSuffix}</div></div>
-    <div class="kpi-card"><div class="stat-num">${upcoming}</div><div class="stat-label">Upcoming Launches${brandSuffix}</div></div>
+    <div class="kpi-card"><div class="stat-num">${itemCount}</div><div class="stat-label">Products · สินค้าทั้งหมด ${currentYear}${brandSuffix} <span style="color:var(--ink-soft); font-weight:400;">(${items.length} SKU)</span></div></div>
+    <div class="kpi-card"><div class="stat-num">${newCount}</div><div class="stat-label">New · สินค้าใหม่ (ภายใน 120 วัน)${brandSuffix} <span class="info-tip" data-tip="สินค้าที่มีวันเข้าคลัง (Product on Stock) ไม่เกิน 120 วันนับถึงวันนี้ = ยังถือเป็นสินค้าใหม่">?</span></div></div>
+    <div class="kpi-card"><div class="stat-num">${upcoming}</div><div class="stat-label">Upcoming · กำลังจะวางขาย${brandSuffix} <span class="info-tip" data-tip="นับจากสินค้าที่มี 'วันวางขาย (Launch date)' อยู่หลังวันนี้ = ยังไม่ถึงกำหนดวางขาย">?</span></div></div>
   `;
 
   renderBrandBreakdown(yearItems);   // แดชบอร์ดสรุปแยกแบรนด์ = โชว์ครบทุกแบรนด์เสมอ (ไม่ขึ้นกับปุ่มกรอง)
