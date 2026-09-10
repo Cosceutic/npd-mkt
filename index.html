@@ -510,6 +510,14 @@
   .tl-entry-by{font-size:11px; color:var(--ink-soft); font-style:italic;}
   .tl-img-row{display:flex; gap:6px; flex-wrap:wrap; margin:6px 0;}
   .tl-img-row img{width:56px; height:56px; object-fit:cover; border-radius:8px; cursor:pointer; border:1px solid var(--line);}
+  /* ไฟล์แนบ (รูป/PDF/Doc) — thumbnail ที่คลิกแล้วเปิดไฟล์ต้นฉบับใน Drive เสมอ + fallback 📎 เมื่อรูปโหลดไม่ขึ้น */
+  .att-tile{position:relative; display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; border-radius:8px; overflow:hidden; border:1px solid var(--line); background:var(--bg); text-decoration:none; flex:none; vertical-align:middle;}
+  .att-tile.att-sm{width:30px; height:30px; margin-left:4px;}
+  .att-tile img{width:100%; height:100%; object-fit:cover; display:block;}
+  .att-tile.att-broken::after{content:'📎'; font-size:20px;}
+  .att-tile.att-sm.att-broken::after{font-size:13px;}
+  .att-badge{position:absolute; bottom:1px; right:1px; font-size:9px; line-height:1.2; background:rgba(20,30,40,.62); color:#fff; border-radius:4px; padding:1px 3px;}
+  .att-tile.att-sm .att-badge{font-size:7px; padding:0 2px;}
 
   /* ===== Product Editor (in-web add/edit/delete) ===== */
   .edit-toolbar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 16px; padding:12px 14px; background:var(--card); border:1px solid var(--line); border-radius:12px;}
@@ -1288,6 +1296,20 @@ function resolveImage(row){
    and corrupt the following row, which is exactly what was eating R&D entries.) */
 function resolveImageList(str){
   return (str||'').split(';').map(s=>resolveDriveLink(s)).filter(Boolean);
+}
+/* ไฟล์แนบในบันทึกความคืบหน้า: โชว์ thumbnail + คลิกเปิดไฟล์ต้นฉบับ (Drive) ในแท็บใหม่เสมอ
+   ถ้ารูปโหลดไม่ขึ้น (เช่น PDF/Doc หรือ Drive throttle) จะ fallback เป็นไอคอน 📎 ที่ยังกดลิงก์ได้ */
+function attachmentTiles(imagesRaw, size){
+  const raws=(imagesRaw||'').split(';').map(s=>s.trim()).filter(Boolean);
+  if(!raws.length) return '';
+  const cls = size==='sm' ? 'att-tile att-sm' : 'att-tile';
+  return raws.map(raw=>{
+    const thumb = resolveDriveLink(raw) || raw;
+    const href = /^https?:/i.test(raw) ? raw : thumb;   // ลิงก์ต้นฉบับ (หน้า Drive /view) เพื่อกดเปิดดูเต็ม
+    return `<a class="${cls}" href="${esc(href)}" target="_blank" rel="noopener" title="เปิดไฟล์แนบในแท็บใหม่">`
+      + `<img src="${esc(thumb)}" alt="ไฟล์แนบ" loading="lazy" onerror="this.style.display='none'; this.parentNode.classList.add('att-broken');">`
+      + `<span class="att-badge">🔗</span></a>`;
+  }).join('');
 }
 
 function toBool(v){
@@ -3535,7 +3557,7 @@ function renderTeamUpdates(){
     const noteText = [label, l.note].filter(Boolean).join(': ');
     return {date:l.date, note:noteText || '(update logged)', product, sku:l.sku,
       productName:l.productName,
-            track:l.track, updatedBy:l.updatedBy, pic:l.pic, images:l.images};
+            track:l.track, updatedBy:l.updatedBy, pic:l.pic, images:l.images, imagesRaw:l.imagesRaw};
   });
   feed.sort((a,b)=> b.date.localeCompare(a.date));
 
@@ -3561,7 +3583,7 @@ function renderTeamUpdates(){
       : `<strong style="font-size:13px;">${esc(displayName)}</strong>`;
     const skuHtml = f.sku ? ` <span class="sku" style="display:inline;">(${esc(f.sku)})</span>` : '';
     const byHtml = (f.pic||f.updatedBy) ? ` <span class="tl-entry-by">— ${esc([f.pic?('👤 '+f.pic):'', f.updatedBy].filter(Boolean).join(' · '))}</span>` : '';
-    const thumbs = (f.images||[]).slice(0,4).map(src=>`<img src="${esc(src)}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;cursor:pointer;margin-left:4px;" onclick="openLightbox('${esc(src)}',event)">`).join('');
+    const thumbs = attachmentTiles(f.imagesRaw, 'sm');
     html += `<div class="mini-row">
       <span>${nameHtml}${skuHtml} — ${esc(f.note)}${byHtml}${thumbs}</span>
     </div>`;
@@ -3659,9 +3681,8 @@ function openTrackLog(sku, track, focus){
 
   const timelineHtml = entries.length ? entries.map(e=>{
     const sub = [e.subCategory, e.stage, e.detail].filter(Boolean).join(' — ');
-    const imgHtml = e.images.length
-      ? `<div class="tl-img-row">${e.images.map(src=>`<img src="${esc(src)}" onclick="openLightbox('${esc(src)}',event)">`).join('')}</div>`
-      : '';
+    const at = attachmentTiles(e.imagesRaw);
+    const imgHtml = at ? `<div class="tl-img-row">${at}</div>` : '';
     const canEdit = e.id && isTeamUnlocked();
     let actions='';
     if(canEdit){
