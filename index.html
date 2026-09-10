@@ -52,6 +52,15 @@
   .kpi-card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px;}
   .kpi-card .stat-num{font-size:24px; font-weight:700; color:var(--blue-deep);}
   .kpi-card .stat-label{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  /* ปุ่มกรองแบรนด์ (มุมมองรวม/แยกแบรนด์) */
+  .brand-filter-bar{margin-bottom:12px;}
+  .brand-filter-bar:empty{display:none;}
+  .brand-filter-bar-inner{display:flex; flex-wrap:wrap; gap:6px; align-items:center;}
+  .brand-filter-lead{font-size:12px; color:var(--ink-soft); font-weight:600; margin-right:2px;}
+  .brand-filter-btn{display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:999px; padding:6px 13px; cursor:pointer; transition:background .12s, border-color .12s, color .12s;}
+  .brand-filter-btn:hover{background:var(--bg);}
+  .brand-filter-btn.active{background:var(--blue); border-color:var(--blue); color:#fff;}
+  .brand-filter-btn.active .brand-dot{box-shadow:0 0 0 1.5px #fff;}
   /* แดชบอร์ดสรุปจำนวนสินค้าตามแบรนด์ */
   .brand-kpi-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px;}
   .brand-kpi-card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px;}
@@ -580,6 +589,7 @@
 
   <div class="view active" id="view-calendar">
     <div class="year-tabs" id="year-tabs"></div>
+    <div class="brand-filter-bar" id="brand-filter-bar"></div>
     <div class="kpi-grid" id="kpi-grid"></div>
     <div id="brand-breakdown"></div>
 
@@ -2367,7 +2377,21 @@ function loadWorkflowFrame(){
 }
 function printWorkflow(){ var f=document.getElementById('wf-frame'); if(f && f.contentWindow){ try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){ window.print(); } } }
 
+// ตั้งไอคอนบนแท็บ (favicon) จากโลโก้บริษัทที่ฝังอยู่บนหัวเว็บ — ไม่ต้องมีไฟล์แยก
+function setAppFavicon(){
+  try{
+    const img=document.querySelector('.brand img');
+    const href=(img&&img.src)||'';
+    if(!href) return;
+    ['icon','apple-touch-icon'].forEach(rel=>{
+      let l=document.querySelector('link[rel="'+rel+'"]');
+      if(!l){ l=document.createElement('link'); l.rel=rel; document.head.appendChild(l); }
+      l.type='image/png'; l.href=href;
+    });
+  }catch(e){}
+}
 async function init(){
+  setAppFavicon();
   document.getElementById('updated-badge').textContent = 'Loading data…';
   await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet(), loadNPRSummaryFromSheet(), loadEventsFromSheet()]);
   renderNotices();
@@ -2898,6 +2922,18 @@ function cellDate(p, key){
 
 // แยกสินค้าปีปัจจุบันตามแบรนด์ → โชว์ชื่อสินค้า (SKU) กดเปิดไทม์ไลน์ได้
 const BRAND_TINT = { godmami:'#E9557F', glimmer:'#7A5AF8', mamilabo:'#0E9AA7' };
+function brandDisplayLabel(k){ return (typeof BRAND_DEFS!=='undefined'&&BRAND_DEFS[k]&&BRAND_DEFS[k].label) || (k&&k!=='other'?k.replace(/\b\w/g,c=>c.toUpperCase()):'ไม่ระบุแบรนด์'); }
+// มุมมองแบรนด์ของแดชบอร์ด: 'all' = รวมทุกแบรนด์, หรือ key ของแบรนด์ (godmami/glimmer/…)
+let calBrandFilter = 'all';
+function setCalBrandFilter(b){ calBrandFilter = b || 'all'; renderCalendar(); }
+function renderBrandFilterBar(brands){
+  const host=document.getElementById('brand-filter-bar'); if(!host) return;
+  if(!brands.length){ host.innerHTML=''; return; }
+  const btn=(val,label,color)=>`<button class="brand-filter-btn${calBrandFilter===val?' active':''}" onclick="setCalBrandFilter('${val}')">${color?`<span class="brand-dot" style="background:${color}"></span>`:''}${esc(label)}</button>`;
+  let html=btn('all','ทั้งหมด (รวมทุกแบรนด์)','');
+  brands.forEach(k=> html+=btn(k, brandDisplayLabel(k), BRAND_TINT[k]||'#6B7280'));
+  host.innerHTML=`<div class="brand-filter-bar-inner"><span class="brand-filter-lead">มุมมองแบรนด์:</span>${html}</div>`;
+}
 function renderBrandBreakdown(items){
   const host=document.getElementById('brand-breakdown'); if(!host) return;
   const groups={};
@@ -2944,8 +2980,19 @@ function toggleBrandDetail(){
   if(l) l.textContent= show?'▾ ซ่อนรายชื่อสินค้า':'▸ ดูรายชื่อสินค้าแต่ละแบรนด์';
 }
 function renderCalendar(){
-  const items = PRODUCTS.filter(p=>getYear(p)===currentYear)
+  const yearItems = PRODUCTS.filter(p=>getYear(p)===currentYear)
                          .sort((a,b)=> (effectiveDate(a,'launch')||effectiveDate(a,'arrival')).localeCompare(effectiveDate(b,'launch')||effectiveDate(b,'arrival')));
+
+  // แบรนด์ที่มีสินค้าในปีนี้ → ปุ่มกรอง (ทั้งหมด/แต่ละแบรนด์)
+  const order=['godmami','glimmer','mamilabo'];
+  const brandsPresent=[...new Set(yearItems.map(p=>p.brand||'other'))]
+    .sort((a,b)=>{ const ia=order.indexOf(a),ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib) || a.localeCompare(b); });
+  if(calBrandFilter!=='all' && !brandsPresent.includes(calBrandFilter)) calBrandFilter='all';
+  renderBrandFilterBar(brandsPresent);
+
+  // items = ตามมุมมองแบรนด์ที่เลือก (KPI/Category/Quarter/Timeline/ตาราง จะกรองตามนี้)
+  const items = (calBrandFilter==='all') ? yearItems : yearItems.filter(p=>(p.brand||'other')===calBrandFilter);
+  const brandSuffix = (calBrandFilter==='all') ? '' : ` · ${brandDisplayLabel(calBrandFilter)}`;
 
   const newCount = items.filter(p=>computeStatus(p).label.startsWith('New')).length;
   const today = new Date(); today.setHours(0,0,0,0);
@@ -2954,12 +3001,12 @@ function renderCalendar(){
     return l && new Date(l+"T00:00:00") > today;
   }).length;
   document.getElementById('kpi-grid').innerHTML = `
-    <div class="kpi-card"><div class="stat-num">${items.length}</div><div class="stat-label">Products in ${currentYear}</div></div>
-    <div class="kpi-card"><div class="stat-num">${newCount}</div><div class="stat-label">Currently within 120-day "New"</div></div>
-    <div class="kpi-card"><div class="stat-num">${upcoming}</div><div class="stat-label">Upcoming Launches</div></div>
+    <div class="kpi-card"><div class="stat-num">${items.length}</div><div class="stat-label">Products in ${currentYear}${brandSuffix}</div></div>
+    <div class="kpi-card"><div class="stat-num">${newCount}</div><div class="stat-label">Currently within 120-day "New"${brandSuffix}</div></div>
+    <div class="kpi-card"><div class="stat-num">${upcoming}</div><div class="stat-label">Upcoming Launches${brandSuffix}</div></div>
   `;
 
-  renderBrandBreakdown(items);
+  renderBrandBreakdown(yearItems);   // แดชบอร์ดสรุปแยกแบรนด์ = โชว์ครบทุกแบรนด์เสมอ (ไม่ขึ้นกับปุ่มกรอง)
   renderCategoryChart(items);
   renderQuarterGrid(items);
   renderStockTimeline(items);
