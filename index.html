@@ -207,9 +207,12 @@
   /* compact calendar nav row: buttons hug their label instead of stretching equally */
   .cal-nav-row{flex-wrap:wrap;}
   .cal-nav-row .btn-sm{flex:0 0 auto;}
-  /* New Products table — show only the selected Part's date columns */
-  #product-table.ptbl-npd .pcol-mkt{display:none;}
-  #product-table.ptbl-mkt .pcol-npd{display:none;}
+  /* New Products table — show only the selected Part's date columns.
+     Collapse the whole COLUMN via the <col> (visibility:collapse) — NOT display:none on the
+     cells, which (with table-layout:fixed) would re-map the remaining cells onto the wrong
+     <col> tracks. visibility:collapse keeps every cell in place and removes the track. */
+  #product-table.ptbl-npd col.pcol-mkt{visibility:collapse;}
+  #product-table.ptbl-mkt col.pcol-npd{visibility:collapse;}
   .btn-sm.primary{background:var(--blue-deep); color:#fff;}
   .btn-sm.primary:hover{background:var(--blue-ink);}
   .btn-sm.ghost{background:var(--blue-pale); color:var(--blue-ink);}
@@ -715,16 +718,16 @@
           <col style="width:85px;">   <!-- Type -->
           <col style="width:75px;">   <!-- Category -->
           <col style="width:130px;">  <!-- Status -->
-          <col style="width:76px;">   <!-- Sample to MKT -->
-          <col style="width:76px;">   <!-- Product on Stock -->
-          <col style="width:76px;">   <!-- Ref Photo Due -->
-          <col style="width:76px;">   <!-- Photo Shoot Date -->
-          <col style="width:76px;">   <!-- Product Image/Video Ready -->
-          <col style="width:76px;">   <!-- Digital Asset Ready -->
-          <col style="width:76px;">   <!-- Platform Listing Done -->
-          <col style="width:76px;">   <!-- Basket Open Date -->
-          <col style="width:76px;">   <!-- Launch Date -->
-          <col style="width:76px;">   <!-- PR Marketing Date -->
+          <col class="pcol pcol-npd" style="width:76px;">   <!-- Sample to MKT -->
+          <col class="pcol pcol-npd" style="width:76px;">   <!-- Product on Stock -->
+          <col class="pcol pcol-mkt" style="width:76px;">   <!-- Ref Photo Due -->
+          <col class="pcol pcol-mkt" style="width:76px;">   <!-- Photo Shoot Date -->
+          <col class="pcol pcol-mkt" style="width:76px;">   <!-- Product Media Completion -->
+          <col class="pcol pcol-mkt" style="width:76px;">   <!-- E-Commerce Content Readiness -->
+          <col class="pcol pcol-mkt" style="width:76px;">   <!-- Marketplace Listing Completion -->
+          <col class="pcol pcol-npd" style="width:76px;">   <!-- Basket Open Date -->
+          <col class="pcol pcol-npd" style="width:76px;">   <!-- Launch Date -->
+          <col class="pcol pcol-mkt" style="width:76px;">   <!-- PR Marketing Date -->
           <col style="width:56px;">   <!-- Canva -->
         </colgroup>
         <thead>
