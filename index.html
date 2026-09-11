@@ -197,6 +197,13 @@
   .cshades{display:flex; flex-direction:column; gap:5px; margin-top:8px;}
   .shade-row{display:flex; align-items:center; gap:8px; padding:6px 9px; border:1px solid var(--line); border-radius:9px; background:#fff; cursor:pointer; font-size:12.5px; transition:background .12s, border-color .12s;}
   .shade-row:hover{background:var(--blue-pale); border-color:var(--blue-ink);}
+  /* multi-SKU list collapsed into one toggle button (keeps every card the same compact height) */
+  .cshades-details{margin-top:10px;}
+  .cshades-summary{list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-family:'Prompt',sans-serif; font-size:12.5px; font-weight:600; color:var(--blue-deep); background:var(--blue-pale); border:1px solid #CFE0F5; border-radius:9px; padding:7px 13px; user-select:none; transition:background .12s;}
+  .cshades-summary::-webkit-details-marker{display:none;}
+  .cshades-summary::before{content:'▸'; font-size:10px; transition:transform .15s;}
+  .cshades-details[open] .cshades-summary::before{transform:rotate(90deg);}
+  .cshades-summary:hover{background:#E3EEFB;}
   .shade-name{flex:1; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .shade-sku{font-size:11px; color:var(--ink-soft); white-space:nowrap;}
   .shade-canva{text-decoration:none; font-size:14px; flex-shrink:0;}
@@ -208,11 +215,12 @@
   .cal-nav-row{flex-wrap:wrap;}
   .cal-nav-row .btn-sm{flex:0 0 auto;}
   /* New Products table — show only the selected Part's date columns.
-     Collapse the whole COLUMN via the <col> (visibility:collapse) — NOT display:none on the
-     cells, which (with table-layout:fixed) would re-map the remaining cells onto the wrong
-     <col> tracks. visibility:collapse keeps every cell in place and removes the track. */
-  #product-table.ptbl-npd col.pcol-mkt{visibility:collapse;}
-  #product-table.ptbl-mkt col.pcol-npd{visibility:collapse;}
+     THIS table uses table-layout:auto (overriding the global fixed) so hiding the cells AND
+     their <col> with display:none removes the column cleanly — no fixed-layout <col> remapping,
+     no phantom track, and no collapsed-cell content bleeding out (which floated the ⓘ icons). */
+  #product-table{table-layout:auto;}
+  #product-table.ptbl-npd th.pcol-mkt, #product-table.ptbl-npd td.pcol-mkt, #product-table.ptbl-npd col.pcol-mkt{display:none;}
+  #product-table.ptbl-mkt th.pcol-npd, #product-table.ptbl-mkt td.pcol-npd, #product-table.ptbl-mkt col.pcol-npd{display:none;}
   .btn-sm.primary{background:var(--blue-deep); color:#fff;}
   .btn-sm.primary:hover{background:var(--blue-ink);}
   .btn-sm.ghost{background:var(--blue-pale); color:var(--blue-ink);}
@@ -3567,7 +3575,10 @@ function catalogGroupCard(members){
         <div class="csku">กลุ่ม ${esc(members[0].key)}</div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${brandBadge(rep,20)}${typeBadge(rep)}${categoryBadge(rep)}${collectionBadge((members.map(m=>(m.p.collection||'').trim()).find(Boolean)||''))}</div>
         ${EDIT_MODE ? `<button class="btn-sm primary cgroup-edit" onclick="editGroupShared('${attrJs(members[0].p.sku)}')">✏️ แก้ข้อมูลร่วมทั้งกลุ่ม (${members.length} SKU)</button>` : ''}
-        <div class="cshades">${shadeRows}</div>
+        <details class="cshades-details"${EDIT_MODE?' open':''}>
+          <summary class="cshades-summary">ดูทั้ง ${members.length} SKU / เฉด</summary>
+          <div class="cshades">${shadeRows}</div>
+        </details>
         ${EDIT_MODE ? `<div class="cgroup-hint">แถว ✏️ = แก้เฉดเดียว · ปุ่มด้านบน = แก้ Timeline/แบรนด์/หมวด ครั้งเดียวลงทุก SKU</div>` : ''}
       </div>
     </div>`;
@@ -3643,13 +3654,10 @@ function renderCatalog(){
   grid.innerHTML = orderedCats.map(cat=>{
     const inCat=gInfo.filter(g=>g.category===cat);
     // จัด collection ให้อยู่ติดกัน (เรียง collection ตามชิ้นใหม่สุดของ collection นั้น) + สินค้าใหม่อยู่บน
-    const collDate={};
-    inCat.forEach(g=>{ const ck=g.collection||(' '+g.key); collDate[ck]=Math.max(collDate[ck]||0, g.newest); });
+    const createdOrder=g=>Math.max(...g.members.map(m=>m.idx));
     inCat.sort((a,b)=>{
-      if(a.recent!==b.recent) return a.recent?-1:1;
-      const ca=a.collection||(' '+a.key), cb=b.collection||(' '+b.key);
-      if(ca!==cb) return (collDate[cb]-collDate[ca]) || ca.localeCompare(cb);
-      return (b.newest-a.newest) || String(a.key).localeCompare(String(b.key),undefined,{numeric:true,sensitivity:'base'});
+      if(a.recent!==b.recent) return a.recent?-1:1;   // recent-on-this-device to very top
+      return createdOrder(b)-createdOrder(a);            // newest-created first
     });
     const cards=inCat.map(g=> g.members.length>1 ? catalogGroupCard(g.members) : catalogSingleCard(g.members[0].p, g.members[0].idx)).join('');
     const cdef=CATEGORY_DEFS[cat];
