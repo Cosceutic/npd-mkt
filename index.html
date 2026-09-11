@@ -785,7 +785,14 @@
       <button class="btn-edit ghost" id="btn-sync-setup" onclick="openSyncSetup()" style="display:none;">⚙️ ตั้งค่า Sheet Sync</button>
     </div>
     <div class="brand-filter-bar" id="catalog-brand-bar"></div>
-    <div style="margin-bottom:14px;"><input type="text" id="catalog-search" class="catalog-search" oninput="renderCatalog()" placeholder="🔍 ค้นหาสินค้า (ชื่อ / SKU / บาร์โค้ด / Collection)"></div>
+    <div style="margin-bottom:10px;"><input type="text" id="catalog-search" class="catalog-search" oninput="renderCatalog()" placeholder="🔍 ค้นหาสินค้า (ชื่อ / SKU / บาร์โค้ด / Collection)"></div>
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+      <span style="font-size:12.5px; color:var(--ink-soft); font-weight:600;">เรียงตาม:</span>
+      <button class="btn-sm subnav-active" id="csortbtn-created" onclick="setCatalogSort('created')" style="flex:0 0 auto;">🆕 วันที่สร้าง (ใหม่→เก่า)</button>
+      <button class="btn-sm" id="csortbtn-name" onclick="setCatalogSort('name')" style="flex:0 0 auto;">🔤 ชื่อ (ก-ฮ / A-Z)</button>
+      <button class="btn-sm" id="csortbtn-collection" onclick="setCatalogSort('collection')" style="flex:0 0 auto;">🎁 Collection</button>
+      <button class="btn-sm" id="csortbtn-sku" onclick="setCatalogSort('sku')" style="flex:0 0 auto;">🔢 SKU</button>
+    </div>
     <div id="catalog-grid"></div>
     <div id="catalog-empty" class="empty" style="display:none;">No products yet.</div>
   </div>
@@ -3594,6 +3601,13 @@ function editGroupShared(sku){
 // มุมมองแบรนด์ของหน้า Product Info
 let catalogBrandFilter='all';
 function setCatalogBrandFilter(b){ catalogBrandFilter=b||'all'; renderCatalog(); }
+// การเรียงสินค้าในหน้า Product Info: created (ใหม่→เก่า) · name (อักษร) · collection · sku
+let catalogSort='created';
+function setCatalogSort(s){
+  catalogSort=s||'created';
+  ['created','name','collection','sku'].forEach(function(k){ var b=document.getElementById('csortbtn-'+k); if(b) b.classList.toggle('subnav-active', k===catalogSort); });
+  renderCatalog();
+}
 function renderCatalogBrandBar(brands){
   const host=document.getElementById('catalog-brand-bar'); if(!host) return;
   if(!brands.length){ host.innerHTML=''; return; }
@@ -3640,6 +3654,8 @@ function renderCatalog(){
     const members=groups[key];
     const rep=(members.find(m=>m.p.image)||members[0]).p;
     return { key, members,
+      name:(rep.name||'').trim(),
+      created:Math.max.apply(null, members.map(m=>m.idx)),
       category:(rep.category||'').trim(),
       collection:(members.map(m=>(m.p.collection||'').trim()).find(Boolean)||''),
       recent:groupAddedRecently(members),
@@ -3654,10 +3670,20 @@ function renderCatalog(){
   grid.innerHTML = orderedCats.map(cat=>{
     const inCat=gInfo.filter(g=>g.category===cat);
     // จัด collection ให้อยู่ติดกัน (เรียง collection ตามชิ้นใหม่สุดของ collection นั้น) + สินค้าใหม่อยู่บน
-    const createdOrder=g=>Math.max(...g.members.map(m=>m.idx));
     inCat.sort((a,b)=>{
-      if(a.recent!==b.recent) return a.recent?-1:1;   // recent-on-this-device to very top
-      return createdOrder(b)-createdOrder(a);            // newest-created first
+      if(catalogSort==='name')
+        return a.name.localeCompare(b.name,'th',{numeric:true,sensitivity:'base'});
+      if(catalogSort==='sku')
+        return String(a.key).localeCompare(String(b.key),undefined,{numeric:true,sensitivity:'base'});
+      if(catalogSort==='collection'){
+        const ca=a.collection, cb=b.collection;
+        if(!!ca!==!!cb) return ca?-1:1;                  // มี Collection ก่อน, ไม่มีไว้ท้าย
+        if(ca!==cb) return ca.localeCompare(cb,'th',{numeric:true,sensitivity:'base'});
+        return b.created-a.created;                       // ใน Collection เดียวกัน ใหม่→เก่า
+      }
+      // default 'created' — ใหม่→เก่า (เพิ่งเพิ่มในเครื่องนี้เด้งบนสุด)
+      if(a.recent!==b.recent) return a.recent?-1:1;
+      return b.created-a.created;
     });
     const cards=inCat.map(g=> g.members.length>1 ? catalogGroupCard(g.members) : catalogSingleCard(g.members[0].p, g.members[0].idx)).join('');
     const cdef=CATEGORY_DEFS[cat];
