@@ -140,6 +140,21 @@
   .ue-item-name{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .ue-multi-item:has(input:checked) .ue-item-name{font-weight:600; color:var(--accent-deep,#D14E88);}
   .ue-item-sku{color:var(--ink-soft,#6B7684); font-size:11px; background:var(--bg,#F6F8FC); border-radius:6px; padding:1px 8px; white-space:nowrap; flex:none;}
+  /* ===== NPD Process — work summary by topic (per product) ===== */
+  .psum-track{margin-bottom:22px;}
+  .psum-track-h{font-family:'Prompt',sans-serif; font-weight:700; font-size:15px; color:var(--accent-deep,#D14E88); border-bottom:2px solid var(--accent-pale,#FDEAF3); padding-bottom:6px; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+  .psum-sub{margin:0 0 15px;}
+  .psum-sub-h{font-weight:600; font-size:13.5px; color:var(--ink,#22303A); margin-bottom:7px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .psum-count{font-size:11px; font-weight:600; color:var(--ink-soft,#6B7684); background:var(--bg,#F6F8FC); border:1px solid var(--line,#E4E9F2); border-radius:999px; padding:1px 9px;}
+  .psum-table-wrap{overflow-x:auto; border:1px solid var(--line,#E4E9F2); border-radius:12px;}
+  .psum-table{width:100%; border-collapse:collapse; font-size:12.5px; table-layout:auto;}
+  .psum-table th{background:var(--bg,#F6F8FC); text-align:left; padding:8px 11px; font-weight:600; color:var(--ink-soft,#6B7684); white-space:nowrap; border-bottom:1px solid var(--line,#E4E9F2);}
+  .psum-table td{padding:8px 11px; border-bottom:1px solid var(--line,#E4E9F2); vertical-align:top; line-height:1.5;}
+  .psum-table tr:last-child td{border-bottom:none;}
+  .psum-table tbody tr:hover td{background:#FCFDFF;}
+  .psum-stage{display:inline-block; background:var(--accent-pale,#FDEAF3); color:var(--accent-deep,#D14E88); border-radius:999px; padding:2px 10px; font-weight:600; font-size:11.5px; white-space:nowrap;}
+  .psum-table td .att-tile,.psum-table td img{max-width:96px;}
+  .psum-empty{text-align:center; padding:28px; color:var(--ink-soft,#6B7684);}
 
   .panel{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px 20px 18px; margin-bottom:18px;}
   .panel h3{margin:16px 0 12px; font-size:14.5px;}
@@ -1142,6 +1157,16 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="psum-overlay" style="z-index:74;" onclick="if(event.target===this) closeProcessSummary()">
+  <div class="modal-box" style="max-width:880px; width:96vw;">
+    <div class="modal-header">
+      <div id="psum-head" style="display:flex; align-items:center; gap:12px; min-width:0;"></div>
+      <button class="modal-close" onclick="closeProcessSummary()">✕</button>
+    </div>
+    <div class="modal-body" id="psum-body" style="padding:16px 20px 24px; max-height:78vh; overflow:auto;"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="tracklog-overlay" style="z-index:60;" onclick="if(event.target===this) closeTrackLog()">
   <div class="modal-box" style="max-width:620px;">
     <div class="modal-header">
@@ -1720,6 +1745,9 @@ function mapUpdateRow(r){
     risk: (r.Risk||'').trim(),
     nextDue: (r.NextDue || r['Next Due'] || '').trim(),
     nextDueDetail: (r.NextDueDetail || r['Next Due Detail'] || '').trim(),
+    formulaCode: (r.FormulaCode || r['Formula Code'] || '').trim(),
+    formulaList: (r.FormulaList || r['Formula List'] || '').trim(),
+    formulaColor: (r.FormulaColor || r['Formula Color'] || '').trim(),
     id: (r.id || r.ID || '').trim(),
     _local: !!r._local,
   };
@@ -3803,6 +3831,86 @@ function nameForSku(sku){
 function latestLogsForSku(sku){
   return UPDATE_LOGS.filter(l=>l.sku===sku).sort((a,b)=>b.date.localeCompare(a.date));
 }
+/* ===== NPD Process — click a product name → summary of its work grouped by แผนก(track) → หัวข้อ(subcategory).
+   Each หัวข้อ becomes a table (วันที่ · สถานะ · รายละเอียด · กำหนดถัดไป · รูป · ผู้อัปเดต). R&D shown first. ===== */
+const PSUM_TRACK_ORDER = ['rd','pkg','purchase','graphic','data','branding','marketing','npd','supply chain','warehouse','accounting','cosmania oem'];
+function processSummaryLogs(sku){
+  const grp = productGroupOf(sku);
+  const set = new Set([sku, grp]); (groupMembers(grp)||[]).forEach(s=>set.add(s));
+  return UPDATE_LOGS.filter(l=>set.has(l.sku));
+}
+/* "รวมทุกสูตร" table (matches the team's Final-Formula sheet): one row per unique รหัสสูตร
+   (Trial No.), with List / Color / received-date / auto CF date (from the อนุมัติสูตร entry
+   carrying the same code) / image. Multiple codes in one entry are split by comma. */
+function formulaSummaryTable(rdLogs){
+  rdLogs = rdLogs || [];
+  const APPROVED_RE = /อนุมัติสูตร|formulation approved/i;
+  const cfByCode = {};
+  rdLogs.forEach(l=>{ if(!l.formulaCode || !l.date || !APPROVED_RE.test(l.subCategory||'')) return;
+    l.formulaCode.split(',').map(c=>c.trim()).filter(Boolean).forEach(c=>{ if(!cfByCode[c]||l.date>cfByCode[c]) cfByCode[c]=l.date; }); });
+  const byCode={}, order=[];
+  rdLogs.forEach(l=>{ if(!l.formulaCode) return;
+    l.formulaCode.split(',').map(c=>c.trim()).filter(Boolean).forEach(code=>{
+      if(!byCode[code]){ byCode[code]={list:'',color:'',img:'',recv:''}; order.push(code); }
+      const b=byCode[code];
+      if(l.formulaList && !b.list) b.list=l.formulaList;
+      if(l.formulaColor && !b.color) b.color=l.formulaColor;
+      if(l.imagesRaw && !b.img) b.img=l.imagesRaw;
+      if(l.date && (!b.recv || l.date<b.recv)) b.recv=l.date;
+    });
+  });
+  if(!order.length) return '';
+  const rows = order.map((code,i)=>{ const b=byCode[code];
+    const recv = b.recv ? formatDate(new Date(b.recv+'T00:00:00')) : '<span class="dash">-</span>';
+    const cfd = cfByCode[code] ? formatDate(new Date(cfByCode[code]+'T00:00:00')) : '<span class="dash">-</span>';
+    const img = attachmentTiles(b.img,'sm') || '<span class="dash">-</span>';
+    return `<tr><td style="text-align:center;">${i+1}</td><td>${esc(b.list)||'<span class="dash">-</span>'}</td><td>${esc(b.color)||'<span class="dash">-</span>'}</td><td style="white-space:nowrap;"><span style="font-weight:600;color:var(--accent-deep,#D14E88);">${esc(code)}</span></td><td style="white-space:nowrap;">${recv}</td><td style="white-space:nowrap;">${cfd}</td><td>${img}</td></tr>`;
+  }).join('');
+  return `<div class="psum-sub"><div class="psum-sub-h">🧪 รวมทุกสูตร (All Formulas) <span class="psum-count">${order.length} สูตร</span></div>
+    <div class="psum-table-wrap"><table class="psum-table"><thead><tr><th>No.</th><th>รายการ (List)</th><th>คำอธิบายสี</th><th>รหัสสูตร (Trial No.)</th><th>วันที่ได้รับ</th><th>✅ วันที่ CF</th><th>ภาพ</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function openProcessSummary(sku){
+  const logs = processSummaryLogs(sku);
+  const name = nameForSku(sku);
+  const grp = productGroupOf(sku);
+  const rep = PRODUCTS.find(p=>p.sku===sku) || PRODUCTS.find(p=>productGroupOf(p.sku)===grp) || null;
+  const head = document.getElementById('psum-head');
+  head.innerHTML = `${rep&&rep.image?`<img src="${esc(rep.image)}" alt="" style="width:48px;height:48px;border-radius:10px;object-fit:cover;cursor:pointer;flex:none;" onclick="openLightbox('${esc(rep.image)}',event)">`:''}
+    <div style="min-width:0;"><div class="mh-name" style="font-size:15px;">${esc(name)}</div>
+    <span class="sku" style="display:inline;">${esc(isGroupCode(sku)?('กลุ่ม '+sku):sku)} · สรุปงานตามหัวข้อ</span></div>`;
+  const body = document.getElementById('psum-body');
+  if(!logs.length){
+    body.innerHTML = '<div class="psum-empty">🗒️ ยังไม่มีบันทึกความคืบหน้าสำหรับสินค้านี้<br><span style="font-size:12px;">เพิ่มได้จากปุ่ม “➕ เพิ่มบันทึกความคืบหน้า”</span></div>';
+  } else {
+    const byTrack={}; logs.forEach(l=>{ const t=l.track||'other'; (byTrack[t]=byTrack[t]||[]).push(l); });
+    const tracks = PSUM_TRACK_ORDER.filter(t=>byTrack[t]).concat(Object.keys(byTrack).filter(t=>PSUM_TRACK_ORDER.indexOf(t)<0));
+    body.innerHTML = tracks.map(t=>{
+      const bySub={}, subOrder=[];
+      byTrack[t].forEach(l=>{ const s=(l.subCategory||'').trim()||'(ไม่ระบุหัวข้อ)'; if(!bySub[s]){bySub[s]=[];subOrder.push(s);} bySub[s].push(l); });
+      const subsHtml = subOrder.map(s=>{
+        const rows = bySub[s].slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+        const trs = rows.map(l=>{
+          const dt = l.date ? formatDate(new Date(l.date+'T00:00:00')) : '<span class="dash">-</span>';
+          const stage = l.stage ? `<span class="psum-stage">${esc(l.stage)}</span>` : '<span class="dash">-</span>';
+          const detail = esc([l.detail, l.note].filter(Boolean).join(' · ')) || '<span class="dash">-</span>';
+          const imgs = attachmentTiles(l.imagesRaw, 'sm') || '<span class="dash">-</span>';
+          const scopeTag = (l.sku!==sku && isGroupCode(l.sku)) ? ' <span class="grp-tag" title="อัปเดตระดับกลุ่ม">กลุ่ม</span>' : (l.sku!==sku && !isGroupCode(sku) ? ` <span class="grp-tag">${esc(l.sku)}</span>` : '');
+          const by = (esc([l.pic?('👤 '+l.pic):'', l.updatedBy].filter(Boolean).join(' · '))||'') + scopeTag || '<span class="dash">-</span>';
+          const ndIso = l.nextDue ? parseSheetDate(l.nextDue) : '';
+          const ndDisp = ndIso ? formatDate(new Date(ndIso+'T00:00:00')) : (l.nextDue||'');
+          const nd = (ndDisp||l.nextDueDetail) ? esc([ndDisp, l.nextDueDetail].filter(Boolean).join(' — ')) : '<span class="dash">-</span>';
+          return `<tr><td style="white-space:nowrap;">${dt}</td><td>${stage}</td><td>${detail}</td><td>${nd}</td><td>${imgs}</td><td style="white-space:nowrap;">${by}</td></tr>`;
+        }).join('');
+        return `<div class="psum-sub"><div class="psum-sub-h">📋 ${esc(s)} <span class="psum-count">${rows.length} รายการ</span></div>
+          <div class="psum-table-wrap"><table class="psum-table"><thead><tr><th>วันที่</th><th>สถานะ</th><th>รายละเอียด</th><th>กำหนดถัดไป</th><th>รูป</th><th>ผู้อัปเดต</th></tr></thead><tbody>${trs}</tbody></table></div></div>`;
+      }).join('');
+      const formulaHtml = (t==='rd') ? formulaSummaryTable(byTrack['rd']) : '';
+      return `<div class="psum-track"><div class="psum-track-h">🗂️ ${esc(trackLabelOf(t))}</div>${formulaHtml}${subsHtml}</div>`;
+    }).join('');
+  }
+  document.getElementById('psum-overlay').classList.add('open');
+}
+function closeProcessSummary(){ const el=document.getElementById('psum-overlay'); if(el) el.classList.remove('open'); }
 function riskForSku(sku){
   const hit = latestLogsForSku(sku).find(l=>l.risk);
   return hit ? hit.risk : '';
@@ -4018,11 +4126,11 @@ function renderTeamUpdates(){
       const members = grpMap[key];
       if(members.length===1){
         const p=members[0]; const idx=PRODUCTS.indexOf(p);
-        return rowFor(p.sku, imgOf(p), `<button class="link-btn" onclick="openTimeline(${idx})">${esc(p.name)}</button>`);
+        return rowFor(p.sku, imgOf(p), `<button class="link-btn" onclick="openProcessSummary('${attrJs(p.sku)}')">${esc(p.name)}</button>`);
       }
       const rep = members.find(m=>m.image) || members[0];
       const gname = groupDisplayName(key);
-      const nameCell = `<div style="font-weight:600;">${esc(gname)} <span class="grp-tag">${members.length} SKU</span></div>
+      const nameCell = `<div style="font-weight:600;"><button class="link-btn" style="font-weight:600;" onclick="openProcessSummary('${attrJs(key)}')">${esc(gname)}</button> <span class="grp-tag">${members.length} SKU</span></div>
         <span class="sku" style="display:inline;">กลุ่ม ${esc(key)}</span>`;
       return `<tr>
         <td>${imgOf(rep)}</td><td>${nameCell}</td>
@@ -4031,7 +4139,7 @@ function renderTeamUpdates(){
     }).join('');
     const pendingRows = pendingSkus.map(sku=>{
       const name = nameForSku(sku);
-      return rowFor(sku, '<span class="dash">-</span>', `<strong style="font-size:13px;">${esc(name)}</strong><br><span class="sku" style="display:inline;">${esc(sku)} · ยังไม่มีในระบบสินค้า</span>`, ' style="background:var(--bg);"');
+      return rowFor(sku, '<span class="dash">-</span>', `<button class="link-btn" style="font-weight:700; font-size:13px;" onclick="openProcessSummary('${attrJs(sku)}')">${esc(name)}</button><br><span class="sku" style="display:inline;">${esc(sku)} · ยังไม่มีในระบบสินค้า</span>`, ' style="background:var(--bg);"');
     }).join('');
     tbody.innerHTML = knownRows + pendingRows;
   }
@@ -7389,6 +7497,7 @@ function updateSubStageFields(){
   const t=(document.getElementById('ue-Track')||{}).value||'';
   const sc=document.getElementById('ue-subcat-cell'); if(sc) sc.innerHTML=subcatCellHtml(t,'');
   const st=document.getElementById('ue-stage-cell'); if(st) st.innerHTML=ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesFor(t,''),'','เช่น กำลังทำ, เสร็จ','maybeAutoNextDue()');
+  const rd=document.getElementById('ue-rd-fields'); if(rd) rd.style.display = normalizeTrack(t)==='rd' ? '' : 'none';  // ช่องรหัสสูตร/CF โผล่เฉพาะ R&D
   maybeAutoNextDue();
 }
 // Stage ขึ้นกับแผนก; เปลี่ยน SubCategory/Stage แล้วคำนวณ Auto Next Due ให้ด้วย
@@ -7540,6 +7649,17 @@ function renderUpdateForm(){
     <div class="pe-field"><label>สาย/แผนก (Track)</label><select id="ue-Track" onchange="updateSubStageFields()">${trackOpts}</select></div>
     <div class="pe-field" id="ue-subcat-cell">${subcatCellHtml(initTrack, pf.SubCategory||'')}</div>
     <div class="pe-field" id="ue-stage-cell">${ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesFor(initTrack, pf.SubCategory||''),pf.Stage||'','เช่น กำลังทำ, เสร็จ','maybeAutoNextDue()')}</div>
+    <div class="pe-field full" id="ue-rd-fields" style="display:${normalizeTrack(initTrack)==='rd'?'':'none'};">
+      <div style="background:var(--accent-pale,#FDEAF3); border:1px solid #F3C6DD; border-radius:12px; padding:12px;">
+        <div style="font-weight:600; color:var(--accent-deep,#D14E88); font-size:12.5px; margin-bottom:8px;">🧪 ข้อมูลสูตร (สำหรับตาราง “รวมทุกสูตร”)</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:150px;"><label style="font-size:11.5px; font-weight:600;">รหัสสูตร / Trial No.</label><input type="text" id="ue-FormulaCode" value="${esc(pf.FormulaCode||'')}" placeholder="เช่น LA0304-1/23 · หลายรหัสคั่นด้วย ,"></div>
+          <div style="flex:1; min-width:130px;"><label style="font-size:11.5px; font-weight:600;">รายการ (List)</label><input type="text" id="ue-FormulaList" value="${esc(pf.FormulaList||'')}" placeholder="เช่น Wonder, Eye shadow"></div>
+          <div style="flex:1; min-width:130px;"><label style="font-size:11.5px; font-weight:600;">คำอธิบายสี</label><input type="text" id="ue-FormulaColor" value="${esc(pf.FormulaColor||'')}" placeholder="เช่น สีแดงหุ่น"></div>
+        </div>
+        <div style="font-size:11px; color:var(--ink-soft,#6B7684); margin-top:8px; line-height:1.5;">💡 กรอกรหัสสูตรทั้งในรายการ <b>“พัฒนาสูตร”</b> และ <b>“อนุมัติสูตร”</b> ที่เป็นสูตรเดียวกัน → ระบบจับคู่รหัสแล้วดึง <b>วันที่ CF</b> มาให้อัตโนมัติจากวันของรายการอนุมัติสูตร · ภาพประกอบใช้ช่อง “ไฟล์แนบ/รูป” ด้านล่าง</div>
+      </div>
+    </div>
     <div class="pe-field"><label>PIC (ผู้รับผิดชอบ)</label><input type="text" id="ue-PIC" list="ue-pic-list" value="${esc(pf.PIC||'')}" placeholder="เลือกหรือพิมพ์ชื่อ (อื่นๆพิมพ์เองได้)"><datalist id="ue-pic-list">${picList}</datalist></div>
     <div class="pe-field"><label>ผู้อัปเดต (UpdatedBy)</label><select id="ue-UpdatedBy">${byOpts}</select></div>
     <div class="pe-field"><label>Risk</label><select id="ue-Risk">${riskOpts}</select></div>
@@ -7603,7 +7723,11 @@ function collectUpdateBase(){
     // actually writes to the column; keep "NextDue" too for tolerant local reads.
     NextDue:nextDue, 'Next Due':nextDue,
     // รายละเอียดของกำหนดถัดไป — แยกจาก Detail (งานรอบนี้); ต้องเพิ่มคอลัมน์ "Next Due Detail" ในชีตถึงจะซิงค์
-    NextDueDetail:g('NextDueDetail'), 'Next Due Detail':g('NextDueDetail')
+    NextDueDetail:g('NextDueDetail'), 'Next Due Detail':g('NextDueDetail'),
+    // R&D: ข้อมูลสูตร — เพิ่มคอลัมน์ "Formula Code"/"Formula List"/"Formula Color" ในชีตถึงจะซิงค์ (วันที่ CF ดึงอัตโนมัติจากรายการอนุมัติสูตร)
+    FormulaCode:g('FormulaCode'), 'Formula Code':g('FormulaCode'),
+    FormulaList:g('FormulaList'), 'Formula List':g('FormulaList'),
+    FormulaColor:g('FormulaColor'), 'Formula Color':g('FormulaColor')
   };
 }
 function collectUpdateForm(){
@@ -7779,7 +7903,7 @@ function editUpdateEntry(id){
   // a group-scoped entry is stored under the group code — show a member SKU + scope=group so it edits cleanly
   const grpMode = isGroupCode(e.sku);
   const dispSku = grpMode ? (groupMembers(e.sku)[0] || e.sku) : e.sku;
-  openUpdateEditor({ sku:dispSku, scope: grpMode?'group':'sku', trackLabel:e.trackRaw||'', SubCategory:e.subCategory, Stage:e.stage, Date:e.date, UpdatedBy:e.updatedBy, PIC:e.pic, Risk:e.risk, NextDue:e.nextDue, NextDueDetail:e.nextDueDetail, Detail:e.detail, Note:e.note, Images:e.imagesRaw||'' }, id);
+  openUpdateEditor({ sku:dispSku, scope: grpMode?'group':'sku', trackLabel:e.trackRaw||'', SubCategory:e.subCategory, Stage:e.stage, Date:e.date, UpdatedBy:e.updatedBy, PIC:e.pic, Risk:e.risk, NextDue:e.nextDue, NextDueDetail:e.nextDueDetail, FormulaCode:e.formulaCode, FormulaList:e.formulaList, FormulaColor:e.formulaColor, Detail:e.detail, Note:e.note, Images:e.imagesRaw||'' }, id);
 }
 function deleteUpdateEntry(id){
   if(!confirm('ลบบันทึกนี้ออกจาก Updates Log?')) return;
@@ -7853,7 +7977,7 @@ function deleteNotice(msg){
 /* ESC closes the new modals */
 document.addEventListener('keydown', (e)=>{
   if(e.key!=='Escape') return;
-  const stack=[['sync-overlay',closeSyncSetup],['sb-overlay',closeSavedBriefsModal],['nm-overlay',closeNoticeManager],['ue-overlay',closeUpdateEditor],['pe-overlay',closeProductEditor]];
+  const stack=[['sync-overlay',closeSyncSetup],['sb-overlay',closeSavedBriefsModal],['nm-overlay',closeNoticeManager],['ue-overlay',closeUpdateEditor],['pe-overlay',closeProductEditor],['psum-overlay',closeProcessSummary]];
   for(const [id,fn] of stack){ const el=document.getElementById(id); if(el && el.classList.contains('open')){ fn(); return; } }
 });
 
