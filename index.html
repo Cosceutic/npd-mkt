@@ -207,6 +207,9 @@
   /* compact calendar nav row: buttons hug their label instead of stretching equally */
   .cal-nav-row{flex-wrap:wrap;}
   .cal-nav-row .btn-sm{flex:0 0 auto;}
+  /* New Products table — show only the selected Part's date columns */
+  #product-table.ptbl-npd .pcol-mkt{display:none;}
+  #product-table.ptbl-mkt .pcol-npd{display:none;}
   .btn-sm.primary{background:var(--blue-deep); color:#fff;}
   .btn-sm.primary:hover{background:var(--blue-ink);}
   .btn-sm.ghost{background:var(--blue-pale); color:var(--blue-ink);}
@@ -696,10 +699,13 @@
     </div>
 
     <div class="panel">
-      <h3>New Products</h3>
-      <p class="section-sub">Click a product name to see its full milestone timeline.</p>
+      <h3>สินค้าใหม่ <span style="color:var(--ink-soft); font-weight:400; font-size:11px; margin-left:6px;">New Products · คลิกชื่อสินค้าเพื่อดูไทม์ไลน์เต็ม</span></h3>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 12px;">
+        <button class="btn-sm subnav-active" id="pcolbtn-npd" onclick="switchProductCols('npd')" style="flex:0 0 auto;">📦 ข้อมูล NPD</button>
+        <button class="btn-sm" id="pcolbtn-mkt" onclick="switchProductCols('mkt')" style="flex:0 0 auto;">📣 ข้อมูล Marketing PR</button>
+      </div>
       <div class="table-scroll">
-      <table>
+      <table id="product-table" class="ptbl-npd">
         <colgroup>
           <col style="width:48px;">   <!-- Image -->
           <col style="width:230px;">  <!-- Product (wider) -->
@@ -723,24 +729,24 @@
         </colgroup>
         <thead>
           <tr>
-            <th>Image<span class="th-info" data-tip="รูปสินค้า">&#9432;</span></th>
-            <th>Product<span class="th-info" data-tip="ชื่อสินค้า">&#9432;</span></th>
+            <th>รูป<span class="th-info" data-tip="รูปสินค้า">&#9432;</span></th>
+            <th>สินค้า<span class="th-info" data-tip="ชื่อสินค้า">&#9432;</span></th>
             <th>SKU<span class="th-info" data-tip="รหัสสินค้า">&#9432;</span></th>
-            <th>Barcode<span class="th-info" data-tip="บาร์โค้ด">&#9432;</span></th>
-            <th>Brand<span class="th-info" data-tip="แบรนด์">&#9432;</span></th>
-            <th>Type<span class="th-info" data-tip="ประเภทสินค้า">&#9432;</span></th>
-            <th>Category<span class="th-info" data-tip="หมวดสินค้า">&#9432;</span></th>
-            <th>Status (120-day)<span class="th-info" data-tip="สถานะสินค้าใหม่ (120 วัน)">&#9432;</span></th>
-            <th>Sample to MKT<span class="th-info" data-tip="วันส่งตัวอย่างให้ MKT">&#9432;</span></th>
-            <th>Product on Stock<span class="th-info" data-tip="วันที่สินค้าเข้าคลัง">&#9432;</span></th>
-            <th>Ref Photo Due<span class="th-info" data-tip="วันที่ต้องได้ Ref ถ่ายรูป">&#9432;</span></th>
-            <th>Photo Shoot Date<span class="th-info" data-tip="วันถ่ายงาน">&#9432;</span></th>
-            <th>Product Media Completion<span class="th-info" data-tip="วันที่ภาพและวิดีโอสินค้าเสร็จสมบูรณ์">&#9432;</span></th>
-            <th>E-Commerce Content Readiness<span class="th-info" data-tip="วันที่เนื้อหาสำหรับขายออนไลน์พร้อมใช้งาน">&#9432;</span></th>
-            <th>Marketplace Listing Completion<span class="th-info" data-tip="วันที่ลงข้อมูลสินค้าบนแพลตฟอร์มครบทุกช่องทาง">&#9432;</span></th>
-            <th>Basket Open Date<span class="th-info" data-tip="วันที่เปิดตะกร้าขายสินค้า">&#9432;</span></th>
-            <th>Official Launch Date<span class="th-info" data-tip="วันเปิดตัวสินค้าอย่างเป็นทางการ">&#9432;</span></th>
-            <th>PR Marketing Date<span class="th-info" data-tip="วันประชาสัมพันธ์การตลาด">&#9432;</span></th>
+            <th>บาร์โค้ด<span class="th-info" data-tip="บาร์โค้ด">&#9432;</span></th>
+            <th>แบรนด์<span class="th-info" data-tip="แบรนด์">&#9432;</span></th>
+            <th>ประเภท<span class="th-info" data-tip="ประเภทสินค้า">&#9432;</span></th>
+            <th>หมวด<span class="th-info" data-tip="หมวดสินค้า">&#9432;</span></th>
+            <th>สถานะ<span class="th-info" data-tip="สถานะสินค้าใหม่ 120 วัน">&#9432;</span></th>
+            <th class="pcol pcol-npd">ส่งตัวอย่าง MKT<span class="th-info" data-tip="วันส่งตัวอย่างให้ MKT (Sample to MKT)">&#9432;</span></th>
+            <th class="pcol pcol-npd">เข้าคลัง<span class="th-info" data-tip="วันที่สินค้าเข้าคลัง (Product on Stock)">&#9432;</span></th>
+            <th class="pcol pcol-mkt">รูป Ref<span class="th-info" data-tip="วันที่ต้องได้ Ref ถ่ายรูป (Ref Photo Due)">&#9432;</span></th>
+            <th class="pcol pcol-mkt">วันถ่ายภาพ<span class="th-info" data-tip="วันถ่ายงาน (Photo Shoot Date)">&#9432;</span></th>
+            <th class="pcol pcol-mkt">ภาพ/วิดีโอเสร็จ<span class="th-info" data-tip="วันที่ภาพและวิดีโอสินค้าเสร็จ (Product Media Completion)">&#9432;</span></th>
+            <th class="pcol pcol-mkt">คอนเทนต์ออนไลน์<span class="th-info" data-tip="เนื้อหาขายออนไลน์พร้อมใช้ (E-Commerce Content Readiness)">&#9432;</span></th>
+            <th class="pcol pcol-mkt">ลงมาร์เก็ตเพลส<span class="th-info" data-tip="ลงข้อมูลสินค้าบนแพลตฟอร์มครบ (Marketplace Listing Completion)">&#9432;</span></th>
+            <th class="pcol pcol-npd">เปิดตะกร้า<span class="th-info" data-tip="วันเปิดตะกร้าขายสินค้า (Basket Open Date)">&#9432;</span></th>
+            <th class="pcol pcol-npd">วันเปิดตัว<span class="th-info" data-tip="วันเปิดตัวอย่างเป็นทางการ (Official Launch Date)">&#9432;</span></th>
+            <th class="pcol pcol-mkt">PR การตลาด<span class="th-info" data-tip="วันประชาสัมพันธ์การตลาด (PR Marketing Date)">&#9432;</span></th>
             <th>Canva<span class="th-info" data-tip="ลิงก์ Canva">&#9432;</span></th>
           </tr>
         </thead>
@@ -2731,6 +2737,16 @@ function switchTimeline(key){
   var t=document.getElementById('tl-title');
   if(t) t.innerHTML = meta.title + '<span style="color:var(--ink-soft); font-weight:400; font-size:11px; margin-left:6px;">'+meta.sub+'</span>';
 }
+/* New Products table — switch the visible date columns between NPD and Marketing PR parts */
+function switchProductCols(part){
+  var tbl=document.getElementById('product-table'); if(!tbl) return;
+  var mkt = (part==='mkt');
+  tbl.classList.toggle('ptbl-mkt', mkt);
+  tbl.classList.toggle('ptbl-npd', !mkt);
+  var bn=document.getElementById('pcolbtn-npd'), bm=document.getElementById('pcolbtn-mkt');
+  if(bn) bn.classList.toggle('subnav-active', !mkt);
+  if(bm) bm.classList.toggle('subnav-active', mkt);
+}
 function renderMilestoneTimeline(containerId, fieldKey, emptyLabel){
   const container = document.getElementById(containerId);
   const withDates = items_currentYearCache.filter(p=>effectiveDate(p,fieldKey));
@@ -3479,16 +3495,16 @@ function renderCalendar(){
       <td>${typeBadge(p)}</td>
       <td>${categoryBadge(p)}</td>
       <td><span class="pill" style="background:${status.color}">${status.label}</span></td>
-      <td class="td-date">${cellDate(p,'sampleToMkt')}</td>
-      <td class="td-date">${cellDate(p,'arrival')}</td>
-      <td class="td-date">${cellDate(p,'refPhoto')}</td>
-      <td class="td-date">${cellDate(p,'photoShoot')}</td>
-      <td class="td-date">${cellDate(p,'productMedia')}</td>
-      <td class="td-date">${cellDate(p,'dataReady')}</td>
-      <td class="td-date">${cellDate(p,'platformDone')}</td>
-      <td class="td-date">${cellDate(p,'basketOpen')}</td>
-      <td class="td-date">${cellDate(p,'launch')}</td>
-      <td class="td-date">${cellDate(p,'prDate')}</td>
+      <td class="td-date pcol pcol-npd">${cellDate(p,'sampleToMkt')}</td>
+      <td class="td-date pcol pcol-npd">${cellDate(p,'arrival')}</td>
+      <td class="td-date pcol pcol-mkt">${cellDate(p,'refPhoto')}</td>
+      <td class="td-date pcol pcol-mkt">${cellDate(p,'photoShoot')}</td>
+      <td class="td-date pcol pcol-mkt">${cellDate(p,'productMedia')}</td>
+      <td class="td-date pcol pcol-mkt">${cellDate(p,'dataReady')}</td>
+      <td class="td-date pcol pcol-mkt">${cellDate(p,'platformDone')}</td>
+      <td class="td-date pcol pcol-npd">${cellDate(p,'basketOpen')}</td>
+      <td class="td-date pcol pcol-npd">${cellDate(p,'launch')}</td>
+      <td class="td-date pcol pcol-mkt">${cellDate(p,'prDate')}</td>
       <td>${p.canva ? `<a class="canva-link" href="${esc(p.canva)}" target="_blank" rel="noopener">Open →</a>` : '<span class="dash">-</span>'}</td>
     </tr>`;
   });
