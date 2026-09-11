@@ -7565,7 +7565,7 @@ function fireConfetti(opts){
   try{ if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
   opts=opts||{};
   var count=opts.count||140;
-  var colors=opts.colors||['#ff9ec2','#ec5f97','#7db4ff','#5fd0a8','#ffb454','#c9a7ff','#ffd36b'];
+  var colors=opts.colors||['#FFC7DE','#FFD9C0','#FFE9A8','#C9F0DC','#C6E2FF','#E3D0FF','#FFCBE1'];
   var power=opts.power||1, spread=(opts.spread!=null)?opts.spread:Math.PI*0.9;
   var W=window.innerWidth, H=window.innerHeight;
   var origins=opts.origins||[{x:W*0.5,y:H*0.42}];
@@ -7606,7 +7606,7 @@ function launchConfetti(){
   var W=window.innerWidth, H=window.innerHeight;
   fireConfetti({count:90,power:1.35,spread:Math.PI*0.32,origins:[{x:W*0.06,y:H*0.98,ang:-Math.PI/3}]});
   fireConfetti({count:90,power:1.35,spread:Math.PI*0.32,origins:[{x:W*0.94,y:H*0.98,ang:-Math.PI*2/3}]});
-  fireConfetti({count:70,power:1.1,colors:['#ffd36b','#ffb454','#ffe9a8','#fff2cf','#ec5f97','#ff9ec2'],origins:[{x:W*0.5,y:H*0.5}]});
+  fireConfetti({count:70,power:1.1,colors:['#FFE9A8','#FFF2CF','#FFD9C0','#FFC7DE','#E3D0FF','#C9F0DC'],origins:[{x:W*0.5,y:H*0.5}]});
 }
 // decides which celebration (if any) to fire for a saved update row
 function celebrateMilestone(o){
@@ -7614,8 +7614,8 @@ function celebrateMilestone(o){
   var raw=((o.Stage||'')+' '+(o.SubCategory||'')+' '+(o.Track||'')+' '+(o.trackLabel||''));
   var isLaunch=/launch|เปิดขาย|วางขาย|วางจำหน่าย|เปิดตัว|เปิดตะกร้า|commercial\s*handover/i.test(raw);
   var isDone=/เรียบร้อย|เสร็จ|ได้ของ|ชำระเงินแล้ว|จบงาน|ส่งมอบ|อนุมัติ|approved|complete|done/i.test(o.Stage||'');
-  if(isLaunch){ setTimeout(function(){ launchConfetti(); toast('🎉🚀 Launch! ยินดีด้วยย','ok'); },120); }
-  else if(isDone){ setTimeout(function(){ fireConfetti({count:130}); },120); }
+  if(isLaunch){ playCelebrationSound('launch'); setTimeout(function(){ launchConfetti(); toast('🎉🚀 Launch! ยินดีด้วยย','ok'); },120); }
+  else if(isDone){ playCelebrationSound('done'); setTimeout(function(){ fireConfetti({count:130}); },120); }
 }
 function saveUpdateEntry(){
   // โหมดหลายสินค้า (เฉพาะตอนเพิ่มใหม่ ไม่ใช่ตอนแก้ไข)
