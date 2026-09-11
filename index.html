@@ -896,6 +896,8 @@
       <div id="brief-form-container" style="display:none; margin-top:16px;"></div>
     </div>
 
+    <div class="brand-filter-bar" id="team-brand-bar"></div>
+
     <div style="display:flex; gap:8px; margin-bottom:16px;">
       <button class="btn-sm subnav-active" id="subnav-status" onclick="switchTeamSubview('status')">Current Status</button>
       <button class="btn-sm" id="subnav-tracking" onclick="switchTeamSubview('tracking')">📅 Tracking (ปฏิทิน)</button>
@@ -3959,6 +3961,7 @@ let ALL_TRACK_EVENTS = [];
 function trackingEvents(){
   const evs=[];
   (UPDATE_LOGS||[]).forEach(l=>{
+    if(typeof teamLogVisible==='function' && !teamLogVisible(l.sku)) return;   // กรองตามแบรนด์ที่เลือกในหน้า NPD Process
     const name = nameForSku(l.sku);
     const label = [l.subCategory, l.stage, l.detail].filter(Boolean).join(' — ') || l.note || 'อัปเดต';
     if(l.date) evs.push({date:l.date, kind:'done', sku:l.sku, track:l.track, name, label, by:l.updatedBy, log:l});
@@ -4092,15 +4095,42 @@ async function deleteBriefFromSummary(nprNo){
 
 const TRACK_LABELS = { npd:'NPD', rd:'R&D (วิจัยพัฒนา)', purchase:'Purchase (จัดซื้อ)', pkg:'Technical Packaging', graphic:'Graphic (กราฟฟิก)', 'supply chain':'Supply Chain', data:'Data (ข้อมูลสินค้า)', branding:'Branding', marketing:'Sales & Marketing', warehouse:'Warehouse', accounting:'Accounting', 'cosmania oem':'Cosmania OEM' };
 function trackLabelOf(t){ return TRACK_LABELS[t] || (t ? t.replace(/\b\w/g,c=>c.toUpperCase()) : t); }
+/* ===== NPD Process — brand filter (whole page except Library + Brief Form) ===== */
+let teamBrandFilter='all';
+function teamBrandOf(sku){
+  let b=brandOfSku(sku);
+  if(!b && isGroupCode(sku)){ const m=groupMembers(sku)||[]; for(const s of m){ b=brandOfSku(s); if(b) break; } }
+  return b||'other';
+}
+function teamLogVisible(sku){ return teamBrandFilter==='all' || teamBrandOf(sku)===teamBrandFilter; }
+function renderTeamBrandBar(){
+  const host=document.getElementById('team-brand-bar'); if(!host) return;
+  const brands=[...new Set((PRODUCTS||[]).map(p=>p.brand||'other'))];
+  const bOrder=['godmami','glimmer','mamilabo'];
+  brands.sort((a,b)=>{const ia=bOrder.indexOf(a),ib=bOrder.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b);});
+  if(teamBrandFilter!=='all' && !brands.includes(teamBrandFilter)) teamBrandFilter='all';
+  if(brands.length<=1){ host.innerHTML=''; return; }
+  const btn=(val,label,color)=>`<button class="brand-filter-btn${teamBrandFilter===val?' active':''}" onclick="setTeamBrandFilter('${val}')">${color?`<span class="brand-dot" style="background:${color}"></span>`:''}${esc(label)}</button>`;
+  let html=btn('all','ทั้งหมด (รวมทุกแบรนด์)','');
+  brands.forEach(k=>html+=btn(k, brandDisplayLabel(k), BRAND_TINT[k]||'#6B7280'));
+  host.innerHTML=`<div class="brand-filter-bar-inner"><span class="brand-filter-lead">มุมมองแบรนด์:</span>${html}</div>`;
+}
+function setTeamBrandFilter(b){
+  teamBrandFilter=b||'all';
+  renderTeamUpdates();
+  const tv=document.getElementById('team-subview-tracking');
+  if(tv && tv.style.display!=='none'){ if(typeof renderTrackingCalendar==='function') renderTrackingCalendar(); if(typeof renderTrackingUpcoming==='function') renderTrackingUpcoming(); }
+}
 function renderTeamUpdates(){
+  renderTeamBrandBar();
   // Current Status table — one column per track that has updates (R&D + Packaging always shown)
   const tbody = document.getElementById('team-status-tbody');
   const headRow = document.getElementById('team-status-headrow');
   const skusWithLogs = new Set(UPDATE_LOGS.map(l=>l.sku));
   const knownSkus = new Set(PRODUCTS.map(p=>p.sku));
   // a product is relevant if it OR its group has any log; group codes never become phantom rows
-  const pendingSkus = [...skusWithLogs].filter(sku=>!knownSkus.has(sku) && !isGroupCode(sku));
-  const relevant = PRODUCTS.filter(p=>skusWithLogs.has(p.sku) || skusWithLogs.has(productGroupOf(p.sku)));
+  const pendingSkus = [...skusWithLogs].filter(sku=>!knownSkus.has(sku) && !isGroupCode(sku) && teamLogVisible(sku));
+  const relevant = PRODUCTS.filter(p=>(skusWithLogs.has(p.sku) || skusWithLogs.has(productGroupOf(p.sku))) && teamLogVisible(p.sku));
 
   const otherTracks = [...new Set(UPDATE_LOGS.map(l=>l.track).filter(Boolean))].filter(t=>t!=='rd'&&t!=='pkg').sort();
   const trackCols = ['rd','pkg', ...otherTracks];
@@ -4144,8 +4174,8 @@ function renderTeamUpdates(){
     tbody.innerHTML = knownRows + pendingRows;
   }
 
-  // Activity feed: Updates Log entries only, newest first
-  const feed = UPDATE_LOGS.map(l=>{
+  // Activity feed: Updates Log entries only, newest first (respects brand filter)
+  const feed = UPDATE_LOGS.filter(l=>teamLogVisible(l.sku)).map(l=>{
     const product = PRODUCTS.find(p=>p.sku===l.sku);
     const label = [l.subCategory, l.stage, l.detail].filter(Boolean).join(' — ');
     const noteText = [label, l.note].filter(Boolean).join(': ');
