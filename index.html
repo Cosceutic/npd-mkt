@@ -662,18 +662,15 @@
     </div>
 
     <div class="panel">
-      <h3 style="margin-top:16px;">Product on Stock Timeline<span style="color:var(--ink-soft); font-weight:400; font-size:11px; margin-left:6px;">ไทม์ไลน์สินค้าเข้าคลัง</span></h3>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+        <button class="btn-sm subnav-active" id="tlbtn-stock" onclick="switchTimeline('stock')">📦 สินค้าเข้าคลัง</button>
+        <button class="btn-sm" id="tlbtn-basket" onclick="switchTimeline('basket')">🛒 เปิดตะกร้าขาย</button>
+        <button class="btn-sm" id="tlbtn-pr" onclick="switchTimeline('pr')">📣 ประชาสัมพันธ์</button>
+      </div>
+      <h3 id="tl-title" style="margin-top:0;">Product on Stock Timeline<span style="color:var(--ink-soft); font-weight:400; font-size:11px; margin-left:6px;">ไทม์ไลน์สินค้าเข้าคลัง</span></h3>
       <div id="stock-timeline"></div>
-    </div>
-
-    <div class="panel">
-      <h3 style="margin-top:16px;">Online Sales Enablement Timeline<span style="color:var(--ink-soft); font-weight:400; font-size:11px; margin-left:6px;">ไทม์ไลน์วันที่เปิดตะกร้าขายสินค้า</span></h3>
-      <div id="basket-timeline"></div>
-    </div>
-
-    <div class="panel">
-      <h3 style="margin-top:16px;">Public Relations Timeline<span style="color:var(--ink-soft); font-weight:400; font-size:11px; margin-left:6px;">ไทม์ไลน์วันประชาสัมพันธ์การตลาด</span></h3>
-      <div id="pr-timeline"></div>
+      <div id="basket-timeline" style="display:none;"></div>
+      <div id="pr-timeline" style="display:none;"></div>
     </div>
 
     <div class="panel">
@@ -2714,6 +2711,22 @@ function productGroupLabel(p){
   return (groupMembers(g).length > 1) ? (groupDisplayName(g) || baseName(p && p.name)) : baseName(p && p.name);
 }
 
+/* The 3 milestone timelines share one panel with a segmented menu — only the active one shows,
+   to save vertical space (all 3 are still rendered underneath, just hidden). */
+const TL_META = {
+  stock:  {title:'Product on Stock Timeline',        sub:'ไทม์ไลน์สินค้าเข้าคลัง'},
+  basket: {title:'Online Sales Enablement Timeline', sub:'ไทม์ไลน์วันที่เปิดตะกร้าขายสินค้า'},
+  pr:     {title:'Public Relations Timeline',        sub:'ไทม์ไลน์วันประชาสัมพันธ์การตลาด'}
+};
+function switchTimeline(key){
+  const meta = TL_META[key] || TL_META.stock;
+  ['stock','basket','pr'].forEach(function(k){
+    var c=document.getElementById(k+'-timeline'); if(c) c.style.display=(k===key)?'':'none';
+    var b=document.getElementById('tlbtn-'+k); if(b) b.classList.toggle('subnav-active', k===key);
+  });
+  var t=document.getElementById('tl-title');
+  if(t) t.innerHTML = meta.title + '<span style="color:var(--ink-soft); font-weight:400; font-size:11px; margin-left:6px;">'+meta.sub+'</span>';
+}
 function renderMilestoneTimeline(containerId, fieldKey, emptyLabel){
   const container = document.getElementById(containerId);
   const withDates = items_currentYearCache.filter(p=>effectiveDate(p,fieldKey));
@@ -7516,6 +7529,7 @@ function saveMultiUpdateEntries(){
   // ส่งขึ้น Sheet ทีละตัว เว้นระยะ ~350ms กันชนกัน/โดน network ตัด (append เล็ก ~300 ตัวอักษร ผ่านชัวร์)
   rows.forEach((row,i)=> setTimeout(()=>syncToSheet('updates','append', null, row), i*350));
   toast('เพิ่มบันทึกแล้ว '+rows.length+' สินค้า (Timeline เดียวกัน)','ok');
+  celebrateMilestone(base);
 }
 function openUpdateEditor(prefill, editId){
   uePrefill = prefill||null; ueEditId = editId||null;
@@ -7524,6 +7538,85 @@ function openUpdateEditor(prefill, editId){
   document.getElementById('ue-overlay').classList.add('open');
 }
 function closeUpdateEditor(){ document.getElementById('ue-overlay').classList.remove('open'); ueEditId=null; uePrefill=null; }
+/* ---------- 🎉 Confetti celebration — pops when a milestone is closed or a product launches ---------- */
+/* Soft chime synthesized with Web Audio (no audio file). Must start from a user gesture — it is,
+   because it fires from the Save-button click. */
+var _celAudio=null;
+function _celCtx(){ try{ if(!_celAudio){ var AC=window.AudioContext||window.webkitAudioContext; if(!AC) return null; _celAudio=new AC(); } if(_celAudio.state==='suspended'){ _celAudio.resume(); } return _celAudio; }catch(e){ return null; } }
+function _celTone(actx, freq, start, dur, peak, type){
+  var o=actx.createOscillator(), g=actx.createGain();
+  o.type=type||'triangle'; o.frequency.value=freq; o.connect(g); g.connect(actx.destination);
+  var t0=actx.currentTime+start;
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(peak||0.15, t0+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  o.start(t0); o.stop(t0+dur+0.03);
+}
+function playCelebrationSound(type){
+  var actx=_celCtx(); if(!actx) return;
+  if(type==='launch'){
+    [523.25,659.25,783.99,1046.5].forEach(function(f,i){ _celTone(actx,f,i*0.10,0.55,0.15,'triangle'); }); // C-E-G-C fanfare
+    for(var i=0;i<6;i++){ _celTone(actx, 1250+Math.random()*950, 0.42+i*0.05, 0.16, 0.045,'sine'); }   // sparkle
+  } else {
+    [659.25,783.99,987.77].forEach(function(f,i){ _celTone(actx,f,i*0.09,0.38,0.13,'triangle'); });    // gentle E-G-B rise
+  }
+}
+function fireConfetti(opts){
+  try{ if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
+  opts=opts||{};
+  var count=opts.count||140;
+  var colors=opts.colors||['#ff9ec2','#ec5f97','#7db4ff','#5fd0a8','#ffb454','#c9a7ff','#ffd36b'];
+  var power=opts.power||1, spread=(opts.spread!=null)?opts.spread:Math.PI*0.9;
+  var W=window.innerWidth, H=window.innerHeight;
+  var origins=opts.origins||[{x:W*0.5,y:H*0.42}];
+  var cvs=document.createElement('canvas');
+  cvs.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2147483647';
+  var dpr=Math.min(window.devicePixelRatio||1,2);
+  cvs.width=Math.floor(W*dpr); cvs.height=Math.floor(H*dpr);
+  document.body.appendChild(cvs);
+  var ctx=cvs.getContext('2d'); ctx.scale(dpr,dpr);
+  var parts=[];
+  for(var i=0;i<count;i++){
+    var o=origins[i%origins.length];
+    var directed=(o.ang!==undefined);
+    var ang=directed ? o.ang+(Math.random()-0.5)*spread : Math.random()*Math.PI*2;
+    var speed=(5+Math.random()*8)*power;
+    parts.push({x:o.x,y:o.y,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed-(directed?0:2.5),
+      g:0.16+Math.random()*0.12,size:5+Math.random()*7,rot:Math.random()*6.28,vr:(Math.random()-0.5)*0.3,
+      color:colors[(Math.random()*colors.length)|0],shape:Math.random()<0.5?'rect':'circ',
+      life:0,ttl:80+Math.random()*50,wob:Math.random()*6.28});
+  }
+  var frame=0;
+  function tick(){
+    frame++; ctx.clearRect(0,0,W,H); var alive=0;
+    for(var i=0;i<parts.length;i++){ var p=parts[i]; if(p.life>p.ttl) continue; p.life++; alive++;
+      p.vy+=p.g; p.vx*=0.99; p.vy*=0.99; p.wob+=0.1;
+      p.x+=p.vx+Math.sin(p.wob)*0.6; p.y+=p.vy; p.rot+=p.vr;
+      var a=Math.max(0,1-p.life/p.ttl);
+      ctx.save(); ctx.globalAlpha=a; ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillStyle=p.color;
+      if(p.shape==='rect'){ ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.6); }
+      else { ctx.beginPath(); ctx.arc(0,0,p.size/2,0,6.29); ctx.fill(); }
+      ctx.restore();
+    }
+    if(alive>0 && frame<260){ requestAnimationFrame(tick); } else { if(cvs.parentNode) cvs.parentNode.removeChild(cvs); }
+  }
+  requestAnimationFrame(tick);
+}
+function launchConfetti(){
+  var W=window.innerWidth, H=window.innerHeight;
+  fireConfetti({count:90,power:1.35,spread:Math.PI*0.32,origins:[{x:W*0.06,y:H*0.98,ang:-Math.PI/3}]});
+  fireConfetti({count:90,power:1.35,spread:Math.PI*0.32,origins:[{x:W*0.94,y:H*0.98,ang:-Math.PI*2/3}]});
+  fireConfetti({count:70,power:1.1,colors:['#ffd36b','#ffb454','#ffe9a8','#fff2cf','#ec5f97','#ff9ec2'],origins:[{x:W*0.5,y:H*0.5}]});
+}
+// decides which celebration (if any) to fire for a saved update row
+function celebrateMilestone(o){
+  if(!o) return;
+  var raw=((o.Stage||'')+' '+(o.SubCategory||'')+' '+(o.Track||'')+' '+(o.trackLabel||''));
+  var isLaunch=/launch|เปิดขาย|วางขาย|วางจำหน่าย|เปิดตัว|เปิดตะกร้า|commercial\s*handover/i.test(raw);
+  var isDone=/เรียบร้อย|เสร็จ|ได้ของ|ชำระเงินแล้ว|จบงาน|ส่งมอบ|อนุมัติ|approved|complete|done/i.test(o.Stage||'');
+  if(isLaunch){ setTimeout(function(){ launchConfetti(); toast('🎉🚀 Launch! ยินดีด้วยย','ok'); },120); }
+  else if(isDone){ setTimeout(function(){ fireConfetti({count:130}); },120); }
+}
 function saveUpdateEntry(){
   // โหมดหลายสินค้า (เฉพาะตอนเพิ่มใหม่ ไม่ใช่ตอนแก้ไข)
   if(!ueEditId && (document.getElementById('ue-multi')||{}).checked){ return saveMultiUpdateEntries(); }
@@ -7542,6 +7635,7 @@ function saveUpdateEntry(){
     closeUpdateEditor();
     syncToSheet('updates','update', row.id, row);
     toast('แก้ไขบันทึกแล้ว','ok');
+    celebrateMilestone(row);
   } else {
     row.id = 'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     const arr=getUpdatesLocal(); arr.push(row); saveUpdatesLocal(arr);
@@ -7549,6 +7643,7 @@ function saveUpdateEntry(){
     closeUpdateEditor();
     syncToSheet('updates','append', null, row);
     toast('เพิ่มบันทึกแล้ว','ok');
+    celebrateMilestone(row);
   }
 }
 function editUpdateEntry(id){
