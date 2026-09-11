@@ -203,7 +203,10 @@
   .shade-edit{display:flex; gap:2px; flex-shrink:0;}
   .shade-edit button{background:none; border:none; cursor:pointer; font-size:12px; padding:2px; border-radius:5px;}
   .shade-edit button:hover{background:var(--blue-pale);}
-  .btn-sm{flex:1; text-align:center; padding:7px 10px; border-radius:8px; font-size:12.5px; font-weight:600; text-decoration:none; cursor:pointer; border:none;}
+  .btn-sm{flex:1; text-align:center; padding:7px 10px; border-radius:8px; font-size:12.5px; font-weight:600; text-decoration:none; cursor:pointer; border:none; white-space:nowrap;}
+  /* compact calendar nav row: buttons hug their label instead of stretching equally */
+  .cal-nav-row{flex-wrap:wrap;}
+  .cal-nav-row .btn-sm{flex:0 0 auto;}
   .btn-sm.primary{background:var(--blue-deep); color:#fff;}
   .btn-sm.primary:hover{background:var(--blue-ink);}
   .btn-sm.ghost{background:var(--blue-pale); color:var(--blue-ink);}
@@ -676,7 +679,7 @@
     <div class="panel">
       <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
         <h3 style="margin-top:16px;">NPD &amp; Marketing Calendar<span style="color:var(--ink-soft); font-weight:400; font-size:11px; margin-left:6px;">ปฏิทินงาน NPD &amp; Marketing</span></h3>
-        <div style="display:flex; align-items:center; gap:10px;">
+        <div class="cal-nav-row" style="display:flex; align-items:center; gap:10px;">
           <button class="btn-sm primary" id="btn-add-event-cal" onclick="openEventEditor()" style="display:none;">📅 เพิ่มวันหยุด/นัด</button>
           <button class="btn-sm ghost" onclick="shiftCalMonth(-1)">&larr;</button>
           <span id="stock-cal-label" style="font-family:'Prompt'; font-weight:600; font-size:13.5px; min-width:120px; text-align:center; display:inline-block;"></span>
@@ -1666,6 +1669,7 @@ function mapUpdateRow(r){
     pic: (r.PIC || r.Pic || '').trim(),
     risk: (r.Risk||'').trim(),
     nextDue: (r.NextDue || r['Next Due'] || '').trim(),
+    nextDueDetail: (r.NextDueDetail || r['Next Due Detail'] || '').trim(),
     id: (r.id || r.ID || '').trim(),
     _local: !!r._local,
   };
@@ -3811,8 +3815,10 @@ function renderTrackingCalendar(){
     const list=(byDay[day]||[]).sort((a,b)=> (a.e.kind===b.e.kind)?0 : (a.e.kind==='due'?-1:1));
     const chips = list.map(({e,idx})=>{
       const pfx = e.kind==='due' ? '⏰ ' : '';
-      const tip = (e.kind==='due'?'ครบกำหนด: ':'')+e.name+' — '+e.label+(e.by?(' · '+e.by):'');
-      const short = e.label ? (e.label.length>22 ? e.label.slice(0,22)+'…' : e.label) : e.name;
+      const dueDetail = (e.kind==='due' && e.log && e.log.nextDueDetail) ? e.log.nextDueDetail : '';
+      const chipLabel = dueDetail || e.label;
+      const tip = (e.kind==='due'?'ครบกำหนด: ':'')+e.name+' — '+chipLabel+(e.by?(' · '+e.by):'');
+      const short = chipLabel ? (chipLabel.length>22 ? chipLabel.slice(0,22)+'…' : chipLabel) : e.name;
       return `<div class="tev ${tevClass(e)}" title="${esc(tip)}" onclick="openTrackEventFromCal(${idx})">${esc(pfx+e.name)}<span class="tev-sub">${esc(short)}</span></div>`;
     }).join('');
     const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
@@ -3836,7 +3842,8 @@ function renderTrackingUpcoming(){
     const days=Math.round((d-today)/86400000);
     const urgent = days<=3 ? 'style="color:#C0392B;font-weight:700;"' : days<=7 ? 'style="color:#B26A00;font-weight:700;"' : 'style="color:var(--ink-soft);"';
     const dLabel = days===0?'วันนี้':days===1?'พรุ่งนี้':`อีก ${days} วัน`;
-    return `<div class="mini-row"><span>⏰ <button class="link-btn" style="font-weight:600;" onclick="openTrackEventFromCal(${idx})">${esc(e.name)}</button> <span class="sku" style="display:inline;">(${esc(trackLabelShort(e.track))})</span> — <b>${esc(e.label)}</b> <span ${urgent}>· ${formatDate(d)} · ${dLabel}</span></span></div>`;
+    const mainLabel = (e.log && e.log.nextDueDetail) ? e.log.nextDueDetail : e.label;
+    return `<div class="mini-row"><span>⏰ <button class="link-btn" style="font-weight:600;" onclick="openTrackEventFromCal(${idx})">${esc(e.name)}</button> <span class="sku" style="display:inline;">(${esc(trackLabelShort(e.track))})</span> — <b>${esc(mainLabel)}</b> <span ${urgent}>· ${formatDate(d)} · ${dLabel}</span></span></div>`;
   }).join('');
 }
 function trackLabelShort(t){ const m={npd:'NPD',rd:'R&D',pkg:'Packaging',graphic:'Graphic',purchase:'Purchase','supply chain':'Supply',data:'Data',branding:'Branding',marketing:'Sales&Mkt',warehouse:'Warehouse',accounting:'Acct','cosmania oem':'Cosmania'}; return m[t]||t||''; }
@@ -4107,6 +4114,7 @@ function openTrackLog(sku, track, focus){
       <div class="tl-entry-date">${e.date ? formatDate(new Date(e.date+"T00:00:00")) : 'Undated'}${scopeTag}</div>
       ${sub ? `<div class="tl-entry-sub">${esc(sub)}</div>` : ''}
       ${e.note ? `<div class="tl-entry-note">${esc(e.note)}</div>` : ''}
+      ${e.nextDueDetail ? `<div class="tl-entry-note" style="color:#B26A00; font-weight:600;">⏰ กำหนดถัดไป: ${esc(e.nextDueDetail)}</div>` : ''}
       ${dueTag}
       ${imgHtml}
       ${(e.pic||e.updatedBy) ? `<div class="tl-entry-by">${esc([e.pic?('👤 PIC: '+e.pic):'', e.updatedBy?('อัปเดตโดย '+e.updatedBy):''].filter(Boolean).join(' · '))}</div>` : ''}
@@ -7431,8 +7439,9 @@ function renderUpdateForm(){
     <div class="pe-field"><label>PIC (ผู้รับผิดชอบ)</label><input type="text" id="ue-PIC" list="ue-pic-list" value="${esc(pf.PIC||'')}" placeholder="เลือกหรือพิมพ์ชื่อ (อื่นๆพิมพ์เองได้)"><datalist id="ue-pic-list">${picList}</datalist></div>
     <div class="pe-field"><label>ผู้อัปเดต (UpdatedBy)</label><select id="ue-UpdatedBy">${byOpts}</select></div>
     <div class="pe-field"><label>Risk</label><select id="ue-Risk">${riskOpts}</select></div>
-    <div class="pe-field"><label>กำหนดถัดไป (Next Due) — วันที่</label><input type="date" id="ue-NextDue" value="${esc(normalizeDueDate(pf.NextDue))}"><div id="ue-nextdue-hint" style="font-size:11px; color:#B26A00; font-weight:600; margin-top:3px;"></div><div style="font-size:11px; color:var(--muted); margin-top:3px;">เลือกเฉพาะ "วันที่" ครบกำหนด — ส่วนว่าทำอะไร ให้พิมพ์ในช่อง รายละเอียด (Detail)</div></div>
-    <div class="pe-field full"><label>รายละเอียด (Detail) *</label><textarea id="ue-Detail" placeholder="อัปเดตความคืบหน้า…">${esc(pf.Detail||'')}</textarea></div>
+    <div class="pe-field"><label>กำหนดถัดไป (Next Due) — วันที่</label><input type="date" id="ue-NextDue" value="${esc(normalizeDueDate(pf.NextDue))}"><div id="ue-nextdue-hint" style="font-size:11px; color:#B26A00; font-weight:600; margin-top:3px;"></div><div style="font-size:11px; color:var(--muted); margin-top:3px;">เลือก "วันที่" ครบกำหนด แล้วอธิบายว่ารอบหน้าต้องทำอะไรในช่อง "รายละเอียดกำหนดถัดไป" ด้านล่าง</div></div>
+    <div class="pe-field full"><label>รายละเอียดกำหนดถัดไป (Detail Next Due)</label><input type="text" id="ue-NextDueDetail" value="${esc(pf.NextDueDetail||'')}" placeholder="รอบถัดไปต้องทำอะไร เช่น ตามผล PPS, นัดส่งตัวอย่าง, เช็คสต็อกกล่อง"></div>
+    <div class="pe-field full"><label>รายละเอียด (Detail) *<span style="font-weight:400; color:var(--muted); font-size:11px; margin-left:6px;">— รายละเอียดงานที่ทำรอบนี้</span></label><textarea id="ue-Detail" placeholder="อัปเดตความคืบหน้าที่ทำรอบนี้…">${esc(pf.Detail||'')}</textarea></div>
     <div class="pe-field full"><label>หมายเหตุ (Note)</label><input type="text" id="ue-Note" value="${esc(pf.Note||'')}"></div>
     <div class="pe-field full"><label>ไฟล์แนบ / รูป (Images) — อัปโหลดในเว็บ หรือวางลิงก์เอง (คั่นหลายอันด้วย ; )</label>
       <input type="text" id="ue-Images" value="${esc(pf.Images||'')}" placeholder="วางลิงก์ Google Drive หรือกด 📎 อัปโหลดไฟล์">
@@ -7476,7 +7485,9 @@ function collectUpdateBase(){
     UpdatedBy:g('UpdatedBy'), PIC:g('PIC'), Risk:g('Risk'),
     // Sheet column is literally "Next Due" (with a space) — send that key so it
     // actually writes to the column; keep "NextDue" too for tolerant local reads.
-    NextDue:nextDue, 'Next Due':nextDue
+    NextDue:nextDue, 'Next Due':nextDue,
+    // รายละเอียดของกำหนดถัดไป — แยกจาก Detail (งานรอบนี้); ต้องเพิ่มคอลัมน์ "Next Due Detail" ในชีตถึงจะซิงค์
+    NextDueDetail:g('NextDueDetail'), 'Next Due Detail':g('NextDueDetail')
   };
 }
 function collectUpdateForm(){
@@ -7652,7 +7663,7 @@ function editUpdateEntry(id){
   // a group-scoped entry is stored under the group code — show a member SKU + scope=group so it edits cleanly
   const grpMode = isGroupCode(e.sku);
   const dispSku = grpMode ? (groupMembers(e.sku)[0] || e.sku) : e.sku;
-  openUpdateEditor({ sku:dispSku, scope: grpMode?'group':'sku', trackLabel:e.trackRaw||'', SubCategory:e.subCategory, Stage:e.stage, Date:e.date, UpdatedBy:e.updatedBy, PIC:e.pic, Risk:e.risk, NextDue:e.nextDue, Detail:e.detail, Note:e.note, Images:e.imagesRaw||'' }, id);
+  openUpdateEditor({ sku:dispSku, scope: grpMode?'group':'sku', trackLabel:e.trackRaw||'', SubCategory:e.subCategory, Stage:e.stage, Date:e.date, UpdatedBy:e.updatedBy, PIC:e.pic, Risk:e.risk, NextDue:e.nextDue, NextDueDetail:e.nextDueDetail, Detail:e.detail, Note:e.note, Images:e.imagesRaw||'' }, id);
 }
 function deleteUpdateEntry(id){
   if(!confirm('ลบบันทึกนี้ออกจาก Updates Log?')) return;
@@ -7806,7 +7817,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
       var days=null,due='';
       var d=ofcParseDate(l.nextDue);
       if(d){ days=Math.round((d-today)/86400000); due=d.getDate()+' '+THMON[d.getMonth()]; }
-      out.push({p:l.productName||l.sku, sku:l.sku, s:[l.subCategory,l.stage].filter(Boolean).join(' · ')||l.stage||l.note||'อัปเดตงาน', due:due, days:days});
+      out.push({p:l.productName||l.sku, sku:l.sku, s:[l.subCategory,l.stage].filter(Boolean).join(' · ')||l.stage||l.note||'อัปเดตงาน', due:due, days:days, nd:l.nextDueDetail||''});
     });
     out.sort(function(a,b){ if(a.days==null&&b.days==null) return 0; if(a.days==null) return 1; if(b.days==null) return -1; return a.days-b.days; });
     return out;
@@ -7875,7 +7886,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     if(!tasks.length){
       h+='<div class="ofc-empty"><div class="ofc-em">🎉</div><div style="font-family:Mitr;font-weight:600;margin-top:6px">ไม่มีงานค้างเลย!</div><div style="font-size:12px;margin-top:2px">เคลียร์งานหมดแล้ว เก่งมาก 💖</div></div>';
     } else {
-      h+='<div class="ofc-tasks">'+tasks.map(function(t){var x=ofcDl(t.days); return '<div class="ofc-task"><div><p class="ofc-pn">'+ofcE(t.p)+'</p><div class="ofc-stg">'+(t.sku?'<span class="ofc-sku">'+ofcE(t.sku)+'</span> ':'')+'📋 '+ofcE(t.s)+'</div></div><div class="ofc-chip">'+(t.due?'<div class="ofc-due">กำหนด '+t.due+'</div>':'')+'<div class="ofc-dl '+x.c+'">'+x.t+'</div></div></div>';}).join('')+'</div>';
+      h+='<div class="ofc-tasks">'+tasks.map(function(t){var x=ofcDl(t.days); return '<div class="ofc-task"><div><p class="ofc-pn">'+ofcE(t.p)+'</p><div class="ofc-stg">'+(t.sku?'<span class="ofc-sku">'+ofcE(t.sku)+'</span> ':'')+'📋 '+ofcE(t.s)+'</div>'+(t.nd?'<div class="ofc-stg" style="color:#c9821f;font-weight:600;margin-top:2px">⏰ ถัดไป: '+ofcE(t.nd)+'</div>':'')+'</div><div class="ofc-chip">'+(t.due?'<div class="ofc-due">กำหนด '+t.due+'</div>':'')+'<div class="ofc-dl '+x.c+'">'+x.t+'</div></div></div>';}).join('')+'</div>';
     }
     var unlocked=(typeof isTeamUnlocked==='function')&&isTeamUnlocked();
     var curE=c.emoji||st.mood;
