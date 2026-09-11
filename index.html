@@ -627,7 +627,6 @@
       <div class="tab active" data-view="calendar">NPD &amp; MKT Calendar</div>
       <div class="tab" data-view="catalog">Product Info</div>
       <div class="tab" data-view="team">NPD Process</div>
-      <div class="tab" data-view="workflow">NPD Work Flow</div>
       <div class="tab" data-view="office">🏢 ออฟฟิศ</div>
     </nav>
     <div class="updated-badge" id="updated-badge"></div>
@@ -794,6 +793,11 @@
     <p class="section-sub">เอกสารและโฟลเดอร์ที่ใช้บ่อย</p>
     <div class="panel" style="padding:16px 20px;">
       <div class="lib-grid">
+        <a class="lib-btn" href="#" onclick="openWorkflow();return false;" style="cursor:pointer;">
+          <span class="lib-icon">🧭</span>
+          <span class="lib-text"><strong>NPD Work Flow</strong><small>แผนผังขั้นตอนการทำงาน End-to-End</small></span>
+          <span class="lib-arrow">→</span>
+        </a>
         <a class="lib-btn" href="https://docs.google.com/document/d/1Pq0LNvoqs5m08CAPj8f97nA5gq7iYnaCHkagridPeHM/edit?usp=sharing" target="_blank" rel="noopener">
           <span class="lib-icon">📄</span>
           <span class="lib-text"><strong>Godmami Project Information</strong><small>Google Doc</small></span>
@@ -955,7 +959,8 @@
   </div>
 
   <div class="view" id="view-workflow">
-    <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
+      <button class="btn-sm ghost" onclick="backToProcessFromWorkflow()" style="padding:7px 14px;">← กลับ NPD Process</button>
       <button class="btn-sm ghost" onclick="printWorkflow()" style="padding:7px 14px;">🖨️ พิมพ์ / บันทึก PDF</button>
     </div>
     <iframe id="wf-frame" title="NPD Work Flow" style="width:100%; border:none; display:block; min-height:80vh; border-radius:12px; background:#FAFAF7; box-shadow:0 1px 3px rgba(0,0,0,.06);"></iframe>
@@ -1022,7 +1027,8 @@
   #view-office .ofc-tasks{margin-top:14px;display:flex;flex-direction:column;gap:9px;}
   #view-office .ofc-task{border:1px solid var(--ofc-line);border-radius:15px;padding:11px 13px;display:flex;align-items:center;gap:11px;background:linear-gradient(180deg,#fff,#fbfcff);}
   #view-office .ofc-pn{font-weight:600;font-size:13.5px;margin:0;}
-  #view-office .ofc-stg{font-size:11.5px;color:var(--ofc-ink2);margin-top:2px;}
+  #view-office .ofc-stg{font-size:11.5px;color:var(--ofc-ink2);margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+  #view-office .ofc-sku{display:inline-block;background:#eef1f7;color:#5a6478;font-weight:700;font-size:10.5px;padding:1px 6px;border-radius:6px;font-family:"Sarabun";}
   #view-office .ofc-chip{margin-left:auto;text-align:right;flex:none;}
   #view-office .ofc-due{font-size:11px;color:var(--ofc-ink2);}
   #view-office .ofc-dl{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-top:3px;display:inline-block;}
@@ -2573,6 +2579,20 @@ function loadWorkflowFrame(){
   f.srcdoc = WORKFLOW_HTML;
 }
 function printWorkflow(){ var f=document.getElementById('wf-frame'); if(f && f.contentWindow){ try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){ window.print(); } } }
+/* NPD Work Flow now lives inside the Library (NPD Process) instead of a top-nav tab.
+   openWorkflow() shows the workflow view; the back button returns to NPD Process. */
+function openWorkflow(){
+  document.querySelectorAll('#nav .tab').forEach(function(x){ x.classList.remove('active'); });
+  document.querySelectorAll('.view').forEach(function(x){ x.classList.remove('active'); });
+  var v=document.getElementById('view-workflow'); if(v) v.classList.add('active');
+  loadWorkflowFrame();
+  window.scrollTo(0,0);
+}
+function backToProcessFromWorkflow(){
+  var t=Array.prototype.find.call(document.querySelectorAll('#nav .tab'), function(x){ return x.dataset.view==='team'; });
+  if(t){ t.click(); } else { document.querySelectorAll('.view').forEach(function(x){ x.classList.remove('active'); }); var vt=document.getElementById('view-team'); if(vt) vt.classList.add('active'); }
+  window.scrollTo(0,0);
+}
 
 // ตั้งไอคอนบนแท็บ (favicon) จากโลโก้บริษัทที่ฝังอยู่บนหัวเว็บ — ไม่ต้องมีไฟล์แยก
 function setAppFavicon(){
@@ -7671,19 +7691,27 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
 
   function ofcParseDate(s){ if(!s) return null; if(typeof parseSheetDate==='function'){var iso=parseSheetDate(s); if(iso) return new Date(iso+'T00:00:00');} var d=new Date(s); return isNaN(d)?null:d; }
   function ofcTasks(person){
-    const done=/เรียบร้อย|เสร็จ|ได้ของ|ชำระเงินแล้ว|ยกเลิก|ปิดงาน/;
+    const done=/เรียบร้อย|เสร็จ|ได้ของ|ชำระเงินแล้ว|ยกเลิก|ปิดงาน|จบงาน|ส่งมอบ/;
     const logs=(typeof UPDATE_LOGS!=='undefined'&&UPDATE_LOGS)||[];
-    const mine=logs.filter(function(l){var who=((l.pic||'')+' '+(l.updatedBy||'')); return who.indexOf(person.n)>=0;});
+    // Use the LATEST update per SKU across ALL logs = the item's CURRENT state.
+    // (Same-day updates are tie-broken by array order, so a "เรียบร้อย" logged the same day
+    //  as the in-progress one still wins; and a completion logged by ANYONE clears it.)
     const bySku={};
-    mine.forEach(function(l){ if(!l.sku) return; var c=bySku[l.sku]; if(!c||(l.date||'')>(c.date||'')) bySku[l.sku]=l; });
+    logs.forEach(function(l,idx){ if(!l.sku) return; var c=bySku[l.sku];
+      if(!c){ bySku[l.sku]={log:l,idx:idx}; return; }
+      var nd=(l.date||''), cd=(c.log.date||'');
+      if(nd>cd || (nd===cd && idx>=c.idx)) bySku[l.sku]={log:l,idx:idx};
+    });
     const today=new Date(); today.setHours(0,0,0,0);
     const out=[];
-    Object.keys(bySku).forEach(function(sku){ var l=bySku[sku];
-      if(done.test(l.stage||'')) return;
+    Object.keys(bySku).forEach(function(sku){ var l=bySku[sku].log;
+      var who=((l.pic||'')+' '+(l.updatedBy||''));
+      if(who.indexOf(person.n)<0) return;      // item's CURRENT owner must be this person
+      if(done.test(l.stage||'')) return;        // current stage is a done stage → cleared
       var days=null,due='';
       var d=ofcParseDate(l.nextDue);
       if(d){ days=Math.round((d-today)/86400000); due=d.getDate()+' '+THMON[d.getMonth()]; }
-      out.push({p:l.productName||l.sku, s:[l.subCategory,l.stage].filter(Boolean).join(' · ')||l.stage||l.note||'อัปเดตงาน', due:due, days:days});
+      out.push({p:l.productName||l.sku, sku:l.sku, s:[l.subCategory,l.stage].filter(Boolean).join(' · ')||l.stage||l.note||'อัปเดตงาน', due:due, days:days});
     });
     out.sort(function(a,b){ if(a.days==null&&b.days==null) return 0; if(a.days==null) return 1; if(b.days==null) return -1; return a.days-b.days; });
     return out;
@@ -7752,7 +7780,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     if(!tasks.length){
       h+='<div class="ofc-empty"><div class="ofc-em">🎉</div><div style="font-family:Mitr;font-weight:600;margin-top:6px">ไม่มีงานค้างเลย!</div><div style="font-size:12px;margin-top:2px">เคลียร์งานหมดแล้ว เก่งมาก 💖</div></div>';
     } else {
-      h+='<div class="ofc-tasks">'+tasks.map(function(t){var x=ofcDl(t.days); return '<div class="ofc-task"><div><p class="ofc-pn">'+ofcE(t.p)+'</p><div class="ofc-stg">📋 '+ofcE(t.s)+'</div></div><div class="ofc-chip">'+(t.due?'<div class="ofc-due">กำหนด '+t.due+'</div>':'')+'<div class="ofc-dl '+x.c+'">'+x.t+'</div></div></div>';}).join('')+'</div>';
+      h+='<div class="ofc-tasks">'+tasks.map(function(t){var x=ofcDl(t.days); return '<div class="ofc-task"><div><p class="ofc-pn">'+ofcE(t.p)+'</p><div class="ofc-stg">'+(t.sku?'<span class="ofc-sku">'+ofcE(t.sku)+'</span> ':'')+'📋 '+ofcE(t.s)+'</div></div><div class="ofc-chip">'+(t.due?'<div class="ofc-due">กำหนด '+t.due+'</div>':'')+'<div class="ofc-dl '+x.c+'">'+x.t+'</div></div></div>';}).join('')+'</div>';
     }
     var unlocked=(typeof isTeamUnlocked==='function')&&isTeamUnlocked();
     var curE=c.emoji||st.mood;
