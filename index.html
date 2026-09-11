@@ -6587,7 +6587,9 @@ function renderProductForm(row, isEdit){
     <div class="pe-section">ข้อมูลหลัก</div>
     <div class="pe-grid">
       <div class="pe-field full"><label>ชื่อสินค้า *</label><input type="text" id="pe-name" value="${V('name')}" placeholder="เช่น Lip Serum Glow"></div>
-      <div class="pe-field"><label>SKU * ${isEdit?'(แก้ไม่ได้ — ใช้เป็นรหัสอ้างอิง)':''}</label><input type="text" id="pe-sku" value="${V('sku')}" placeholder="เช่น GM-LS-01" ${isEdit?'readonly style="background:var(--bg);"':''}></div>
+      <div class="pe-field"><label>SKU * ${isEdit?'(แก้ไม่ได้ — ใช้เป็นรหัสอ้างอิง)':'<span style="font-weight:400; color:var(--ink-soft); font-size:11px;">— ไม่มี SKU? กด 🎲 รันอัตโนมัติ (แก้ทีหลังได้)</span>'}</label>${isEdit
+        ? `<input type="text" id="pe-sku" value="${V('sku')}" placeholder="เช่น GM-LS-01" readonly style="background:var(--bg);">`
+        : `<div style="display:flex; gap:8px; align-items:stretch;"><input type="text" id="pe-sku" value="${V('sku')}" placeholder="เช่น GM-LS-01 หรือกด 🎲" style="flex:1; min-width:0;"><button type="button" class="btn-sm ghost" style="flex:0 0 auto; white-space:nowrap;" onclick="fillAutoSku()">🎲 รันอัตโนมัติ</button></div>`}</div>
       <div class="pe-field"><label>Barcode</label><input type="text" id="pe-barcode" value="${V('barcode')}" placeholder="เว้นว่างได้ / ให้ทีมระบบสร้าง"></div>
       <div class="pe-field"><label>Brand</label><select id="pe-brand">${brandOpts}</select></div>
       <div class="pe-field"><label>Type</label><select id="pe-type">${typeOpts}</select></div>
@@ -6683,6 +6685,21 @@ async function uploadProductImage(inputEl){
   inputEl.value='';
 }
 
+/* Auto-run SKU — for products that arrive without a SKU. Generates a unique AUTO-### code
+   (next available, never clashing with an existing SKU); still fully editable afterwards. */
+function nextAutoSku(){
+  const existing = new Set((PRODUCTS||[]).map(p=>(p.sku||'').trim().toUpperCase()).filter(Boolean));
+  let max=0;
+  existing.forEach(s=>{ const m=s.match(/^NSKU(\d+)$/); if(m){ const n=parseInt(m[1],10); if(n>max) max=n; } });
+  let n=max+1, sku;
+  do { sku='NSKU'+String(n).padStart(3,'0'); n++; } while(existing.has(sku.toUpperCase()));
+  return sku;
+}
+function fillAutoSku(){
+  const el=document.getElementById('pe-sku'); if(!el) return;
+  el.value=nextAutoSku(); el.focus();
+  if(typeof toast==='function') toast('รัน SKU อัตโนมัติแล้ว: '+el.value+' — แก้ไขได้ภายหลัง','ok');
+}
 function openProductEditor(sku){
   editingSku = sku || null;
   let row = {};
