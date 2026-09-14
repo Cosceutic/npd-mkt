@@ -1243,7 +1243,24 @@
   #view-content .cc-rm-badge{font-size:10px;font-weight:700;color:#fff;background:var(--b);border-radius:999px;padding:1px 8px;}
   #view-content .cc-rm-launched{font-size:10px;font-weight:700;color:#2E7D32;background:#E3F3E1;border-radius:999px;padding:1px 8px;}
   #view-content .cc-rm-soon{font-size:10px;font-weight:700;color:#B26A00;background:#FCEFD8;border-radius:999px;padding:1px 8px;}
-  @media(max-width:640px){ #view-content .ccal-cell{min-height:66px;} #view-content .ccal-chip{font-size:9.5px;padding:1px 4px;} #view-content .ccal-chip .ci{display:none;} }
+  /* pillar / format tags + monthly performance snapshot */
+  #view-content .cc-pill{font-size:10.5px;font-weight:700;color:#fff;background:var(--p);border-radius:999px;padding:1px 9px;white-space:nowrap;}
+  #view-content .cc-fmt{font-size:10.5px;font-weight:600;color:var(--accent-deep);background:var(--accent-pale);border-radius:6px;padding:1px 8px;white-space:nowrap;}
+  #view-content .cc-perf-wrap{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px;box-shadow:0 4px 14px -10px rgba(80,100,150,.5);}
+  #view-content .cc-perf-title{font-family:'Prompt',sans-serif;font-weight:700;font-size:14px;color:var(--ink);margin-bottom:10px;}
+  #view-content .cc-perf-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;}
+  #view-content .cc-perf-card{background:var(--accent-pale);border-radius:11px;padding:10px 12px;text-align:center;}
+  #view-content .cc-perf-v{font-family:'Prompt',sans-serif;font-weight:700;font-size:26px;line-height:1;color:var(--ink);}
+  #view-content .cc-perf-l{font-size:11.5px;color:var(--ink-soft);margin-top:5px;line-height:1.25;}
+  #view-content .cc-perf-s{font-size:10.5px;color:var(--ink-soft);opacity:.85;margin-top:2px;}
+  #view-content .cc-perf-pillars{margin-top:13px;padding-top:12px;border-top:1px solid var(--line);}
+  #view-content .cc-perf-h{font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;}
+  #view-content .cc-perf-pbar{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  #view-content .cc-perf-plabel{flex:0 0 150px;font-size:11.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #view-content .cc-perf-ptrack{flex:1;height:9px;background:#ece7ef;border-radius:5px;overflow:hidden;}
+  #view-content .cc-perf-ptrack>i{display:block;height:100%;border-radius:5px;transition:width .25s;}
+  #view-content .cc-perf-pn{flex:0 0 26px;text-align:right;font-size:11.5px;font-weight:700;color:var(--ink-soft);}
+  @media(max-width:640px){ #view-content .ccal-cell{min-height:66px;} #view-content .ccal-chip{font-size:9.5px;padding:1px 4px;} #view-content .ccal-chip .ci{display:none;} #view-content .cc-perf-plabel{flex:0 0 118px;} #view-content .cc-perf-v{font-size:22px;} }
   </style>
   <div class="view" id="view-content">
     <div style="max-width:1220px;margin:0 auto;">
@@ -1284,6 +1301,7 @@
           </span>
           <span class="ccal-add-wrap"><button class="btn-edit primary" id="ccal-add" onclick="openContentCalEditor()" style="display:none;">➕ เพิ่มโพสต์</button></span>
         </div>
+        <div id="ccal-perf"></div>
         <div id="ccal-legend" class="ccal-legend"></div>
         <div id="ccal-host"></div>
       </div>
@@ -8381,10 +8399,10 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
 (function(){
   var CSV='https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=ContentIdeas';
   var LKEY='npd_content_ideas_v1';
-  var HEADERS=['id','title','detail','brand','product','channel','status','updatedBy','updatedAt'];
+  var HEADERS=['id','title','detail','brand','product','pillar','channel','status','updatedBy','updatedAt'];
   var STATUS={idea:{t:'💡 ไอเดีย',c:'#7db4ff'},doing:{t:'🎬 กำลังทำ',c:'#ffb454'},posted:{t:'✅ ลงแล้ว',c:'#5fd0a8'},archived:{t:'🗄️ พับไว้',c:'#9aa4b5'}};
   var STATUS_ORDER=['idea','doing','posted','archived'];
-  var CHANNELS=['Facebook','Instagram','TikTok','Shopee','Lazada','YouTube','LINE OA'];
+  var CHANNELS=['Facebook','Instagram','TikTok','Lemon8','Shopee','Lazada','YouTube','LINE OA'];
   var SHEET_ROWS_CI=[]; window.CONTENT_IDEAS=[];
   var ciBrand='all', ciStatus='all', ciSub='idea', ciEditId=null;
 
@@ -8397,6 +8415,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   function normCI(r){ return {
     id:(r.id||r.ID||'').trim(), title:(r.title||r.Title||'').trim(), detail:(r.detail||r.Detail||'').trim(),
     brand:nBrand(r.brand||r.Brand||''), product:(r.product||r.Product||'').trim(),
+    pillar:(r.pillar||r.Pillar||'').trim(),
     channel:(r.channel||r.Channel||'').trim(), status:((r.status||r.Status||'').trim()||'idea'),
     updatedBy:(r.updatedBy||r.UpdatedBy||'').trim(), updatedAt:(r.updatedAt||r.UpdatedAt||'').trim() }; }
   function ciSig(b){ return [b.title,b.detail,b.brand,b.product,b.channel,b.status].join('|'); }
@@ -8422,7 +8441,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     if(!cfg||!cfg.url){ if(typeof toast==='function') toast('บันทึกในเครื่องแล้ว · ยังไม่ได้ตั้ง Sheet Sync (ทีมยังไม่เห็น)','info'); return; }
     var isDel=(action==='delete');
     var payload={target:'contentideas', sheetName:'ContentIdeas', key:'id', create:HEADERS, action:isDel?'delete':'upsert', keyValue:idea.id,
-      row: isDel?undefined:{id:idea.id,title:idea.title||'',detail:idea.detail||'',brand:idea.brand||'',product:idea.product||'',channel:idea.channel||'',status:idea.status||'idea',updatedBy:idea.updatedBy||'',updatedAt:(typeof todayStr==='function'?todayStr():'')} };
+      row: isDel?undefined:{id:idea.id,title:idea.title||'',detail:idea.detail||'',brand:idea.brand||'',product:idea.product||'',pillar:idea.pillar||'',channel:idea.channel||'',status:idea.status||'idea',updatedBy:idea.updatedBy||'',updatedAt:(typeof todayStr==='function'?todayStr():'')} };
     try{ await postToSheet(payload); }catch(e){}
     setTimeout(function(){ if(typeof loadContentIdeasFromSheet==='function') loadContentIdeasFromSheet().then(function(){ renderContentIdea(); }); }, 6000);
   }
@@ -8478,7 +8497,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     var lbl=(typeof brandDisplayLabel==='function')?brandDisplayLabel:function(k){return k;};
     var bb = x.brand ? '<span class="cc-brand" style="--b:'+(tint[x.brand]||'#6B7280')+'">'+e2(lbl(x.brand))+'</span>' : '';
     var act = unlocked() ? '<div class="cc-card-actions"><button class="btn-sm ghost" onclick="openContentIdeaEditor(\''+aj(x.id)+'\')">✏️ แก้ไข</button><button class="btn-sm warn-ghost" onclick="deleteContentIdea(\''+aj(x.id)+'\')">🗑️</button></div>' : '';
-    return '<div class="cc-card"><div class="cc-card-top"><span class="cc-status" style="--s:'+st.c+'">'+st.t+'</span>'+bb+'</div>'
+    return '<div class="cc-card"><div class="cc-card-top"><span class="cc-status" style="--s:'+st.c+'">'+st.t+'</span>'+bb+(typeof pillarTag==='function'?pillarTag(x.pillar):'')+'</div>'
       +'<div class="cc-title">'+e2(x.title)+'</div>'
       +(x.detail?'<div class="cc-detail">'+e2(x.detail)+'</div>':'')
       +(x.product?'<div class="cc-meta">📦 '+e2(x.product)+'</div>':'')
@@ -8497,6 +8516,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     var lbl=(typeof brandDisplayLabel==='function')?brandDisplayLabel:function(k){return k;};
     var brandOpts='<option value="">— เลือกแบรนด์ —</option>'+brandsPresent.map(function(k){return '<option value="'+e2(k)+'"'+(x.brand===k?' selected':'')+'>'+e2(lbl(k))+'</option>';}).join('');
     var statusOpts=STATUS_ORDER.map(function(s){return '<option value="'+s+'"'+((x.status||'idea')===s?' selected':'')+'>'+e2(STATUS[s].t)+'</option>';}).join('');
+    var pillarOptsCI='<option value="">— ไม่ระบุ —</option>'+((typeof PILLAR_ORDER!=='undefined')?PILLAR_ORDER:[]).map(function(k){return '<option value="'+k+'"'+(x.pillar===k?' selected':'')+'>'+e2(PILLARS[k].t)+' · '+e2(PILLARS[k].s)+'</option>';}).join('');
     var sel=(x.channel||'').split(',').map(function(c){return c.trim();});
     var chanChk=CHANNELS.map(function(c){return '<label><input type="checkbox" value="'+e2(c)+'"'+(sel.indexOf(c)>=0?' checked':'')+'> '+e2(c)+'</label>';}).join('');
     document.getElementById('cc-editor-title').textContent = id?'✏️ แก้ไขไอเดีย':'➕ เพิ่มไอเดียคอนเทนต์';
@@ -8506,6 +8526,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
       +'<div class="pe-field full"><label>รายละเอียด</label><textarea id="cc-f-detail" placeholder="สรุปไอเดีย/มุมเล่า/hook…">'+e2(x.detail||'')+'</textarea></div>'
       +'<div class="pe-field"><label>แบรนด์</label><select id="cc-f-brand">'+brandOpts+'</select></div>'
       +'<div class="pe-field"><label>สถานะ</label><select id="cc-f-status">'+statusOpts+'</select></div>'
+      +'<div class="pe-field full"><label>เสาหลักคอนเทนต์ (Pillar)</label><select id="cc-f-pillar">'+pillarOptsCI+'</select></div>'
       +'<div class="pe-field full"><label>สินค้า / คอลเลกชัน</label><input type="text" id="cc-f-product" value="'+e2(x.product||'')+'" placeholder="เช่น Halloween Collection 2026 / MK005"></div>'
       +'<div class="pe-field full"><label>ช่องทาง</label><div class="cc-chk" id="cc-f-channels">'+chanChk+'</div></div>'
       +'<div class="pe-field full"><label>ผู้เสนอ</label><input type="text" id="cc-f-by" value="'+e2(x.updatedBy||'')+'" placeholder="ชื่อผู้เสนอไอเดีย"></div>'
@@ -8519,7 +8540,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     var title=g('cc-f-title'); if(!title){ if(typeof toast==='function') toast('ใส่หัวข้อไอเดียก่อน','err'); return; }
     var chans=[].slice.call(document.querySelectorAll('#cc-f-channels input:checked')).map(function(c){return c.value;}).join(', ');
     var idea={ id: ciEditId || ('ci'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
-      title:title, detail:g('cc-f-detail'), brand:nBrand(g('cc-f-brand')), product:g('cc-f-product'),
+      title:title, detail:g('cc-f-detail'), brand:nBrand(g('cc-f-brand')), product:g('cc-f-product'), pillar:g('cc-f-pillar'),
       channel:chans, status:g('cc-f-status')||'idea', updatedBy:g('cc-f-by'), updatedAt:(typeof todayStr==='function'?todayStr():'') };
     var local=ciLocal(); var i=local.findIndex(function(z){return z.id===idea.id;}); if(i>-1) local[i]=idea; else local.push(idea); ciSaveLocal(local);
     rebuildCI(); renderContentIdea(); closeContentIdeaEditor();
@@ -8545,9 +8566,15 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   var TH_WDF=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
   var CAL_CSV='https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=ContentCalendar';
   var CAL_LKEY='npd_content_cal_v1';
-  var CAL_HEADERS=['id','date','title','brand','product','channel','status','time','owner','note'];
-  var CAL_STATUS={plan:{t:'📝 วางแผน',c:'#7db4ff'},doing:{t:'🎬 กำลังทำ',c:'#ffb454'},ready:{t:'✅ พร้อมลง',c:'#a78bfa'},posted:{t:'🚀 ลงแล้ว',c:'#5fd0a8'}};
-  var CAL_STATUS_ORDER=['plan','doing','ready','posted'];
+  var CAL_HEADERS=['id','date','title','brand','product','pillar','format','channel','status','goal','time','owner','note'];
+  // production pipeline (KINN-style): idea → script → shoot → edit → review → schedule → posted → track
+  var CAL_STATUS={idea:{t:'💡 ไอเดีย',c:'#f2c94c'},scripting:{t:'✍️ เขียนสคริปต์',c:'#7db4ff'},production:{t:'🎬 ถ่าย/โปรดักชัน',c:'#ffb454'},editing:{t:'✂️ ตัดต่อ',c:'#f2a3c7'},review:{t:'👀 รีวิว/รออนุมัติ',c:'#a78bfa'},scheduled:{t:'⏰ ตั้งเวลาแล้ว',c:'#4dd0e1'},posted:{t:'✅ โพสต์แล้ว',c:'#5fd0a8'},track:{t:'📈 ติดตามผล',c:'#26a69a'}};
+  var CAL_STATUS_ORDER=['idea','scripting','production','editing','review','scheduled','posted','track'];
+  // Content Pillars (แกน/เสาหลักคอนเทนต์) — standard marketing pillars
+  var PILLARS={awareness:{t:'📣 Awareness',s:'การรับรู้',c:'#5B8FF9'},consideration:{t:'🤔 Consideration',s:'พิจารณา',c:'#9B7EF8'},conversion:{t:'🛒 Conversion',s:'ปิดการขาย',c:'#F0705A'},authority:{t:'🎓 Authority',s:'น่าเชื่อถือ',c:'#3CA5A5'},engagement:{t:'💬 Engagement',s:'มีส่วนร่วม',c:'#F2994A'},education:{t:'📚 Product Education',s:'ให้ความรู้สินค้า',c:'#2D9CDB'},entertainment:{t:'🎉 Entertainment',s:'ความบันเทิง',c:'#EB5FA0'}};
+  var PILLAR_ORDER=['awareness','consideration','conversion','authority','engagement','education','entertainment'];
+  var FORMATS=['Post','Story','Reels','Short','Video','Live','Album','Photo','Carousel'];
+  var GOALS=['Reach / Views / Impressions','New Followers','Profile / Page Visit','Click / Link','Add to Cart / Purchase','Save / Share','Comment / Engagement','Watch Time / Completion'];
   var SHEET_ROWS_CAL=[]; window.CONTENT_CAL=[];
   var now0=new Date(); var calY=now0.getFullYear(), calM=now0.getMonth(), calMode='grid', calEditId=null, calLoaded=false;
 
@@ -8556,9 +8583,11 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   function normCAL(r){ return {
     id:(r.id||r.ID||'').trim(), date:(r.date||r.Date||'').trim(), title:(r.title||r.Title||'').trim(),
     brand:nBrand(r.brand||r.Brand||''), product:(r.product||r.Product||'').trim(),
-    channel:(r.channel||r.Channel||'').trim(), status:((r.status||r.Status||'').trim()||'plan'),
+    pillar:(r.pillar||r.Pillar||'').trim(), format:(r.format||r.Format||'').trim(),
+    channel:(r.channel||r.Channel||'').trim(), status:((r.status||r.Status||'').trim()||'idea'),
+    goal:(r.goal||r.Goal||'').trim(),
     time:(r.time||r.Time||'').trim(), owner:(r.owner||r.Owner||'').trim(), note:(r.note||r.Note||'').trim() }; }
-  function calSig(b){ return [b.date,b.title,b.brand,b.product,b.channel,b.status,b.time,b.owner,b.note].join('|'); }
+  function calSig(b){ return [b.date,b.title,b.brand,b.product,b.pillar,b.format,b.channel,b.status,b.goal,b.time,b.owner,b.note].join('|'); }
   function rebuildCAL(){
     var byId={}, order=[];
     SHEET_ROWS_CAL.forEach(function(b){ if(!(b.id in byId)) order.push(b.id); byId[b.id]=b; });
@@ -8581,14 +8610,36 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     if(!cfg||!cfg.url){ if(typeof toast==='function') toast('บันทึกในเครื่องแล้ว · ยังไม่ได้ตั้ง Sheet Sync (ทีมยังไม่เห็น)','info'); return; }
     var isDel=(action==='delete');
     var payload={target:'contentcal', sheetName:'ContentCalendar', key:'id', create:CAL_HEADERS, action:isDel?'delete':'upsert', keyValue:item.id,
-      row: isDel?undefined:{id:item.id,date:item.date||'',title:item.title||'',brand:item.brand||'',product:item.product||'',channel:item.channel||'',status:item.status||'plan',time:item.time||'',owner:item.owner||'',note:item.note||''} };
+      row: isDel?undefined:{id:item.id,date:item.date||'',title:item.title||'',brand:item.brand||'',product:item.product||'',pillar:item.pillar||'',format:item.format||'',channel:item.channel||'',status:item.status||'idea',goal:item.goal||'',time:item.time||'',owner:item.owner||'',note:item.note||''} };
     try{ await postToSheet(payload); }catch(e){}
     setTimeout(function(){ if(typeof loadContentCalFromSheet==='function') loadContentCalFromSheet().then(function(){ if(ciSub==='calendar') renderContentCal(); }); }, 6000);
   }
   function calItems(){ return (window.CONTENT_CAL||[]).filter(function(x){ return ciBrand==='all' || (x.brand||'other')===ciBrand; }); }
   function calChanChips(ch){ return (ch||'').split(',').map(function(c){return c.trim();}).filter(Boolean).map(function(c){return '<span class="cc-chan">'+e2(c)+'</span>';}).join(''); }
+  function pillarTag(k){ var p=PILLARS[k]; return p?'<span class="cc-pill" style="--p:'+p.c+'" title="'+e2(p.s)+'">'+e2(p.t)+'</span>':''; }
+  function fmtTag(f){ return f?'<span class="cc-fmt">'+e2(f)+'</span>':''; }
   function isoOf(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
   function calLegend(){ var h=CAL_STATUS_ORDER.map(function(s){return '<span class="lg"><span class="dot" style="background:'+CAL_STATUS[s].c+'"></span>'+e2(CAL_STATUS[s].t)+'</span>';}).join(''); var el=document.getElementById('ccal-legend'); if(el) el.innerHTML=h; }
+  // Monthly performance snapshot (mirrors KINN's Dashboard) — respects month + brand filter
+  function renderCalPerf(){
+    var host=document.getElementById('ccal-perf'); if(!host) return;
+    var items=calItems().filter(function(x){ var d=new Date(x.date+'T00:00:00'); return d.getFullYear()===calY && d.getMonth()===calM; });
+    if(!items.length){ host.innerHTML=''; return; }
+    var total=items.length, cnt={idea:0,prod:0,scheduled:0,posted:0};
+    items.forEach(function(x){ var s=x.status; if(s==='idea')cnt.idea++; else if(s==='scheduled')cnt.scheduled++; else if(s==='posted'||s==='track')cnt.posted++; else cnt.prod++; });
+    var pct=total?Math.round(cnt.posted/total*100):0;
+    var byP={}; items.forEach(function(x){ if(x.pillar){ byP[x.pillar]=(byP[x.pillar]||0)+1; } });
+    var pillarBars=PILLAR_ORDER.filter(function(k){return byP[k];}).map(function(k){ var p=PILLARS[k],n=byP[k];
+      return '<div class="cc-perf-pbar"><span class="cc-perf-plabel">'+e2(p.t)+'</span><span class="cc-perf-ptrack"><i style="width:'+Math.round(n/total*100)+'%;background:'+p.c+'"></i></span><span class="cc-perf-pn">'+n+'</span></div>'; }).join('');
+    var kpi=function(label,val,sub,color){ return '<div class="cc-perf-card"><div class="cc-perf-v"'+(color?' style="color:'+color+'"':'')+'>'+val+'</div><div class="cc-perf-l">'+e2(label)+'</div>'+(sub?'<div class="cc-perf-s">'+e2(sub)+'</div>':'')+'</div>'; };
+    host.innerHTML='<div class="cc-perf-wrap"><div class="cc-perf-title">📊 ภาพรวมเดือน '+TH_MF[calM]+' '+calY+'</div>'
+      +'<div class="cc-perf-cards">'
+      +kpi('คอนเทนต์ทั้งหมด',total,'',null)
+      +kpi('โพสต์แล้ว',cnt.posted,pct+'% ของแผน','#1E7C4B')
+      +kpi('กำลังผลิต/ตั้งเวลา',(cnt.prod+cnt.scheduled),'','#B26A00')
+      +kpi('ไอเดีย/ยังไม่เริ่ม',cnt.idea,'','#8A6D00')
+      +'</div>'+(pillarBars?'<div class="cc-perf-pillars"><div class="cc-perf-h">สัดส่วนตามเสาหลักคอนเทนต์</div>'+pillarBars+'</div>':'')+'</div>';
+  }
 
   window.calMove=function(delta){ calM+=delta; if(calM<0){calM=11;calY--;} if(calM>11){calM=0;calY++;} renderContentCal(); };
   window.calToday=function(){ var d=new Date(); calY=d.getFullYear(); calM=d.getMonth(); renderContentCal(); };
@@ -8596,7 +8647,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
 
   window.renderContentCal=function(){
     var host=document.getElementById('ccal-host'); if(!host) return;
-    calLegend();
+    calLegend(); renderCalPerf();
     var addBtn=document.getElementById('ccal-add'); if(addBtn) addBtn.style.display=unlocked()?'':'none';
     document.getElementById('ccal-mode-grid').classList.toggle('on',calMode==='grid');
     document.getElementById('ccal-mode-list').classList.toggle('on',calMode==='list');
@@ -8617,9 +8668,10 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
       var isToday=new Date(calY,calM,day).getTime()===today.getTime();
       var list=(byDay[day]||[]).slice().sort(function(a,b){return (a.time||'').localeCompare(b.time||'');});
       var shown=list.slice(0,4);
-      var chips=shown.map(function(x){ var st=CAL_STATUS[x.status]||CAL_STATUS.plan;
-        var tip=(x.time?x.time+' ':'')+x.title+(x.brand?' · '+bLbl(x.brand):'')+(x.channel?' · '+x.channel:'');
-        return '<div class="ccal-chip" style="--s:'+st.c+'" title="'+e2(tip)+'" onclick="event.stopPropagation();calChipClick(\''+aj(x.id)+'\')">'+(x.time?'<span class="ci">'+e2(x.time)+'</span> ':'')+e2(x.title)+'</div>';
+      var chips=shown.map(function(x){ var st=CAL_STATUS[x.status]||CAL_STATUS.idea; var pc=(PILLARS[x.pillar]||{}).c;
+        var tip=(x.time?x.time+' ':'')+x.title+(x.pillar&&PILLARS[x.pillar]?' · '+PILLARS[x.pillar].t:'')+(x.format?' · '+x.format:'')+(x.brand?' · '+bLbl(x.brand):'')+(x.channel?' · '+x.channel:'')+' · '+st.t;
+        var bl=pc?';border-left:4px solid '+pc:'';
+        return '<div class="ccal-chip" style="--s:'+st.c+bl+'" title="'+e2(tip)+'" onclick="event.stopPropagation();calChipClick(\''+aj(x.id)+'\')">'+(x.time?'<span class="ci">'+e2(x.time)+'</span> ':'')+e2(x.title)+'</div>';
       }).join('');
       if(list.length>shown.length) chips+='<div class="ccal-more">+'+(list.length-shown.length)+' เพิ่มเติม</div>';
       var addable=unlocked();
@@ -8638,10 +8690,12 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
       var d=new Date(dt+'T00:00:00'); var past=d<today;
       var head='<div class="ccal-day-head">'+TH_WDF[d.getDay()]+' '+d.getDate()+' '+TH_MF[d.getMonth()]+' '+d.getFullYear()+'<span class="cnt">'+byDate[dt].length+' โพสต์</span></div>';
       var rows=byDate[dt].slice().sort(function(a,b){return (a.time||'').localeCompare(b.time||'');}).map(function(x){
-        var st=CAL_STATUS[x.status]||CAL_STATUS.plan;
-        var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); if(x.brand) meta.push('🏷️ '+e2(bLbl(x.brand))); if(x.product) meta.push('📦 '+e2(x.product)); if(x.owner) meta.push('👤 '+e2(x.owner));
+        var st=CAL_STATUS[x.status]||CAL_STATUS.idea;
+        var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); if(x.brand) meta.push('🏷️ '+e2(bLbl(x.brand))); if(x.product) meta.push('📦 '+e2(x.product)); if(x.goal) meta.push('🎯 '+e2(x.goal)); if(x.owner) meta.push('👤 '+e2(x.owner));
+        var tags=pillarTag(x.pillar)+fmtTag(x.format);
         var act=unlocked()?'<div class="ccal-post-actions"><button class="btn-sm ghost" onclick="openContentCalEditor(\''+aj(x.id)+'\')">✏️</button><button class="btn-sm warn-ghost" onclick="deleteContentCal(\''+aj(x.id)+'\')">🗑️</button></div>':'';
         return '<div class="ccal-post"><span class="ccal-post-s" style="--s:'+st.c+'">'+st.t+'</span><div class="ccal-post-main"><div class="ccal-post-title">'+e2(x.title)+'</div>'
+          +(tags?'<div class="ccal-post-meta">'+tags+'</div>':'')
           +'<div class="ccal-post-meta">'+meta.join('')+calChanChips(x.channel)+'</div>'+(x.note?'<div class="cc-mh-note">'+e2(x.note)+'</div>':'')+'</div>'+act+'</div>';
       }).join('');
       return '<div class="ccal-day'+(past?' past':'')+'">'+head+rows+'</div>';
@@ -8651,9 +8705,12 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   window.calChipClick=function(id){ if(unlocked()) openContentCalEditor(id); else openContentCalDetail(id); };
   window.openContentCalDetail=function(id){
     var x=(window.CONTENT_CAL||[]).find(function(i){return i.id===id;}); if(!x) return;
-    var st=CAL_STATUS[x.status]||CAL_STATUS.plan; var d=new Date(x.date+'T00:00:00');
+    var st=CAL_STATUS[x.status]||CAL_STATUS.idea; var d=new Date(x.date+'T00:00:00');
     var rows='<div class="ccal-detail-row"><b>วันที่</b><span>'+TH_WDF[d.getDay()]+' '+d.getDate()+' '+TH_MF[d.getMonth()]+' '+d.getFullYear()+(x.time?' · '+e2(x.time):'')+'</span></div>'
       +'<div class="ccal-detail-row"><b>สถานะ</b><span>'+st.t+'</span></div>'
+      +(x.pillar&&PILLARS[x.pillar]?'<div class="ccal-detail-row"><b>เสาหลัก</b><span>'+pillarTag(x.pillar)+' <span style="color:var(--ink-soft);font-size:12px;">'+e2(PILLARS[x.pillar].s)+'</span></span></div>':'')
+      +(x.format?'<div class="ccal-detail-row"><b>รูปแบบ</b><span>'+fmtTag(x.format)+'</span></div>':'')
+      +(x.goal?'<div class="ccal-detail-row"><b>เป้าหมาย</b><span>🎯 '+e2(x.goal)+'</span></div>':'')
       +(x.brand?'<div class="ccal-detail-row"><b>แบรนด์</b><span>'+e2(bLbl(x.brand))+'</span></div>':'')
       +(x.product?'<div class="ccal-detail-row"><b>สินค้า</b><span>'+e2(x.product)+'</span></div>':'')
       +(x.channel?'<div class="ccal-detail-row"><b>ช่องทาง</b><span>'+calChanChips(x.channel)+'</span></div>':'')
@@ -8671,7 +8728,10 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     var brandsPresent=[...new Set((typeof PRODUCTS!=='undefined'?PRODUCTS:[]).map(function(p){return p.brand;}).filter(Boolean))];
     if(!brandsPresent.length) brandsPresent=['godmami','glimmer','mamilabo'];
     var brandOpts='<option value="">— เลือกแบรนด์ —</option>'+brandsPresent.map(function(k){return '<option value="'+e2(k)+'"'+(x.brand===k?' selected':'')+'>'+e2(bLbl(k))+'</option>';}).join('');
-    var statusOpts=CAL_STATUS_ORDER.map(function(s){return '<option value="'+s+'"'+((x.status||'plan')===s?' selected':'')+'>'+e2(CAL_STATUS[s].t)+'</option>';}).join('');
+    var statusOpts=CAL_STATUS_ORDER.map(function(s){return '<option value="'+s+'"'+((x.status||'idea')===s?' selected':'')+'>'+e2(CAL_STATUS[s].t)+'</option>';}).join('');
+    var pillarOpts='<option value="">— ไม่ระบุ —</option>'+PILLAR_ORDER.map(function(k){return '<option value="'+k+'"'+(x.pillar===k?' selected':'')+'>'+e2(PILLARS[k].t)+' · '+e2(PILLARS[k].s)+'</option>';}).join('');
+    var formatOpts='<option value="">— ไม่ระบุ —</option>'+FORMATS.map(function(f){return '<option value="'+e2(f)+'"'+(x.format===f?' selected':'')+'>'+e2(f)+'</option>';}).join('');
+    var goalList=GOALS.map(function(gv){return '<option value="'+e2(gv)+'">';}).join('');
     var sel=(x.channel||'').split(',').map(function(c){return c.trim();});
     var chanChk=CHANNELS.map(function(c){return '<label><input type="checkbox" value="'+e2(c)+'"'+(sel.indexOf(c)>=0?' checked':'')+'> '+e2(c)+'</label>';}).join('');
     var ideas=(window.CONTENT_IDEAS||[]);
@@ -8684,7 +8744,10 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
       +'<div class="pe-field"><label>วันที่ลง *</label><input type="date" id="cc-cf-date" value="'+e2(x.date||'')+'"></div>'
       +'<div class="pe-field"><label>เวลา</label><input type="time" id="cc-cf-time" value="'+e2(x.time||'')+'"></div>'
       +'<div class="pe-field"><label>แบรนด์</label><select id="cc-cf-brand">'+brandOpts+'</select></div>'
-      +'<div class="pe-field"><label>สถานะ</label><select id="cc-cf-status">'+statusOpts+'</select></div>'
+      +'<div class="pe-field"><label>สถานะการผลิต</label><select id="cc-cf-status">'+statusOpts+'</select></div>'
+      +'<div class="pe-field"><label>เสาหลักคอนเทนต์ (Pillar)</label><select id="cc-cf-pillar">'+pillarOpts+'</select></div>'
+      +'<div class="pe-field"><label>รูปแบบ (Format)</label><select id="cc-cf-format">'+formatOpts+'</select></div>'
+      +'<div class="pe-field full"><label>เป้าหมาย / ตัวชี้วัด (Goal)</label><input type="text" id="cc-cf-goal" list="cc-cf-goals" value="'+e2(x.goal||'')+'" placeholder="เช่น Reach / Add to Cart / New Followers"><datalist id="cc-cf-goals">'+goalList+'</datalist></div>'
       +'<div class="pe-field full"><label>สินค้า / คอลเลกชัน</label><input type="text" id="cc-cf-product" value="'+e2(x.product||'')+'" placeholder="เช่น Halloween Collection / MK005"></div>'
       +'<div class="pe-field full"><label>ช่องทางลง</label><div class="cc-chk" id="cc-cf-channels">'+chanChk+'</div></div>'
       +'<div class="pe-field full"><label>ผู้ดูแลโพสต์</label><input type="text" id="cc-cf-owner" value="'+e2(x.owner||'')+'" placeholder="ชื่อผู้รับผิดชอบ"></div>'
@@ -8698,6 +8761,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     if(g('cc-cf-title') && !g('cc-cf-title').value) g('cc-cf-title').value=z.title||'';
     if(g('cc-cf-product') && !g('cc-cf-product').value) g('cc-cf-product').value=z.product||'';
     if(g('cc-cf-brand') && z.brand) g('cc-cf-brand').value=z.brand;
+    if(g('cc-cf-pillar') && z.pillar) g('cc-cf-pillar').value=z.pillar;
     if(g('cc-cf-note') && !g('cc-cf-note').value) g('cc-cf-note').value=z.detail||'';
     var picks=(z.channel||'').split(',').map(function(c){return c.trim();});
     [].slice.call(document.querySelectorAll('#cc-cf-channels input')).forEach(function(cb){ if(picks.indexOf(cb.value)>=0) cb.checked=true; });
@@ -8708,8 +8772,9 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     var date=g('cc-cf-date'); if(!date){ if(typeof toast==='function') toast('เลือกวันที่ลงก่อน','err'); return; }
     var chans=[].slice.call(document.querySelectorAll('#cc-cf-channels input:checked')).map(function(c){return c.value;}).join(', ');
     var item={ id: calEditId || ('cc'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
-      date:date, title:title, brand:nBrand(g('cc-cf-brand')), product:g('cc-cf-product'), channel:chans,
-      status:g('cc-cf-status')||'plan', time:g('cc-cf-time'), owner:g('cc-cf-owner'), note:g('cc-cf-note'),
+      date:date, title:title, brand:nBrand(g('cc-cf-brand')), product:g('cc-cf-product'),
+      pillar:g('cc-cf-pillar'), format:g('cc-cf-format'), goal:g('cc-cf-goal'), channel:chans,
+      status:g('cc-cf-status')||'idea', time:g('cc-cf-time'), owner:g('cc-cf-owner'), note:g('cc-cf-note'),
       updatedAt:(typeof todayStr==='function'?todayStr():'') };
     var local=calLocal(); var i=local.findIndex(function(z){return z.id===item.id;}); if(i>-1) local[i]=item; else local.push(item); calSaveLocal(local);
     rebuildCAL(); renderContentCal(); closeContentIdeaEditor();
