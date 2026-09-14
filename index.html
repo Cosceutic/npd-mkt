@@ -1261,6 +1261,71 @@
   #view-content .cc-perf-ptrack>i{display:block;height:100%;border-radius:5px;transition:width .25s;}
   #view-content .cc-perf-pn{flex:0 0 26px;text-align:right;font-size:11.5px;font-weight:700;color:var(--ink-soft);}
   @media(max-width:640px){ #view-content .ccal-cell{min-height:66px;} #view-content .ccal-chip{font-size:9.5px;padding:1px 4px;} #view-content .ccal-chip .ci{display:none;} #view-content .cc-perf-plabel{flex:0 0 118px;} #view-content .cc-perf-v{font-size:22px;} }
+  /* ===== 🎨 Brand Identity ===== */
+  #view-content .cc-bi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;align-items:start;}
+  #view-content .cc-bi-card{background:var(--card);border:1px solid var(--line);border-top:5px solid var(--b);border-radius:14px;overflow:hidden;box-shadow:0 4px 16px -10px rgba(80,100,150,.5);}
+  #view-content .cc-bi-head{display:flex;align-items:center;gap:10px;padding:13px 16px 11px;}
+  #view-content .cc-bi-brand{font-family:'Prompt',sans-serif;font-weight:700;font-size:17px;color:var(--ink);}
+  #view-content .cc-bi-ch{font-size:12px;color:var(--ink-soft);}
+  #view-content .cc-bi-edit{margin-left:auto;flex:0 0 auto;}
+  #view-content .cc-bi-body{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px;}
+  #view-content .cc-bi-block>h5{font-family:'Prompt',sans-serif;font-weight:600;font-size:12px;color:var(--accent-deep);margin:0 0 4px;letter-spacing:.02em;}
+  #view-content .cc-bi-block p{margin:0;font-size:13px;color:var(--ink);line-height:1.55;white-space:pre-wrap;}
+  #view-content .cc-bi-slogan{font-family:'Prompt',sans-serif;font-weight:600;font-size:15px;color:var(--b);font-style:italic;}
+  #view-content .cc-bi-swatches{display:flex;gap:8px;flex-wrap:wrap;}
+  #view-content .cc-bi-sw{display:flex;flex-direction:column;align-items:center;gap:3px;}
+  #view-content .cc-bi-sw i{width:38px;height:38px;border-radius:9px;border:1px solid rgba(0,0,0,.12);display:block;}
+  #view-content .cc-bi-sw span{font-size:9.5px;color:var(--ink-soft);font-family:monospace;}
+  #view-content .cc-bi-fonts{display:flex;gap:8px;flex-wrap:wrap;}
+  #view-content .cc-bi-font{font-size:12px;border:1px solid var(--line);border-radius:8px;padding:3px 10px;color:var(--ink);}
+  #view-content .cc-bi-empty{padding:26px 16px;text-align:center;color:var(--ink-soft);font-size:13px;}
+  #view-content .cc-bi-link{font-size:12.5px;color:var(--accent-deep);text-decoration:none;font-weight:600;}
+  /* ===== #️⃣ Hashtags ===== */
+  #view-content .cc-ht-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;align-items:start;}
+  #view-content .cc-ht-card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px 14px;display:flex;flex-direction:column;gap:9px;box-shadow:0 4px 14px -10px rgba(80,100,150,.5);}
+  #view-content .cc-ht-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  #view-content .cc-ht-name{font-family:'Prompt',sans-serif;font-weight:600;font-size:14.5px;color:var(--ink);flex:1;min-width:80px;}
+  #view-content .cc-ht-count{font-size:11px;color:var(--ink-soft);font-weight:600;}
+  #view-content .cc-ht-tags{display:flex;gap:5px;flex-wrap:wrap;}
+  #view-content .cc-ht-tag{font-size:11.5px;font-weight:600;color:var(--accent-deep);background:var(--accent-pale);border-radius:6px;padding:2px 8px;cursor:pointer;transition:.12s;}
+  #view-content .cc-ht-tag:hover{background:var(--accent);color:#fff;}
+  #view-content .cc-ht-note{font-size:11.5px;color:var(--ink-soft);}
+  #view-content .cc-ht-actions{display:flex;gap:6px;margin-top:2px;}
+  #view-content .cc-ht-actions .btn-sm{flex:0 0 auto;}
+  #view-content .cc-ht-copy{flex:1 !important;}
+  /* ===== 🗂️ Pipeline (Kanban board) ===== */
+  #view-content .cc-pl-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start;}
+  #view-content .cc-pl-col{flex:0 0 264px;width:264px;background:#eef1f6;border-radius:13px;padding:9px;display:flex;flex-direction:column;gap:9px;min-height:120px;transition:background .12s,box-shadow .12s;}
+  #view-content .cc-pl-col.dragover{background:var(--accent-pale);box-shadow:inset 0 0 0 2px var(--accent);}
+  #view-content .cc-pl-colhead{display:flex;align-items:center;gap:7px;padding:3px 5px;}
+  #view-content .cc-pl-dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;}
+  #view-content .cc-pl-colname{font-family:'Prompt',sans-serif;font-weight:700;font-size:12.5px;color:var(--ink);flex:1;line-height:1.2;}
+  #view-content .cc-pl-colcount{font-size:11px;font-weight:700;color:var(--ink-soft);background:#fff;border-radius:999px;padding:1px 8px;}
+  #view-content .cc-pl-add{border:1px dashed var(--line);background:transparent;border-radius:9px;padding:6px;font-size:12px;color:var(--ink-soft);cursor:pointer;font-weight:600;}
+  #view-content .cc-pl-add:hover{background:#fff;color:var(--accent-deep);border-color:var(--accent);}
+  #view-content .cc-pl-card{background:#fff;border:1px solid var(--line);border-left:4px solid var(--s);border-radius:11px;padding:10px 11px;display:flex;flex-direction:column;gap:6px;box-shadow:0 2px 8px -5px rgba(80,100,150,.5);cursor:grab;}
+  #view-content .cc-pl-card:active{cursor:grabbing;}
+  #view-content .cc-pl-card.dragging{opacity:.45;}
+  #view-content .cc-pl-ct{font-family:'Prompt',sans-serif;font-weight:600;font-size:13px;color:var(--ink);line-height:1.35;}
+  #view-content .cc-pl-tags{display:flex;gap:4px;flex-wrap:wrap;}
+  #view-content .cc-pl-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--ink-soft);align-items:center;}
+  #view-content .cc-pl-who{display:flex;gap:6px;flex-wrap:wrap;}
+  #view-content .cc-pl-pic,#view-content .cc-pl-rev{font-size:10.5px;font-weight:600;border-radius:999px;padding:1px 8px;white-space:nowrap;}
+  #view-content .cc-pl-pic{background:#EAF1FF;color:#2456B0;}
+  #view-content .cc-pl-rev{background:#F3ECFF;color:#6A3FC0;}
+  #view-content .cc-pl-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:1px;}
+  #view-content .cc-pl-actions button{font-size:11px;font-weight:700;border:none;border-radius:7px;padding:4px 9px;cursor:pointer;}
+  #view-content .cc-pl-send{background:#EDE7FB;color:#5B3FC0;}
+  #view-content .cc-pl-send:hover{background:#a78bfa;color:#fff;}
+  #view-content .cc-pl-ok{background:#DEF3E7;color:#1E7C4B;}
+  #view-content .cc-pl-ok:hover{background:#5fd0a8;color:#fff;}
+  #view-content .cc-pl-no{background:#FCE4E4;color:#C0392B;}
+  #view-content .cc-pl-no:hover{background:#ef6b6b;color:#fff;}
+  #view-content .cc-pl-post{background:#E4EEFC;color:#2456B0;}
+  #view-content .cc-pl-post:hover{background:#4b9ef8;color:#fff;}
+  #view-content .cc-pl-move{font-size:10.5px;color:var(--ink-soft);border:1px solid var(--line);border-radius:7px;padding:3px 5px;background:#fff;max-width:100%;}
+  #view-content .cc-pl-empty{font-size:11.5px;color:var(--ink-soft);text-align:center;padding:14px 6px;opacity:.75;}
+  @media(max-width:640px){ #view-content .cc-pl-col{flex:0 0 232px;width:232px;} }
   </style>
   <div class="view" id="view-content">
     <div style="max-width:1220px;margin:0 auto;">
@@ -1269,7 +1334,10 @@
         <button class="btn-sm subnav-active" id="cc-nav-idea" onclick="switchContentSub('idea')">💡 Content Idea</button>
         <button class="btn-sm" id="cc-nav-musthave" onclick="switchContentSub('musthave')">✅ Content Must Have</button>
         <button class="btn-sm" id="cc-nav-calendar" onclick="switchContentSub('calendar')">📅 Content Calendar</button>
+        <button class="btn-sm" id="cc-nav-pipeline" onclick="switchContentSub('pipeline')">🗂️ Pipeline</button>
         <button class="btn-sm" id="cc-nav-roadmap" onclick="switchContentSub('roadmap')">🚀 Road Map Plan</button>
+        <button class="btn-sm" id="cc-nav-brandid" onclick="switchContentSub('brandid')">🎨 Brand Identity</button>
+        <button class="btn-sm" id="cc-nav-hashtag" onclick="switchContentSub('hashtag')">#️⃣ Hashtags</button>
       </div>
       <div class="brand-filter-bar" id="cc-brand-bar"></div>
       <div id="cc-sub-idea">
@@ -1305,6 +1373,13 @@
         <div id="ccal-legend" class="ccal-legend"></div>
         <div id="ccal-host"></div>
       </div>
+      <div id="cc-sub-pipeline" style="display:none;">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+          <p class="cc-rm-lead">บอร์ดสถานะคอนเทนต์ — ลากการ์ดเพื่อเปลี่ยนสถานะ · ข้อมูลชุดเดียวกับปฏิทิน · ส่งตรวจ/อนุมัติ/ตีกลับได้ในคลิกเดียว</p>
+          <button class="btn-edit primary" id="cc-pl-add" onclick="openContentCalEditor()" style="display:none;flex:0 0 auto;">➕ เพิ่มการ์ด</button>
+        </div>
+        <div id="cc-pl-host"></div>
+      </div>
       <div id="cc-sub-roadmap" style="display:none;">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
           <p class="cc-rm-lead">โรดแมปเปิดตัวสินค้า — ดึงจากข้อมูล NPD อัตโนมัติ (สินค้าที่มีวันวางขาย/เปิดตะกร้า/เข้าสต็อก)</p>
@@ -1314,6 +1389,19 @@
           </span>
         </div>
         <div id="cc-rm-host"></div>
+      </div>
+      <div id="cc-sub-brandid" style="display:none;">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+          <p class="cc-rm-lead">อัตลักษณ์แบรนด์ — ที่อ้างอิงให้ทีมคุมโทนคอนเทนต์ (จุดยืน · น้ำเสียง · สี · ฟอนต์ · Do &amp; Don't) · 1 การ์ดต่อ 1 แบรนด์ เพิ่ม/แก้ทีหลังได้</p>
+        </div>
+        <div id="cc-bi-host"></div>
+      </div>
+      <div id="cc-sub-hashtag" style="display:none;">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+          <p class="cc-rm-lead">คลังแฮชแท็ก — จัดเป็นกลุ่ม กดคัดลอกทั้งกลุ่มไปวางได้เร็ว ๆ</p>
+          <button class="btn-edit primary" id="cc-ht-add" onclick="openHashtagEditor()" style="display:none;flex:0 0 auto;">➕ เพิ่มกลุ่มแฮชแท็ก</button>
+        </div>
+        <div id="cc-ht-host"></div>
       </div>
     </div>
     <div class="modal-overlay" id="cc-editor-overlay" style="z-index:73;" onclick="if(event.target===this) closeContentIdeaEditor()">
@@ -8447,10 +8535,12 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   }
 
   window.switchContentSub=function(key){ ciSub=key;
-    ['idea','musthave','calendar','roadmap'].forEach(function(k){ var el=document.getElementById('cc-sub-'+k); if(el) el.style.display=(k===key)?'':'none'; var b=document.getElementById('cc-nav-'+k); if(b) b.classList.toggle('subnav-active',k===key); });
-    var bar=document.getElementById('cc-brand-bar'); if(bar) bar.style.display=(key==='musthave')?'none':''; // brand view applies to idea/calendar/roadmap
-    if(key==='calendar' && !calLoaded){ calLoaded=true; if(typeof loadContentCalFromSheet==='function') loadContentCalFromSheet().then(function(){ if(ciSub==='calendar') renderContentCal(); }).catch(function(){}); }
+    ['idea','musthave','calendar','pipeline','roadmap','brandid','hashtag'].forEach(function(k){ var el=document.getElementById('cc-sub-'+k); if(el) el.style.display=(k===key)?'':'none'; var b=document.getElementById('cc-nav-'+k); if(b) b.classList.toggle('subnav-active',k===key); });
+    var bar=document.getElementById('cc-brand-bar'); if(bar) bar.style.display=(key==='musthave')?'none':''; // brand view applies to everything except the checklist
+    if((key==='calendar'||key==='pipeline') && !calLoaded){ calLoaded=true; if(typeof loadContentCalFromSheet==='function') loadContentCalFromSheet().then(function(){ if(ciSub==='calendar') renderContentCal(); else if(ciSub==='pipeline') renderPipeline(); }).catch(function(){}); }
     if(key==='musthave' && !mhLoaded){ mhLoaded=true; if(typeof loadMustHaveFromSheet==='function') loadMustHaveFromSheet().then(function(){ if(ciSub==='musthave') renderMustHave(); }).catch(function(){}); }
+    if(key==='brandid' && !biLoaded){ biLoaded=true; if(typeof loadBrandIdFromSheet==='function') loadBrandIdFromSheet().then(function(){ if(ciSub==='brandid') renderBrandId(); }).catch(function(){}); }
+    if(key==='hashtag' && !htLoaded){ htLoaded=true; if(typeof loadHashtagsFromSheet==='function') loadHashtagsFromSheet().then(function(){ if(ciSub==='hashtag') renderHashtags(); }).catch(function(){}); }
     renderContentCreator();
   };
   function ciBrandBar(){
@@ -8473,8 +8563,11 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   window.renderContentCreator=function(){ ciBrandBar();
     if(ciSub==='idea') renderContentIdea();
     else if(ciSub==='calendar') renderContentCal();
+    else if(ciSub==='pipeline') renderPipeline();
     else if(ciSub==='musthave') renderMustHave();
     else if(ciSub==='roadmap') renderRoadmap();
+    else if(ciSub==='brandid') renderBrandId();
+    else if(ciSub==='hashtag') renderHashtags();
   };
   window.renderContentIdea=function(){
     var host=document.getElementById('cc-idea-grid'); if(!host) return;
@@ -8566,10 +8659,12 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   var TH_WDF=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
   var CAL_CSV='https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=ContentCalendar';
   var CAL_LKEY='npd_content_cal_v1';
-  var CAL_HEADERS=['id','date','title','brand','product','pillar','format','channel','status','goal','time','owner','note'];
-  // production pipeline (KINN-style): idea → script → shoot → edit → review → schedule → posted → track
-  var CAL_STATUS={idea:{t:'💡 ไอเดีย',c:'#f2c94c'},scripting:{t:'✍️ เขียนสคริปต์',c:'#7db4ff'},production:{t:'🎬 ถ่าย/โปรดักชัน',c:'#ffb454'},editing:{t:'✂️ ตัดต่อ',c:'#f2a3c7'},review:{t:'👀 รีวิว/รออนุมัติ',c:'#a78bfa'},scheduled:{t:'⏰ ตั้งเวลาแล้ว',c:'#4dd0e1'},posted:{t:'✅ โพสต์แล้ว',c:'#5fd0a8'},track:{t:'📈 ติดตามผล',c:'#26a69a'}};
-  var CAL_STATUS_ORDER=['idea','scripting','production','editing','review','scheduled','posted','track'];
+  var CAL_HEADERS=['id','date','title','brand','product','pillar','format','channel','status','goal','time','owner','reviewer','note'];
+  // content pipeline (review flow): brief → production → review → revise → approved → posted → track
+  var CAL_STATUS={brief:{t:'📝 บรีฟ/ไอเดีย',c:'#f2c94c'},production:{t:'🎬 กำลังผลิต',c:'#ffb454'},review:{t:'👀 รอตรวจสอบ',c:'#a78bfa'},revise:{t:'🔧 แก้ไข (ตีกลับ)',c:'#ef6b6b'},approved:{t:'✅ อนุมัติ (รอโพสต์)',c:'#5fd0a8'},posted:{t:'🚀 โพสต์แล้ว',c:'#4b9ef8'},track:{t:'📈 ติดตามผล',c:'#26a69a'}};
+  var CAL_STATUS_ORDER=['brief','production','review','revise','approved','posted','track'];
+  var PIC_NAMES_CC=['เลิฟ','สเปียร์','เอ','หรา'];        // เจ้าของงาน (PIC)
+  var REVIEWER_NAMES=['พลอย','แพรว','ออม'];             // ผู้ตรวจงาน
   // Content Pillars (แกน/เสาหลักคอนเทนต์) — standard marketing pillars
   var PILLARS={awareness:{t:'📣 Awareness',s:'การรับรู้',c:'#5B8FF9'},consideration:{t:'🤔 Consideration',s:'พิจารณา',c:'#9B7EF8'},conversion:{t:'🛒 Conversion',s:'ปิดการขาย',c:'#F0705A'},authority:{t:'🎓 Authority',s:'น่าเชื่อถือ',c:'#3CA5A5'},engagement:{t:'💬 Engagement',s:'มีส่วนร่วม',c:'#F2994A'},education:{t:'📚 Product Education',s:'ให้ความรู้สินค้า',c:'#2D9CDB'},entertainment:{t:'🎉 Entertainment',s:'ความบันเทิง',c:'#EB5FA0'}};
   var PILLAR_ORDER=['awareness','consideration','conversion','authority','engagement','education','entertainment'];
@@ -8584,10 +8679,10 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     id:(r.id||r.ID||'').trim(), date:(r.date||r.Date||'').trim(), title:(r.title||r.Title||'').trim(),
     brand:nBrand(r.brand||r.Brand||''), product:(r.product||r.Product||'').trim(),
     pillar:(r.pillar||r.Pillar||'').trim(), format:(r.format||r.Format||'').trim(),
-    channel:(r.channel||r.Channel||'').trim(), status:((r.status||r.Status||'').trim()||'idea'),
+    channel:(r.channel||r.Channel||'').trim(), status:((r.status||r.Status||'').trim()||'brief'),
     goal:(r.goal||r.Goal||'').trim(),
-    time:(r.time||r.Time||'').trim(), owner:(r.owner||r.Owner||'').trim(), note:(r.note||r.Note||'').trim() }; }
-  function calSig(b){ return [b.date,b.title,b.brand,b.product,b.pillar,b.format,b.channel,b.status,b.goal,b.time,b.owner,b.note].join('|'); }
+    time:(r.time||r.Time||'').trim(), owner:(r.owner||r.Owner||'').trim(), reviewer:(r.reviewer||r.Reviewer||'').trim(), note:(r.note||r.Note||'').trim() }; }
+  function calSig(b){ return [b.date,b.title,b.brand,b.product,b.pillar,b.format,b.channel,b.status,b.goal,b.time,b.owner,b.reviewer,b.note].join('|'); }
   function rebuildCAL(){
     var byId={}, order=[];
     SHEET_ROWS_CAL.forEach(function(b){ if(!(b.id in byId)) order.push(b.id); byId[b.id]=b; });
@@ -8610,9 +8705,9 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     if(!cfg||!cfg.url){ if(typeof toast==='function') toast('บันทึกในเครื่องแล้ว · ยังไม่ได้ตั้ง Sheet Sync (ทีมยังไม่เห็น)','info'); return; }
     var isDel=(action==='delete');
     var payload={target:'contentcal', sheetName:'ContentCalendar', key:'id', create:CAL_HEADERS, action:isDel?'delete':'upsert', keyValue:item.id,
-      row: isDel?undefined:{id:item.id,date:item.date||'',title:item.title||'',brand:item.brand||'',product:item.product||'',pillar:item.pillar||'',format:item.format||'',channel:item.channel||'',status:item.status||'idea',goal:item.goal||'',time:item.time||'',owner:item.owner||'',note:item.note||''} };
+      row: isDel?undefined:{id:item.id,date:item.date||'',title:item.title||'',brand:item.brand||'',product:item.product||'',pillar:item.pillar||'',format:item.format||'',channel:item.channel||'',status:item.status||'brief',goal:item.goal||'',time:item.time||'',owner:item.owner||'',reviewer:item.reviewer||'',note:item.note||''} };
     try{ await postToSheet(payload); }catch(e){}
-    setTimeout(function(){ if(typeof loadContentCalFromSheet==='function') loadContentCalFromSheet().then(function(){ if(ciSub==='calendar') renderContentCal(); }); }, 6000);
+    setTimeout(function(){ if(typeof loadContentCalFromSheet==='function') loadContentCalFromSheet().then(function(){ if(ciSub==='calendar'||ciSub==='pipeline') renderCalActive(); }); }, 6000);
   }
   function calItems(){ return (window.CONTENT_CAL||[]).filter(function(x){ return ciBrand==='all' || (x.brand||'other')===ciBrand; }); }
   function calChanChips(ch){ return (ch||'').split(',').map(function(c){return c.trim();}).filter(Boolean).map(function(c){return '<span class="cc-chan">'+e2(c)+'</span>';}).join(''); }
@@ -8625,8 +8720,8 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     var host=document.getElementById('ccal-perf'); if(!host) return;
     var items=calItems().filter(function(x){ var d=new Date(x.date+'T00:00:00'); return d.getFullYear()===calY && d.getMonth()===calM; });
     if(!items.length){ host.innerHTML=''; return; }
-    var total=items.length, cnt={idea:0,prod:0,scheduled:0,posted:0};
-    items.forEach(function(x){ var s=x.status; if(s==='idea')cnt.idea++; else if(s==='scheduled')cnt.scheduled++; else if(s==='posted'||s==='track')cnt.posted++; else cnt.prod++; });
+    var total=items.length, cnt={todo:0,review:0,approved:0,posted:0};
+    items.forEach(function(x){ var s=x.status; if(s==='posted'||s==='track')cnt.posted++; else if(s==='review'||s==='revise')cnt.review++; else if(s==='approved')cnt.approved++; else cnt.todo++; });
     var pct=total?Math.round(cnt.posted/total*100):0;
     var byP={}; items.forEach(function(x){ if(x.pillar){ byP[x.pillar]=(byP[x.pillar]||0)+1; } });
     var pillarBars=PILLAR_ORDER.filter(function(k){return byP[k];}).map(function(k){ var p=PILLARS[k],n=byP[k];
@@ -8636,8 +8731,8 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
       +'<div class="cc-perf-cards">'
       +kpi('คอนเทนต์ทั้งหมด',total,'',null)
       +kpi('โพสต์แล้ว',cnt.posted,pct+'% ของแผน','#1E7C4B')
-      +kpi('กำลังผลิต/ตั้งเวลา',(cnt.prod+cnt.scheduled),'','#B26A00')
-      +kpi('ไอเดีย/ยังไม่เริ่ม',cnt.idea,'','#8A6D00')
+      +kpi('รอตรวจ/แก้ไข',cnt.review,'','#6A4BC0')
+      +kpi('กำลังผลิต · รออนุมัติ',(cnt.todo+cnt.approved),'','#B26A00')
       +'</div>'+(pillarBars?'<div class="cc-perf-pillars"><div class="cc-perf-h">สัดส่วนตามเสาหลักคอนเทนต์</div>'+pillarBars+'</div>':'')+'</div>';
   }
 
@@ -8668,7 +8763,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
       var isToday=new Date(calY,calM,day).getTime()===today.getTime();
       var list=(byDay[day]||[]).slice().sort(function(a,b){return (a.time||'').localeCompare(b.time||'');});
       var shown=list.slice(0,4);
-      var chips=shown.map(function(x){ var st=CAL_STATUS[x.status]||CAL_STATUS.idea; var pc=(PILLARS[x.pillar]||{}).c;
+      var chips=shown.map(function(x){ var st=CAL_STATUS[x.status]||CAL_STATUS.brief; var pc=(PILLARS[x.pillar]||{}).c;
         var tip=(x.time?x.time+' ':'')+x.title+(x.pillar&&PILLARS[x.pillar]?' · '+PILLARS[x.pillar].t:'')+(x.format?' · '+x.format:'')+(x.brand?' · '+bLbl(x.brand):'')+(x.channel?' · '+x.channel:'')+' · '+st.t;
         var bl=pc?';border-left:4px solid '+pc:'';
         return '<div class="ccal-chip" style="--s:'+st.c+bl+'" title="'+e2(tip)+'" onclick="event.stopPropagation();calChipClick(\''+aj(x.id)+'\')">'+(x.time?'<span class="ci">'+e2(x.time)+'</span> ':'')+e2(x.title)+'</div>';
@@ -8690,8 +8785,8 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
       var d=new Date(dt+'T00:00:00'); var past=d<today;
       var head='<div class="ccal-day-head">'+TH_WDF[d.getDay()]+' '+d.getDate()+' '+TH_MF[d.getMonth()]+' '+d.getFullYear()+'<span class="cnt">'+byDate[dt].length+' โพสต์</span></div>';
       var rows=byDate[dt].slice().sort(function(a,b){return (a.time||'').localeCompare(b.time||'');}).map(function(x){
-        var st=CAL_STATUS[x.status]||CAL_STATUS.idea;
-        var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); if(x.brand) meta.push('🏷️ '+e2(bLbl(x.brand))); if(x.product) meta.push('📦 '+e2(x.product)); if(x.goal) meta.push('🎯 '+e2(x.goal)); if(x.owner) meta.push('👤 '+e2(x.owner));
+        var st=CAL_STATUS[x.status]||CAL_STATUS.brief;
+        var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); if(x.brand) meta.push('🏷️ '+e2(bLbl(x.brand))); if(x.product) meta.push('📦 '+e2(x.product)); if(x.goal) meta.push('🎯 '+e2(x.goal)); if(x.owner) meta.push('👤 '+e2(x.owner)); if(x.reviewer) meta.push('🔍 '+e2(x.reviewer));
         var tags=pillarTag(x.pillar)+fmtTag(x.format);
         var act=unlocked()?'<div class="ccal-post-actions"><button class="btn-sm ghost" onclick="openContentCalEditor(\''+aj(x.id)+'\')">✏️</button><button class="btn-sm warn-ghost" onclick="deleteContentCal(\''+aj(x.id)+'\')">🗑️</button></div>':'';
         return '<div class="ccal-post"><span class="ccal-post-s" style="--s:'+st.c+'">'+st.t+'</span><div class="ccal-post-main"><div class="ccal-post-title">'+e2(x.title)+'</div>'
@@ -8705,7 +8800,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   window.calChipClick=function(id){ if(unlocked()) openContentCalEditor(id); else openContentCalDetail(id); };
   window.openContentCalDetail=function(id){
     var x=(window.CONTENT_CAL||[]).find(function(i){return i.id===id;}); if(!x) return;
-    var st=CAL_STATUS[x.status]||CAL_STATUS.idea; var d=new Date(x.date+'T00:00:00');
+    var st=CAL_STATUS[x.status]||CAL_STATUS.brief; var d=new Date(x.date+'T00:00:00');
     var rows='<div class="ccal-detail-row"><b>วันที่</b><span>'+TH_WDF[d.getDay()]+' '+d.getDate()+' '+TH_MF[d.getMonth()]+' '+d.getFullYear()+(x.time?' · '+e2(x.time):'')+'</span></div>'
       +'<div class="ccal-detail-row"><b>สถานะ</b><span>'+st.t+'</span></div>'
       +(x.pillar&&PILLARS[x.pillar]?'<div class="ccal-detail-row"><b>เสาหลัก</b><span>'+pillarTag(x.pillar)+' <span style="color:var(--ink-soft);font-size:12px;">'+e2(PILLARS[x.pillar].s)+'</span></span></div>':'')
@@ -8714,7 +8809,8 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
       +(x.brand?'<div class="ccal-detail-row"><b>แบรนด์</b><span>'+e2(bLbl(x.brand))+'</span></div>':'')
       +(x.product?'<div class="ccal-detail-row"><b>สินค้า</b><span>'+e2(x.product)+'</span></div>':'')
       +(x.channel?'<div class="ccal-detail-row"><b>ช่องทาง</b><span>'+calChanChips(x.channel)+'</span></div>':'')
-      +(x.owner?'<div class="ccal-detail-row"><b>ผู้ดูแล</b><span>'+e2(x.owner)+'</span></div>':'')
+      +(x.owner?'<div class="ccal-detail-row"><b>เจ้าของงาน</b><span>👤 '+e2(x.owner)+'</span></div>':'')
+      +(x.reviewer?'<div class="ccal-detail-row"><b>ผู้ตรวจ</b><span>🔍 '+e2(x.reviewer)+'</span></div>':'')
       +(x.note?'<div class="ccal-detail-row"><b>โน้ต</b><span>'+e2(x.note)+'</span></div>':'');
     document.getElementById('cc-editor-title').textContent='📅 '+x.title;
     document.getElementById('cc-editor-body').innerHTML=rows+'<div style="display:flex;justify-content:flex-end;margin-top:16px;"><button class="btn-sm ghost" onclick="closeContentIdeaEditor()">ปิด</button></div>';
@@ -8725,10 +8821,11 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     calEditId=id||null;
     var x = id ? (window.CONTENT_CAL||[]).find(function(i){return i.id===id;}) : {};
     x = x || {}; if(presetDate && !x.date) x.date=presetDate;
+    if(!id){ if(typeof plPresetStatus!=='undefined' && plPresetStatus){ x=Object.assign({},x,{status:plPresetStatus}); } plPresetStatus=null; }
     var brandsPresent=[...new Set((typeof PRODUCTS!=='undefined'?PRODUCTS:[]).map(function(p){return p.brand;}).filter(Boolean))];
     if(!brandsPresent.length) brandsPresent=['godmami','glimmer','mamilabo'];
     var brandOpts='<option value="">— เลือกแบรนด์ —</option>'+brandsPresent.map(function(k){return '<option value="'+e2(k)+'"'+(x.brand===k?' selected':'')+'>'+e2(bLbl(k))+'</option>';}).join('');
-    var statusOpts=CAL_STATUS_ORDER.map(function(s){return '<option value="'+s+'"'+((x.status||'idea')===s?' selected':'')+'>'+e2(CAL_STATUS[s].t)+'</option>';}).join('');
+    var statusOpts=CAL_STATUS_ORDER.map(function(s){return '<option value="'+s+'"'+((x.status||'brief')===s?' selected':'')+'>'+e2(CAL_STATUS[s].t)+'</option>';}).join('');
     var pillarOpts='<option value="">— ไม่ระบุ —</option>'+PILLAR_ORDER.map(function(k){return '<option value="'+k+'"'+(x.pillar===k?' selected':'')+'>'+e2(PILLARS[k].t)+' · '+e2(PILLARS[k].s)+'</option>';}).join('');
     var formatOpts='<option value="">— ไม่ระบุ —</option>'+FORMATS.map(function(f){return '<option value="'+e2(f)+'"'+(x.format===f?' selected':'')+'>'+e2(f)+'</option>';}).join('');
     var goalList=GOALS.map(function(gv){return '<option value="'+e2(gv)+'">';}).join('');
@@ -8750,7 +8847,8 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
       +'<div class="pe-field full"><label>เป้าหมาย / ตัวชี้วัด (Goal)</label><input type="text" id="cc-cf-goal" list="cc-cf-goals" value="'+e2(x.goal||'')+'" placeholder="เช่น Reach / Add to Cart / New Followers"><datalist id="cc-cf-goals">'+goalList+'</datalist></div>'
       +'<div class="pe-field full"><label>สินค้า / คอลเลกชัน</label><input type="text" id="cc-cf-product" value="'+e2(x.product||'')+'" placeholder="เช่น Halloween Collection / MK005"></div>'
       +'<div class="pe-field full"><label>ช่องทางลง</label><div class="cc-chk" id="cc-cf-channels">'+chanChk+'</div></div>'
-      +'<div class="pe-field full"><label>ผู้ดูแลโพสต์</label><input type="text" id="cc-cf-owner" value="'+e2(x.owner||'')+'" placeholder="ชื่อผู้รับผิดชอบ"></div>'
+      +'<div class="pe-field"><label>เจ้าของงาน (PIC)</label><input type="text" id="cc-cf-owner" list="cc-cf-pics" value="'+e2(x.owner||'')+'" placeholder="เลิฟ / สเปียร์ / เอ / หรา"><datalist id="cc-cf-pics">'+PIC_NAMES_CC.map(function(n){return '<option value="'+e2(n)+'">';}).join('')+'</datalist></div>'
+      +'<div class="pe-field"><label>ผู้ตรวจงาน</label><input type="text" id="cc-cf-reviewer" list="cc-cf-reviewers" value="'+e2(x.reviewer||'')+'" placeholder="พลอย / แพรว / ออม"><datalist id="cc-cf-reviewers">'+REVIEWER_NAMES.map(function(n){return '<option value="'+e2(n)+'">';}).join('')+'</datalist></div>'
       +'<div class="pe-field full"><label>โน้ต</label><textarea id="cc-cf-note" placeholder="แคปชัน / มุมเล่า / สิ่งที่ต้องเตรียม…">'+e2(x.note||'')+'</textarea></div>'
       +'</div>'
       +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;"><button class="btn-sm ghost" onclick="closeContentIdeaEditor()">ยกเลิก</button><button class="btn-sm primary" onclick="saveContentCal()">💾 บันทึก</button></div>';
@@ -8774,10 +8872,10 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     var item={ id: calEditId || ('cc'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
       date:date, title:title, brand:nBrand(g('cc-cf-brand')), product:g('cc-cf-product'),
       pillar:g('cc-cf-pillar'), format:g('cc-cf-format'), goal:g('cc-cf-goal'), channel:chans,
-      status:g('cc-cf-status')||'idea', time:g('cc-cf-time'), owner:g('cc-cf-owner'), note:g('cc-cf-note'),
+      status:g('cc-cf-status')||'brief', time:g('cc-cf-time'), owner:g('cc-cf-owner'), reviewer:g('cc-cf-reviewer'), note:g('cc-cf-note'),
       updatedAt:(typeof todayStr==='function'?todayStr():'') };
     var local=calLocal(); var i=local.findIndex(function(z){return z.id===item.id;}); if(i>-1) local[i]=item; else local.push(item); calSaveLocal(local);
-    rebuildCAL(); renderContentCal(); closeContentIdeaEditor();
+    rebuildCAL(); renderCalActive(); closeContentIdeaEditor();
     if(typeof toast==='function') toast(calEditId?'แก้ไขโพสต์แล้ว':'เพิ่มโพสต์แล้ว','ok');
     calSync(item,'upsert');
   };
@@ -8786,10 +8884,72 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     if(typeof window.confirm==='function' && !window.confirm('ลบโพสต์นี้ออกจากปฏิทิน?')) return;
     calSaveLocal(calLocal().filter(function(z){return z.id!==id;}));
     SHEET_ROWS_CAL=SHEET_ROWS_CAL.filter(function(z){return z.id!==id;});
-    rebuildCAL(); renderContentCal();
+    rebuildCAL(); renderCalActive();
     if(typeof toast==='function') toast('ลบโพสต์แล้ว','ok');
     calSync({id:id},'delete');
   };
+
+  /* ============================================================
+     🗂️  CONTENT PIPELINE  (Kanban board — same data as Calendar)
+     ============================================================ */
+  var plDragId=null, plPresetStatus=null;
+  function renderCalActive(){ if(ciSub==='pipeline') renderPipeline(); else renderContentCal(); }
+  window.renderPipeline=function(){
+    var host=document.getElementById('cc-pl-host'); if(!host) return;
+    var addBtn=document.getElementById('cc-pl-add'); if(addBtn) addBtn.style.display=unlocked()?'':'none';
+    var items=(window.CONTENT_CAL||[]).filter(function(x){ return ciBrand==='all' || (x.brand||'other')===ciBrand; });
+    var byStatus={}; CAL_STATUS_ORDER.forEach(function(s){byStatus[s]=[];});
+    items.forEach(function(x){ var s=CAL_STATUS[x.status]?x.status:'brief'; byStatus[s].push(x); });
+    var canEdit=unlocked();
+    host.innerHTML='<div class="cc-pl-board">'+CAL_STATUS_ORDER.map(function(s){
+      var st=CAL_STATUS[s]; var list=byStatus[s].slice().sort(function(a,b){return (a.date+(a.time||'')).localeCompare(b.date+(b.time||''));});
+      var cards=list.map(function(x){ return plCard(x,s,canEdit); }).join('') || '<div class="cc-pl-empty">— ว่าง —</div>';
+      var addC = canEdit ? '<button class="cc-pl-add" onclick="plAddIn(\''+s+'\')">➕ เพิ่มการ์ด</button>' : '';
+      return '<div class="cc-pl-col" data-status="'+s+'"'+(canEdit?' ondragover="plDragOver(event)" ondragleave="plDragLeave(event)" ondrop="plDrop(event,\''+s+'\')"':'')+'>'
+        +'<div class="cc-pl-colhead"><span class="cc-pl-dot" style="background:'+st.c+'"></span><span class="cc-pl-colname">'+e2(st.t)+'</span><span class="cc-pl-colcount">'+list.length+'</span></div>'
+        +cards+addC+'</div>';
+    }).join('')+'</div>';
+  };
+  function plCard(x,s,canEdit){
+    var st=CAL_STATUS[s];
+    var tags=pillarTag(x.pillar)+fmtTag(x.format)+calChanChips(x.channel);
+    var d=x.date?new Date(x.date+'T00:00:00'):null;
+    var dd=(d&&!isNaN(d))?(d.getDate()+' '+TH_M[d.getMonth()]):'';
+    var who=(x.owner?'<span class="cc-pl-pic" title="เจ้าของงาน (PIC)">👤 '+e2(x.owner)+'</span>':'')+(x.reviewer?'<span class="cc-pl-rev" title="ผู้ตรวจ">🔍 '+e2(x.reviewer)+'</span>':'');
+    var openFn = canEdit ? ('openContentCalEditor(\''+aj(x.id)+'\')') : ('openContentCalDetail(\''+aj(x.id)+'\')');
+    return '<div class="cc-pl-card" style="--s:'+st.c+'"'+(canEdit?' draggable="true" ondragstart="plDragStart(event,\''+aj(x.id)+'\')" ondragend="plDragEnd(event)"':'')+'>'
+      +'<div class="cc-pl-ct" style="cursor:pointer;" onclick="'+openFn+'">'+e2(x.title)+'</div>'
+      +(tags?'<div class="cc-pl-tags">'+tags+'</div>':'')
+      +((dd||who)?'<div class="cc-pl-meta">'+(dd?'<span>📅 '+e2(dd)+(x.time?' '+e2(x.time):'')+'</span>':'')+(who?'<span class="cc-pl-who">'+who+'</span>':'')+'</div>':'')
+      +(canEdit?plActions(x,s):'')+'</div>';
+  }
+  function plActions(x,s){
+    var b=[];
+    if(s==='brief'||s==='production') b.push('<button class="cc-pl-send" onclick="event.stopPropagation();plMove(\''+aj(x.id)+'\',\'review\')">ส่งตรวจ 👀</button>');
+    if(s==='review'){ b.push('<button class="cc-pl-ok" onclick="event.stopPropagation();plMove(\''+aj(x.id)+'\',\'approved\')">อนุมัติ ✅</button>'); b.push('<button class="cc-pl-no" onclick="event.stopPropagation();plMove(\''+aj(x.id)+'\',\'revise\')">ตีกลับ 🔧</button>'); }
+    if(s==='revise') b.push('<button class="cc-pl-send" onclick="event.stopPropagation();plMove(\''+aj(x.id)+'\',\'review\')">ส่งตรวจอีกครั้ง 👀</button>');
+    if(s==='approved') b.push('<button class="cc-pl-post" onclick="event.stopPropagation();plMove(\''+aj(x.id)+'\',\'posted\')">โพสต์แล้ว 🚀</button>');
+    var opts=CAL_STATUS_ORDER.map(function(k){return '<option value="'+k+'"'+(k===s?' selected':'')+'>'+e2(CAL_STATUS[k].t)+'</option>';}).join('');
+    b.push('<select class="cc-pl-move" title="ย้ายไปคอลัมน์อื่น" onclick="event.stopPropagation();" onchange="plMove(\''+aj(x.id)+'\',this.value)">'+opts+'</select>');
+    return '<div class="cc-pl-actions">'+b.join('')+'</div>';
+  }
+  window.plMove=function(id,newStatus){
+    if(!unlocked()) return; if(!CAL_STATUS[newStatus]) return;
+    var local=calLocal(); var i=local.findIndex(function(z){return z.id===id;}); var base;
+    if(i>-1){ base=normCAL(local[i]); } else { var found=(window.CONTENT_CAL||[]).find(function(z){return z.id===id;}); base=found?Object.assign({},found):null; }
+    if(!base || base.status===newStatus) return;
+    base.status=newStatus; base.updatedAt=(typeof todayStr==='function'?todayStr():'');
+    if(i>-1) local[i]=base; else local.push(base); calSaveLocal(local);
+    rebuildCAL(); renderPipeline();
+    if(typeof toast==='function') toast('ย้ายไป “'+CAL_STATUS[newStatus].t+'” แล้ว','ok');
+    calSync(base,'upsert');
+  };
+  window.plAddIn=function(s){ if(!unlocked()){ if(typeof toast==='function') toast('เข้าโหมดแก้ไข 🔓 ก่อน','info'); return; } plPresetStatus=s; openContentCalEditor(); };
+  window.plDragStart=function(ev,id){ plDragId=id; try{ ev.dataTransfer.setData('text/plain',id); ev.dataTransfer.effectAllowed='move'; }catch(e){} var c=ev.currentTarget; if(c) c.classList.add('dragging'); };
+  window.plDragEnd=function(ev){ var c=ev.currentTarget; if(c) c.classList.remove('dragging'); plDragId=null; var cols=document.querySelectorAll('#cc-pl-host .cc-pl-col.dragover'); [].forEach.call(cols,function(el){el.classList.remove('dragover');}); };
+  window.plDragOver=function(ev){ ev.preventDefault(); try{ ev.dataTransfer.dropEffect='move'; }catch(e){} ev.currentTarget.classList.add('dragover'); };
+  window.plDragLeave=function(ev){ if(!ev.currentTarget.contains(ev.relatedTarget)) ev.currentTarget.classList.remove('dragover'); };
+  window.plDrop=function(ev,s){ ev.preventDefault(); ev.currentTarget.classList.remove('dragover'); var id=plDragId; try{ var dt=ev.dataTransfer.getData('text/plain'); if(dt) id=dt; }catch(e){} if(id) plMove(id,s); };
 
   /* ============================================================
      ✅  CONTENT MUST HAVE  (standard checklist by type/platform)
@@ -8986,6 +9146,251 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
       return '<div class="cc-rm-year">'+y+'</div><div class="cc-rm-tl">'+inner+'</div>';
     }).join('');
     host.innerHTML=html;
+  };
+
+  /* ============================================================
+     🎨  BRAND IDENTITY  (per-brand tone reference, sheet-synced)
+     ============================================================ */
+  var BI_CSV='https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=BrandIdentity';
+  var BI_LKEY='npd_brand_identity_v1';
+  var BI_HEADERS=['id','brand','channelName','positioning','slogan','target','toneVoice','contentTopics','doDont','colors','fonts','moodboard','updatedBy','updatedAt'];
+  var SHEET_ROWS_BI=[]; window.BRAND_IDS=[]; var biLoaded=false, biEditBrand=null;
+  // Starter for Glimmer = the user's OWN brand info (from their KINN sheet); offered as an editable prefill, never auto-saved.
+  var BI_SEED={ glimmer:{ channelName:'Glimmer Sisters', slogan:'Little glow for school days',
+    positioning:'Glimmer Sisters คือแบรนด์เมคอัพไลฟ์สไตล์สำหรับวัยเรียน ที่เปลี่ยนโมเมนต์แรกของการแต่งหน้าให้เป็นเรื่องง่าย น่ารัก พกได้ ไม่กดดัน และเข้าไปเป็นส่วนหนึ่งของโมเมนต์ในชีวิตวันเรียน\n(EN) A teen pop beauty brand that turns first makeup moments into something easy, cute, and pressure-free.',
+    target:'', toneVoice:'',
+    contentTopics:'- Gleam Check Ritual: โมเมนต์ส่องกระจกก่อนไปเรียน "วันนี้พร้อมแล้ว"\n- First Makeup Diaries: สอนแต่งแบบมือใหม่ ใช้ง่าย\n- Sisterhood & UGC: เพื่อนเห็นแล้วขอลอง, pouch reveal, ยืมกันใช้\n- School Day Moments: ลุคไปเรียน/กิจกรรมในวันเรียน',
+    doDont:'', colors:'#385dae, #f2bec8, #0c359e', fonts:'Poppins, Sukhumvit', moodboard:'' } };
+  function biLocal(){try{return JSON.parse(localStorage.getItem(BI_LKEY))||[];}catch(e){return [];}}
+  function biSaveLocal(a){try{localStorage.setItem(BI_LKEY,JSON.stringify(a));}catch(e){}}
+  function normBI(r){ return {
+    id:nBrand(r.id||r.ID||r.brand||r.Brand||''), brand:nBrand(r.brand||r.Brand||r.id||''),
+    channelName:(r.channelName||r.ChannelName||'').trim(), positioning:(r.positioning||r.Positioning||'').trim(),
+    slogan:(r.slogan||r.Slogan||'').trim(), target:(r.target||r.Target||'').trim(),
+    toneVoice:(r.toneVoice||r.ToneVoice||'').trim(), contentTopics:(r.contentTopics||r.ContentTopics||'').trim(),
+    doDont:(r.doDont||r.DoDont||'').trim(), colors:(r.colors||r.Colors||'').trim(),
+    fonts:(r.fonts||r.Fonts||'').trim(), moodboard:(r.moodboard||r.Moodboard||'').trim(),
+    updatedBy:(r.updatedBy||'').trim(), updatedAt:(r.updatedAt||'').trim() }; }
+  function biSig(b){ return [b.channelName,b.positioning,b.slogan,b.target,b.toneVoice,b.contentTopics,b.doDont,b.colors,b.fonts,b.moodboard].join('|'); }
+  function rebuildBI(){
+    var byId={}, order=[];
+    SHEET_ROWS_BI.forEach(function(b){ if(b.id){ if(!(b.id in byId)) order.push(b.id); byId[b.id]=b; } });
+    biLocal().map(normBI).forEach(function(b){ if(b.id){ if(!(b.id in byId)) order.push(b.id); byId[b.id]=b; } });
+    window.BRAND_IDS = order.map(function(id){return byId[id];}).filter(Boolean);
+  }
+  window.loadBrandIdFromSheet=async function(){
+    try{
+      var res=await fetch(BI_CSV+'&_cb='+Date.now(),{cache:'no-store'}); var csv=await res.text();
+      var ok=/(^|,)\s*"?id"?\s*(,|$)/im.test(csv)&&/(^|,)\s*"?positioning"?\s*(,|$)/im.test(csv);
+      SHEET_ROWS_BI = (ok && typeof parseCsvByHeader==='function') ? parseCsvByHeader(csv,['id']).map(normBI).filter(function(b){return b.id;}) : [];
+    }catch(e){ SHEET_ROWS_BI=[]; }
+    var sheetSig={}; SHEET_ROWS_BI.forEach(function(b){ sheetSig[b.id]=biSig(b); });
+    var local=biLocal(); var kept=local.filter(function(b){ var nb=normBI(b); var s=sheetSig[nb.id]; return !(s && s===biSig(nb)); });
+    if(kept.length!==local.length) biSaveLocal(kept);
+    rebuildBI();
+  };
+  async function biSync(item, action){
+    var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{};
+    if(!cfg||!cfg.url){ if(typeof toast==='function') toast('บันทึกในเครื่องแล้ว · ยังไม่ได้ตั้ง Sheet Sync (ทีมยังไม่เห็น)','info'); return; }
+    var isDel=(action==='delete');
+    var row={}; BI_HEADERS.forEach(function(h){ row[h]=item[h]||''; }); row.updatedAt=(typeof todayStr==='function'?todayStr():'');
+    var payload={target:'brandidentity', sheetName:'BrandIdentity', key:'id', create:BI_HEADERS, action:isDel?'delete':'upsert', keyValue:item.id, row: isDel?undefined:row };
+    try{ await postToSheet(payload); }catch(e){}
+    setTimeout(function(){ if(typeof loadBrandIdFromSheet==='function') loadBrandIdFromSheet().then(function(){ if(ciSub==='brandid') renderBrandId(); }); }, 6000);
+  }
+  window.renderBrandId=function(){
+    var host=document.getElementById('cc-bi-host'); if(!host) return;
+    var brands=[...new Set((typeof PRODUCTS!=='undefined'?PRODUCTS:[]).map(function(p){return p.brand;}).filter(Boolean))];
+    (window.BRAND_IDS||[]).forEach(function(r){ if(r.id && brands.indexOf(r.id)<0) brands.push(r.id); });
+    if(!brands.length) brands=['godmami','glimmer','mamilabo'];
+    var order=['godmami','glimmer','mamilabo'];
+    brands.sort(function(a,b){var ia=order.indexOf(a),ib=order.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b);});
+    if(ciBrand!=='all') brands=brands.filter(function(b){return b===ciBrand;});
+    var tint=(typeof BRAND_TINT!=='undefined')?BRAND_TINT:{};
+    host.innerHTML='<div class="cc-bi-grid">'+brands.map(function(b){
+      var rec=(window.BRAND_IDS||[]).find(function(r){return r.id===b;});
+      var c=tint[b]||'#6B7280';
+      if(!rec){
+        var seedHint=BI_SEED[b]?' (มีตัวอย่างให้เริ่ม)':'';
+        return '<div class="cc-bi-card" style="--b:'+c+'"><div class="cc-bi-head"><div class="cc-bi-brand">'+e2(bLbl(b))+'</div>'+(unlocked()?'<button class="btn-sm primary cc-bi-edit" onclick="openBrandIdEditor(\''+aj(b)+'\')">➕ เพิ่มข้อมูล</button>':'')+'</div><div class="cc-bi-empty">ยังไม่มีข้อมูลอัตลักษณ์แบรนด์นี้'+e2(seedHint)+(unlocked()?'':' · กด 🔓 ปลดล็อกทีมเพื่อเพิ่ม')+'</div></div>';
+      }
+      var head='<div class="cc-bi-head"><div><div class="cc-bi-brand">'+e2(bLbl(b))+'</div>'+(rec.channelName?'<div class="cc-bi-ch">📣 '+e2(rec.channelName)+'</div>':'')+'</div>'+(unlocked()?'<button class="btn-sm ghost cc-bi-edit" onclick="openBrandIdEditor(\''+aj(b)+'\')">✏️ แก้ไข</button>':'')+'</div>';
+      var blocks='';
+      if(rec.slogan) blocks+='<div class="cc-bi-block"><div class="cc-bi-slogan" style="--b:'+c+'">“'+e2(rec.slogan)+'”</div></div>';
+      var tb=function(label,val){ return val?'<div class="cc-bi-block"><h5>'+label+'</h5><p>'+e2(val)+'</p></div>':''; };
+      blocks+=tb('จุดยืน (Positioning)',rec.positioning);
+      blocks+=tb('กลุ่มเป้าหมาย',rec.target);
+      blocks+=tb('บุคลิก &amp; น้ำเสียง',rec.toneVoice);
+      blocks+=tb('หัวข้อคอนเทนต์หลัก',rec.contentTopics);
+      blocks+=tb("Do &amp; Don't (คุมโทน)",rec.doDont);
+      if(rec.colors){ var cols=rec.colors.split(/[,\s]+/).filter(function(x){return /^#?[0-9a-fA-F]{3,8}$/.test(x);}).map(function(h){ var hex=(h[0]==='#')?h:'#'+h; return '<div class="cc-bi-sw"><i style="background:'+e2(hex)+'"></i><span>'+e2(hex)+'</span></div>'; }).join('');
+        if(cols) blocks+='<div class="cc-bi-block"><h5>ชุดสี</h5><div class="cc-bi-swatches">'+cols+'</div></div>'; }
+      if(rec.fonts){ var fs=rec.fonts.split(/[,\n]+/).map(function(x){return x.trim();}).filter(Boolean).map(function(f){return '<span class="cc-bi-font" style="font-family:\''+e2(f)+'\',sans-serif">'+e2(f)+'</span>';}).join('');
+        if(fs) blocks+='<div class="cc-bi-block"><h5>ฟอนต์</h5><div class="cc-bi-fonts">'+fs+'</div></div>'; }
+      if(rec.moodboard){ var mb=/^https?:/i.test(rec.moodboard)?'<a class="cc-bi-link" href="'+e2(rec.moodboard)+'" target="_blank" rel="noopener">เปิด Mood Board ↗</a>':'<p>'+e2(rec.moodboard)+'</p>';
+        blocks+='<div class="cc-bi-block"><h5>Mood Board</h5>'+mb+'</div>'; }
+      return '<div class="cc-bi-card" style="--b:'+c+'">'+head+'<div class="cc-bi-body">'+blocks+'</div></div>';
+    }).join('')+'</div>';
+  };
+  window.openBrandIdEditor=function(brand){
+    if(!unlocked()){ if(typeof toast==='function') toast('เข้าโหมดแก้ไข 🔓 ก่อนจึงจะเพิ่ม/แก้อัตลักษณ์แบรนด์ได้','info'); return; }
+    biEditBrand=brand;
+    var existing=(window.BRAND_IDS||[]).find(function(r){return r.id===brand;});
+    var isSeed=!existing && !!BI_SEED[brand];
+    var x=existing || (BI_SEED[brand]?Object.assign({id:brand,brand:brand},BI_SEED[brand]):{id:brand,brand:brand});
+    var fld=function(id,label,val,ph,ta){ return '<div class="pe-field full"><label>'+label+'</label>'+(ta?('<textarea id="'+id+'" placeholder="'+e2(ph||'')+'">'+e2(val||'')+'</textarea>'):('<input type="text" id="'+id+'" value="'+e2(val||'')+'" placeholder="'+e2(ph||'')+'">'))+'</div>'; };
+    document.getElementById('cc-editor-title').textContent='🎨 อัตลักษณ์ '+bLbl(brand)+(isSeed?' · ตัวอย่าง (ตรวจแล้วบันทึก)':'');
+    document.getElementById('cc-editor-body').innerHTML=
+      (isSeed?'<div style="background:var(--accent-pale);border-radius:9px;padding:8px 11px;font-size:12px;color:var(--accent-deep);margin-bottom:6px;">ℹ️ นี่คือข้อมูลตัวอย่างที่ดึงมาให้ กรุณาตรวจ/แก้ให้ถูกต้องก่อนกดบันทึก</div>':'')
+      +'<div class="pe-grid">'
+      +fld('cc-bi-channelName','ชื่อช่อง / แบรนด์',x.channelName,'เช่น Glimmer Sisters')
+      +fld('cc-bi-slogan','สโลแกน (ประโยคจดจำง่าย)',x.slogan,'เช่น Little glow for school days')
+      +fld('cc-bi-positioning','จุดยืน (Positioning)',x.positioning,'แบรนด์นี้คืออะไร ต่างจากคนอื่นยังไง',true)
+      +fld('cc-bi-target','กลุ่มเป้าหมาย',x.target,'ใครคือลูกค้าหลัก',true)
+      +fld('cc-bi-toneVoice','บุคลิก & น้ำเสียง (Tone of Voice)',x.toneVoice,'พูดกับลูกค้าแบบไหน',true)
+      +fld('cc-bi-contentTopics','หัวข้อคอนเทนต์หลัก',x.contentTopics,'ธีม/ซีรีส์คอนเทนต์ที่เน้น',true)
+      +fld('cc-bi-doDont',"Do & Don't (คุมโทน)",x.doDont,'สิ่งที่ควรทำ / ข้อห้าม',true)
+      +fld('cc-bi-colors','ชุดสีแบรนด์ (hex คั่นด้วย ,)',x.colors,'#385dae, #f2bec8, #0c359e')
+      +fld('cc-bi-fonts','ฟอนต์ (คั่นด้วย ,)',x.fonts,'Poppins, Sukhumvit')
+      +fld('cc-bi-moodboard','Mood Board (ลิงก์ หรือ โน้ต)',x.moodboard,'วางลิงก์ Canva/Drive หรือพิมพ์อธิบาย')
+      +'</div>'
+      +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;"><button class="btn-sm ghost" onclick="closeContentIdeaEditor()">ยกเลิก</button><button class="btn-sm primary" onclick="saveBrandId()">💾 บันทึก</button></div>';
+    document.getElementById('cc-editor-overlay').classList.add('open');
+  };
+  window.saveBrandId=function(){
+    var g=function(id){return String((document.getElementById(id)||{}).value||'').trim();};
+    var item={ id:biEditBrand, brand:biEditBrand,
+      channelName:g('cc-bi-channelName'), slogan:g('cc-bi-slogan'), positioning:g('cc-bi-positioning'),
+      target:g('cc-bi-target'), toneVoice:g('cc-bi-toneVoice'), contentTopics:g('cc-bi-contentTopics'),
+      doDont:g('cc-bi-doDont'), colors:g('cc-bi-colors'), fonts:g('cc-bi-fonts'), moodboard:g('cc-bi-moodboard'),
+      updatedAt:(typeof todayStr==='function'?todayStr():'') };
+    var local=biLocal(); var i=local.findIndex(function(z){return normBI(z).id===item.id;}); if(i>-1) local[i]=item; else local.push(item); biSaveLocal(local);
+    rebuildBI(); renderBrandId(); closeContentIdeaEditor();
+    if(typeof toast==='function') toast('บันทึกอัตลักษณ์แบรนด์แล้ว','ok');
+    biSync(item,'upsert');
+  };
+
+  /* ============================================================
+     #️⃣  HASHTAGS  (quick-copy hashtag library, sheet-synced)
+     ============================================================ */
+  var HT_CSV='https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=Hashtags';
+  var HT_LKEY='npd_hashtags_v1';
+  var HT_HEADERS=['id','brand','groupName','tags','note','updatedBy','updatedAt'];
+  var SHEET_ROWS_HT=[]; window.HASHTAGS=[]; var htLoaded=false, htEditId=null;
+  var DEFAULT_HT=[
+    ['','บิวตี้ทั่วไป','#รีวิวเครื่องสำอาง #เมคอัพ #แต่งหน้า #บิวตี้ #beautytiktok #makeuptutorial','ใช้ได้ทุกโพสต์บิวตี้'],
+    ['','สายรีวิว','#รีวิวของแท้ #รีวิวจริง #บอกต่อ #ของมันต้องมี #hautetrend','โพสต์รีวิว/บอกต่อ'],
+    ['','โปรโมชัน/ขายของ','#ลดราคา #โปรโมชั่น #ส่งฟรี #ของมันต้องมี #shopee #lazada','โพสต์แคมเปญ/เซล']
+  ];
+  function htLocal(){try{return JSON.parse(localStorage.getItem(HT_LKEY))||[];}catch(e){return [];}}
+  function htSaveLocal(a){try{localStorage.setItem(HT_LKEY,JSON.stringify(a));}catch(e){}}
+  function normHT(r){ return {
+    id:(r.id||r.ID||'').trim(), brand:nBrand(r.brand||r.Brand||''), groupName:(r.groupName||r.GroupName||'').trim(),
+    tags:(r.tags||r.Tags||'').trim(), note:(r.note||r.Note||'').trim(),
+    updatedBy:(r.updatedBy||'').trim(), updatedAt:(r.updatedAt||'').trim() }; }
+  function htSig(b){ return [b.brand,b.groupName,b.tags,b.note].join('|'); }
+  function htNormTags(raw){ return String(raw||'').split(/[\s,]+/).map(function(t){return t.trim();}).filter(Boolean).map(function(t){return t[0]==='#'?t:'#'+t;}); }
+  function rebuildHT(){
+    var byId={}, order=[];
+    SHEET_ROWS_HT.forEach(function(b){ if(!(b.id in byId)) order.push(b.id); byId[b.id]=b; });
+    htLocal().map(normHT).forEach(function(b){ if(b.id){ if(!(b.id in byId)) order.push(b.id); byId[b.id]=b; } });
+    window.HASHTAGS = order.map(function(id){return byId[id];}).filter(function(b){return b && b.groupName; });
+  }
+  window.loadHashtagsFromSheet=async function(){
+    try{
+      var res=await fetch(HT_CSV+'&_cb='+Date.now(),{cache:'no-store'}); var csv=await res.text();
+      var ok=/(^|,)\s*"?id"?\s*(,|$)/im.test(csv)&&/(^|,)\s*"?groupName"?\s*(,|$)/im.test(csv);
+      SHEET_ROWS_HT = (ok && typeof parseCsvByHeader==='function') ? parseCsvByHeader(csv,['id','groupName']).map(normHT).filter(function(b){return b.id&&b.groupName;}) : [];
+    }catch(e){ SHEET_ROWS_HT=[]; }
+    var sheetSig={}; SHEET_ROWS_HT.forEach(function(b){ sheetSig[b.id]=htSig(b); });
+    var local=htLocal(); var kept=local.filter(function(b){ var nb=normHT(b); var s=sheetSig[nb.id]; return !(s && s===htSig(nb)); });
+    if(kept.length!==local.length) htSaveLocal(kept);
+    rebuildHT();
+  };
+  async function htSync(item, action){
+    var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{};
+    if(!cfg||!cfg.url){ if(typeof toast==='function') toast('บันทึกในเครื่องแล้ว · ยังไม่ได้ตั้ง Sheet Sync (ทีมยังไม่เห็น)','info'); return; }
+    var isDel=(action==='delete');
+    var payload={target:'hashtags', sheetName:'Hashtags', key:'id', create:HT_HEADERS, action:isDel?'delete':'upsert', keyValue:item.id,
+      row: isDel?undefined:{id:item.id,brand:item.brand||'',groupName:item.groupName||'',tags:item.tags||'',note:item.note||'',updatedBy:item.updatedBy||'',updatedAt:(typeof todayStr==='function'?todayStr():'')} };
+    try{ await postToSheet(payload); }catch(e){}
+    setTimeout(function(){ if(typeof loadHashtagsFromSheet==='function') loadHashtagsFromSheet().then(function(){ if(ciSub==='hashtag') renderHashtags(); }); }, 6000);
+  }
+  function ccCopy(text){
+    var done=function(){ if(typeof toast==='function') toast('คัดลอกแล้ว 📋','ok'); };
+    try{ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done,function(){fallback();}); return; } }catch(e){}
+    fallback();
+    function fallback(){ try{ var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done(); }catch(e2){ if(typeof toast==='function') toast('คัดลอกไม่สำเร็จ ลองเลือกแล้วก๊อปเอง','err'); } }
+  }
+  window.copyHashtagGroup=function(id){ var g=(window.HASHTAGS||[]).find(function(x){return x.id===id;}); if(!g) return; ccCopy(htNormTags(g.tags).join(' ')); };
+  window.copyHashtag=function(tag){ ccCopy(tag); };
+  window.renderHashtags=function(){
+    var host=document.getElementById('cc-ht-host'); if(!host) return;
+    var addBtn=document.getElementById('cc-ht-add'); if(addBtn) addBtn.style.display=unlocked()?'':'none';
+    var items=(window.HASHTAGS||[]).filter(function(x){ return ciBrand==='all' || (x.brand||'')===ciBrand || !x.brand; });
+    if(!items.length){
+      host.innerHTML='<div class="cc-bi-empty" style="background:var(--card);border:1px dashed var(--line);border-radius:14px;">ยังไม่มีคลังแฮชแท็ก'
+        +(unlocked()?'<div style="margin-top:12px;"><button class="btn-sm primary" style="display:inline-block;width:auto;padding:8px 16px;flex:0 0 auto;" onclick="installDefaultHashtags()">＋ ใส่กลุ่มตัวอย่าง</button> <button class="btn-sm ghost" style="display:inline-block;width:auto;padding:8px 16px;flex:0 0 auto;" onclick="openHashtagEditor()">➕ เพิ่มเอง</button></div>':' · กด 🔓 ปลดล็อกทีมเพื่อเพิ่ม')+'</div>';
+      return;
+    }
+    var tint=(typeof BRAND_TINT!=='undefined')?BRAND_TINT:{};
+    host.innerHTML='<div class="cc-ht-grid">'+items.map(function(x){
+      var tags=htNormTags(x.tags);
+      var chips=tags.map(function(t){return '<span class="cc-ht-tag" title="คัดลอกแท็กนี้" onclick="copyHashtag(\''+aj(t)+'\')">'+e2(t)+'</span>';}).join('');
+      var bb=x.brand?'<span class="cc-brand" style="--b:'+(tint[x.brand]||'#6B7280')+'">'+e2(bLbl(x.brand))+'</span>':'';
+      var act=unlocked()?'<button class="btn-sm ghost" onclick="openHashtagEditor(\''+aj(x.id)+'\')">✏️</button><button class="btn-sm warn-ghost" onclick="deleteHashtag(\''+aj(x.id)+'\')">🗑️</button>':'';
+      return '<div class="cc-ht-card"><div class="cc-ht-top"><span class="cc-ht-name">'+e2(x.groupName)+'</span>'+bb+'<span class="cc-ht-count">'+tags.length+' แท็ก</span></div>'
+        +'<div class="cc-ht-tags">'+chips+'</div>'
+        +(x.note?'<div class="cc-ht-note">'+e2(x.note)+'</div>':'')
+        +'<div class="cc-ht-actions"><button class="btn-sm primary cc-ht-copy" onclick="copyHashtagGroup(\''+aj(x.id)+'\')">📋 คัดลอกทั้งกลุ่ม</button>'+act+'</div></div>';
+    }).join('')+'</div>';
+  };
+  window.installDefaultHashtags=function(){
+    if(!unlocked()){ if(typeof toast==='function') toast('เข้าโหมดแก้ไข 🔓 ก่อน','info'); return; }
+    var local=htLocal();
+    DEFAULT_HT.forEach(function(r,idx){ var it={ id:'htd'+idx, brand:nBrand(r[0]||''), groupName:r[1], tags:r[2], note:r[3]||'', updatedBy:'', updatedAt:(typeof todayStr==='function'?todayStr():'') };
+      local.push(it); setTimeout(function(){ htSync(it,'upsert'); }, idx*300); });
+    htSaveLocal(local); rebuildHT(); renderHashtags();
+    if(typeof toast==='function') toast('ใส่กลุ่มตัวอย่าง '+DEFAULT_HT.length+' กลุ่มแล้ว','ok');
+  };
+  window.openHashtagEditor=function(id){
+    if(!unlocked()){ if(typeof toast==='function') toast('เข้าโหมดแก้ไข 🔓 ก่อน','info'); return; }
+    htEditId=id||null;
+    var x = id ? (window.HASHTAGS||[]).find(function(i){return i.id===id;}) : {};
+    x=x||{};
+    var brandsPresent=[...new Set((typeof PRODUCTS!=='undefined'?PRODUCTS:[]).map(function(p){return p.brand;}).filter(Boolean))];
+    var brandOpts='<option value="">ทุกแบรนด์ (ใช้ร่วม)</option>'+brandsPresent.map(function(k){return '<option value="'+e2(k)+'"'+(x.brand===k?' selected':'')+'>'+e2(bLbl(k))+'</option>';}).join('');
+    document.getElementById('cc-editor-title').textContent=id?'✏️ แก้ไขกลุ่มแฮชแท็ก':'➕ เพิ่มกลุ่มแฮชแท็ก';
+    document.getElementById('cc-editor-body').innerHTML=
+      '<div class="pe-grid">'
+      +'<div class="pe-field full"><label>ชื่อกลุ่ม *</label><input type="text" id="cc-hf-name" value="'+e2(x.groupName||'')+'" placeholder="เช่น บิวตี้ทั่วไป / โปรโมชัน / รีวิว"></div>'
+      +'<div class="pe-field full"><label>แบรนด์</label><select id="cc-hf-brand">'+brandOpts+'</select></div>'
+      +'<div class="pe-field full"><label>แฮชแท็ก *</label><textarea id="cc-hf-tags" placeholder="พิมพ์แท็กคั่นด้วยเว้นวรรค เช่น #แต่งหน้า #รีวิว (ไม่ต้องใส่ # ก็ได้ ระบบเติมให้)">'+e2(x.tags||'')+'</textarea></div>'
+      +'<div class="pe-field full"><label>โน้ต</label><input type="text" id="cc-hf-note" value="'+e2(x.note||'')+'" placeholder="ใช้ตอนไหน (ไม่บังคับ)"></div>'
+      +'</div>'
+      +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;"><button class="btn-sm ghost" onclick="closeContentIdeaEditor()">ยกเลิก</button><button class="btn-sm primary" onclick="saveHashtag()">💾 บันทึก</button></div>';
+    document.getElementById('cc-editor-overlay').classList.add('open');
+  };
+  window.saveHashtag=function(){
+    var g=function(id){return String((document.getElementById(id)||{}).value||'').trim();};
+    var name=g('cc-hf-name'); if(!name){ if(typeof toast==='function') toast('ใส่ชื่อกลุ่มก่อน','err'); return; }
+    var tags=g('cc-hf-tags'); if(!tags){ if(typeof toast==='function') toast('ใส่แฮชแท็กอย่างน้อย 1 อัน','err'); return; }
+    var item={ id: htEditId || ('ht'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
+      brand:nBrand(g('cc-hf-brand')), groupName:name, tags:htNormTags(tags).join(' '), note:g('cc-hf-note'),
+      updatedBy:'', updatedAt:(typeof todayStr==='function'?todayStr():'') };
+    var local=htLocal(); var i=local.findIndex(function(z){return z.id===item.id;}); if(i>-1) local[i]=item; else local.push(item); htSaveLocal(local);
+    rebuildHT(); renderHashtags(); closeContentIdeaEditor();
+    if(typeof toast==='function') toast(htEditId?'แก้ไขกลุ่มแฮชแท็กแล้ว':'เพิ่มกลุ่มแฮชแท็กแล้ว','ok');
+    htSync(item,'upsert');
+  };
+  window.deleteHashtag=function(id){
+    if(!unlocked()) return;
+    if(typeof window.confirm==='function' && !window.confirm('ลบกลุ่มแฮชแท็กนี้?')) return;
+    htSaveLocal(htLocal().filter(function(z){return z.id!==id;}));
+    SHEET_ROWS_HT=SHEET_ROWS_HT.filter(function(z){return z.id!==id;});
+    rebuildHT(); renderHashtags();
+    if(typeof toast==='function') toast('ลบแล้ว','ok');
+    htSync({id:id},'delete');
   };
 
   if(typeof loadContentIdeasFromSheet==='function'){
