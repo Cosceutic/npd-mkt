@@ -1366,6 +1366,27 @@
   #cc-card-body .cc-cm-send:disabled{opacity:.5;cursor:not-allowed;}
   #cc-card-body .cc-cm-status{font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
   #view-content .cc-pl-badge,#view-content .ccal-cmn{font-size:11px;color:var(--ink-soft);font-weight:600;}
+  /* ===== due date · revise/extend · overdue dashboard ===== */
+  #view-content .cc-due,#cc-card-body .cc-due{font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 9px;background:#EEF1F6;color:#556;white-space:nowrap;}
+  #view-content .cc-due-soon,#cc-card-body .cc-due-soon{background:#FCEFD8;color:#B26A00;}
+  #view-content .cc-due-late,#cc-card-body .cc-due-late{background:#FCE4E4;color:#C0392B;}
+  #view-content .cc-due-done,#cc-card-body .cc-due-done{background:#E3F3E1;color:#2E7D32;}
+  #view-content .cc-rev-badge,#cc-card-body .cc-rev-badge{font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 9px;background:#FDE7EF;color:#C0286B;white-space:nowrap;}
+  #view-content .cc-ext-badge,#cc-card-body .cc-ext-badge{font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 9px;background:#EAF1FF;color:#2456B0;white-space:nowrap;}
+  #view-content .cc-pl-badges{display:flex;gap:4px;flex-wrap:wrap;}
+  #view-content .cc-pl-card.cc-pl-late{border-color:#f3b4b4;box-shadow:0 0 0 1px #f3b4b4, 0 2px 8px -5px rgba(192,57,43,.4);}
+  #view-content .cc-od-banner{background:#FCECEC;border:1px solid #F3C0C0;border-radius:12px;padding:11px 14px;margin-bottom:14px;}
+  #view-content .cc-od-h{font-family:'Prompt',sans-serif;font-weight:700;font-size:13.5px;color:#C0392B;margin-bottom:8px;}
+  #view-content .cc-od-chips{display:flex;gap:7px;flex-wrap:wrap;}
+  #view-content .cc-od-chip{font-size:11.5px;border:1px solid #EDBCBC;background:#fff;color:#8A2B22;border-radius:8px;padding:4px 9px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #view-content .cc-od-chip b{color:#C0392B;}
+  #view-content .cc-od-chip:hover{background:#fff3f3;border-color:#C0392B;}
+  #view-content .cc-od-more{font-size:11.5px;color:#8A2B22;align-self:center;font-weight:600;}
+  #cc-card-body .cc-cd-hist{margin-top:11px;background:#f7f8fb;border:1px solid var(--line);border-radius:10px;padding:9px 12px;}
+  #cc-card-body .cc-cd-hist-h{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:5px;}
+  #cc-card-body .cc-cd-loglist{margin:0;padding-left:16px;display:flex;flex-direction:column;gap:3px;}
+  #cc-card-body .cc-cd-loglist li{font-size:12px;color:var(--ink-soft);line-height:1.45;}
+  #cc-card-body .cc-cd-edit{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px;}
   </style>
   <div class="view" id="view-content">
     <div style="max-width:1220px;margin:0 auto;">
@@ -8706,7 +8727,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   var TH_WDF=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
   var CAL_CSV='https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=ContentCalendar';
   var CAL_LKEY='npd_content_cal_v1';
-  var CAL_HEADERS=['id','date','title','brand','product','pillar','format','channel','status','goal','time','owner','reviewer','note'];
+  var CAL_HEADERS=['id','date','due','title','brand','product','pillar','format','channel','status','goal','time','owner','reviewer','note','reviseCount','extendCount','log'];
   // content pipeline (review flow): brief → production → review → revise → approved → posted → track
   var CAL_STATUS={brief:{t:'📝 บรีฟ/ไอเดีย',c:'#f2c94c'},production:{t:'🎬 กำลังผลิต',c:'#ffb454'},review:{t:'👀 รอตรวจสอบ',c:'#a78bfa'},revise:{t:'🔧 แก้ไข (ตีกลับ)',c:'#ef6b6b'},approved:{t:'✅ อนุมัติ (รอโพสต์)',c:'#5fd0a8'},posted:{t:'🚀 โพสต์แล้ว',c:'#4b9ef8'},track:{t:'📈 ติดตามผล',c:'#26a69a'}};
   var CAL_STATUS_ORDER=['brief','production','review','revise','approved','posted','track'];
@@ -8723,13 +8744,14 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   function calLocal(){try{return JSON.parse(localStorage.getItem(CAL_LKEY))||[];}catch(e){return [];}}
   function calSaveLocal(a){try{localStorage.setItem(CAL_LKEY,JSON.stringify(a));}catch(e){}}
   function normCAL(r){ return {
-    id:(r.id||r.ID||'').trim(), date:(r.date||r.Date||'').trim(), title:(r.title||r.Title||'').trim(),
+    id:(r.id||r.ID||'').trim(), date:(r.date||r.Date||'').trim(), due:(r.due||r.Due||'').trim(), title:(r.title||r.Title||'').trim(),
     brand:nBrand(r.brand||r.Brand||''), product:(r.product||r.Product||'').trim(),
     pillar:(r.pillar||r.Pillar||'').trim(), format:(r.format||r.Format||'').trim(),
     channel:(r.channel||r.Channel||'').trim(), status:((r.status||r.Status||'').trim()||'brief'),
     goal:(r.goal||r.Goal||'').trim(),
-    time:(r.time||r.Time||'').trim(), owner:(r.owner||r.Owner||'').trim(), reviewer:(r.reviewer||r.Reviewer||'').trim(), note:(r.note||r.Note||'').trim() }; }
-  function calSig(b){ return [b.date,b.title,b.brand,b.product,b.pillar,b.format,b.channel,b.status,b.goal,b.time,b.owner,b.reviewer,b.note].join('|'); }
+    time:(r.time||r.Time||'').trim(), owner:(r.owner||r.Owner||'').trim(), reviewer:(r.reviewer||r.Reviewer||'').trim(), note:(r.note||r.Note||'').trim(),
+    reviseCount:parseInt(r.reviseCount||r.ReviseCount||'0',10)||0, extendCount:parseInt(r.extendCount||r.ExtendCount||'0',10)||0, log:(r.log||r.Log||'').trim() }; }
+  function calSig(b){ return [b.date,b.due,b.title,b.brand,b.product,b.pillar,b.format,b.channel,b.status,b.goal,b.time,b.owner,b.reviewer,b.note,b.reviseCount,b.extendCount,b.log].join('|'); }
   function rebuildCAL(){
     var byId={}, order=[];
     SHEET_ROWS_CAL.forEach(function(b){ if(!(b.id in byId)) order.push(b.id); byId[b.id]=b; });
@@ -8752,7 +8774,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     if(!cfg||!cfg.url){ if(typeof toast==='function') toast('บันทึกในเครื่องแล้ว · ยังไม่ได้ตั้ง Sheet Sync (ทีมยังไม่เห็น)','info'); return; }
     var isDel=(action==='delete');
     var payload={target:'contentcal', sheetName:'ContentCalendar', key:'id', create:CAL_HEADERS, action:isDel?'delete':'upsert', keyValue:item.id,
-      row: isDel?undefined:{id:item.id,date:item.date||'',title:item.title||'',brand:item.brand||'',product:item.product||'',pillar:item.pillar||'',format:item.format||'',channel:item.channel||'',status:item.status||'brief',goal:item.goal||'',time:item.time||'',owner:item.owner||'',reviewer:item.reviewer||'',note:item.note||''} };
+      row: isDel?undefined:{id:item.id,date:item.date||'',due:item.due||'',title:item.title||'',brand:item.brand||'',product:item.product||'',pillar:item.pillar||'',format:item.format||'',channel:item.channel||'',status:item.status||'brief',goal:item.goal||'',time:item.time||'',owner:item.owner||'',reviewer:item.reviewer||'',note:item.note||'',reviseCount:item.reviseCount||0,extendCount:item.extendCount||0,log:item.log||''} };
     try{ await postToSheet(payload); }catch(e){}
     setTimeout(function(){ if(typeof loadContentCalFromSheet==='function') loadContentCalFromSheet().then(function(){ if(ciSub==='calendar'||ciSub==='pipeline') renderCalActive(); }); }, 6000);
   }
@@ -8760,13 +8782,34 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   function calChanChips(ch){ return (ch||'').split(',').map(function(c){return c.trim();}).filter(Boolean).map(function(c){return '<span class="cc-chan">'+e2(c)+'</span>';}).join(''); }
   function pillarTag(k){ var p=PILLARS[k]; return p?'<span class="cc-pill" style="--p:'+p.c+'" title="'+e2(p.s)+'">'+e2(p.t)+'</span>':''; }
   function fmtTag(f){ return f?'<span class="cc-fmt">'+e2(f)+'</span>':''; }
+  // ---- due date / lateness / work-history helpers ----
+  function cardDone(s){ return s==='approved'||s==='posted'||s==='track'; }
+  function calToday0(){ var t=new Date(); t.setHours(0,0,0,0); return t; }
+  function dueDiff(x){ if(!x||!x.due) return null; var d=new Date(x.due+'T00:00:00'); if(isNaN(d)) return null; return Math.round((d-calToday0())/86400000); }
+  function dueState(x){ if(!x||!x.due||cardDone(x.status)) return ''; var diff=dueDiff(x); if(diff===null) return ''; if(diff<0) return 'overdue'; if(diff<=1) return 'soon'; return 'ok'; }
+  function dueBadge(x){ if(!x.due) return ''; var d=new Date(x.due+'T00:00:00'); var lbl=(!isNaN(d))?(d.getDate()+' '+TH_M[d.getMonth()]):x.due; var s=dueState(x); var diff=dueDiff(x);
+    if(cardDone(x.status)) return '<span class="cc-due cc-due-done" title="กำหนดส่ง">🎯 '+e2(lbl)+'</span>';
+    if(s==='overdue') return '<span class="cc-due cc-due-late" title="เลยกำหนดส่ง">⏰ เลยกำหนด '+Math.abs(diff)+' วัน</span>';
+    if(s==='soon') return '<span class="cc-due cc-due-soon" title="ใกล้ครบกำหนด">⏰ '+(diff===0?'ส่งวันนี้':'ส่งพรุ่งนี้')+'</span>';
+    return '<span class="cc-due" title="กำหนดส่ง">🎯 ส่ง '+e2(lbl)+'</span>'; }
+  function reviseBadge(x){ return (x.reviseCount>0)?'<span class="cc-rev-badge" title="ถูกตีกลับให้แก้">🔧 แก้ '+x.reviseCount+' ครั้ง</span>':''; }
+  function extendBadge(x){ return (x.extendCount>0)?'<span class="cc-ext-badge" title="ขยายเวลาส่ง">⏱️ ขยาย '+x.extendCount+'</span>':''; }
+  function logStamp(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+  function appendLog(cur, line){ cur=(cur||'').trim(); return cur ? (cur+'\n'+logStamp()+' · '+line) : (logStamp()+' · '+line); }
+  function overdueList(){ return calItems().filter(function(x){ return dueState(x)==='overdue'; }).sort(function(a,b){return (a.due||'').localeCompare(b.due||'');}); }
+  function overdueBannerHtml(){ var od=overdueList(); if(!od.length) return '';
+    var chips=od.slice(0,15).map(function(x){ var diff=Math.abs(dueDiff(x)); var st=CAL_STATUS[x.status]||CAL_STATUS.brief;
+      return '<button class="cc-od-chip" onclick="openCardModal(\''+aj(x.id)+'\')" title="'+e2(st.t)+'"><b>'+e2(x.title)+'</b> · เลย '+diff+' วัน'+(x.owner?(' · 👤'+e2(x.owner)):'')+'</button>'; }).join('');
+    return '<div class="cc-od-banner"><div class="cc-od-h">⚠️ งานเลยกำหนดส่ง '+od.length+' ใบ — ต้องเร่ง/ขยายเวลา</div><div class="cc-od-chips">'+chips+(od.length>15?'<span class="cc-od-more">+'+(od.length-15)+' อื่นๆ</span>':'')+'</div></div>'; }
   function isoOf(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
   function calLegend(){ var h=CAL_STATUS_ORDER.map(function(s){return '<span class="lg"><span class="dot" style="background:'+CAL_STATUS[s].c+'"></span>'+e2(CAL_STATUS[s].t)+'</span>';}).join(''); var el=document.getElementById('ccal-legend'); if(el) el.innerHTML=h; }
   // Monthly performance snapshot (mirrors KINN's Dashboard) — respects month + brand filter
   function renderCalPerf(){
     var host=document.getElementById('ccal-perf'); if(!host) return;
+    var banner=overdueBannerHtml();
     var items=calItems().filter(function(x){ var d=new Date(x.date+'T00:00:00'); return d.getFullYear()===calY && d.getMonth()===calM; });
-    if(!items.length){ host.innerHTML=''; return; }
+    if(!items.length){ host.innerHTML=banner; return; }
+    var lateN=overdueList().length;
     var total=items.length, cnt={todo:0,review:0,approved:0,posted:0};
     items.forEach(function(x){ var s=x.status; if(s==='posted'||s==='track')cnt.posted++; else if(s==='review'||s==='revise')cnt.review++; else if(s==='approved')cnt.approved++; else cnt.todo++; });
     var pct=total?Math.round(cnt.posted/total*100):0;
@@ -8774,12 +8817,13 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     var pillarBars=PILLAR_ORDER.filter(function(k){return byP[k];}).map(function(k){ var p=PILLARS[k],n=byP[k];
       return '<div class="cc-perf-pbar"><span class="cc-perf-plabel">'+e2(p.t)+'</span><span class="cc-perf-ptrack"><i style="width:'+Math.round(n/total*100)+'%;background:'+p.c+'"></i></span><span class="cc-perf-pn">'+n+'</span></div>'; }).join('');
     var kpi=function(label,val,sub,color){ return '<div class="cc-perf-card"><div class="cc-perf-v"'+(color?' style="color:'+color+'"':'')+'>'+val+'</div><div class="cc-perf-l">'+e2(label)+'</div>'+(sub?'<div class="cc-perf-s">'+e2(sub)+'</div>':'')+'</div>'; };
-    host.innerHTML='<div class="cc-perf-wrap"><div class="cc-perf-title">📊 ภาพรวมเดือน '+TH_MF[calM]+' '+calY+'</div>'
+    host.innerHTML=banner+'<div class="cc-perf-wrap"><div class="cc-perf-title">📊 ภาพรวมเดือน '+TH_MF[calM]+' '+calY+'</div>'
       +'<div class="cc-perf-cards">'
       +kpi('คอนเทนต์ทั้งหมด',total,'',null)
       +kpi('โพสต์แล้ว',cnt.posted,pct+'% ของแผน','#1E7C4B')
       +kpi('รอตรวจ/แก้ไข',cnt.review,'','#6A4BC0')
       +kpi('กำลังผลิต · รออนุมัติ',(cnt.todo+cnt.approved),'','#B26A00')
+      +kpi('⏰ เลยกำหนดส่ง',lateN,'ทั้งหมด',lateN?'#C0392B':null)
       +'</div>'+(pillarBars?'<div class="cc-perf-pillars"><div class="cc-perf-h">สัดส่วนตามเสาหลักคอนเทนต์</div>'+pillarBars+'</div>':'')+'</div>';
   }
 
@@ -8834,7 +8878,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
       var rows=byDate[dt].slice().sort(function(a,b){return (a.time||'').localeCompare(b.time||'');}).map(function(x){
         var st=CAL_STATUS[x.status]||CAL_STATUS.brief;
         var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); if(x.brand) meta.push('🏷️ '+e2(bLbl(x.brand))); if(x.product) meta.push('📦 '+e2(x.product)); if(x.goal) meta.push('🎯 '+e2(x.goal)); if(x.owner) meta.push('👤 '+e2(x.owner)); if(x.reviewer) meta.push('🔍 '+e2(x.reviewer));
-        var tags=pillarTag(x.pillar)+fmtTag(x.format);
+        var tags=pillarTag(x.pillar)+fmtTag(x.format)+dueBadge(x)+reviseBadge(x)+extendBadge(x);
         var act=unlocked()?'<div class="ccal-post-actions"><button class="btn-sm ghost" onclick="openContentCalEditor(\''+aj(x.id)+'\')">✏️</button><button class="btn-sm warn-ghost" onclick="deleteContentCal(\''+aj(x.id)+'\')">🗑️</button></div>':'';
         var cn=(typeof commentCount==='function')?commentCount(x.id):0; if(cn) meta.push('💬 '+cn);
         return '<div class="ccal-post"><span class="ccal-post-s" style="--s:'+st.c+'">'+st.t+'</span><div class="ccal-post-main"><div class="ccal-post-title" style="cursor:pointer;" onclick="openCardModal(\''+aj(x.id)+'\')">'+e2(x.title)+'</div>'
@@ -8888,6 +8932,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
       +'<div class="pe-field full"><label>หัวข้อโพสต์ / คอนเทนต์ *</label><input type="text" id="cc-cf-title" value="'+e2(x.title||'')+'" placeholder="เช่น รีวิวลิปสีใหม่ Halloween"></div>'
       +'<div class="pe-field"><label>วันที่ลง *</label><input type="date" id="cc-cf-date" value="'+e2(x.date||'')+'"></div>'
       +'<div class="pe-field"><label>เวลา</label><input type="time" id="cc-cf-time" value="'+e2(x.time||'')+'"></div>'
+      +'<div class="pe-field"><label>⏰ กำหนดส่งงาน (Due)</label><input type="date" id="cc-cf-due" value="'+e2(x.due||'')+'"></div>'
       +'<div class="pe-field"><label>แบรนด์</label><select id="cc-cf-brand">'+brandOpts+'</select></div>'
       +'<div class="pe-field"><label>สถานะการผลิต</label><select id="cc-cf-status">'+statusOpts+'</select></div>'
       +'<div class="pe-field"><label>เสาหลักคอนเทนต์ (Pillar)</label><select id="cc-cf-pillar">'+pillarOpts+'</select></div>'
@@ -8917,10 +8962,16 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     var title=g('cc-cf-title'); if(!title){ if(typeof toast==='function') toast('ใส่หัวข้อโพสต์ก่อน','err'); return; }
     var date=g('cc-cf-date'); if(!date){ if(typeof toast==='function') toast('เลือกวันที่ลงก่อน','err'); return; }
     var chans=[].slice.call(document.querySelectorAll('#cc-cf-channels input:checked')).map(function(c){return c.value;}).join(', ');
+    var due=g('cc-cf-due');
+    var prev = calEditId ? (window.CONTENT_CAL||[]).find(function(z){return z.id===calEditId;}) : null;
+    var reviseCount = prev?(prev.reviseCount||0):0, extendCount = prev?(prev.extendCount||0):0, log = prev?(prev.log||''):'';
+    // ยืดกำหนดส่งออกไป (วันใหม่ช้ากว่าเดิม) → นับ + ลงประวัติอัตโนมัติ
+    if(prev && prev.due && due && due>prev.due){ extendCount++; log=appendLog(log,'ขยายเวลาส่ง: '+prev.due+' → '+due); }
     var item={ id: calEditId || ('cc'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
-      date:date, title:title, brand:nBrand(g('cc-cf-brand')), product:g('cc-cf-product'),
+      date:date, due:due, title:title, brand:nBrand(g('cc-cf-brand')), product:g('cc-cf-product'),
       pillar:g('cc-cf-pillar'), format:g('cc-cf-format'), goal:g('cc-cf-goal'), channel:chans,
       status:g('cc-cf-status')||'brief', time:g('cc-cf-time'), owner:g('cc-cf-owner'), reviewer:g('cc-cf-reviewer'), note:g('cc-cf-note'),
+      reviseCount:reviseCount, extendCount:extendCount, log:log,
       updatedAt:(typeof todayStr==='function'?todayStr():'') };
     var local=calLocal(); var i=local.findIndex(function(z){return z.id===item.id;}); if(i>-1) local[i]=item; else local.push(item); calSaveLocal(local);
     rebuildCAL(); renderCalActive(); closeContentIdeaEditor();
@@ -8949,7 +9000,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     var byStatus={}; CAL_STATUS_ORDER.forEach(function(s){byStatus[s]=[];});
     items.forEach(function(x){ var s=CAL_STATUS[x.status]?x.status:'brief'; byStatus[s].push(x); });
     var canEdit=unlocked();
-    host.innerHTML='<div class="cc-pl-board">'+CAL_STATUS_ORDER.map(function(s){
+    host.innerHTML=overdueBannerHtml()+'<div class="cc-pl-board">'+CAL_STATUS_ORDER.map(function(s){
       var st=CAL_STATUS[s]; var list=byStatus[s].slice().sort(function(a,b){return (a.date+(a.time||'')).localeCompare(b.date+(b.time||''));});
       var cards=list.map(function(x){ return plCard(x,s,canEdit); }).join('') || '<div class="cc-pl-empty">— ว่าง —</div>';
       var addC = canEdit ? '<button class="cc-pl-add" onclick="plAddIn(\''+s+'\')">➕ เพิ่มการ์ด</button>' : '';
@@ -8966,9 +9017,11 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     var who=(x.owner?'<span class="cc-pl-pic" title="เจ้าของงาน (PIC)">👤 '+e2(x.owner)+'</span>':'')+(x.reviewer?'<span class="cc-pl-rev" title="ผู้ตรวจ">🔍 '+e2(x.reviewer)+'</span>':'');
     var cn=(typeof commentCount==='function')?commentCount(x.id):0;
     var cmn=cn?'<span class="cc-pl-badge" title="คอมเมนต์">💬 '+cn+'</span>':'';
-    return '<div class="cc-pl-card" style="--s:'+st.c+'"'+(canEdit?' draggable="true" ondragstart="plDragStart(event,\''+aj(x.id)+'\')" ondragend="plDragEnd(event)"':'')+'>'
+    var badges=dueBadge(x)+reviseBadge(x)+extendBadge(x);
+    return '<div class="cc-pl-card'+(dueState(x)==='overdue'?' cc-pl-late':'')+'" style="--s:'+st.c+'"'+(canEdit?' draggable="true" ondragstart="plDragStart(event,\''+aj(x.id)+'\')" ondragend="plDragEnd(event)"':'')+'>'
       +'<div class="cc-pl-ct" style="cursor:pointer;" onclick="openCardModal(\''+aj(x.id)+'\')">'+e2(x.title)+'</div>'
       +(tags?'<div class="cc-pl-tags">'+tags+'</div>':'')
+      +(badges?'<div class="cc-pl-badges">'+badges+'</div>':'')
       +((dd||who||cmn)?'<div class="cc-pl-meta">'+(dd?'<span>📅 '+e2(dd)+(x.time?' '+e2(x.time):'')+'</span>':'')+cmn+(who?'<span class="cc-pl-who">'+who+'</span>':'')+'</div>':'')
       +(canEdit?plActions(x,s):'')+'</div>';
   }
@@ -8988,12 +9041,30 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     if(i>-1){ base=normCAL(local[i]); } else { var found=(window.CONTENT_CAL||[]).find(function(z){return z.id===id;}); base=found?Object.assign({},found):null; }
     if(!base || base.status===newStatus) return;
     base.status=newStatus; base.updatedAt=(typeof todayStr==='function'?todayStr():'');
+    // ตีกลับให้แก้ → นับจำนวนครั้ง + ลงประวัติ (ถามเหตุผลสั้นๆ ไม่ใส่ก็ได้)
+    if(newStatus==='revise'){ base.reviseCount=(base.reviseCount||0)+1;
+      var reason=(typeof window.prompt==='function')?(window.prompt('ตีกลับให้แก้ ครั้งที่ '+base.reviseCount+'\nเหตุผล/สิ่งที่ต้องแก้ (ไม่ใส่ก็ได้):','')||''):'';
+      base.log=appendLog(base.log, 'ตีกลับให้แก้ ครั้งที่ '+base.reviseCount+(reason?(' — '+reason):'')); }
     if(i>-1) local[i]=base; else local.push(base); calSaveLocal(local);
     rebuildCAL(); renderPipeline();
-    if(typeof toast==='function') toast('ย้ายไป “'+CAL_STATUS[newStatus].t+'” แล้ว','ok');
+    if(typeof toast==='function') toast(newStatus==='revise'?('ตีกลับให้แก้ (ครั้งที่ '+base.reviseCount+')'):('ย้ายไป “'+CAL_STATUS[newStatus].t+'” แล้ว'),'ok');
     calSync(base,'upsert');
   };
   window.plAddIn=function(s){ if(!unlocked()){ if(typeof toast==='function') toast('เข้าโหมดแก้ไข 🔓 ก่อน','info'); return; } plPresetStatus=s; openContentCalEditor(); };
+  window.extendDue=function(id){
+    if(!unlocked()){ if(typeof toast==='function') toast('เข้าโหมดแก้ไข 🔓 ก่อน','info'); return; }
+    var x=(window.CONTENT_CAL||[]).find(function(c){return c.id===id;}); if(!x) return;
+    var nd=(typeof window.prompt==='function')?window.prompt('ขยาย/เปลี่ยนกำหนดส่งเป็นวันที่ (YYYY-MM-DD):', x.due||''):''; if(!nd) return; nd=nd.trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(nd)){ if(typeof toast==='function') toast('รูปแบบวันที่ไม่ถูก — ต้องเป็น YYYY-MM-DD','err'); return; }
+    var reason=(typeof window.prompt==='function')?(window.prompt('เหตุผลที่ขยายเวลา (ไม่ใส่ก็ได้):','')||''):'';
+    var local=calLocal(); var i=local.findIndex(function(z){return z.id===id;}); var base=(i>-1)?normCAL(local[i]):Object.assign({},x);
+    var old=base.due||'(ยังไม่กำหนด)';
+    base.due=nd; base.extendCount=(base.extendCount||0)+1; base.log=appendLog(base.log,'ขยายเวลาส่ง: '+old+' → '+nd+(reason?(' — '+reason):'')); base.updatedAt=(typeof todayStr==='function'?todayStr():'');
+    if(i>-1) local[i]=base; else local.push(base); calSaveLocal(local);
+    rebuildCAL(); if(cmModalCard) renderCardModal(); renderCalActive();
+    if(typeof toast==='function') toast('ขยายเวลาส่งเป็น '+nd+' แล้ว','ok');
+    calSync(base,'upsert');
+  };
   window.plDragStart=function(ev,id){ plDragId=id; try{ ev.dataTransfer.setData('text/plain',id); ev.dataTransfer.effectAllowed='move'; }catch(e){} var c=ev.currentTarget; if(c) c.classList.add('dragging'); };
   window.plDragEnd=function(ev){ var c=ev.currentTarget; if(c) c.classList.remove('dragging'); plDragId=null; var cols=document.querySelectorAll('#cc-pl-host .cc-pl-col.dragover'); [].forEach.call(cols,function(el){el.classList.remove('dragover');}); };
   window.plDragOver=function(ev){ ev.preventDefault(); try{ ev.dataTransfer.dropEffect='move'; }catch(e){} ev.currentTarget.classList.add('dragover'); };
@@ -9076,7 +9147,8 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     var titleEl=document.getElementById('cc-card-title'); if(titleEl) titleEl.textContent=x.title||'การ์ด';
     var rows='';
     var addRow=function(lb,val){ return val?'<div class="cc-cd-row"><b>'+lb+'</b><span>'+val+'</span></div>':''; };
-    rows+=addRow('วันที่', dstr?e2(dstr):'');
+    rows+=addRow('วันที่ลง', dstr?e2(dstr):'');
+    rows+=addRow('กำหนดส่ง', x.due?dueBadge(x):'');
     rows+=addRow('เสาหลัก', (x.pillar&&PILLARS[x.pillar])?pillarTag(x.pillar):'');
     rows+=addRow('รูปแบบ', x.format?fmtTag(x.format):'');
     rows+=addRow('ช่องทาง', x.channel?calChanChips(x.channel):'');
@@ -9085,8 +9157,12 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     rows+=addRow('เจ้าของงาน', x.owner?('👤 '+e2(x.owner)):'');
     rows+=addRow('ผู้ตรวจ', x.reviewer?('🔍 '+e2(x.reviewer)):'');
     rows+=addRow('โน้ต', x.note?e2(x.note):'');
-    var editBtn=unlocked()?'<div class="cc-cd-edit"><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 14px;" onclick="closeCardModal();openContentCalEditor(\''+aj(id)+'\')">✏️ แก้ไขรายละเอียดการ์ด</button></div>':'';
-    var info='<div class="cc-cd-info"><div class="cc-cd-badges"><span class="cc-cd-s" style="background:'+st.c+'">'+st.t+'</span>'+(x.brand?'<span class="cc-brand" style="--b:'+((typeof BRAND_TINT!=='undefined'?BRAND_TINT:{})[x.brand]||'#6B7280')+'">'+e2(bLbl(x.brand))+'</span>':'')+'</div><div class="cc-cd-rows">'+rows+'</div>'+editBtn+'</div>';
+    var logLines=(x.log||'').split('\n').filter(Boolean);
+    var histTitle='📋 ประวัติงาน'+((x.reviseCount||x.extendCount)?(' — '+(x.reviseCount?('🔧 แก้ '+x.reviseCount+' ครั้ง'):'')+(x.reviseCount&&x.extendCount?' · ':'')+(x.extendCount?('⏱️ ขยายเวลา '+x.extendCount+' ครั้ง'):'')):'');
+    var histHtml=(logLines.length)?('<div class="cc-cd-hist"><div class="cc-cd-hist-h">'+histTitle+'</div><ul class="cc-cd-loglist">'+logLines.map(function(l){return '<li>'+e2(l)+'</li>';}).reverse().join('')+'</ul></div>'):'';
+    var editBtn=unlocked()?('<div class="cc-cd-edit"><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="closeCardModal();openContentCalEditor(\''+aj(id)+'\')">✏️ แก้ไขรายละเอียด</button><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="extendDue(\''+aj(id)+'\')">⏱️ ขยายเวลาส่ง</button></div>'):'';
+    var badgeLine=dueBadge(x)+reviseBadge(x)+extendBadge(x);
+    var info='<div class="cc-cd-info"><div class="cc-cd-badges"><span class="cc-cd-s" style="background:'+st.c+'">'+st.t+'</span>'+(x.brand?'<span class="cc-brand" style="--b:'+((typeof BRAND_TINT!=='undefined'?BRAND_TINT:{})[x.brand]||'#6B7280')+'">'+e2(bLbl(x.brand))+'</span>':'')+badgeLine+'</div><div class="cc-cd-rows">'+rows+'</div>'+histHtml+editBtn+'</div>';
 
     var cms=commentsFor(id);
     var list = cms.length ? cms.map(cmItem).join('') : '<div class="cc-cm-empty">ยังไม่มีคอมเมนต์ — เริ่มคุยงานกันได้เลย 💬</div>';
