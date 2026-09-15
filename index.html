@@ -9519,7 +9519,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;"><button class="btn-sm ghost" onclick="closeContentIdeaEditor()">ยกเลิก</button><button class="btn-sm primary" onclick="saveContentCal()">💾 บันทึก</button></div>';
     document.getElementById('cc-editor-overlay').classList.add('open');
     if(window.DraftGuard){   // เก็บร่างอัตโนมัติ + กู้คืนถ้าเผลอปิด
-      DraftGuard.bindAutoSave(document.getElementById('cc-editor-body'), function(){ return calEditId?null:'content_cal'; }, null);
+      DraftGuard.bindAutoSave(document.getElementById('cc-editor-body'), function(){ return (!calEditId && document.getElementById('cc-cf-date'))?'content_cal':null; }, null);
       if(!id && DraftGuard.load('content_cal')){ if(DraftGuard.restore('content_cal')){ DraftGuard.hint(document.getElementById('cc-editor-body'), function(){ DraftGuard.clear('content_cal'); window.openContentCalEditor(null); }); } }
     }
   };
