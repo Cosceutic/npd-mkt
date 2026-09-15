@@ -8465,6 +8465,7 @@ function renderUpdateForm(){
         <input type="text" id="ue-multi-search" class="ue-multi-search" placeholder="🔍 ค้นหาชื่อ หรือ SKU…" oninput="filterMultiSku()" autocomplete="off">
         <div class="ue-multi-toolbar">
           <button type="button" class="ue-chip-btn" onclick="multiSkuAll(true)">✓ เลือกทั้งหมดที่เห็น</button>
+          <button type="button" class="ue-chip-btn" onclick="multiSelectFamily()" title="พ่วง SKU อื่นในกลุ่มเดียวกันของตัวที่ติ๊กไว้">🧩 เลือกทุก SKU ในตระกูล</button>
           <button type="button" class="ue-chip-btn ghost" onclick="multiSkuAll(false)">✕ ล้างที่เลือก</button>
         </div>
         <div id="ue-sku-multi-list" class="ue-multi-list">
@@ -8597,24 +8598,57 @@ function updateMultiCount(){
   const el=document.getElementById('ue-multi-count'); if(el) el.textContent='เลือก '+n+' รายการ';
   if(typeof renderContinueBar==='function') renderContinueBar();
 }
+function multiSelectFamily(){
+  var checked=[].slice.call(document.querySelectorAll('#ue-sku-multi-list input:checked')).map(function(c){return c.value;}).filter(Boolean);
+  if(!checked.length){ toast('ติ๊กสินค้าอย่างน้อย 1 ตัวก่อน แล้วกดปุ่มนี้เพื่อพ่วงทั้งตระกูลเดียวกัน','info'); return; }
+  var want=new Set();
+  new Set(checked.map(function(s){return productGroupOf(s);})).forEach(function(g){ groupMembers(g).forEach(function(s){ want.add(s); }); });
+  var added=0;
+  document.querySelectorAll('#ue-sku-multi-list input').forEach(function(cb){ if(want.has(cb.value) && !cb.checked){ cb.checked=true; added++; } });
+  updateMultiCount();
+  toast(added ? ('พ่วงทั้งตระกูลแล้ว +'+added+' SKU (รวม '+want.size+' ตัว)') : 'เลือกครบทั้งตระกูลแล้ว','ok');
+}
 function saveMultiUpdateEntries(){
-  const skus=[...document.querySelectorAll('#ue-sku-multi-list input:checked')].map(c=>c.value).filter(Boolean);
+  var skus=[].slice.call(document.querySelectorAll('#ue-sku-multi-list input:checked')).map(function(c){return c.value;}).filter(Boolean);
   if(!skus.length){ toast('เลือกสินค้าอย่างน้อย 1 รายการ','err'); return; }
-  const base=collectUpdateBase();
+  // ⚠️ เตือนถ้ามี SKU ในตระกูลเดียวกันยังไม่ได้เลือก (กันตกหล่นเหมือนเคส MK021)
+  var chk=new Set(skus), missing=[];
+  new Set(skus.map(function(s){return productGroupOf(s);})).forEach(function(g){ groupMembers(g).forEach(function(m){ if(!chk.has(m)) missing.push(m); }); });
+  var missU=Array.from(new Set(missing));
+  if(missU.length){
+    var nm=missU.map(function(m){return nameForSku(m)||m;}).slice(0,10).join('\n• ');
+    if(confirm('⚠️ ในตระกูลเดียวกันยังมีสินค้าที่ยังไม่ได้เลือก '+missU.length+' รายการ:\n• '+nm+(missU.length>10?'\n…':'')+'\n\nกด "ตกลง" = เลือกเพิ่มให้ครบแล้วบันทึกพร้อมกัน (แนะนำ)\nกด "ยกเลิก" = บันทึกเฉพาะที่เลือกไว้')){
+      var addSet=new Set(missU);
+      document.querySelectorAll('#ue-sku-multi-list input').forEach(function(cb){ if(addSet.has(cb.value)) cb.checked=true; });
+      updateMultiCount();
+      skus=[].slice.call(document.querySelectorAll('#ue-sku-multi-list input:checked')).map(function(c){return c.value;}).filter(Boolean);
+    }
+  }
+  var base=collectUpdateBase();
   if(!base.Detail){ toast('กรอกรายละเอียด (Detail) ก่อน','err'); return; }
   if(uploadNotReadyGuard()) return;
   if(window.DraftGuard) DraftGuard.clear('npd_update');
-  const arr=getUpdatesLocal();
-  const rows=skus.map((sku,i)=>{
-    const row=Object.assign({}, base, { SKU:sku, ProductName:(nameForSku(sku)||''), id:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+i });
+  // ตระกูลไหนเลือกครบทุกตัว + มี "การ์ดกลุ่ม" ค้างอยู่ → อัปเดตภาพรวมกลุ่มให้ด้วย จะได้ไม่ค้างสถานะเก่า
+  var finalSet=new Set(skus), groupCodes=[];
+  var LOGS=(typeof UPDATE_LOGS!=='undefined'&&UPDATE_LOGS)||[];
+  new Set(skus.map(function(s){return productGroupOf(s);})).forEach(function(g){
+    if(typeof isGroupCode==='function' && isGroupCode(g) && !finalSet.has(g) && LOGS.some(function(l){return l.sku===g;})){
+      var mem=groupMembers(g);
+      if(mem.length && mem.every(function(m){return finalSet.has(m);})) groupCodes.push(g);
+    }
+  });
+  var targets=skus.concat(groupCodes);
+  var arr=getUpdatesLocal();
+  var rows=targets.map(function(sku,i){
+    var row=Object.assign({}, base, { SKU:sku, ProductName:(nameForSku(sku)|| (typeof groupDisplayName==='function'?groupDisplayName(sku):'') ||sku), id:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+i });
     arr.push(row); return row;
   });
   saveUpdatesLocal(arr);
   rebuildUpdateLogs(); renderTeamUpdates(); updateSyncStatus(); updateEditControls();
   closeUpdateEditor();
-  // ส่งขึ้น Sheet ทีละตัว เว้นระยะ ~350ms กันชนกัน/โดน network ตัด (append เล็ก ~300 ตัวอักษร ผ่านชัวร์)
-  rows.forEach((row,i)=> setTimeout(()=>syncToSheet('updates','append', null, row), i*350));
-  toast('เพิ่มบันทึกแล้ว '+rows.length+' สินค้า (Timeline เดียวกัน)','ok');
+  // ส่งขึ้น Sheet ทีละตัว เว้นระยะ ~350ms กันชนกัน/โดน network ตัด
+  rows.forEach(function(row,i){ setTimeout(function(){ syncToSheet('updates','append', null, row); }, i*350); });
+  toast('เพิ่มบันทึกแล้ว '+skus.length+' สินค้า'+(groupCodes.length?(' + ภาพรวมกลุ่ม '+groupCodes.length):'')+' (Timeline เดียวกัน)','ok');
   celebrateMilestone(base);
 }
 function openUpdateEditor(prefill, editId){
