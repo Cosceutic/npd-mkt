@@ -1326,6 +1326,46 @@
   #view-content .cc-pl-move{font-size:10.5px;color:var(--ink-soft);border:1px solid var(--line);border-radius:7px;padding:3px 5px;background:#fff;max-width:100%;}
   #view-content .cc-pl-empty{font-size:11.5px;color:var(--ink-soft);text-align:center;padding:14px 6px;opacity:.75;}
   @media(max-width:640px){ #view-content .cc-pl-col{flex:0 0 232px;width:232px;} }
+  /* ===== 💬 Card detail + comments ===== */
+  #view-content #cc-card-title{font-family:'Prompt',sans-serif;font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #cc-card-body .cc-cd-info{padding:14px 18px;border-bottom:1px solid var(--line);}
+  #cc-card-body .cc-cd-badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:9px;}
+  #cc-card-body .cc-cd-s{font-size:11px;font-weight:700;color:#fff;border-radius:999px;padding:2px 10px;}
+  #cc-card-body .cc-cd-rows{display:flex;flex-direction:column;gap:6px;}
+  #cc-card-body .cc-cd-row{display:flex;gap:8px;font-size:13px;color:var(--ink);}
+  #cc-card-body .cc-cd-row b{flex:0 0 84px;color:var(--ink-soft);font-weight:600;}
+  #cc-card-body .cc-cd-edit{margin-top:11px;}
+  #cc-card-body .cc-cm-sec{padding:14px 18px 18px;background:#f7f8fb;}
+  #cc-card-body .cc-cm-h{font-family:'Prompt',sans-serif;font-weight:700;font-size:14px;color:var(--ink);margin-bottom:11px;}
+  #cc-card-body .cc-cm-list{display:flex;flex-direction:column;gap:11px;margin-bottom:14px;}
+  #cc-card-body .cc-cm{background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 12px;}
+  #cc-card-body .cc-cm-top{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+  #cc-card-body .cc-cm-av{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;font-family:'Prompt',sans-serif;}
+  #cc-card-body .cc-cm-name{font-weight:700;font-size:13px;color:var(--ink);}
+  #cc-card-body .cc-cm-time{font-size:11px;color:var(--ink-soft);}
+  #cc-card-body .cc-cm-del{margin-left:auto;background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:6px;}
+  #cc-card-body .cc-cm-del:hover{background:#FDECEC;color:var(--danger,#C0392B);}
+  #cc-card-body .cc-cm-text{font-size:13px;color:var(--ink);line-height:1.55;white-space:pre-wrap;word-break:break-word;}
+  #cc-card-body .cc-cm-text a{color:var(--accent-deep);}
+  #cc-card-body .cc-cm-imgs{margin-top:7px;display:flex;flex-wrap:wrap;gap:5px;}
+  #cc-card-body .cc-cm-links{margin-top:7px;display:flex;flex-wrap:wrap;gap:6px;}
+  #cc-card-body .cc-cm-link{font-size:11.5px;font-weight:600;color:var(--accent-deep);background:var(--accent-pale);border-radius:7px;padding:3px 9px;text-decoration:none;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle;}
+  #cc-card-body .cc-cm-empty{font-size:12.5px;color:var(--ink-soft);text-align:center;padding:16px 0;}
+  #cc-card-body .cc-cm-box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 12px;}
+  #cc-card-body .cc-cm-box textarea{width:100%;min-height:66px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-family:inherit;font-size:13px;resize:vertical;box-sizing:border-box;}
+  #cc-card-body .cc-cm-drafts{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px;}
+  #cc-card-body .cc-cm-draft{position:relative;}
+  #cc-card-body .cc-cm-draft .rm{position:absolute;top:-6px;right:-6px;background:#C0392B;color:#fff;border:none;border-radius:50%;width:17px;height:17px;font-size:11px;line-height:1;cursor:pointer;}
+  #cc-card-body .cc-cm-draftlink{font-size:11px;background:var(--accent-pale);color:var(--accent-deep);border-radius:7px;padding:3px 24px 3px 9px;position:relative;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #cc-card-body .cc-cm-draftlink .rm{position:absolute;top:2px;right:3px;background:none;border:none;color:#C0392B;cursor:pointer;font-size:13px;}
+  #cc-card-body .cc-cm-toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:9px;}
+  #cc-card-body .cc-cm-tool{font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;color:var(--ink);}
+  #cc-card-body .cc-cm-tool:hover{border-color:var(--accent);color:var(--accent-deep);}
+  #cc-card-body .cc-cm-author{border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:12.5px;max-width:150px;}
+  #cc-card-body .cc-cm-send{margin-left:auto;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:7px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Prompt',sans-serif;}
+  #cc-card-body .cc-cm-send:disabled{opacity:.5;cursor:not-allowed;}
+  #cc-card-body .cc-cm-status{font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
+  #view-content .cc-pl-badge,#view-content .ccal-cmn{font-size:11px;color:var(--ink-soft);font-weight:600;}
   </style>
   <div class="view" id="view-content">
     <div style="max-width:1220px;margin:0 auto;">
@@ -1408,6 +1448,12 @@
       <div class="modal-box" style="max-width:560px;width:96vw;">
         <div class="modal-header"><div class="mh-name" id="cc-editor-title">➕ เพิ่มไอเดียคอนเทนต์</div><button class="modal-close" onclick="closeContentIdeaEditor()">✕</button></div>
         <div class="modal-body" id="cc-editor-body" style="padding:16px 18px 22px;max-height:80vh;overflow:auto;"></div>
+      </div>
+    </div>
+    <div class="modal-overlay" id="cc-card-overlay" style="z-index:74;" onclick="if(event.target===this) closeCardModal()">
+      <div class="modal-box" style="max-width:640px;width:96vw;">
+        <div class="modal-header"><div class="mh-name" id="cc-card-title" style="min-width:0;">การ์ด</div><button class="modal-close" onclick="closeCardModal()">✕</button></div>
+        <div class="modal-body" id="cc-card-body" style="padding:0;max-height:82vh;overflow:auto;"></div>
       </div>
     </div>
   </div>
@@ -8538,6 +8584,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     ['idea','musthave','calendar','pipeline','roadmap','brandid','hashtag'].forEach(function(k){ var el=document.getElementById('cc-sub-'+k); if(el) el.style.display=(k===key)?'':'none'; var b=document.getElementById('cc-nav-'+k); if(b) b.classList.toggle('subnav-active',k===key); });
     var bar=document.getElementById('cc-brand-bar'); if(bar) bar.style.display=(key==='musthave')?'none':''; // brand view applies to everything except the checklist
     if((key==='calendar'||key==='pipeline') && !calLoaded){ calLoaded=true; if(typeof loadContentCalFromSheet==='function') loadContentCalFromSheet().then(function(){ if(ciSub==='calendar') renderContentCal(); else if(ciSub==='pipeline') renderPipeline(); }).catch(function(){}); }
+    if((key==='calendar'||key==='pipeline') && !cmLoaded && typeof loadCommentsFromSheet==='function'){ cmLoaded=true; loadCommentsFromSheet().then(function(){ if(ciSub==='calendar'||ciSub==='pipeline') renderCalActive(); }).catch(function(){}); }
     if(key==='musthave' && !mhLoaded){ mhLoaded=true; if(typeof loadMustHaveFromSheet==='function') loadMustHaveFromSheet().then(function(){ if(ciSub==='musthave') renderMustHave(); }).catch(function(){}); }
     if(key==='brandid' && !biLoaded){ biLoaded=true; if(typeof loadBrandIdFromSheet==='function') loadBrandIdFromSheet().then(function(){ if(ciSub==='brandid') renderBrandId(); }).catch(function(){}); }
     if(key==='hashtag' && !htLoaded){ htLoaded=true; if(typeof loadHashtagsFromSheet==='function') loadHashtagsFromSheet().then(function(){ if(ciSub==='hashtag') renderHashtags(); }).catch(function(){}); }
@@ -8789,7 +8836,8 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
         var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); if(x.brand) meta.push('🏷️ '+e2(bLbl(x.brand))); if(x.product) meta.push('📦 '+e2(x.product)); if(x.goal) meta.push('🎯 '+e2(x.goal)); if(x.owner) meta.push('👤 '+e2(x.owner)); if(x.reviewer) meta.push('🔍 '+e2(x.reviewer));
         var tags=pillarTag(x.pillar)+fmtTag(x.format);
         var act=unlocked()?'<div class="ccal-post-actions"><button class="btn-sm ghost" onclick="openContentCalEditor(\''+aj(x.id)+'\')">✏️</button><button class="btn-sm warn-ghost" onclick="deleteContentCal(\''+aj(x.id)+'\')">🗑️</button></div>':'';
-        return '<div class="ccal-post"><span class="ccal-post-s" style="--s:'+st.c+'">'+st.t+'</span><div class="ccal-post-main"><div class="ccal-post-title">'+e2(x.title)+'</div>'
+        var cn=(typeof commentCount==='function')?commentCount(x.id):0; if(cn) meta.push('💬 '+cn);
+        return '<div class="ccal-post"><span class="ccal-post-s" style="--s:'+st.c+'">'+st.t+'</span><div class="ccal-post-main"><div class="ccal-post-title" style="cursor:pointer;" onclick="openCardModal(\''+aj(x.id)+'\')">'+e2(x.title)+'</div>'
           +(tags?'<div class="ccal-post-meta">'+tags+'</div>':'')
           +'<div class="ccal-post-meta">'+meta.join('')+calChanChips(x.channel)+'</div>'+(x.note?'<div class="cc-mh-note">'+e2(x.note)+'</div>':'')+'</div>'+act+'</div>';
       }).join('');
@@ -8797,7 +8845,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     }).join('');
     host.innerHTML='<div class="ccal-agenda">'+h+'</div>';
   }
-  window.calChipClick=function(id){ if(unlocked()) openContentCalEditor(id); else openContentCalDetail(id); };
+  window.calChipClick=function(id){ openCardModal(id); };
   window.openContentCalDetail=function(id){
     var x=(window.CONTENT_CAL||[]).find(function(i){return i.id===id;}); if(!x) return;
     var st=CAL_STATUS[x.status]||CAL_STATUS.brief; var d=new Date(x.date+'T00:00:00');
@@ -8916,11 +8964,12 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
     var d=x.date?new Date(x.date+'T00:00:00'):null;
     var dd=(d&&!isNaN(d))?(d.getDate()+' '+TH_M[d.getMonth()]):'';
     var who=(x.owner?'<span class="cc-pl-pic" title="เจ้าของงาน (PIC)">👤 '+e2(x.owner)+'</span>':'')+(x.reviewer?'<span class="cc-pl-rev" title="ผู้ตรวจ">🔍 '+e2(x.reviewer)+'</span>':'');
-    var openFn = canEdit ? ('openContentCalEditor(\''+aj(x.id)+'\')') : ('openContentCalDetail(\''+aj(x.id)+'\')');
+    var cn=(typeof commentCount==='function')?commentCount(x.id):0;
+    var cmn=cn?'<span class="cc-pl-badge" title="คอมเมนต์">💬 '+cn+'</span>':'';
     return '<div class="cc-pl-card" style="--s:'+st.c+'"'+(canEdit?' draggable="true" ondragstart="plDragStart(event,\''+aj(x.id)+'\')" ondragend="plDragEnd(event)"':'')+'>'
-      +'<div class="cc-pl-ct" style="cursor:pointer;" onclick="'+openFn+'">'+e2(x.title)+'</div>'
+      +'<div class="cc-pl-ct" style="cursor:pointer;" onclick="openCardModal(\''+aj(x.id)+'\')">'+e2(x.title)+'</div>'
       +(tags?'<div class="cc-pl-tags">'+tags+'</div>':'')
-      +((dd||who)?'<div class="cc-pl-meta">'+(dd?'<span>📅 '+e2(dd)+(x.time?' '+e2(x.time):'')+'</span>':'')+(who?'<span class="cc-pl-who">'+who+'</span>':'')+'</div>':'')
+      +((dd||who||cmn)?'<div class="cc-pl-meta">'+(dd?'<span>📅 '+e2(dd)+(x.time?' '+e2(x.time):'')+'</span>':'')+cmn+(who?'<span class="cc-pl-who">'+who+'</span>':'')+'</div>':'')
       +(canEdit?plActions(x,s):'')+'</div>';
   }
   function plActions(x,s){
@@ -8950,6 +8999,185 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   window.plDragOver=function(ev){ ev.preventDefault(); try{ ev.dataTransfer.dropEffect='move'; }catch(e){} ev.currentTarget.classList.add('dragover'); };
   window.plDragLeave=function(ev){ if(!ev.currentTarget.contains(ev.relatedTarget)) ev.currentTarget.classList.remove('dragover'); };
   window.plDrop=function(ev,s){ ev.preventDefault(); ev.currentTarget.classList.remove('dragover'); var id=plDragId; try{ var dt=ev.dataTransfer.getData('text/plain'); if(dt) id=dt; }catch(e){} if(id) plMove(id,s); };
+
+  /* ============================================================
+     💬  CARD COMMENTS  (discuss work on a card, attach images + links)
+     ============================================================ */
+  var CM_CSV='https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=ContentComments';
+  var CM_LKEY='npd_content_comments_v1';
+  var CM_HEADERS=['id','cardId','author','text','images','links','createdAt'];
+  var SHEET_ROWS_CM=[]; window.CONTENT_COMMENTS=[]; var cmLoaded=false, cmModalCard=null;
+  var ccDraft={images:[],links:[]};
+  var CC_PEOPLE=[].concat(PIC_NAMES_CC,REVIEWER_NAMES);
+  // งาน Content ทั้งหมด (รูปแนบในคอมเมนต์ ฯลฯ) เก็บแยกที่โฟลเดอร์นี้ — สร้างโฟลเดอร์ย่อยแยกตามสินค้าให้อัตโนมัติ
+  var CONTENT_PARENT_FOLDER_ID='1fhGsio2LbPUaFOnu3v8iNGg97C4pOHEG';
+  function ccDriveSafe(s){ return String(s||'').replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim().slice(0,80); }
+  function ccFolderName(card){ card=card||{}; var p=ccDriveSafe(card.product); if(p) return p; var b=(card.brand&&typeof bLbl==='function')?ccDriveSafe(bLbl(card.brand)):''; if(b) return b; return 'Content ทั่วไป'; }
+  function ccUploadLoc(card){
+    var name=ccFolderName(card); var key='npd_upfolder_'+CONTENT_PARENT_FOLDER_ID+'_'+name; var cached='';
+    try{ cached=localStorage.getItem(key)||''; }catch(e){}
+    return { name:name, cacheKey:key, cached:cached, loc: cached?{parentId:cached}:{parentId:CONTENT_PARENT_FOLDER_ID, folder:name} };
+  }
+  function cmLocal(){try{return JSON.parse(localStorage.getItem(CM_LKEY))||[];}catch(e){return [];}}
+  function cmSaveLocal(a){try{localStorage.setItem(CM_LKEY,JSON.stringify(a));}catch(e){}}
+  function normCM(r){ return {
+    id:(r.id||r.ID||'').trim(), cardId:(r.cardId||r.CardId||r.cardid||'').trim(), author:(r.author||r.Author||'').trim(),
+    text:(r.text||r.Text||'').trim(), images:(r.images||r.Images||'').trim(), links:(r.links||r.Links||'').trim(),
+    createdAt:(r.createdAt||r.CreatedAt||'').trim() }; }
+  function cmSig(b){ return [b.cardId,b.author,b.text,b.images,b.links].join('|'); }
+  function rebuildCM(){
+    var byId={}, order=[];
+    SHEET_ROWS_CM.forEach(function(b){ if(!(b.id in byId)) order.push(b.id); byId[b.id]=b; });
+    cmLocal().map(normCM).forEach(function(b){ if(b.id){ if(!(b.id in byId)) order.push(b.id); byId[b.id]=b; } });
+    window.CONTENT_COMMENTS = order.map(function(id){return byId[id];}).filter(function(b){return b && b.cardId; });
+  }
+  window.loadCommentsFromSheet=async function(){
+    try{
+      var res=await fetch(CM_CSV+'&_cb='+Date.now(),{cache:'no-store'}); var csv=await res.text();
+      var ok=/(^|,)\s*"?id"?\s*(,|$)/im.test(csv)&&/(^|,)\s*"?cardId"?\s*(,|$)/im.test(csv);
+      SHEET_ROWS_CM = (ok && typeof parseCsvByHeader==='function') ? parseCsvByHeader(csv,['id','cardId']).map(normCM).filter(function(b){return b.id&&b.cardId;}) : [];
+    }catch(e){ SHEET_ROWS_CM=[]; }
+    var sheetSig={}; SHEET_ROWS_CM.forEach(function(b){ sheetSig[b.id]=cmSig(b); });
+    var local=cmLocal(); var kept=local.filter(function(b){ var nb=normCM(b); var s=sheetSig[nb.id]; return !(s && s===cmSig(nb)); });
+    if(kept.length!==local.length) cmSaveLocal(kept);
+    rebuildCM();
+  };
+  async function cmSync(item, action){
+    var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{};
+    if(!cfg||!cfg.url) return;
+    var isDel=(action==='delete');
+    var payload={target:'contentcomments', sheetName:'ContentComments', key:'id', create:CM_HEADERS, action:isDel?'delete':'upsert', keyValue:item.id,
+      row: isDel?undefined:{id:item.id,cardId:item.cardId||'',author:item.author||'',text:item.text||'',images:item.images||'',links:item.links||'',createdAt:item.createdAt||''} };
+    try{ await postToSheet(payload); }catch(e){}
+    setTimeout(function(){ if(typeof loadCommentsFromSheet==='function') loadCommentsFromSheet().then(function(){ if(cmModalCard) renderCardModal(); renderCalActive(); }); }, 6000);
+  }
+  function commentsFor(cardId){ return (window.CONTENT_COMMENTS||[]).filter(function(c){return c.cardId===cardId;}).sort(function(a,b){return (a.createdAt||'').localeCompare(b.createdAt||'');}); }
+  window.commentCount=function(cardId){ return commentsFor(cardId).length; };
+  function linkifyText(t){ var out='',s=String(t||''),re=/(https?:\/\/[^\s]+)/g,last=0,m;
+    while((m=re.exec(s))){ out+=e2(s.slice(last,m.index)); var u=m[0]; out+='<a href="'+e2(u)+'" target="_blank" rel="noopener">'+e2(u)+'</a>'; last=m.index+u.length; }
+    out+=e2(s.slice(last)); return out; }
+  function linkHost(u){ try{ return u.replace(/^https?:\/\//,'').split(/[\/?#]/)[0]; }catch(e){ return u; } }
+  function cmAvatar(name){ var n=(name||'?').trim(); return '<div class="cc-cm-av">'+e2(n?n.slice(0,2):'?')+'</div>'; }
+  function nowStamp(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+
+  window.openCardModal=function(id){
+    cmModalCard=id; ccDraft={images:[],links:[]};
+    if(!cmLoaded && typeof loadCommentsFromSheet==='function'){ cmLoaded=true; loadCommentsFromSheet().then(function(){ if(cmModalCard===id){ renderCardModal(); renderCalActive(); } }).catch(function(){}); }
+    renderCardModal();
+    document.getElementById('cc-card-overlay').classList.add('open');
+  };
+  window.closeCardModal=function(){ var el=document.getElementById('cc-card-overlay'); if(el) el.classList.remove('open'); cmModalCard=null; ccDraft={images:[],links:[]}; };
+  window.renderCardModal=function(){
+    var id=cmModalCard; if(!id) return;
+    var x=(window.CONTENT_CAL||[]).find(function(c){return c.id===id;}); if(!x){ closeCardModal(); return; }
+    var st=CAL_STATUS[x.status]||CAL_STATUS.brief;
+    var d=x.date?new Date(x.date+'T00:00:00'):null;
+    var dstr=(d&&!isNaN(d))?(TH_WDF[d.getDay()]+' '+d.getDate()+' '+TH_MF[d.getMonth()]+' '+d.getFullYear()+(x.time?' · '+e2(x.time):'')):'';
+    var titleEl=document.getElementById('cc-card-title'); if(titleEl) titleEl.textContent=x.title||'การ์ด';
+    var rows='';
+    var addRow=function(lb,val){ return val?'<div class="cc-cd-row"><b>'+lb+'</b><span>'+val+'</span></div>':''; };
+    rows+=addRow('วันที่', dstr?e2(dstr):'');
+    rows+=addRow('เสาหลัก', (x.pillar&&PILLARS[x.pillar])?pillarTag(x.pillar):'');
+    rows+=addRow('รูปแบบ', x.format?fmtTag(x.format):'');
+    rows+=addRow('ช่องทาง', x.channel?calChanChips(x.channel):'');
+    rows+=addRow('สินค้า', x.product?e2(x.product):'');
+    rows+=addRow('เป้าหมาย', x.goal?('🎯 '+e2(x.goal)):'');
+    rows+=addRow('เจ้าของงาน', x.owner?('👤 '+e2(x.owner)):'');
+    rows+=addRow('ผู้ตรวจ', x.reviewer?('🔍 '+e2(x.reviewer)):'');
+    rows+=addRow('โน้ต', x.note?e2(x.note):'');
+    var editBtn=unlocked()?'<div class="cc-cd-edit"><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 14px;" onclick="closeCardModal();openContentCalEditor(\''+aj(id)+'\')">✏️ แก้ไขรายละเอียดการ์ด</button></div>':'';
+    var info='<div class="cc-cd-info"><div class="cc-cd-badges"><span class="cc-cd-s" style="background:'+st.c+'">'+st.t+'</span>'+(x.brand?'<span class="cc-brand" style="--b:'+((typeof BRAND_TINT!=='undefined'?BRAND_TINT:{})[x.brand]||'#6B7280')+'">'+e2(bLbl(x.brand))+'</span>':'')+'</div><div class="cc-cd-rows">'+rows+'</div>'+editBtn+'</div>';
+
+    var cms=commentsFor(id);
+    var list = cms.length ? cms.map(cmItem).join('') : '<div class="cc-cm-empty">ยังไม่มีคอมเมนต์ — เริ่มคุยงานกันได้เลย 💬</div>';
+    var composer='';
+    if(unlocked()){
+      var draftImgs=ccDraft.images.map(function(u,i){ return '<div class="cc-cm-draft"><a class="att-tile att-sm" href="'+e2(u)+'" target="_blank" rel="noopener"><img src="'+e2(resolveDriveLink(u)||u)+'" onerror="this.style.display=\'none\';this.parentNode.classList.add(\'att-broken\');"></a><button class="rm" onclick="ccRemoveDraftImg('+i+')">✕</button></div>'; }).join('');
+      var draftLinks=ccDraft.links.map(function(u,i){ return '<span class="cc-cm-draftlink">🔗 '+e2(linkHost(u))+'<button class="rm" onclick="ccRemoveDraftLink('+i+')">✕</button></span>'; }).join('');
+      var peopleOpts=CC_PEOPLE.map(function(n){return '<option value="'+e2(n)+'">';}).join('');
+      composer='<div class="cc-cm-box">'
+        +'<textarea id="cc-cm-text" placeholder="พิมพ์คอมเมนต์คุยงาน… (วางลิงก์ในข้อความก็ได้)"></textarea>'
+        +((draftImgs||draftLinks)?'<div class="cc-cm-drafts">'+draftImgs+draftLinks+'</div>':'')
+        +'<div class="cc-cm-status" id="cc-cm-status"></div>'
+        +'<div class="cc-cm-toolbar">'
+        +'<input class="cc-cm-author" id="cc-cm-author" list="cc-cm-people" placeholder="ชื่อคุณ" value="'+e2(ccLastAuthor())+'"><datalist id="cc-cm-people">'+peopleOpts+'</datalist>'
+        +'<label class="cc-cm-tool">📎 แนบรูป<input type="file" accept="image/*" multiple style="display:none;" onchange="ccAttachImage(this)"></label>'
+        +'<button class="cc-cm-tool" onclick="ccAddLink()">🔗 แนบลิงก์</button>'
+        +'<button class="cc-cm-send" onclick="postComment()">ส่งคอมเมนต์</button>'
+        +'</div></div>';
+    } else {
+      composer='<div class="cc-cm-empty">กด 🔓 ปลดล็อกทีม เพื่อคอมเมนต์/แนบไฟล์</div>';
+    }
+    document.getElementById('cc-card-body').innerHTML = info
+      +'<div class="cc-cm-sec"><div class="cc-cm-h">💬 คอมเมนต์งาน ('+cms.length+')</div><div class="cc-cm-list">'+list+'</div>'+composer+'</div>';
+  };
+  function cmItem(c){
+    var del=unlocked()?'<button class="cc-cm-del" title="ลบ" onclick="deleteComment(\''+aj(c.id)+'\')">🗑</button>':'';
+    var imgs=c.images?'<div class="cc-cm-imgs">'+attachmentTiles(c.images,'sm')+'</div>':'';
+    var links=c.links?('<div class="cc-cm-links">'+c.links.split(';').map(function(u){u=u.trim();return u?'<a class="cc-cm-link" href="'+e2(u)+'" target="_blank" rel="noopener" title="'+e2(u)+'">🔗 '+e2(linkHost(u))+'</a>':'';}).join('')+'</div>'):'';
+    return '<div class="cc-cm"><div class="cc-cm-top">'+cmAvatar(c.author)+'<span class="cc-cm-name">'+e2(c.author||'ไม่ระบุชื่อ')+'</span><span class="cc-cm-time">'+e2(c.createdAt||'')+'</span>'+del+'</div>'
+      +(c.text?'<div class="cc-cm-text">'+linkifyText(c.text)+'</div>':'')+imgs+links+'</div>';
+  }
+  function ccLastAuthor(){ try{ return localStorage.getItem('npd_cc_last_author')||''; }catch(e){ return ''; } }
+  function ccSetLastAuthor(n){ try{ if(n) localStorage.setItem('npd_cc_last_author',n); }catch(e){} }
+  window.ccRemoveDraftImg=function(i){ ccDraft.images.splice(i,1); renderCardModal(); };
+  window.ccRemoveDraftLink=function(i){ ccDraft.links.splice(i,1); renderCardModal(); };
+  window.ccAddLink=function(){
+    var u=window.prompt('วางลิงก์ที่ต้องการแนบ (เช่น Google Drive / Canva / เว็บ)','https://');
+    if(!u) return; u=u.trim(); if(!/^https?:\/\//i.test(u)){ if(typeof toast==='function') toast('ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://','err'); return; }
+    // keep the text the user already typed
+    var ta=document.getElementById('cc-cm-text'); var keep=ta?ta.value:'';
+    ccDraft.links.push(u); renderCardModal();
+    var ta2=document.getElementById('cc-cm-text'); if(ta2) ta2.value=keep;
+  };
+  window.ccAttachImage=async function(inputEl){
+    var files=inputEl.files?Array.prototype.slice.call(inputEl.files):[]; if(!files.length) return;
+    var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{};
+    var st=document.getElementById('cc-cm-status');
+    var ta=document.getElementById('cc-cm-text'); var keepText=ta?ta.value:'';
+    if(!cfg||!cfg.url){ if(st) st.textContent='❌ ยังไม่ได้ตั้ง Sheet Sync — อัปรูปไม่ได้ (แนบลิงก์รูปแทนได้)'; inputEl.value=''; return; }
+    var card=(window.CONTENT_CAL||[]).find(function(c){return c.id===cmModalCard;})||{};
+    var fu=ccUploadLoc(card);   // งาน Content → โฟลเดอร์เฉพาะ + โฟลเดอร์ย่อยตามสินค้า
+    var done=0, fail=0;
+    for(var i=0;i<files.length;i++){
+      if(st){ st.textContent='⏳ กำลังอัปรูป '+(i+1)+'/'+files.length+' → โฟลเดอร์ “'+fu.name+'”…'; st.style.color='var(--ink-soft)'; }
+      try{
+        var dataUrl=await fileToUploadDataUrl(files[i]);
+        var r=await postReadable(Object.assign({action:'uploadImage', dataUrl, name:files[i].name}, fu.loc));
+        if(r && r.ok && r.url){ ccDraft.images.push(r.url); done++;
+          if(r.folderId && !fu.cached){ try{ localStorage.setItem(fu.cacheKey, r.folderId); }catch(e){} fu.cached=r.folderId; fu.loc={parentId:r.folderId}; }
+        } else fail++;
+      }catch(e){ fail++; }
+    }
+    inputEl.value='';
+    renderCardModal();
+    var ta2=document.getElementById('cc-cm-text'); if(ta2) ta2.value=keepText;
+    var st2=document.getElementById('cc-cm-status');
+    if(st2){ if(done===0){ st2.textContent='❌ อัปรูปไม่สำเร็จ ('+fail+') — เน็ตออฟฟิศบางทีตัดไฟล์ใหญ่ · ลองใหม่ หรือแนบลิงก์รูปแทน'; st2.style.color='var(--danger,#C0392B)'; } else { st2.textContent='✅ แนบรูปแล้ว '+done+' รูป'+(fail?(' · พลาด '+fail):''); st2.style.color='var(--ink-soft)'; } }
+  };
+  window.postComment=function(){
+    if(!unlocked()) return;
+    var ta=document.getElementById('cc-cm-text'); var text=ta?ta.value.trim():'';
+    var author=(document.getElementById('cc-cm-author')||{}).value||''; author=author.trim();
+    if(!text && !ccDraft.images.length && !ccDraft.links.length){ if(typeof toast==='function') toast('พิมพ์ข้อความ หรือแนบรูป/ลิงก์ก่อน','err'); return; }
+    ccSetLastAuthor(author);
+    var c={ id:'cm'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), cardId:cmModalCard, author:author||'ไม่ระบุชื่อ',
+      text:text, images:ccDraft.images.join(' ; '), links:ccDraft.links.join(' ; '), createdAt:nowStamp() };
+    var local=cmLocal(); local.push(c); cmSaveLocal(local);
+    ccDraft={images:[],links:[]};
+    rebuildCM(); renderCardModal(); renderCalActive();
+    if(typeof toast==='function') toast('ส่งคอมเมนต์แล้ว 💬','ok');
+    cmSync(c,'upsert');
+  };
+  window.deleteComment=function(id){
+    if(!unlocked()) return;
+    if(typeof window.confirm==='function' && !window.confirm('ลบคอมเมนต์นี้?')) return;
+    cmSaveLocal(cmLocal().filter(function(z){return z.id!==id;}));
+    SHEET_ROWS_CM=SHEET_ROWS_CM.filter(function(z){return z.id!==id;});
+    rebuildCM(); renderCardModal(); renderCalActive();
+    if(typeof toast==='function') toast('ลบคอมเมนต์แล้ว','ok');
+    cmSync({id:id},'delete');
+  };
 
   /* ============================================================
      ✅  CONTENT MUST HAVE  (standard checklist by type/platform)
