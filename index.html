@@ -1610,7 +1610,7 @@
   .qt-pick-chip:hover{opacity:1;}
   @media(max-width:640px){ .qt-panel{width:90vw;} }
 </style>
-<button id="qt-toggle" onclick="qtToggle()" title="รายการงาน (Task To-Do)">📋<span class="qt-count" id="qt-count"></span></button>
+<button id="qt-toggle" onclick="qtToggle()" title="รายการงาน (Task To-Do)" style="display:none;">📋<span class="qt-count" id="qt-count"></span></button>
 <div class="qt-panel" id="qt-panel">
   <div class="qt-top"><div class="qt-h">📋 รายการงาน · To-Do</div><button class="qt-x" onclick="qtToggle()">✕</button></div>
   <div class="qt-tools">
@@ -2471,6 +2471,7 @@ document.querySelectorAll('#nav .tab').forEach(t=>{
     if(t.dataset.view==='workflow'){ loadWorkflowFrame(); }
     if(t.dataset.view==='office'){ if(typeof renderOffice==='function') renderOffice(); }
     if(t.dataset.view==='content'){ if(typeof renderContentCreator==='function') renderContentCreator(); }
+    if(typeof qtSyncVisibility==='function') qtSyncVisibility();   // To-Do โชว์เฉพาะหน้าออฟฟิศ
   });
 });
 
@@ -5601,12 +5602,6 @@ function renderBriefPartA(){
       {key:'note',label:'หมายเหตุ'}
     ])}
 
-    <div class="brief-sub-label" style="margin-top:20px; font-size:13.5px; color:var(--bAD);">🎨 Design &amp; Collection Brief</div>
-    <div class="brief-field-grid">
-      ${bfField('a2_collectionName','Collection Name','text')}
-      ${bfField('a2_designObj','Design Objective','select',{options:A2_DESIGN_OBJ})}
-      ${bfField('a2_designObjOther','Design Objective — อื่นๆ (โปรดระบุ)','text')}
-    </div>
     ${bfField('a2_painPoint','Pain Point (ปัญหา/สิ่งที่อยากแก้)','textarea',{full:true})}
 
     <div class="brief-sub-label">Target Customer (กลุ่มเป้าหมาย)</div>
@@ -5618,18 +5613,8 @@ function renderBriefPartA(){
       ${bfField('a2_tcLifestyle','Lifestyle','text',{full:true})}
     </div>
 
-    ${bfMultiField('a2_keyFeel','Key Feeling', A2_KEY_FEELING)}
-    ${bfField('a2_keyFeelOther','Key Feeling — อื่นๆ (โปรดระบุ)','text')}
-    ${bfField('a2_keyMessage','Key Message','textarea',{full:true})}
-
-    ${bfMultiField('a2_pkgForm','รูปแบบบรรจุภัณฑ์', A2_PKG_FORM)}
-    ${bfField('a2_pkgFormOther','รูปแบบบรรจุภัณฑ์ — อื่นๆ (โปรดระบุ)','text')}
+    ${bfField('a2_pkgForm','รูปแบบบรรจุภัณฑ์ (พิมพ์เอง)','textarea',{full:true,placeholder:'พิมพ์รูปแบบบรรจุภัณฑ์ที่ต้องการ เช่น หลอด 30ml, กระปุก, ขวดปั๊ม'})}
     <div class="brief-field brief-full">${briefImgInline('a2_pkgFormImg','ภาพประกอบรูปแบบบรรจุภัณฑ์ (แนบได้หลายรูป)')}</div>
-
-    <div class="brief-field-grid">
-      ${bfField('a2_mood','Mood &amp; Tone','select',{options:A2_MOOD})}
-      ${bfField('a2_moodOther','Mood &amp; Tone — อื่นๆ (โปรดระบุ)','text')}
-    </div>
 
     <div class="brief-section-h">A3 · SKU</div>
     <div class="brief-field-grid">
@@ -5722,19 +5707,23 @@ function mktCalc(i){ const out=mktPrice10(i); bfSet('b_mkt_price10_'+i, out); co
 function renderBriefPartB(){
   // remember any ingredient the user has typed, so it shows in the list next time
   bfArr('b_ingredients').forEach(r=>saveCustomIngredient(r.name));
-  // ----- auto-pull from Part A (fills only empty fields, so edits are kept) -----
-  bDefault('b_requestNo', bfGet('a_nprNo'));
+  // ----- auto-pull from Part A -----
+  // ช่องที่ "ดึงอัตโนมัติ" ล้วนๆ (NPD ไม่ต้องกรอก) → มิเรอร์จาก Part A ทุกครั้งที่มีค่า (แก้ที่ A แล้ว B ตามทันที)
+  const bMirror=(id,val)=>{ if(val) bfSet(id,val); return bfGet(id); };
+  bMirror('b_requestNo', bfGet('a_nprNo'));
   bDefault('b_requestDate', bfGet('a_briefDate'));
   bDefault('b_objective', bfGet('a_objective')==='New Product' ? 'New Product' : '');
   bDefault('b_customerName', 'Cosceutic Innovation Laboratories Co., Ltd.');
-  bDefault('b_brandName', bfGet('a_brand'));
+  bMirror('b_brandName', bfGet('a_brand'));
   bDefault('b_address', GODMAMI_ADDRESS);
-  bDefault('b_productName', bfGet('a_projectName'));
+  bMirror('b_productName', bfGet('a_projectName'));
+  // คุณสมบัติที่ต้องการ = ดึงจาก Key Benefit ครั้งแรก แต่แก้/เพิ่มเองได้ (ไม่ทับของที่พิมพ์)
   bDefault('b_properties', keyBenefitsText());
   bDefault('b_productType', catSummary());
   // B1 brand-side column pulled from the fields above
   const wt = [bfGet('a_weight'), bfGet('a_weightUnit')].filter(Boolean).join(' ');
-  const b1src = [ bfGet('a_catL4')||catSummary(), bfGet('b_howToUse'), wt, skuColorsText(), ingredientsText(), keyBenefitsText(), benchmarkText(), appearanceText('color'), appearanceText('odor'), appearanceText('texture') ];
+  // idx5 = Required Claims → ดึงจาก "คุณสมบัติที่ต้องการ" (b_properties) ใน Part B (ตามที่ขอ) เผื่อว่างค่อย fallback Key Benefit
+  const b1src = [ bfGet('a_catL4')||catSummary(), bfGet('b_howToUse'), wt, skuColorsText(), ingredientsText(), (bfGet('b_properties')||keyBenefitsText()), benchmarkText(), appearanceText('color'), appearanceText('odor'), appearanceText('texture') ];
   // always mirror the source into the "ข้อมูลจากแบรนด์" column so it stays auto-filled
   // even after Part A is edited later (only overwrites when there is a source value)
   b1src.forEach((v,i)=>{ if(v) bfSet('b1_brand_'+i, v); else bDefault('b1_brand_'+i, v); });
@@ -8623,6 +8612,8 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
       if(d){ days=Math.round((d-today)/86400000); due=d.getDate()+' '+THMON[d.getMonth()]; }
       out.push({p:l.productName||l.sku, sku:l.sku, s:[l.subCategory,l.stage].filter(Boolean).join(' · ')||l.stage||l.note||'อัปเดตงาน', due:due, days:days, nd:l.nextDueDetail||''});
     });
+    // งานจาก To-Do (มอบหมายให้คนนี้) — เชื่อมเข้าเกมส์ออฟฟิศด้วย
+    if(typeof window.qtOfficeTasks==='function'){ try{ (window.qtOfficeTasks(person.n)||[]).forEach(function(q){ out.push(q); }); }catch(e){} }
     out.sort(function(a,b){ if(a.days==null&&b.days==null) return 0; if(a.days==null) return 1; if(b.days==null) return -1; return a.days-b.days; });
     return out;
   }
@@ -10064,6 +10055,7 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   window.renderQuickTasks=function(){
     var pending=TASKS.filter(function(t){return !t.done;}).length;
     var cb=document.getElementById('qt-count'); if(cb) cb.textContent=pending?String(pending):'';
+    if(onOfficeView() && typeof renderOffice==='function'){ try{ renderOffice(); }catch(e){} }   // อัปเดตสถานะในเกมส์ตามงานที่มอบหมาย
     var addBtn=document.getElementById('qt-addbtn'); if(addBtn) addBtn.style.display=canEdit()?'':'none';
     var hint=document.getElementById('qt-lockhint'); if(hint) hint.textContent=canEdit()?'':'🔒 ปลดล็อกทีม/Content เพื่อเพิ่ม-แก้งาน';
     var people=[]; var seen={}; TASKS.forEach(function(t){ if(t.assignee&&!seen[t.assignee]){seen[t.assignee]=1;people.push(t.assignee);} });
@@ -10129,8 +10121,26 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   };
   window.deleteQuickTask=function(id){ if(!canEdit()) return; if(typeof window.confirm==='function'&&!window.confirm('ลบงานนี้?')) return; qSave(qLocal().filter(function(z){return z.id!==id;})); SHEET=SHEET.filter(function(z){return z.id!==id;}); rebuild(); renderQuickTasks(); closeQtEditor(); if(typeof toast==='function') toast('ลบงานแล้ว','ok'); qSync({id:id},'delete'); };
 
+  // ---- โชว์ปุ่ม To-Do เฉพาะหน้าออฟฟิศ ----
+  function onOfficeView(){ var v=document.getElementById('view-office'); return !!(v && v.classList.contains('active')); }
+  window.qtSyncVisibility=function(){
+    var on=onOfficeView(); var btn=document.getElementById('qt-toggle'); if(btn) btn.style.display = on ? '' : 'none';
+    if(!on && qtOpenState){ qtOpenState=false; var p=document.getElementById('qt-panel'); if(p) p.classList.remove('open'); }   // ออกจากออฟฟิศ → ปิดแผง
+  };
+  // ---- ส่งงานที่มอบให้แต่ละคนไปให้ "เกมส์ออฟฟิศ" นับ/แสดงสถานะ ----
+  window.qtOfficeTasks=function(nick){
+    if(!nick) return [];
+    var TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    var today=new Date(); today.setHours(0,0,0,0);
+    return (TASKS||[]).filter(function(t){ return !t.done && (t.assignee||'').indexOf(nick)>=0; }).map(function(t){
+      var days=null, due='';
+      if(t.due){ var d=new Date(t.due+'T00:00:00'); if(!isNaN(d)){ days=Math.round((d-today)/86400000); due=d.getDate()+' '+TH[d.getMonth()]+(t.dueTime?(' '+t.dueTime):''); } }
+      return { p:t.title, sku:'', s:'📋 '+((t.tags||'').split(',').map(function(x){return x.trim();}).filter(Boolean).join(' · ')||'งานที่มอบหมาย'), due:due, days:days, nd:'', _qt:true };
+    });
+  };
   document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ var ov=document.getElementById('qt-editor-overlay'); if(ov&&ov.classList.contains('open')){ closeQtEditor(); return; } if(qtOpenState){ qtToggle(); } } });
-  if(typeof loadQuickTasksFromSheet==='function'){ loadQuickTasksFromSheet().then(function(){ renderQuickTasks(); }).catch(function(){}); }
+  if(typeof loadQuickTasksFromSheet==='function'){ loadQuickTasksFromSheet().then(function(){ renderQuickTasks(); if(onOfficeView()&&typeof renderOffice==='function') renderOffice(); }).catch(function(){}); }
+  qtSyncVisibility();
 })();
 </script>
 
