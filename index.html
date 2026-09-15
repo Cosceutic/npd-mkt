@@ -1568,11 +1568,11 @@
 
 <!-- 📋 Quick Task To-Do (left slide-in panel) -->
 <style>
-  #qt-toggle{position:fixed;left:0;top:44%;transform:translateY(-50%);z-index:59;background:linear-gradient(135deg,#5B8FF9,#3d6fd0);color:#fff;border:none;border-radius:0 14px 14px 0;padding:13px 11px;font-size:20px;cursor:pointer;box-shadow:2px 4px 16px -5px rgba(30,50,90,.5);line-height:1;}
+  #qt-toggle{position:fixed;left:0;top:44%;transform:translateY(-50%);z-index:9990;background:linear-gradient(135deg,#5B8FF9,#3d6fd0);color:#fff;border:none;border-radius:0 14px 14px 0;padding:13px 11px;font-size:20px;cursor:pointer;box-shadow:2px 4px 16px -5px rgba(30,50,90,.5);line-height:1;}
   #qt-toggle:hover{filter:brightness(1.08);}
   #qt-toggle .qt-count{position:absolute;top:-5px;right:-5px;background:#ff5a5f;color:#fff;font-size:10px;font-weight:700;border-radius:999px;padding:1px 5px;min-width:17px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.3);}
   #qt-toggle .qt-count:empty{display:none;}
-  .qt-panel{position:fixed;left:0;top:0;bottom:0;width:344px;max-width:88vw;background:#f6f8fb;z-index:60;box-shadow:4px 0 34px -8px rgba(20,40,70,.4);transform:translateX(-108%);transition:transform .26s cubic-bezier(.33,1,.68,1);display:flex;flex-direction:column;font-family:'Sarabun',sans-serif;}
+  .qt-panel{position:fixed;left:0;top:0;bottom:0;width:344px;max-width:88vw;background:#f6f8fb;z-index:9991;box-shadow:4px 0 34px -8px rgba(20,40,70,.4);transform:translateX(-108%);transition:transform .26s cubic-bezier(.33,1,.68,1);display:flex;flex-direction:column;font-family:'Sarabun',sans-serif;}
   .qt-panel.open{transform:none;}
   .qt-top{display:flex;align-items:center;gap:8px;padding:15px 15px 12px;background:linear-gradient(135deg,#5B8FF9,#3d6fd0);color:#fff;}
   .qt-top .qt-h{font-family:'Prompt',sans-serif;font-weight:700;font-size:16px;flex:1;}
@@ -1620,7 +1620,7 @@
   <div class="qt-personbar" id="qt-personbar"></div>
   <div class="qt-listwrap"><div id="qt-list"></div></div>
 </div>
-<div class="modal-overlay" id="qt-editor-overlay" style="z-index:95;" onclick="if(event.target===this) closeQtEditor()">
+<div class="modal-overlay" id="qt-editor-overlay" style="z-index:9996;" onclick="if(event.target===this) closeQtEditor()">
   <div class="modal-box" style="max-width:470px;width:94vw;">
     <div class="modal-header"><div class="mh-name" id="qt-editor-title">➕ เพิ่มงาน</div><button class="modal-close" onclick="closeQtEditor()">✕</button></div>
     <div class="modal-body" id="qt-editor-body" style="padding:16px 18px 20px;max-height:80vh;overflow:auto;"></div>
@@ -8028,6 +8028,49 @@ function refreshStageForSubcat(){
   const st=document.getElementById('ue-stage-cell'); if(st) st.innerHTML=ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',list,keep,'เช่น กำลังทำ, เสร็จ','maybeAutoNextDue()');
   maybeAutoNextDue();
 }
+/* ===== ต่องานที่ "ยังกำลังทำ" ของสินค้า — กันไม่ให้บันทึกใหม่ไปลงคนละเส้น (Track/หัวข้อไม่ตรง) แล้วงานเดิมค้าง =====
+   หางานปัจจุบันที่ยังไม่เสร็จของ SKU (แยกตาม Track + หัวข้อย่อย เอาอันล่าสุดต่อคู่) แล้วให้กดต่อได้ในคลิกเดียว */
+let ueContItems=[];
+const UE_DONE_RE=/เรียบร้อย|เสร็จ|ได้ของ|ชำระเงินแล้ว|ยกเลิก|ปิดงาน|จบงาน|ส่งมอบ/;
+function inProgressWorkItems(sku){
+  if(!sku || typeof UPDATE_LOGS==='undefined') return [];
+  const grp=productGroupOf(sku);
+  const set=new Set([sku,grp]); (groupMembers(grp)||[]).forEach(s=>set.add(s));
+  const byKey={};
+  UPDATE_LOGS.filter(l=>set.has(l.sku) && (l.subCategory||l.stage)).forEach(l=>{
+    const key=(l.track||'')+'|'+(l.subCategory||'');
+    if(!byKey[key] || (l.date||'')>=(byKey[key].date||'')) byKey[key]=l;   // อันล่าสุดต่อคู่ (Track+หัวข้อ)
+  });
+  return Object.keys(byKey).map(k=>byKey[k]).filter(l=>!UE_DONE_RE.test(l.stage||'')).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+}
+function renderContinueBar(){
+  const host=document.getElementById('ue-continue-bar'); if(!host) return;
+  if(ueEditId){ host.style.display='none'; host.innerHTML=''; return; }   // เฉพาะตอนเพิ่มใหม่
+  const sku=(document.getElementById('ue-SKU')||{}).value||'';
+  const items=sku?inProgressWorkItems(sku):[];
+  ueContItems=items;
+  if(!items.length){ host.style.display='none'; host.innerHTML=''; return; }
+  const chips=items.map((l,i)=>{
+    const lbl=[trackLabelShort(l.track), l.subCategory, l.stage].filter(Boolean).join(' · ')||'(อัปเดต)';
+    return `<button type="button" onclick="continueWorkItem(${i})" style="background:#FFE7BA;color:#8A5A00;border:1px solid #F0CE8A;border-radius:999px;font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;">▶ ${esc(lbl)}</button>`;
+  }).join('');
+  host.style.display='';
+  host.innerHTML=`<div style="background:#FFF6E6;border:1px solid #F3D9A6;border-radius:12px;padding:10px 12px;">
+    <div style="font-size:11.5px;font-weight:600;color:#B26A00;margin-bottom:7px;">🔗 ต่องานที่ยัง “กำลังทำ” ของสินค้านี้ — กดเพื่อไม่ให้บันทึกใหม่ไปลงคนละเส้น (งานเดิมจะได้ไม่ค้าง):</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;">${chips}</div></div>`;
+}
+function continueWorkItem(i){
+  const l=(ueContItems||[])[i]; if(!l) return;
+  const trackSel=document.getElementById('ue-Track');
+  const trackVal=(typeof UPDATE_TRACKS!=='undefined' && UPDATE_TRACKS.find(x=>normalizeTrack(x)===l.track)) || l.trackRaw || '';
+  if(trackSel && trackVal) trackSel.value=trackVal;
+  const t=(trackSel||{}).value||'';
+  const sc=document.getElementById('ue-subcat-cell'); if(sc) sc.innerHTML=subcatCellHtml(t, l.subCategory||'');
+  const rd=document.getElementById('ue-rd-fields'); if(rd) rd.style.display = normalizeTrack(t)==='rd' ? '' : 'none';
+  refreshStageForSubcat();
+  const st=document.getElementById('ue-Stage'); if(st){ try{st.focus();}catch(e){} }
+  if(typeof toast==='function') toast('ต่องานเดิม: '+[trackLabelShort(l.track),l.subCategory,l.stage].filter(Boolean).join(' · ')+' — เลือก “ขั้น/สถานะ” ใหม่ (เช่น เสร็จ) แล้วบันทึก','ok');
+}
 let ueEditId = null;
 /* ===== Upload files (images / PDF / Doc / Excel …) straight to Google Drive from the web.
    They land in this parent folder, inside a per-product subfolder (created if missing). ===== */
@@ -8148,6 +8191,7 @@ function renderUpdateForm(){
       <input type="hidden" id="ue-SKU" value="${esc(pfSku)}">
     </div>
     <div class="pe-field" id="ue-scope-cell">${updateScopeCellHtml(pfSku, pf.scope)}</div>
+    <div class="pe-field full" id="ue-continue-bar" style="display:none;"></div>
     <div class="pe-field full" id="ue-sku-multi-cell" style="display:none;">
       <div class="ue-multi-panel">
         <div class="ue-multi-head">
@@ -8194,6 +8238,7 @@ function renderUpdateForm(){
       </div>
     </div>
   </div>`;
+  renderContinueBar();   // ถ้าเปิดฟอร์มมาพร้อม SKU (prefill) ก็โชว์งานที่ค้างเลย
 }
 /* Scope selector — decides whether an update applies to every SKU in the group
    (stored under the group code = shared) or to just this one SKU (specific). */
@@ -8221,6 +8266,7 @@ function onSkuSearchInput(){
   if(!p){ const m=v.match(/—\s*([^—]+)$/); if(m){ const t=m[1].trim(); p=PRODUCTS.find(x=>(x.sku||'')===t); } } // ดึง SKU ท้าย "ชื่อ — SKU"
   hidden.value = p ? p.sku : '';
   refreshUpdateScope();
+  renderContinueBar();   // โชว์ "ต่องานที่กำลังทำ" ของสินค้านี้
 }
 function refreshUpdateScope(){
   const sel=document.getElementById('ue-SKU'); const cell=document.getElementById('ue-scope-cell');
@@ -8898,6 +8944,16 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   function inferWorkType(x){ var f=((x.format||'')+' '+(x.title||'')).toLowerCase(); if(/vdo|video|reel|short|live|คลิป|วิดีโอ|วีดีโอ/.test(f)) return 'vdo'; if(/post|album|photo|carousel|story|โพส|รูปภาพ|อัลบั้ม/.test(f)) return 'post'; if(/aw|artwork|graphic|กราฟิก|สติกเกอร์|sticker|ออกแบบ|แบนเนอร์|banner/.test(f)) return 'aw'; if(/activit|event|กิจกรรม|แจกของ|มินิเกม|live event|แคมเปญ/.test(f)) return 'activities'; return ''; }
   function workTypeOf(x){ return (x.workType && WORK_TYPE_MAP[x.workType]) ? x.workType : (inferWorkType(x)||'other'); }
   function workTypeTag(x){ var w=WORK_TYPE_MAP[workTypeOf(x)]; return w?'<span class="cc-wt" style="--wt:'+w.c+'">'+e2(w.t)+'</span>':''; }
+  // หัวข้อคอนเทนต์แบบเลือกได้ (ดรอปดาวน์ + พิมพ์เอง) และเช็คลิสต์ภาพที่ต้องมีต่อหัวข้อ
+  var CONTENT_TOPICS=['เปิดตัวสินค้าใหม่','รีวิวสินค้า','โปรโมชัน / แคมเปญ','ให้ความรู้ (How-to)','คอนเทนต์บันเทิง','กิจกรรม / Live','UGC / รีวิวลูกค้า','PR / ข่าวสาร'];
+  var CONTENT_CHECKLISTS={
+    'เปิดตัวสินค้าใหม่':[
+      {cat:'หมวดภาพนิ่ง',items:['ภาพปกสินค้า 1 ภาพ','AW Swatch สินค้า','AW USP','AW ภาพคน / Photoshoot','ภาพ Packshot']}
+    ]
+  };
+  function checklistFor(title){ title=(title||''); for(var k in CONTENT_CHECKLISTS){ if(title.indexOf(k)>=0) return {topic:k, groups:CONTENT_CHECKLISTS[k]}; } return null; }
+  function checklistItems(cl){ var out=[]; cl.groups.forEach(function(g){ g.items.forEach(function(it){ out.push(it); }); }); return out; }
+  function checklistProgress(x){ var cl=checklistFor(x.title); if(!cl) return null; var done=(x.checklistDone||'').split(';').map(function(s){return s.trim();}).filter(Boolean); var all=checklistItems(cl); var n=all.filter(function(it){return done.indexOf(it)>=0;}).length; return {done:n, total:all.length}; }
   // content pipeline (review flow): brief → production → review → revise → approved → posted → track
   var CAL_STATUS={brief:{t:'📝 บรีฟ/ไอเดีย',c:'#f2c94c'},production:{t:'🎬 กำลังผลิต',c:'#ffb454'},review:{t:'👀 รอตรวจสอบ',c:'#a78bfa'},revise:{t:'🔧 แก้ไข (ตีกลับ)',c:'#ef6b6b'},approved:{t:'✅ อนุมัติ (รอโพสต์)',c:'#5fd0a8'},posted:{t:'🚀 โพสต์แล้ว',c:'#4b9ef8'},track:{t:'📈 ติดตามผล',c:'#26a69a'}};
   var CAL_STATUS_ORDER=['brief','production','review','revise','approved','posted','track'];
@@ -9956,6 +10012,125 @@ const OFC_ASSETS={"bg": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
   if(typeof loadContentIdeasFromSheet==='function'){
     loadContentIdeasFromSheet().then(function(){ var v=document.getElementById('view-content'); if(v && v.classList.contains('active')) renderContentCreator(); }).catch(function(){});
   }
+})();
+</script>
+
+<script>
+/* ============ 📋 QUICK TASK TO-DO (global left panel) ============ */
+(function(){
+  var CSV='https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=QuickTasks';
+  var LKEY='npd_quick_tasks_v1';
+  var HEADERS=['id','title','assignee','priority','tags','due','dueTime','product','note','done','createdBy','createdAt','updatedAt'];
+  var DEF_TAGS=['ด่วน','ตามงาน','ประชุม','ออกแบบ','ถ่าย','ตัดต่อ','คอนเทนต์','อื่นๆ'];
+  var SHEET=[], TASKS=[], qtOpenState=false, qtPerson='all', qtHideDone=false, qtEditId=null;
+  var TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  function e2(s){var d=document.createElement('div');d.textContent=(s==null?'':s);return d.innerHTML;}
+  function aj(s){ return (typeof attrJs==='function')?attrJs(s):String(s==null?'':s).replace(/'/g,"\\'"); }
+  function canEdit(){ try{ return (typeof isTeamUnlocked==='function'&&isTeamUnlocked()) || sessionStorage.getItem('ccUnlocked')==='1'; }catch(e){ return false; } }
+  function qLocal(){try{return JSON.parse(localStorage.getItem(LKEY))||[];}catch(e){return[];}}
+  function qSave(a){try{localStorage.setItem(LKEY,JSON.stringify(a));}catch(e){}}
+  function norm(r){ return {
+    id:(r.id||r.ID||'').trim(), title:(r.title||r.Title||'').trim(), assignee:(r.assignee||r.Assignee||'').trim(),
+    priority:parseInt(r.priority||r.Priority||'2',10)||2, tags:(r.tags||r.Tags||'').trim(),
+    due:(r.due||r.Due||'').trim(), dueTime:(r.dueTime||r.DueTime||'').trim(), product:(r.product||r.Product||'').trim(),
+    note:(r.note||r.Note||'').trim(), done:((String(r.done||r.Done||'').trim().toLowerCase()==='1'||String(r.done||r.Done||'').trim().toLowerCase()==='true')?'1':''),
+    createdBy:(r.createdBy||'').trim(), createdAt:(r.createdAt||'').trim(), updatedAt:(r.updatedAt||'').trim() }; }
+  function sig(b){ return [b.title,b.assignee,b.priority,b.tags,b.due,b.dueTime,b.product,b.note,b.done].join('|'); }
+  function rebuild(){ var byId={},order=[]; SHEET.forEach(function(b){if(!(b.id in byId))order.push(b.id);byId[b.id]=b;}); qLocal().map(norm).forEach(function(b){if(b.id){if(!(b.id in byId))order.push(b.id);byId[b.id]=b;}}); TASKS=order.map(function(id){return byId[id];}).filter(function(b){return b&&b.title;}); }
+  window.loadQuickTasksFromSheet=async function(){
+    try{ var res=await fetch(CSV+'&_cb='+Date.now(),{cache:'no-store'}); var csv=await res.text();
+      var ok=/(^|,)\s*"?id"?\s*(,|$)/im.test(csv)&&/(^|,)\s*"?title"?\s*(,|$)/im.test(csv);
+      SHEET=(ok&&typeof parseCsvByHeader==='function')?parseCsvByHeader(csv,['id','title']).map(norm).filter(function(b){return b.id&&b.title;}):[];
+    }catch(e){ SHEET=[]; }
+    var ss={}; SHEET.forEach(function(b){ss[b.id]=sig(b);}); var loc=qLocal(); var kept=loc.filter(function(b){var nb=norm(b);var s=ss[nb.id];return !(s&&s===sig(nb));}); if(kept.length!==loc.length) qSave(kept); rebuild();
+  };
+  async function qSync(item,action){
+    var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{}; if(!cfg||!cfg.url) return;
+    var isDel=(action==='delete'); var row={}; HEADERS.forEach(function(h){ row[h]=(item[h]!=null?item[h]:''); }); row.updatedAt=(typeof todayStr==='function'?todayStr():'');
+    var payload={target:'quicktasks',sheetName:'QuickTasks',key:'id',create:HEADERS,action:isDel?'delete':'upsert',keyValue:item.id,row:isDel?undefined:row};
+    try{ await postToSheet(payload); }catch(e){}
+    setTimeout(function(){ if(typeof loadQuickTasksFromSheet==='function') loadQuickTasksFromSheet().then(function(){ renderQuickTasks(); }); },6000);
+  }
+  function stars(n){ n=n||0; var s=''; for(var i=1;i<=3;i++) s+=(i<=n?'★':'☆'); return s; }
+  function qtIsLate(t){ if(t.done||!t.due) return false; var d=new Date(t.due+'T'+(t.dueTime||'23:59')); return !isNaN(d) && d<new Date(); }
+  function qtTagColor(tg){ tg=(tg||'').toLowerCase(); if(/ด่วน|urgent|เร่ง|รีบ/.test(tg)) return '#EF5350'; var pal=['#5B8FF9','#9B7EF8','#3CA5A5','#F2994A','#2D9CDB','#EB5FA0','#26A69A']; var h=0; for(var i=0;i<tg.length;i++)h=(h*31+tg.charCodeAt(i))>>>0; return pal[h%pal.length]; }
+  function qtFmtDue(t){ var d=new Date(t.due+'T00:00:00'); var s=isNaN(d)?t.due:(d.getDate()+' '+TH[d.getMonth()]); if(t.dueTime) s+=' '+t.dueTime; return s; }
+
+  window.qtToggle=function(){ qtOpenState=!qtOpenState; var p=document.getElementById('qt-panel'); if(p) p.classList.toggle('open',qtOpenState);
+    if(qtOpenState){ renderQuickTasks(); if(typeof loadQuickTasksFromSheet==='function') loadQuickTasksFromSheet().then(function(){ renderQuickTasks(); }).catch(function(){}); } };
+  window.setQtPerson=function(p){ qtPerson=p||'all'; renderQuickTasks(); };
+  window.qtToggleHideDone=function(){ qtHideDone=!qtHideDone; renderQuickTasks(); };
+
+  window.renderQuickTasks=function(){
+    var pending=TASKS.filter(function(t){return !t.done;}).length;
+    var cb=document.getElementById('qt-count'); if(cb) cb.textContent=pending?String(pending):'';
+    var addBtn=document.getElementById('qt-addbtn'); if(addBtn) addBtn.style.display=canEdit()?'':'none';
+    var hint=document.getElementById('qt-lockhint'); if(hint) hint.textContent=canEdit()?'':'🔒 ปลดล็อกทีม/Content เพื่อเพิ่ม-แก้งาน';
+    var people=[]; var seen={}; TASKS.forEach(function(t){ if(t.assignee&&!seen[t.assignee]){seen[t.assignee]=1;people.push(t.assignee);} });
+    var pb=document.getElementById('qt-personbar');
+    if(pb){ var h='<button class="qt-pchip'+(qtPerson==='all'?' on':'')+'" onclick="setQtPerson(\'all\')">ทั้งหมด</button>';
+      h+='<button class="qt-pchip'+(qtHideDone?' on':'')+'" onclick="qtToggleHideDone()">'+(qtHideDone?'☑ ซ่อนเสร็จ':'ซ่อนที่เสร็จ')+'</button>';
+      people.forEach(function(p){ h+='<button class="qt-pchip'+(qtPerson===p?' on':'')+'" onclick="setQtPerson(\''+aj(p)+'\')">👤 '+e2(p)+'</button>'; });
+      pb.innerHTML=h; }
+    var items=TASKS.filter(function(t){ if(qtPerson!=='all'&&t.assignee!==qtPerson) return false; if(qtHideDone&&t.done) return false; return true; });
+    items.sort(function(a,b){ if(!!a.done!==!!b.done) return a.done?1:-1; var la=qtIsLate(a),lb=qtIsLate(b); if(la!==lb) return la?-1:1; if((b.priority||0)!==(a.priority||0)) return (b.priority||0)-(a.priority||0); return (a.due||'9999').localeCompare(b.due||'9999'); });
+    var host=document.getElementById('qt-list'); if(!host) return;
+    if(!items.length){ host.innerHTML='<div class="qt-empty">ยังไม่มีงาน'+(canEdit()?' — กด “➕ เพิ่มงานใหม่”':' · กด 🔓 ปลดล็อกเพื่อเพิ่ม')+'</div>'; return; }
+    host.innerHTML=items.map(qtItem).join('');
+  };
+  function qtItem(t){
+    var late=qtIsLate(t);
+    var ck=canEdit()?('<input type="checkbox" class="qt-check"'+(t.done?' checked':'')+' onclick="toggleQtDone(\''+aj(t.id)+'\')">'):('<span class="qt-check" style="text-align:center;">'+(t.done?'✅':'⬜')+'</span>');
+    var tagH=(t.tags||'').split(',').map(function(s){return s.trim();}).filter(Boolean).map(function(tg){ return '<span class="qt-tag" style="--tg:'+qtTagColor(tg)+'">'+e2(tg)+'</span>'; }).join('');
+    var dueH=t.due?('<span class="qt-due'+(late?' late':'')+'">'+(late?'⏰ ':'📅 ')+e2(qtFmtDue(t))+'</span>'):'';
+    var whoH=t.assignee?('<span class="qt-who">👤 '+e2(t.assignee)+'</span>'):'';
+    var prodH=t.product?('<span class="qt-prod" onclick="qtOpenProduct(\''+aj(t.product)+'\')" title="เปิดใน NPD Process">📦 '+e2(t.product)+'</span>'):'';
+    var acts=canEdit()?('<div class="qt-acts"><button onclick="openQtEditor(\''+aj(t.id)+'\')" title="แก้ไข">✏️</button><button onclick="deleteQuickTask(\''+aj(t.id)+'\')" title="ลบ">🗑</button></div>'):'';
+    return '<div class="qt-item'+(t.done?' done':'')+(late?' qt-late':'')+'">'+ck+'<div class="qt-body"><div class="qt-t">'+(t.priority?('<span class="qt-stars-s">'+stars(t.priority)+'</span> '):'')+e2(t.title)+'</div>'+((tagH||dueH||whoH||prodH)?'<div class="qt-meta">'+whoH+dueH+prodH+tagH+'</div>':'')+'</div>'+acts+'</div>';
+  }
+  window.toggleQtDone=function(id){ if(!canEdit()) return; var loc=qLocal(); var i=loc.findIndex(function(z){return z.id===id;}); var base=(i>-1)?norm(loc[i]):(function(){var f=TASKS.find(function(z){return z.id===id;});return f?Object.assign({},f):null;})(); if(!base) return; base.done=base.done?'':'1'; base.updatedAt=(typeof todayStr==='function'?todayStr():''); if(i>-1) loc[i]=base; else loc.push(base); qSave(loc); rebuild(); renderQuickTasks(); qSync(base,'upsert'); };
+  window.qtOpenProduct=function(name){ if(typeof PRODUCTS==='undefined'||!PRODUCTS.length){ if(typeof toast==='function') toast('ยังไม่มีข้อมูลสินค้า','info'); return; } var p=PRODUCTS.find(function(x){return (x.name||'').trim()===name.trim()||(x.sku||'').trim()===name.trim();}); if(!p){ if(typeof toast==='function') toast('ไม่พบสินค้านี้ในระบบ NPD (พิมพ์ชื่อให้ตรง)','info'); return; } qtOpenState=false; var pn=document.getElementById('qt-panel'); if(pn) pn.classList.remove('open'); if(typeof openProcessSummary==='function'&&p.sku) openProcessSummary(p.sku); else if(typeof openTimeline==='function') openTimeline(PRODUCTS.indexOf(p)); };
+
+  window.qtSetPriority=function(n){ var el=document.getElementById('qt-f-priority'); if(el) el.value=n; var st=document.getElementById('qt-f-stars'); if(st){ [].forEach.call(st.children,function(c,i){ c.classList.toggle('on', i<n); }); } };
+  window.openQtEditor=function(id){
+    if(!canEdit()){ if(typeof toast==='function') toast('ปลดล็อกทีม/Content ก่อนจึงจะเพิ่ม/แก้งานได้','info'); return; }
+    qtEditId=id||null; var x=id?TASKS.find(function(t){return t.id===id;}):{}; x=x||{};
+    var picDl=(typeof PIC_NAMES!=='undefined'?PIC_NAMES:[]).map(function(n){return '<option value="'+e2(n)+'">';}).join('');
+    var prodDl=(typeof PRODUCTS!=='undefined'?PRODUCTS:[]).map(function(p){return '<option value="'+e2(p.name||'')+'">';}).join('');
+    var tagPick=DEF_TAGS.map(function(tg){return '<button type="button" class="qt-pick-chip" style="--tg:'+qtTagColor(tg)+'" onclick="qtAddTag(\''+aj(tg)+'\')">+ '+e2(tg)+'</button>';}).join('');
+    document.getElementById('qt-editor-title').textContent=id?'✏️ แก้ไขงาน':'➕ เพิ่มงานใหม่';
+    document.getElementById('qt-editor-body').innerHTML=
+      '<div class="pe-grid" style="grid-template-columns:1fr 1fr;">'
+      +'<div class="pe-field full"><label>ชื่องาน *</label><input type="text" id="qt-f-title" value="'+e2(x.title||'')+'" placeholder="เช่น ตัดต่อคลิปรีวิวลิป Halloween"></div>'
+      +'<div class="pe-field"><label>มอบให้ / ผู้ทำ</label><input type="text" id="qt-f-assignee" list="qt-dl-pic" value="'+e2(x.assignee||'')+'" placeholder="ชื่อคนทำ"><datalist id="qt-dl-pic">'+picDl+'</datalist></div>'
+      +'<div class="pe-field"><label>ความสำคัญ (1-3 ดาว)</label><div class="qt-stars" id="qt-f-stars"><span onclick="qtSetPriority(1)">★</span><span onclick="qtSetPriority(2)">★</span><span onclick="qtSetPriority(3)">★</span></div><input type="hidden" id="qt-f-priority" value="'+(x.priority||2)+'"></div>'
+      +'<div class="pe-field"><label>กำหนดวัน</label><input type="date" id="qt-f-due" value="'+e2(x.due||'')+'"></div>'
+      +'<div class="pe-field"><label>เวลา</label><input type="time" id="qt-f-duetime" value="'+e2(x.dueTime||'')+'"></div>'
+      +'<div class="pe-field full"><label>📦 สินค้า (เชื่อม NPD Process)</label><input type="text" id="qt-f-product" list="qt-dl-prod" value="'+e2(x.product||'')+'" placeholder="เลือก/พิมพ์ชื่อสินค้า (ถ้ามี)"><datalist id="qt-dl-prod">'+prodDl+'</datalist></div>'
+      +'<div class="pe-field full"><label>🏷️ แท็ก (คั่นด้วย ,)</label><input type="text" id="qt-f-tags" value="'+e2(x.tags||'')+'" placeholder="เช่น ด่วน, ตัดต่อ"><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;">'+tagPick+'</div></div>'
+      +'<div class="pe-field full"><label>โน้ต</label><textarea id="qt-f-note" placeholder="รายละเอียดเพิ่มเติม">'+e2(x.note||'')+'</textarea></div>'
+      +'</div>'
+      +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">'+(id?'<button class="btn-sm warn-ghost" style="flex:0 0 auto;margin-right:auto;" onclick="deleteQuickTask(\''+aj(id)+'\')">🗑 ลบ</button>':'')+'<button class="btn-sm ghost" onclick="closeQtEditor()">ยกเลิก</button><button class="btn-sm primary" onclick="saveQuickTask()">💾 บันทึก</button></div>';
+    qtSetPriority(x.priority||2);
+    document.getElementById('qt-editor-overlay').classList.add('open');
+  };
+  window.closeQtEditor=function(){ var el=document.getElementById('qt-editor-overlay'); if(el) el.classList.remove('open'); qtEditId=null; };
+  window.qtAddTag=function(tg){ var el=document.getElementById('qt-f-tags'); if(!el) return; var cur=el.value.split(',').map(function(s){return s.trim();}).filter(Boolean); if(cur.indexOf(tg)<0){cur.push(tg);el.value=cur.join(', ');} };
+  window.saveQuickTask=function(){
+    var g=function(id){return String((document.getElementById(id)||{}).value||'').trim();};
+    var title=g('qt-f-title'); if(!title){ if(typeof toast==='function') toast('ใส่ชื่องานก่อน','err'); return; }
+    var prev=qtEditId?TASKS.find(function(z){return z.id===qtEditId;}):null;
+    var t={ id: qtEditId || ('qt'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
+      title:title, assignee:g('qt-f-assignee'), priority:parseInt(g('qt-f-priority')||'2',10)||2, tags:g('qt-f-tags'),
+      due:g('qt-f-due'), dueTime:g('qt-f-duetime'), product:g('qt-f-product'), note:g('qt-f-note'),
+      done:prev?prev.done:'', createdBy:'', createdAt:(prev&&prev.createdAt)||(typeof todayStr==='function'?todayStr():''), updatedAt:(typeof todayStr==='function'?todayStr():'') };
+    var loc=qLocal(); var i=loc.findIndex(function(z){return z.id===t.id;}); if(i>-1) loc[i]=t; else loc.push(t); qSave(loc);
+    rebuild(); renderQuickTasks(); closeQtEditor(); if(typeof toast==='function') toast(qtEditId?'แก้ไขงานแล้ว':'เพิ่มงานแล้ว','ok'); qSync(t,'upsert');
+  };
+  window.deleteQuickTask=function(id){ if(!canEdit()) return; if(typeof window.confirm==='function'&&!window.confirm('ลบงานนี้?')) return; qSave(qLocal().filter(function(z){return z.id!==id;})); SHEET=SHEET.filter(function(z){return z.id!==id;}); rebuild(); renderQuickTasks(); closeQtEditor(); if(typeof toast==='function') toast('ลบงานแล้ว','ok'); qSync({id:id},'delete'); };
+
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ var ov=document.getElementById('qt-editor-overlay'); if(ov&&ov.classList.contains('open')){ closeQtEditor(); return; } if(qtOpenState){ qtToggle(); } } });
+  if(typeof loadQuickTasksFromSheet==='function'){ loadQuickTasksFromSheet().then(function(){ renderQuickTasks(); }).catch(function(){}); }
 })();
 </script>
 
