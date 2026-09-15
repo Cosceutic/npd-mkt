@@ -1387,6 +1387,12 @@
   #cc-card-body .cc-cd-loglist{margin:0;padding-left:16px;display:flex;flex-direction:column;gap:3px;}
   #cc-card-body .cc-cd-loglist li{font-size:12px;color:var(--ink-soft);line-height:1.45;}
   #cc-card-body .cc-cd-edit{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px;}
+  /* กว้างขึ้น + ช่องกรอกโปร่งขึ้นสำหรับหน้าต่างบรีฟงาน/แก้ไขการ์ด */
+  #cc-editor-body .pe-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:15px 20px;}
+  #cc-editor-body .pe-field label{font-size:12.5px;}
+  #cc-editor-body .pe-field input,#cc-editor-body .pe-field select,#cc-editor-body .pe-field textarea{font-size:14px;padding:10px 12px;}
+  #cc-editor-body .pe-field textarea{min-height:84px;}
+  @media(max-width:620px){ #cc-editor-body .pe-grid{grid-template-columns:1fr;} }
   </style>
   <div class="view" id="view-content">
     <div style="max-width:1220px;margin:0 auto;">
@@ -1466,13 +1472,13 @@
       </div>
     </div>
     <div class="modal-overlay" id="cc-editor-overlay" style="z-index:73;" onclick="if(event.target===this) closeContentIdeaEditor()">
-      <div class="modal-box" style="max-width:560px;width:96vw;">
+      <div class="modal-box" style="max-width:800px;width:96vw;">
         <div class="modal-header"><div class="mh-name" id="cc-editor-title">➕ เพิ่มไอเดียคอนเทนต์</div><button class="modal-close" onclick="closeContentIdeaEditor()">✕</button></div>
         <div class="modal-body" id="cc-editor-body" style="padding:16px 18px 22px;max-height:80vh;overflow:auto;"></div>
       </div>
     </div>
     <div class="modal-overlay" id="cc-card-overlay" style="z-index:74;" onclick="if(event.target===this) closeCardModal()">
-      <div class="modal-box" style="max-width:640px;width:96vw;">
+      <div class="modal-box" style="max-width:740px;width:96vw;">
         <div class="modal-header"><div class="mh-name" id="cc-card-title" style="min-width:0;">การ์ด</div><button class="modal-close" onclick="closeCardModal()">✕</button></div>
         <div class="modal-body" id="cc-card-body" style="padding:0;max-height:82vh;overflow:auto;"></div>
       </div>
