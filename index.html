@@ -8500,6 +8500,10 @@ function renderUpdateForm(){
     </div>
   </div>`;
   ueInitFormulaRows(pf); renderFormulaRows();   // R&D หลายสูตร
+  if(window.DraftGuard){   // เก็บร่างอัตโนมัติ + กู้คืนถ้าเผลอปิด
+    DraftGuard.bindAutoSave(document.getElementById('ue-form'), function(){ return ueEditId?null:'npd_update'; }, function(){ return {formulas: JSON.stringify(typeof ueFormulaRows!=='undefined'?ueFormulaRows:[])}; });
+    if(!ueEditId && (!pf || (!pf.sku && !pf.SKU)) && DraftGuard.load('npd_update')){ if(window.restoreNpdDraft()){ DraftGuard.hint(document.getElementById('ue-form'), window.discardNpdDraft); } }
+  }
   renderContinueBar();   // ถ้าเปิดฟอร์มมาพร้อม SKU (prefill) ก็โชว์งานที่ค้างเลย
 }
 /* Scope selector — decides whether an update applies to every SKU in the group
@@ -8599,6 +8603,7 @@ function saveMultiUpdateEntries(){
   const base=collectUpdateBase();
   if(!base.Detail){ toast('กรอกรายละเอียด (Detail) ก่อน','err'); return; }
   if(uploadNotReadyGuard()) return;
+  if(window.DraftGuard) DraftGuard.clear('npd_update');
   const arr=getUpdatesLocal();
   const rows=skus.map((sku,i)=>{
     const row=Object.assign({}, base, { SKU:sku, ProductName:(nameForSku(sku)||''), id:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+i });
@@ -8706,6 +8711,7 @@ function saveUpdateEntry(){
   if(!row.Detail){ toast('กรอกรายละเอียด (Detail) ก่อน','err'); return; }
   if(uploadNotReadyGuard()) return;
   if(!row.Date) row.Date=todayStr();
+  if(window.DraftGuard) DraftGuard.clear('npd_update');   // บันทึกจริงแล้ว → ล้างร่าง
   if(ueEditId){
     row.id = ueEditId;
     const arr=getUpdatesLocal(); const li=arr.findIndex(x=>x.id===ueEditId);
@@ -9512,6 +9518,10 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +'</div>'
       +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;"><button class="btn-sm ghost" onclick="closeContentIdeaEditor()">ยกเลิก</button><button class="btn-sm primary" onclick="saveContentCal()">💾 บันทึก</button></div>';
     document.getElementById('cc-editor-overlay').classList.add('open');
+    if(window.DraftGuard){   // เก็บร่างอัตโนมัติ + กู้คืนถ้าเผลอปิด
+      DraftGuard.bindAutoSave(document.getElementById('cc-editor-body'), function(){ return calEditId?null:'content_cal'; }, null);
+      if(!id && DraftGuard.load('content_cal')){ if(DraftGuard.restore('content_cal')){ DraftGuard.hint(document.getElementById('cc-editor-body'), function(){ DraftGuard.clear('content_cal'); window.openContentCalEditor(null); }); } }
+    }
   };
   window.calPickIdea=function(id){ if(!id) return; var z=(window.CONTENT_IDEAS||[]).find(function(i){return i.id===id;}); if(!z) return;
     var g=function(fid){return document.getElementById(fid);};
@@ -9543,6 +9553,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     ccRememberTags(item.tags);
     var local=calLocal(); var i=local.findIndex(function(z){return z.id===item.id;}); if(i>-1) local[i]=item; else local.push(item); calSaveLocal(local);
     rebuildCAL(); renderCalActive(); closeContentIdeaEditor();
+    if(window.DraftGuard) DraftGuard.clear('content_cal');
     if(typeof toast==='function') toast(calEditId?'แก้ไขโพสต์แล้ว':'เพิ่มโพสต์แล้ว','ok');
     calSync(item,'upsert');
   };
@@ -10488,5 +10499,102 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 })();
 </script>
 
+<script>
+/* ===== DraftGuard — เก็บร่างฟอร์มอัตโนมัติ กันข้อมูลหายเวลาเผลอปิด/คลิกนอกหน้าต่าง =====
+   ใช้กับฟอร์ม NPD (เพิ่มบันทึกความคืบหน้า) และ Content (เพิ่มโพสต์ลงปฏิทิน) */
+(function(){
+  var P='npd_draft_';
+  var DG={
+    snapshot:function(bodyEl){
+      var o={};
+      if(!bodyEl) return o;
+      bodyEl.querySelectorAll('input[id],select[id],textarea[id]').forEach(function(el){
+        if(el.type==='file') return;
+        if(el.type==='checkbox'||el.type==='radio') o[el.id]={c:!!el.checked, type:el.type};
+        else o[el.id]={v:el.value, type:el.type};
+      });
+      return o;
+    },
+    hasContent:function(snap){
+      return Object.keys(snap).some(function(id){
+        var f=snap[id];
+        if('c' in f) return f.c===true;
+        var ty=f.type||'';
+        if(ty==='date'||ty==='time'||ty==='hidden'||ty==='select-one'||ty==='select-multiple') return false;
+        return !!(f.v && String(f.v).trim().length>0);
+      });
+    },
+    save:function(k, bodyEl, extra){
+      try{
+        var snap=this.snapshot(bodyEl);
+        var hasFormula = extra && extra.formulas && /"(code|list|color|image)":"[^"]+"/.test(extra.formulas);
+        if(!this.hasContent(snap) && !hasFormula){ this.clear(k); return; }
+        var payload={t:Date.now(), fields:snap}; if(extra) payload.extra=extra;
+        localStorage.setItem(P+k, JSON.stringify(payload));
+      }catch(e){}
+    },
+    load:function(k){ try{ return JSON.parse(localStorage.getItem(P+k)||'null'); }catch(e){ return null; } },
+    clear:function(k){ try{ localStorage.removeItem(P+k); }catch(e){} },
+    restore:function(k){
+      var p=this.load(k); if(!p||!p.fields) return false;
+      var any=false;
+      Object.keys(p.fields).forEach(function(id){
+        var el=document.getElementById(id); if(!el) return;
+        var f=p.fields[id];
+        if('c' in f){ el.checked=f.c; } else { el.value=f.v; }
+        any=true;
+      });
+      return any;
+    },
+    bindAutoSave:function(bodyEl, keyFn, extraFn){
+      if(!bodyEl) return;
+      bodyEl.__dgKey=keyFn; bodyEl.__dgExtra=extraFn;
+      if(bodyEl.dataset.dgBound) return;
+      bodyEl.dataset.dgBound='1';
+      var t=null, self=this;
+      var h=function(){
+        if(t) clearTimeout(t);
+        t=setTimeout(function(){
+          var k=bodyEl.__dgKey?bodyEl.__dgKey():null; if(!k) return;
+          self.save(k, bodyEl, bodyEl.__dgExtra?bodyEl.__dgExtra():null);
+        },350);
+      };
+      bodyEl.addEventListener('input',h,true);
+      bodyEl.addEventListener('change',h,true);
+    },
+    hint:function(bodyEl, discardCall){
+      if(!bodyEl) return;
+      var d=document.createElement('div');
+      d.style.cssText='background:#FFF6E6;border:1px solid #F3D9A6;border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#B26A00;display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
+      d.innerHTML='<span>📝 กู้ร่างที่ยังไม่ได้บันทึกกลับมาให้แล้ว — พิมพ์ต่อได้เลย</span>';
+      var b=document.createElement('button'); b.type='button'; b.textContent='ล้างร่าง & เริ่มใหม่';
+      b.style.cssText='margin-left:auto;background:#fff;border:1px solid #E7C98A;color:#B26A00;border-radius:999px;padding:3px 12px;font-size:11.5px;font-weight:600;cursor:pointer;';
+      b.onclick=discardCall; d.appendChild(b);
+      bodyEl.insertBefore(d, bodyEl.firstChild);
+    }
+  };
+  window.DraftGuard=DG;
+
+  // กู้ร่างฟอร์ม NPD (ต้องคุม Track→หัวข้อ→Stage ให้ rebuild ตามลำดับ)
+  window.restoreNpdDraft=function(){
+    var p=DG.load('npd_update'); if(!p||!p.fields) return false;
+    var F=p.fields, gv=function(id){ return (F[id]&&('v' in F[id]))?F[id].v:null; };
+    var tsel=document.getElementById('ue-Track'), track=gv('ue-Track');
+    if(tsel && track!=null && track!=='') tsel.value=track;
+    var t=(tsel||{}).value||'';
+    var sub=gv('ue-SubCategory');
+    var sc=document.getElementById('ue-subcat-cell'); if(sc && typeof subcatCellHtml==='function') sc.innerHTML=subcatCellHtml(t, sub||'');
+    var rd=document.getElementById('ue-rd-fields'); if(rd) rd.style.display=(typeof normalizeTrack==='function'&&normalizeTrack(t)==='rd')?'':'none';
+    if(typeof refreshStageForSubcat==='function') refreshStageForSubcat();
+    var stage=gv('ue-Stage'), st=document.getElementById('ue-Stage');
+    if(st && stage!=null && stage!==''){ st.value=stage; if(st.value!==stage && st.tagName==='SELECT'){ var o=document.createElement('option'); o.value=stage; o.textContent=stage; st.appendChild(o); st.value=stage; } }
+    ['ue-Date','ue-Detail','ue-Note','ue-Images','ue-NextDue','ue-NextDueDetail','ue-PIC','ue-UpdatedBy','ue-Risk'].forEach(function(id){ var el=document.getElementById(id), v=gv(id); if(el && v!=null) el.value=v; });
+    var skuEl=document.getElementById('ue-SKU'), skuV=gv('ue-SKU'); if(skuEl && skuV!=null && skuV!=='') skuEl.value=skuV;
+    if(p.extra && p.extra.formulas && typeof ueFormulaRows!=='undefined'){ try{ var rows=JSON.parse(p.extra.formulas); if(Array.isArray(rows)&&rows.length){ ueFormulaRows=rows; if(typeof renderFormulaRows==='function') renderFormulaRows(); } }catch(e){} }
+    return true;
+  };
+  window.discardNpdDraft=function(){ DG.clear('npd_update'); if(typeof openUpdateEditor==='function') openUpdateEditor({}); };
+})();
+</script>
 </body>
 </html>
