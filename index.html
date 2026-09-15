@@ -2246,6 +2246,7 @@ function mapUpdateRow(r){
     formulaCode: (r.FormulaCode || r['Formula Code'] || '').trim(),
     formulaList: (r.FormulaList || r['Formula List'] || '').trim(),
     formulaColor: (r.FormulaColor || r['Formula Color'] || '').trim(),
+    formulas: ueParseFormulas(r.Formulas || r['Formulas'] || ''),
     id: (r.id || r.ID || '').trim(),
     _local: !!r._local,
   };
@@ -4345,17 +4346,21 @@ function processSummaryLogs(sku){
 function formulaSummaryTable(rdLogs){
   rdLogs = rdLogs || [];
   const APPROVED_RE = /อนุมัติสูตร|formulation approved/i;
+  // แต่ละ log อาจมีหลายสูตร (l.formulas พร้อมรูปต่อสูตร) หรือแบบเก่า (formulaCode คั่น , + รูปรวม)
+  const rowsOf = l => (l.formulas && l.formulas.length)
+      ? l.formulas
+      : String(l.formulaCode||'').split(',').map(c=>({code:(c||'').trim(), list:l.formulaList||'', color:l.formulaColor||'', image:l.imagesRaw||''}));
   const cfByCode = {};
-  rdLogs.forEach(l=>{ if(!l.formulaCode || !l.date || !APPROVED_RE.test(l.subCategory||'')) return;
-    l.formulaCode.split(',').map(c=>c.trim()).filter(Boolean).forEach(c=>{ if(!cfByCode[c]||l.date>cfByCode[c]) cfByCode[c]=l.date; }); });
+  rdLogs.forEach(l=>{ if(!l.date || !APPROVED_RE.test(l.subCategory||'')) return;
+    rowsOf(l).forEach(f=>{ const c=(f.code||'').trim(); if(c && (!cfByCode[c]||l.date>cfByCode[c])) cfByCode[c]=l.date; }); });
   const byCode={}, order=[];
-  rdLogs.forEach(l=>{ if(!l.formulaCode) return;
-    l.formulaCode.split(',').map(c=>c.trim()).filter(Boolean).forEach(code=>{
+  rdLogs.forEach(l=>{
+    rowsOf(l).forEach(f=>{ const code=(f.code||'').trim(); if(!code) return;
       if(!byCode[code]){ byCode[code]={list:'',color:'',img:'',recv:''}; order.push(code); }
       const b=byCode[code];
-      if(l.formulaList && !b.list) b.list=l.formulaList;
-      if(l.formulaColor && !b.color) b.color=l.formulaColor;
-      if(l.imagesRaw && !b.img) b.img=l.imagesRaw;
+      if(f.list && !b.list) b.list=f.list;
+      if(f.color && !b.color) b.color=f.color;
+      if(f.image && !b.img) b.img=f.image;
       if(l.date && (!b.recv || l.date<b.recv)) b.recv=l.date;
     });
   });
@@ -6650,10 +6655,14 @@ function toggleBriefForm(){
       const factoryBtn = key==='b'
         ? `<button class="brief-print-btn" onclick="event.stopPropagation(); printBriefPartBFactory()" style="margin-left:6px;">🏭 Print (Factory Form Style)</button>`
         : '';
+      const summaryBtn = key==='a'
+        ? `<button class="brief-print-btn" onclick="event.stopPropagation(); printBriefSummaryA()" style="margin-right:6px; background:var(--accent-deep,#D14E88); color:#fff; border-color:var(--accent-deep,#D14E88);">📄 Summary Print</button>`
+        : '';
       return `<div class="brief-part pc-${key}" id="brief-part-${key}">
         <div class="brief-part-head" onclick="toggleBriefPart('${key}')">
           <div><span class="brief-chevron">▸</span> <span class="brief-part-title">${esc(p.title)}</span> <span style="font-size:11px; color:var(--ink-soft); font-weight:400;">${esc(p.th)}</span></div>
           <div>
+            ${summaryBtn}
             <button class="brief-print-btn" onclick="event.stopPropagation(); printBriefPart('${key}')">🖨️ Print (Standard)</button>
             ${factoryBtn}
           </div>
@@ -6689,6 +6698,159 @@ const PART_COLORS = {
   e:{a:'#F5B2D3', ad:'#C24C8B', ap:'#FCEAF3', head:'#FEF4F9'},
   f:{a:'#9CDAE4', ad:'#1E8598', ap:'#E7F6F9', head:'#F1FBFD'},
 };
+// ===== A Product Brief — Summary Print (สรุปสวยๆ สำหรับปริ้น) =====
+function briefSummaryLaunch(v){
+  if(!v) return '';
+  const d=new Date(v+'T00:00:00');
+  if(isNaN(d)) return v;
+  return d.toLocaleDateString('en-US',{month:'short',year:'numeric'});
+}
+function printBriefSummaryA(){
+  // make sure Part A is rendered so localStorage-backed bfGet values are current
+  const bodyA=document.getElementById('brief-part-body-a');
+  if(bodyA && !bodyA.dataset.rendered){ bodyA.innerHTML=BRIEF_RENDERERS['a'](); bodyA.dataset.rendered='1'; }
+  const g=id=>String(bfGet(id)||'').trim();
+  const gL=id=>{ let v=g(id); if(v==='Other') v=g(id+'_other')||''; return v; };
+  const marr=id=>{ try{ return (typeof bfMultiGetArr==='function'?bfMultiGetArr(id):JSON.parse(bfGet(id)||'[]'))||[]; }catch(e){ return []; } };
+  const imgs=id=>{ try{ return (typeof imgListOf==='function'?imgListOf(id):[])||[]; }catch(e){ return []; } };
+
+  const dash='<span style="color:#B6BDC8;">—</span>';
+  const rowsHtml = pairs => pairs.map(([k,v])=>`<div class="kv-row"><span class="kv-k">${esc(k)}</span><span class="kv-c">:</span><span class="kv-v">${(v&&String(v).trim())?esc(v):dash}</span></div>`).join('');
+
+  const brand = (typeof brandToLabel==='function'?brandToLabel(g('a_brand')):g('a_brand'))||'Godmami';
+  const owner = marr('a_owner').join(' / ');
+  const channel = marr('a_channel').join(' / ');
+  const launch = briefSummaryLaunch(g('a_fgLaunch'));
+
+  const benefits=[g('a_benefit1'),g('a_benefit2'),g('a_benefit3')].filter(Boolean);
+  const benefitsHtml = benefits.length ? `<ul class="ov-list">${benefits.map(b=>`<li>${esc(b)}</li>`).join('')}</ul>` : dash;
+  const concept = g('a_concept');
+
+  const netW = [g('a_weight'), g('a_weightUnit')].filter(Boolean).join(' ');
+
+  // SKU list (ชื่อสี / appearance) — numbered 01, 02, ...
+  let skuRows=[]; try{ skuRows=JSON.parse(bfGet('a_skuDetail')||'[]'); }catch(e){}
+  const skuNames = skuRows.map(r=>String((r&&(r.color||r.appearance))||'').trim());
+  const skuFilled = skuNames.filter(Boolean);
+  const skuHtml = skuFilled.length
+    ? `<div class="sku-grid">${skuFilled.map((n,i)=>`<div class="sku-item"><span class="sku-no">${String(i+1).padStart(2,'0')}</span> ${esc(n)}</div>`).join('')}</div>`
+    : dash;
+
+  // Images (show if a section has them)
+  const imgTag = v => `<img src="${esc(typeof briefImgSrc==='function'?briefImgSrc(v):v)}" alt="">`;
+  const pkgImgs = imgs('a2_pkgFormImg');
+  const pkgImgHtml = pkgImgs.length ? `<div class="img-row">${pkgImgs.map(imgTag).join('')}</div>` : '';
+  let benchRows=[]; try{ benchRows=JSON.parse(bfGet('a_benchTable')||'[]'); }catch(e){}
+  const benchWithImg = benchRows.filter(r=>r && (r.img || r.name));
+  const benchHtml = benchWithImg.length ? `<div class="bench">${benchWithImg.map(r=>`<div class="bench-cell">${r.img?imgTag(r.img):''}<div class="bench-name">${esc(r.name||'')}</div></div>`).join('')}</div>` : '';
+
+  const remark = g('a_remark');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Product Brief — ${esc(g('a_projectName')||'')}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    @page{ margin:16mm 15mm; }
+    *{ box-sizing:border-box; }
+    body{ font-family:'Sarabun','Tahoma',Arial,sans-serif; color:#20262F; font-size:12.5px; line-height:1.55; margin:0; background:#fff; }
+    .doc{ max-width:720px; margin:0 auto; }
+    .doc-title{ font-family:'Prompt','Tahoma',sans-serif; font-weight:700; font-size:20px; letter-spacing:3px; text-align:center;
+      border:2px solid #20262F; border-radius:6px; padding:12px 8px; margin-bottom:22px; }
+    section{ margin-bottom:20px; break-inside:avoid; }
+    h2{ font-family:'Prompt','Tahoma',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:1.5px; text-transform:uppercase;
+      margin:0 0 4px; color:#111827; }
+    .rule{ border:0; border-top:1px solid #C9CFD8; margin:0 0 10px; }
+    .kv-row{ display:flex; align-items:baseline; margin-bottom:3px; }
+    .kv-k{ width:150px; flex:none; color:#4B5563; font-weight:600; }
+    .kv-c{ width:14px; flex:none; color:#9CA3AF; }
+    .kv-v{ flex:1; }
+    .blk{ margin-bottom:8px; }
+    .blk-h{ font-weight:600; color:#374151; margin-bottom:2px; }
+    .blk-b{ white-space:pre-wrap; }
+    .ov-list{ margin:2px 0 0; padding-left:18px; }
+    .ov-list li{ margin-bottom:2px; }
+    .sku-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:2px 24px; }
+    .sku-item{ } .sku-no{ display:inline-block; min-width:22px; color:#9CA3AF; font-weight:700; }
+    .img-row,.bench{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+    .img-row img{ max-width:150px; max-height:130px; border:1px solid #E2E8F0; border-radius:8px; }
+    .bench-cell{ text-align:center; font-size:11px; }
+    .bench-cell img{ max-width:130px; max-height:110px; border:1px solid #E2E8F0; border-radius:8px; display:block; }
+    .bench-name{ margin-top:3px; color:#4B5563; }
+    .remark-lines{ margin-top:6px; }
+    .remark-lines .ln{ border-bottom:1px solid #9CA3AF; height:20px; margin-bottom:10px; }
+    .sign{ margin-top:16px; }
+    .sign .ln{ display:inline-block; border-bottom:1px solid #374151; min-width:230px; }
+    .sign-row{ margin-bottom:14px; }
+    @media print{ body{ -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+  </style></head><body>
+  <div class="doc">
+    <div class="doc-title">PRODUCT BRIEF</div>
+
+    <section>
+      <h2>Project Information</h2><hr class="rule">
+      ${rowsHtml([
+        ['Project Name', g('a_projectName')],
+        ['NPR No.', g('a_nprNo')],
+        ['Brand', brand],
+        ['Owner', owner],
+        ['Launch Date', launch],
+        ['Sales Channel', channel]
+      ])}
+    </section>
+
+    <section>
+      <h2>Product Overview</h2><hr class="rule">
+      <div class="blk"><div class="blk-h">Concept</div><div class="blk-b">${concept?esc(concept):dash}</div></div>
+      <div class="blk"><div class="blk-h">Key Benefits</div>${benefitsHtml}</div>
+      ${benchHtml?`<div class="blk"><div class="blk-h">Benchmark / Reference</div>${benchHtml}</div>`:''}
+    </section>
+
+    <section>
+      <h2>Target Customer</h2><hr class="rule">
+      ${rowsHtml([
+        ['Age', g('a2_tcAge')],
+        ['Gender', g('a2_tcGender')],
+        ['User', g('a2_tcUser')]
+      ])}
+    </section>
+
+    <section>
+      <h2>Product Specification</h2><hr class="rule">
+      ${rowsHtml([
+        ['Category', g('a_catL1')],
+        ['Area', g('a_catL2')],
+        ['Product Type', gL('a_catL3')],
+        ['Texture', gL('a_catL4')],
+        ['Packaging', g('a2_pkgForm')],
+        ['Net Weight', netW]
+      ])}
+      ${pkgImgHtml}
+    </section>
+
+    <section>
+      <h2>SKU Information</h2><hr class="rule">
+      ${skuHtml}
+    </section>
+
+    <section>
+      <h2>Remark</h2><hr class="rule">
+      ${remark?`<div class="blk-b">${esc(remark)}</div>`:''}
+      <div class="remark-lines"><div class="ln"></div><div class="ln"></div></div>
+      <div class="sign">
+        <div class="sign-row">Approved By : <span class="ln"></span></div>
+        <div class="sign-row">Date : <span class="ln"></span></div>
+      </div>
+    </section>
+  </div>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  if(!win){ if(typeof toast==='function') toast('เบราว์เซอร์บล็อกป๊อปอัป — อนุญาต popup แล้วลองใหม่','err'); return; }
+  win.document.write(html);
+  win.document.close();
+  setTimeout(()=>{ try{ win.focus(); }catch(e){} win.print(); }, 450);
+}
+
 function printBriefPart(key){
   const col = PART_COLORS[key] || PART_COLORS.a;
   const body = document.getElementById('brief-part-body-'+key);
@@ -8168,6 +8330,84 @@ async function uploadUpdateFiles(inputEl){
 }
 // รายชื่อ PIC (ผู้รับผิดชอบงาน) — เลือกจาก dropdown หรือพิมพ์เองได้ (อื่นๆโปรดระบุ)
 const PIC_NAMES = ['มณ','นิ่ม','มีน','โดนัท','เดียร์','คูณ','ลิง','มิ้นท์','เหมียวGP','ไอซ์SC','ไอซ์GP','ข้าวหอม','พลอย','แพรว','คุณอ้น','คุณจ๋า','โบนัส','พีท','คุณยา','คุณกอล์ฟ','คุณเบส','ไนท์','ออม','แนน','สมายด์','เก็จ','โย','คิ้วท์'];
+// ===== R&D หลายสูตร + รูปต่อสูตร (repeatable formula rows) =====
+let ueFormulaRows = [];
+function ueParseFormulas(raw){
+  if(!raw) return [];
+  let arr = raw;
+  if(typeof raw === 'string'){ try{ arr = JSON.parse(raw); }catch(e){ return []; } }
+  if(!Array.isArray(arr)) return [];
+  return arr.map(function(r){ r=r||{}; return {code:String(r.code||'').trim(), list:String(r.list||'').trim(), color:String(r.color||'').trim(), image:String(r.image||'').trim()}; });
+}
+function ueInitFormulaRows(pf){
+  pf = pf || {};
+  let rows = ueParseFormulas(pf.Formulas);
+  if(!rows.length && (pf.FormulaCode||pf.FormulaList||pf.FormulaColor)){
+    const codes = String(pf.FormulaCode||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+    if(codes.length){ rows = codes.map(function(c){ return {code:c, list:String(pf.FormulaList||''), color:String(pf.FormulaColor||''), image:''}; }); }
+    else { rows = [{code:'', list:String(pf.FormulaList||''), color:String(pf.FormulaColor||''), image:''}]; }
+  }
+  if(!rows.length) rows = [{code:'', list:'', color:'', image:''}];
+  ueFormulaRows = rows;
+}
+function renderFormulaRows(){
+  const host = document.getElementById('ue-formula-rows'); if(!host) return;
+  host.innerHTML = ueFormulaRows.map(function(r,i){
+    const thumb = r.image ? (attachmentTiles(r.image,'sm') + '<button type="button" onclick="ueClearFormulaImage('+i+')" style="border:none;background:none;color:#C0392B;cursor:pointer;font-size:12px;">✕ ลบรูป</button>') : '';
+    const del = ueFormulaRows.length>1 ? '<button type="button" onclick="ueRemoveFormulaRow('+i+')" style="border:none;background:none;color:#C0392B;cursor:pointer;font-size:11.5px;">🗑 ลบสูตร</button>' : '';
+    return '<div style="background:#fff;border:1px solid #F3C6DD;border-radius:10px;padding:10px;margin-bottom:8px;">'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;"><span style="background:var(--accent-deep,#D14E88);color:#fff;font-size:11px;font-weight:700;border-radius:999px;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;">'+(i+1)+'</span><span style="font-size:11px;color:var(--ink-soft,#6B7684);">สูตรที่ '+(i+1)+'</span><span style="flex:1;"></span>'+del+'</div>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+      +   '<div style="flex:1;min-width:140px;"><label style="font-size:11px;font-weight:600;">รหัสสูตร / Trial No.</label><input type="text" value="'+esc(r.code||'')+'" oninput="ueSetFormula('+i+',\'code\',this.value)" placeholder="เช่น LA0304-1/23"></div>'
+      +   '<div style="flex:1;min-width:120px;"><label style="font-size:11px;font-weight:600;">รายการ (List)</label><input type="text" value="'+esc(r.list||'')+'" oninput="ueSetFormula('+i+',\'list\',this.value)" placeholder="เช่น Wonder"></div>'
+      +   '<div style="flex:1;min-width:120px;"><label style="font-size:11px;font-weight:600;">คำอธิบายสี</label><input type="text" value="'+esc(r.color||'')+'" oninput="ueSetFormula('+i+',\'color\',this.value)" placeholder="เช่น สีแดงหุ่น"></div>'
+      + '</div>'
+      + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px;">'
+      +   '<label class="btn-edit primary" style="cursor:pointer;font-size:11.5px;padding:5px 10px;">📎 แนบรูปสูตรนี้<input type="file" accept="image/*" style="display:none;" onchange="ueUploadFormulaImage(this,'+i+')"></label>'
+      +   '<span id="ue-frow-st-'+i+'" style="font-size:11px;color:var(--ink-soft,#6B7684);"></span>'
+      +   thumb
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+function ueSetFormula(i,field,val){ if(ueFormulaRows[i]) ueFormulaRows[i][field]=val; }
+function ueClearFormulaImage(i){ if(ueFormulaRows[i]){ ueFormulaRows[i].image=''; renderFormulaRows(); } }
+function ueAddFormulaRow(){ ueFormulaRows.push({code:'',list:'',color:'',image:''}); renderFormulaRows(); }
+function ueRemoveFormulaRow(i){ ueFormulaRows.splice(i,1); if(!ueFormulaRows.length) ueFormulaRows.push({code:'',list:'',color:'',image:''}); renderFormulaRows(); }
+async function ueUploadFormulaImage(inputEl, i){
+  const file = inputEl.files && inputEl.files[0]; if(!file) return;
+  const st = document.getElementById('ue-frow-st-'+i);
+  const cfg = getWriteConfig();
+  if(!cfg.url){ if(st){ st.textContent='❌ ยังไม่ได้ตั้ง Sheet Sync'; st.style.color='#C0392B'; } return; }
+  const sku = (document.getElementById('ue-SKU')||{}).value||'';
+  const folder = uploadFolderNameForSku(sku);
+  const parentId = uploadParentForSku(sku);
+  let folderId = getUploadFolderId(sku, parentId);
+  if(st){ st.textContent='⏳ กำลังอัปรูป…'; st.style.color='var(--ink-soft,#6B7684)'; }
+  try{
+    const dataUrl = await fileToUploadDataUrl(file);
+    const loc = folderId ? {parentId:folderId} : {parentId:parentId, folder:folder};
+    const r = await postReadable(Object.assign({action:'uploadImage', dataUrl:dataUrl, name:file.name}, loc));
+    if(r && r.ok && r.url){
+      if(ueFormulaRows[i]) ueFormulaRows[i].image = r.url;
+      if(r.folderId && !folderId) setUploadFolderId(sku, parentId, r.folderId);
+      if(st){ st.textContent='✅ อัปรูปสำเร็จ'; st.style.color='var(--ink-soft,#6B7684)'; }
+      renderFormulaRows();
+    } else { if(st){ st.textContent='❌ อัปไม่สำเร็จ — ลองใหม่ (เน็ตออฟฟิศบางทีตัดไฟล์ใหญ่)'; st.style.color='#C0392B'; } }
+  }catch(e){ if(st){ st.textContent='❌ อัปไม่สำเร็จ — ลองใหม่'; st.style.color='#C0392B'; } }
+  inputEl.value='';
+}
+function ueFormulasCollect(){
+  const rows = (ueFormulaRows||[]).map(function(r){ return {code:String(r.code||'').trim(), list:String(r.list||'').trim(), color:String(r.color||'').trim(), image:String(r.image||'').trim()}; })
+    .filter(function(r){ return r.code||r.list||r.color||r.image; });
+  return {
+    json: rows.length ? JSON.stringify(rows) : '',
+    codes: rows.map(function(r){return r.code;}).filter(Boolean).join(', '),
+    list: (rows.find(function(r){return r.list;})||{}).list || '',
+    color: (rows.find(function(r){return r.color;})||{}).color || ''
+  };
+}
+
 function renderUpdateForm(){
   const pf = uePrefill || {};
   const pfSku = pf.sku || pf.SKU || '';
@@ -8213,12 +8453,9 @@ function renderUpdateForm(){
     <div class="pe-field full" id="ue-rd-fields" style="display:${normalizeTrack(initTrack)==='rd'?'':'none'};">
       <div style="background:var(--accent-pale,#FDEAF3); border:1px solid #F3C6DD; border-radius:12px; padding:12px;">
         <div style="font-weight:600; color:var(--accent-deep,#D14E88); font-size:12.5px; margin-bottom:8px;">🧪 ข้อมูลสูตร (สำหรับตาราง “รวมทุกสูตร”)</div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <div style="flex:1; min-width:150px;"><label style="font-size:11.5px; font-weight:600;">รหัสสูตร / Trial No.</label><input type="text" id="ue-FormulaCode" value="${esc(pf.FormulaCode||'')}" placeholder="เช่น LA0304-1/23 · หลายรหัสคั่นด้วย ,"></div>
-          <div style="flex:1; min-width:130px;"><label style="font-size:11.5px; font-weight:600;">รายการ (List)</label><input type="text" id="ue-FormulaList" value="${esc(pf.FormulaList||'')}" placeholder="เช่น Wonder, Eye shadow"></div>
-          <div style="flex:1; min-width:130px;"><label style="font-size:11.5px; font-weight:600;">คำอธิบายสี</label><input type="text" id="ue-FormulaColor" value="${esc(pf.FormulaColor||'')}" placeholder="เช่น สีแดงหุ่น"></div>
-        </div>
-        <div style="font-size:11px; color:var(--ink-soft,#6B7684); margin-top:8px; line-height:1.5;">💡 กรอกรหัสสูตรทั้งในรายการ <b>“พัฒนาสูตร”</b> และ <b>“อนุมัติสูตร”</b> ที่เป็นสูตรเดียวกัน → ระบบจับคู่รหัสแล้วดึง <b>วันที่ CF</b> มาให้อัตโนมัติจากวันของรายการอนุมัติสูตร · ภาพประกอบใช้ช่อง “ไฟล์แนบ/รูป” ด้านล่าง</div>
+        <div id="ue-formula-rows"></div>
+        <button type="button" class="btn-edit" onclick="ueAddFormulaRow()" style="font-size:12px; padding:5px 12px; margin-top:2px;">➕ เพิ่มสูตร</button>
+        <div style="font-size:11px; color:var(--ink-soft,#6B7684); margin-top:8px; line-height:1.5;">💡 เพิ่มได้หลายสูตร แต่ละสูตรแนบรูปของตัวเองได้ · กรอกรหัสสูตรให้ตรงกันทั้งในรายการ <b>“พัฒนาสูตร”</b> และ <b>“อนุมัติสูตร”</b> → ระบบดึง <b>วันที่ CF</b> อัตโนมัติจากวันอนุมัติสูตร</div>
       </div>
     </div>
     <div class="pe-field"><label>PIC (ผู้รับผิดชอบ)</label><input type="text" id="ue-PIC" list="ue-pic-list" value="${esc(pf.PIC||'')}" placeholder="เลือกหรือพิมพ์ชื่อ (อื่นๆพิมพ์เองได้)"><datalist id="ue-pic-list">${picList}</datalist></div>
@@ -8237,6 +8474,7 @@ function renderUpdateForm(){
       </div>
     </div>
   </div>`;
+  ueInitFormulaRows(pf); renderFormulaRows();   // R&D หลายสูตร
   renderContinueBar();   // ถ้าเปิดฟอร์มมาพร้อม SKU (prefill) ก็โชว์งานที่ค้างเลย
 }
 /* Scope selector — decides whether an update applies to every SKU in the group
@@ -8277,6 +8515,7 @@ function refreshUpdateScope(){
 function collectUpdateBase(){
   const g=id=>String((document.getElementById('ue-'+id)||{}).value||'').trim();
   const nextDue=g('NextDue');
+  const F=ueFormulasCollect();
   return {
     Date:g('Date')||todayStr(),
     Track:g('Track'), SubCategory:g('SubCategory'), Stage:g('Stage'),
@@ -8287,10 +8526,11 @@ function collectUpdateBase(){
     NextDue:nextDue, 'Next Due':nextDue,
     // รายละเอียดของกำหนดถัดไป — แยกจาก Detail (งานรอบนี้); ต้องเพิ่มคอลัมน์ "Next Due Detail" ในชีตถึงจะซิงค์
     NextDueDetail:g('NextDueDetail'), 'Next Due Detail':g('NextDueDetail'),
-    // R&D: ข้อมูลสูตร — เพิ่มคอลัมน์ "Formula Code"/"Formula List"/"Formula Color" ในชีตถึงจะซิงค์ (วันที่ CF ดึงอัตโนมัติจากรายการอนุมัติสูตร)
-    FormulaCode:g('FormulaCode'), 'Formula Code':g('FormulaCode'),
-    FormulaList:g('FormulaList'), 'Formula List':g('FormulaList'),
-    FormulaColor:g('FormulaColor'), 'Formula Color':g('FormulaColor')
+    // R&D: ข้อมูลสูตร (หลายสูตร + รูปต่อสูตร) — Formulas(JSON) คือตัวหลัก; FormulaCode/List/Color เก็บไว้เผื่อ backward-compat + ดึงวันที่ CF (ต้องเพิ่มคอลัมน์ "Formulas" ในชีตถึงจะซิงค์รูปต่อสูตรข้ามเครื่อง)
+    Formulas:F.json,
+    FormulaCode:F.codes, 'Formula Code':F.codes,
+    FormulaList:F.list, 'Formula List':F.list,
+    FormulaColor:F.color, 'Formula Color':F.color
   };
 }
 function collectUpdateForm(){
@@ -8466,7 +8706,7 @@ function editUpdateEntry(id){
   // a group-scoped entry is stored under the group code — show a member SKU + scope=group so it edits cleanly
   const grpMode = isGroupCode(e.sku);
   const dispSku = grpMode ? (groupMembers(e.sku)[0] || e.sku) : e.sku;
-  openUpdateEditor({ sku:dispSku, scope: grpMode?'group':'sku', trackLabel:e.trackRaw||'', SubCategory:e.subCategory, Stage:e.stage, Date:e.date, UpdatedBy:e.updatedBy, PIC:e.pic, Risk:e.risk, NextDue:e.nextDue, NextDueDetail:e.nextDueDetail, FormulaCode:e.formulaCode, FormulaList:e.formulaList, FormulaColor:e.formulaColor, Detail:e.detail, Note:e.note, Images:e.imagesRaw||'' }, id);
+  openUpdateEditor({ sku:dispSku, scope: grpMode?'group':'sku', trackLabel:e.trackRaw||'', SubCategory:e.subCategory, Stage:e.stage, Date:e.date, UpdatedBy:e.updatedBy, PIC:e.pic, Risk:e.risk, NextDue:e.nextDue, NextDueDetail:e.nextDueDetail, Formulas:(e.formulas&&e.formulas.length)?JSON.stringify(e.formulas):'', FormulaCode:e.formulaCode, FormulaList:e.formulaList, FormulaColor:e.formulaColor, Detail:e.detail, Note:e.note, Images:e.imagesRaw||'' }, id);
 }
 function deleteUpdateEntry(id){
   if(!confirm('ลบบันทึกนี้ออกจาก Updates Log?')) return;
