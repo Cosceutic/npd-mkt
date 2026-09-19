@@ -2150,7 +2150,8 @@ function sbRenderAuthBtn(){
     b.style.cssText='position:fixed;right:16px;bottom:16px;z-index:99999;padding:8px 14px;border-radius:999px;border:none;background:#b0356a;color:#fff;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer;';
     document.body.appendChild(b); }
   const email = SB_SESSION && SB_SESSION.user && SB_SESSION.user.email;
-  b.textContent = sbLoggedIn() ? ('✓ '+(email||'ล็อกอิน')+' · ออก') : '🔑 เข้าสู่ระบบเพื่อแก้ข้อมูล';
+  b.textContent = sbLoggedIn() ? ('✏️ แก้ไขได้: '+(email||'ล็อกอิน')+' · ออกจากระบบ') : '👁 โหมดดูอย่างเดียว — แตะเพื่อเข้าสู่ระบบแก้ไข';
+  b.style.background = sbLoggedIn() ? '#127a4a' : '#b0356a';
 }
 function sbAuthClick(){ if(sbLoggedIn()){ if(confirm('ออกจากระบบ?')) sbLogout(); return; } sbShowLoginModal(); }
 function sbShowLoginModal(){
@@ -4962,7 +4963,7 @@ function lockTeam(){
   try{ sessionStorage.removeItem('npdUnlocked'); }catch(e){}
   applyTeamLockState(false);
 }
-function isTeamUnlocked(){ try{ return (typeof sbLoggedIn==='function' && sbLoggedIn()) || sessionStorage.getItem('npdUnlocked')==='1'; }catch(e){ return false; } }
+function isTeamUnlocked(){ try{ return (typeof sbLoggedIn==='function' && sbLoggedIn()); }catch(e){ return false; } }
 function applyTeamLockState(unlocked){
   const lock = document.getElementById('team-lock');
   const content = document.getElementById('team-content');
@@ -6678,10 +6679,8 @@ async function loadBriefFromCloud(nprNo){
   toast('เปิดบรีฟ "'+nprNo+'" แล้ว','ok');
 }
 async function deleteBriefFromCloud(nprNo){
+  if(!(typeof sbLoggedIn==='function' && sbLoggedIn())){ toast('กรุณาเข้าสู่ระบบก่อนลบ','info'); if(typeof sbShowLoginModal==='function') sbShowLoginModal(); return; }
   if(!confirm('ลบบรีฟ "'+nprNo+'" ออกจากระบบกลาง?')) return;
-  const pass = prompt('ยืนยันการลบ — ใส่รหัสผ่าน:');
-  if(pass===null) return;
-  if(pass !== TEAM_PASSCODE){ toast('รหัสผ่านไม่ถูกต้อง','err'); return; }
   try{
     const r = await postReadable({action:'delete', target:'briefs', keyValue:nprNo});
     if(r && r.ok){ toast('ลบบรีฟแล้ว','ok'); fetchSavedBriefs().then(renderSavedBriefsList); }
@@ -7359,16 +7358,14 @@ function renderAll(){
 /* ---------- edit-mode gate (reuses the team passcode) ---------- */
 function toggleEditMode(){
   if(EDIT_MODE){ EDIT_MODE=false; renderAll(); toast('ออกจากโหมดแก้ไขแล้ว','info'); return; }
-  let unlocked=false; try{ unlocked = sessionStorage.getItem('npdUnlocked')==='1'; }catch(e){}
-  const sbOn = (typeof sbLoggedIn==='function' && sbLoggedIn());
-  if(!unlocked && !sbOn){
-    const pass = prompt('ใส่รหัสผ่านทีม NPD เพื่อเข้าโหมดแก้ไข:');
-    if(pass===null) return;
-    if(pass!==TEAM_PASSCODE){ toast('รหัสผ่านไม่ถูกต้อง','err'); return; }
-    try{ sessionStorage.setItem('npdUnlocked','1'); }catch(e){}
+  // ประตูเดียว: แก้ไขต้องเข้าสู่ระบบก่อน (ทุกการบันทึกจะขึ้น Supabase ให้ทีมเห็นเสมอ)
+  if(!(typeof sbLoggedIn==='function' && sbLoggedIn())){
+    toast('กรุณาเข้าสู่ระบบก่อนจึงจะแก้ไขได้ · แก้แล้วทีมจะเห็นตรงกัน','info');
+    if(typeof sbShowLoginModal==='function') sbShowLoginModal();
+    return;
   }
   EDIT_MODE=true; renderAll();
-  toast('เข้าโหมดแก้ไขแล้ว — เพิ่ม/แก้/ลบ สินค้าได้เลย','ok');
+  toast('เข้าโหมดแก้ไขแล้ว — เพิ่ม/แก้/ลบ ได้เลย','ok');
 }
 
 function updateEditControls(){
@@ -9189,19 +9186,15 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   var CONTENT_PASSCODE='content!';
   function ccIsUnlocked(){ try{ return sessionStorage.getItem('ccUnlocked')==='1'; }catch(e){ return false; } }
   function teamUnlocked(){ return (typeof isTeamUnlocked==='function') && isTeamUnlocked(); }
-  function unlocked(){ return teamUnlocked() || ccIsUnlocked(); }
+  function unlocked(){ return teamUnlocked(); }   // ประตูเดียว = เข้าสู่ระบบ (Supabase)
   window.ccUnlock=function(){
-    var p=window.prompt('ใส่รหัสผ่านเพื่อแก้ไขหน้า Content:',''); if(p===null) return;
-    if(String(p).trim()===CONTENT_PASSCODE){ try{ sessionStorage.setItem('ccUnlocked','1'); }catch(e){} if(typeof toast==='function') toast('ปลดล็อกหน้า Content แล้ว 🔓','ok'); ccUpdateLockBtn(); renderContentCreator(); }
-    else if(typeof toast==='function') toast('รหัสผ่านไม่ถูกต้อง','err');
+    if(typeof toast==='function') toast('กรุณาเข้าสู่ระบบ (ปุ่มมุมขวาล่าง) เพื่อแก้ไข · แก้แล้วทีมจะเห็นตรงกัน','info');
+    if(typeof sbShowLoginModal==='function') sbShowLoginModal();
   };
-  window.ccLock=function(){ try{ sessionStorage.removeItem('ccUnlocked'); }catch(e){} if(typeof toast==='function') toast('ล็อกหน้า Content แล้ว 🔒','ok'); ccUpdateLockBtn(); renderContentCreator(); };
-  window.ccLockBtnClick=function(){ if(ccIsUnlocked()) ccLock(); else ccUnlock(); };
-  function ccUpdateLockBtn(){ var b=document.getElementById('cc-lock-btn'); if(!b) return;
-    if(ccIsUnlocked()){ b.textContent='🔒 ล็อกหน้า Content'; b.classList.remove('primary'); b.style.display=''; }
-    else if(teamUnlocked()){ b.style.display='none'; }              // ปลดล็อกด้วยรหัสทีมอยู่แล้ว
-    else { b.textContent='🔓 ปลดล็อกแก้ไข'; b.classList.add('primary'); b.style.display=''; }
-  }
+  window.ccLock=function(){ if(typeof sbAuthClick==='function') sbAuthClick(); };
+  window.ccLockBtnClick=function(){ if(typeof sbAuthClick==='function') sbAuthClick(); };
+  // รวมเป็นปุ่มล็อกอินเดียว (มุมขวาล่าง) — ซ่อนปุ่มปลดล็อกเฉพาะหน้า Content เพื่อลดความสับสน
+  function ccUpdateLockBtn(){ var b=document.getElementById('cc-lock-btn'); if(!b) return; b.style.display='none'; }
   window.ccUpdateLockBtn=ccUpdateLockBtn;
   function ciLocal(){try{return JSON.parse(localStorage.getItem(LKEY))||[];}catch(e){return [];}}
   function ciSaveLocal(a){try{localStorage.setItem(LKEY,JSON.stringify(a));}catch(e){}}
