@@ -818,11 +818,10 @@
       <button class="btn-edit ghost" id="btn-edit-unlock" onclick="toggleEditMode()">🔓 โหมดแก้ไข</button>
       <button class="btn-edit primary" id="btn-add-product" onclick="openProductEditor()" style="display:none;">➕ เพิ่มสินค้า</button>
       <button class="btn-edit ghost" id="btn-refresh" onclick="refreshFromSheet()" style="display:none;">🔄 รีเฟรช</button>
-      <button class="btn-edit ghost" id="btn-push" onclick="pushPendingToSheet()" style="display:none;">⬆️ ส่งที่ค้างขึ้น Sheet</button>
+      <button class="btn-edit ghost" id="btn-push" onclick="pushPendingToSheet()" style="display:none;">⬆️ ส่งที่ค้างขึ้น Supabase</button>
       <button class="btn-edit ghost" id="btn-export" onclick="exportProductsCsv()" style="display:none;">⬇️ Export CSV</button>
       <button class="btn-edit ghost" id="btn-notices" onclick="openNoticeManager()" style="display:none;">📢 จัดการประกาศ</button>
       <button class="btn-edit danger" id="btn-clear-local" onclick="clearLocalEdits()" style="display:none;">🧹 ล้างที่แก้ในเครื่อง</button>
-      <button class="btn-edit ghost" id="btn-sync-setup" onclick="openSyncSetup()" style="display:none;">⚙️ เข้าสู่ระบบ</button>
     </div>
     <div class="brand-filter-bar" id="catalog-brand-bar"></div>
     <div style="margin-bottom:10px;"><input type="text" id="catalog-search" class="catalog-search" oninput="renderCatalog()" placeholder="🔍 ค้นหาสินค้า (ชื่อ / SKU / บาร์โค้ด / Collection)"></div>
@@ -7612,7 +7611,7 @@ function saveProduct(){
 
 function deleteProduct(sku){
   const p = PRODUCTS.find(x=>x.sku===sku);
-  if(!confirm('ลบสินค้า "'+((p&&p.name)||sku)+'" ?\nถ้าตั้ง Sheet Sync ไว้ จะลบออกจาก Supabase ด้วย')) return;
+  if(!confirm('ลบสินค้า "'+((p&&p.name)||sku)+'" ?\nถ้าเข้าสู่ระบบไว้ จะลบออกจาก Supabase ด้วย')) return;
   const inSheet = SHEET_ROWS.some(r=>(r.sku||'').trim()===sku);
   const store=getPendingStore();
   delete store.edits[sku];
@@ -7706,7 +7705,7 @@ async function pushPendingToSheet(){
   const nCnt=Object.keys(nStore.edits).length + nStore.appends.length + nStore.deletes.length;
   const total=edits.length+dels.length+uCnt+tCnt+nCnt;
   if(!total){ toast('ไม่มีรายการค้าง','info'); return; }
-  toast('กำลังส่ง '+total+' รายการขึ้น Sheet…','info');
+  toast('กำลังส่ง '+total+' รายการขึ้น Supabase…','info');
   let rejected=0, firstErr='';
   const chk = r => { if(r && r.ok===false){ rejected++; if(!firstErr) firstErr = r.error||'ไม่ทราบสาเหตุ'; } };
   try{
@@ -7781,7 +7780,7 @@ function unsyncedProductsReport(){
     const base=(SHEET_ROWS||[]).find(function(r){ return (r.sku||'').trim()===sku; });
     let fields='';
     if(base){ const diff=Object.keys(row).filter(function(k){ return k!=='sku'&&k!=='image'&&normFieldForCompare(k,row[k])!==normFieldForCompare(k,base[k]); }); if(diff.length) fields=' → แก้ช่อง: '+diff.join(', '); }
-    else { fields=' → สินค้าใหม่ (ยังไม่อยู่ใน Sheet)'; }
+    else { fields=' → สินค้าใหม่ (ยังไม่อยู่ใน Supabase)'; }
     return sku+(nm?(' ('+nm+')'):'')+fields;
   });
 }
@@ -7803,7 +7802,7 @@ async function checkSheetHealth(){
     if(pc>0){
       banner.style.display='';
       banner.style.background='#FEF3C7'; banner.style.color='#92400E'; banner.style.borderBottomColor='#F0C040';
-      banner.innerHTML = `💾 เครื่องนี้มีข้อมูล <b>${pc}</b> รายการที่ยัง<b>ไม่ขึ้น Supabase</b> — คนอื่นจะยังไม่เห็น&nbsp; <button onclick="showUnsyncedProducts()" style="background:#fff; color:#92400E; border:1px solid #92400E; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">📋 ดูว่าตัวไหน</button>&nbsp; <button onclick="flushPendingNow()" style="background:#92400E; color:#fff; border:none; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">⬆️ ส่งขึ้น Sheet เลย</button>`;
+      banner.innerHTML = `💾 เครื่องนี้มีข้อมูล <b>${pc}</b> รายการที่ยัง<b>ไม่ขึ้น Supabase</b> — คนอื่นจะยังไม่เห็น&nbsp; <button onclick="showUnsyncedProducts()" style="background:#fff; color:#92400E; border:1px solid #92400E; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">📋 ดูว่าตัวไหน</button>&nbsp; <button onclick="flushPendingNow()" style="background:#92400E; color:#fff; border:none; border-radius:6px; padding:4px 12px; font-weight:700; cursor:pointer;">⬆️ ส่งขึ้น Supabase เลย</button>`;
     } else {
       banner.style.display='none';
     }
@@ -7876,9 +7875,9 @@ async function flushPendingNow(){
     const bySku={}; (SHEET_ROWS||[]).forEach(r=>{ const k=(r.sku||'').trim(); if(k) bySku[k]=r; });
     const diag=Object.keys(ps2.edits).slice(0,4).map(sku=>{
       const s=bySku[sku];
-      if(!s) return sku+' → ยังไม่อยู่ใน Sheet';
+      if(!s) return sku+' → ยังไม่อยู่ใน Supabase';
       const d=PRODUCT_COLUMNS.filter(c=>c!=='image').find(c=>{ let a=String(ps2.edits[sku][c]||'').trim(), b=String(s[c]||'').trim(); if(/_deadline$|_actual$/.test(c)||c==='exp'||c==='saleHaltDate'){ a=parseSheetDate(a)||a; b=parseSheetDate(b)||b; } else if(c==='category'||c==='type'||c==='brand'){ a=a.toLowerCase(); b=b.toLowerCase(); } return a!==b; });
-      return sku+(d?(' → ต่างที่ '+d):' → ตรง (รอ Sheet)');
+      return sku+(d?(' → ต่างที่ '+d):' → ตรง (รอ Supabase)');
     }).join(' · ');
     const sizeNote = ` · [ข้อมูลส่งใหญ่สุด ${maxBody.toLocaleString()} ตัว · รูปในเครื่องยาวสุด ${maxImg.toLocaleString()} ตัว]`;
     console.log('[flush] ยังไม่ยืนยัน:', diag, '| maxBody=', maxBody, 'maxImg=', maxImg);
@@ -8110,7 +8109,7 @@ function saveSyncConfig(){
   if(url && !/\/exec$/.test(url)){ if(!confirm('URL ปกติควรลงท้ายด้วย /exec — บันทึกต่อไหม?')) return; }
   try{ localStorage.setItem('npd_write_cfg', JSON.stringify({url, token})); }catch(e){}
   updateSyncStatus(); updateEditControls();
-  toast(url?'บันทึกการตั้งค่าแล้ว ✓ พร้อมซิงค์กับ Sheet':'ล้างค่าปลายทางแล้ว','ok');
+  toast(url?'บันทึกการตั้งค่าแล้ว ✓ พร้อมซิงค์กับ Supabase':'ล้างค่าปลายทางแล้ว','ok');
   closeSyncSetup();
 }
 function clearSyncConfig(){
@@ -8848,7 +8847,7 @@ function saveUpdateEntry(){
   }
 }
 function editUpdateEntry(id){
-  const e=UPDATE_LOGS.find(x=>x.id===id); if(!e){ toast('ไม่พบบันทึก (บันทึกเก่าที่ไม่มี id แก้ได้ใน Sheet เท่านั้น)','err'); return; }
+  const e=UPDATE_LOGS.find(x=>x.id===id); if(!e){ toast('ไม่พบบันทึก (บันทึกเก่าที่ไม่มี id แก้ได้ใน Supabase โดยตรงเท่านั้น)','err'); return; }
   closeTrackLog();
   // a group-scoped entry is stored under the group code — show a member SKU + scope=group so it edits cleanly
   const grpMode = isGroupCode(e.sku);
@@ -8866,7 +8865,7 @@ function deleteUpdateEntry(id){
 }
 // Delete a local-only entry (no id, never synced to Sheet) matched by its signature.
 function deleteLocalUpdateEntry(sig){
-  if(!confirm('ลบบันทึกนี้ออก?\n(เป็นบันทึกที่อยู่ในเครื่องนี้เท่านั้น ยังไม่ได้ส่งขึ้น Sheet)')) return;
+  if(!confirm('ลบบันทึกนี้ออก?\n(เป็นบันทึกที่อยู่ในเครื่องนี้เท่านั้น ยังไม่ได้ส่งขึ้น Supabase)')) return;
   saveUpdatesLocal(getUpdatesLocal().filter(r=>updateSig(r)!==sig));
   rebuildUpdateLogs();
   renderTeamUpdates(); updateSyncStatus(); updateEditControls();
@@ -9144,7 +9143,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
         var m=body.querySelector('#ofc-msgin').value.trim();
         var shared=await ofcSaveStatus(p.n,selE,m);
         renderOffice();
-        ofcToast(shared?'บันทึกแล้ว · ทั้งทีมเห็นเมื่อรีเฟรช 💖':'บันทึกในเครื่องแล้ว · (ตั้ง ⚙️ Sheet Sync เพื่อแชร์ทีม)');
+        ofcToast(shared?'บันทึกแล้ว · ทั้งทีมเห็นเมื่อรีเฟรช 💖':'บันทึกในเครื่องแล้ว · (เข้าสู่ระบบเพื่อแชร์ทีม)');
         closeOfficeSheet();
       });
       body.querySelector('#ofc-clrbtn').addEventListener('click',async function(){
