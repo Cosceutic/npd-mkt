@@ -3706,7 +3706,7 @@ function normBannerRow(r){
   return {
     id:(r.id||r.ID||'').trim(),
     brand: normalizeBrand((r.brand||r.Brand||'').trim()),   // '' = ทุกแบรนด์
-    image: resolveDriveThumbnail((r.image||r.Image||'').trim()) || (r.image||r.Image||'').trim(),
+    image: resolveDriveLink((r.image||r.Image||'').trim()) || (r.image||r.Image||'').trim(),
     title:(r.title||r.Title||'').trim(),
     caption:(r.caption||r.Caption||'').trim(),
     link:(r.link||r.Link||'').trim(),
