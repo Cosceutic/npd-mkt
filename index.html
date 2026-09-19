@@ -7633,8 +7633,8 @@ function deleteProduct(sku){
 async function postToSheet(payload){
   await sbInit();
   if(!sbLoggedIn()) return { ok:false, error:'ยังไม่ได้เข้าสู่ระบบ (กดปุ่มเข้าสู่ระบบ มุมขวาล่าง)' };
-  const TBL = { products:'products', updates:'updates', task:'tasks', notice:'notice', officestatus:'office', events:'events', banners:'banners', briefs:'briefs' };
-  const KEY = { products:'sku', notice:'Message', task:'รายละเอียดงาน', officestatus:(payload.key||'name'), events:'id', banners:'id', briefs:'nprNo' };
+  const TBL = { products:'products', updates:'updates', task:'tasks', notice:'notice', officestatus:'office', events:'events', banners:'banners', briefs:'briefs', contentideas:'content_ideas', contentcal:'content_calendar', contentcomments:'content_comments', contentmusthave:'content_musthave', brandidentity:'brand_identity', hashtags:'hashtags', quicktasks:'quick_tasks' };
+  const KEY = { products:'sku', notice:'Message', task:'รายละเอียดงาน', officestatus:(payload.key||'name'), events:'id', banners:'id', briefs:'nprNo', contentideas:'id', contentcal:'id', contentcomments:'id', contentmusthave:'id', brandidentity:'id', hashtags:'id', quicktasks:'id' };
   const table = TBL[payload.target];
   if(!table) return { ok:false, error:'unknown target: '+payload.target };
   const key = KEY[payload.target];
@@ -9221,9 +9221,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   }
   window.loadContentIdeasFromSheet=async function(){
     try{
-      var res=await fetch(CSV+'&_cb='+Date.now(),{cache:'no-store'}); var csv=await res.text();
-      var ok=/(^|,)\s*"?id"?\s*(,|$)/im.test(csv)&&/(^|,)\s*"?title"?\s*(,|$)/im.test(csv);
-      SHEET_ROWS_CI = (ok && typeof parseCsvByHeader==='function') ? parseCsvByHeader(csv,['id','title']).map(normCI).filter(function(b){return b.id&&b.title;}) : [];
+      SHEET_ROWS_CI = (await sbSelect('content_ideas')).map(normCI).filter(function(b){return b.id&&b.title;});
     }catch(e){ SHEET_ROWS_CI=[]; }
     var sheetSig={}; SHEET_ROWS_CI.forEach(function(b){ sheetSig[b.id]=ciSig(b); });
     var local=ciLocal(); var kept=local.filter(function(b){ var nb=normCI(b); var s=sheetSig[nb.id]; return !(s && s===ciSig(nb)); });
@@ -9417,9 +9415,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   }
   window.loadContentCalFromSheet=async function(){
     try{
-      var res=await fetch(CAL_CSV+'&_cb='+Date.now(),{cache:'no-store'}); var csv=await res.text();
-      var ok=/(^|,)\s*"?id"?\s*(,|$)/im.test(csv)&&/(^|,)\s*"?date"?\s*(,|$)/im.test(csv)&&/(^|,)\s*"?title"?\s*(,|$)/im.test(csv);
-      SHEET_ROWS_CAL = (ok && typeof parseCsvByHeader==='function') ? parseCsvByHeader(csv,['id','date']).map(normCAL).filter(function(b){return b.id&&b.date&&b.title;}) : [];
+      SHEET_ROWS_CAL = (await sbSelect('content_calendar')).map(normCAL).filter(function(b){return b.id&&b.date&&b.title;});
     }catch(e){ SHEET_ROWS_CAL=[]; }
     var sheetSig={}; SHEET_ROWS_CAL.forEach(function(b){ sheetSig[b.id]=calSig(b); });
     var local=calLocal(); var kept=local.filter(function(b){ var nb=normCAL(b); var s=sheetSig[nb.id]; return !(s && s===calSig(nb)); });
@@ -9846,9 +9842,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   }
   window.loadCommentsFromSheet=async function(){
     try{
-      var res=await fetch(CM_CSV+'&_cb='+Date.now(),{cache:'no-store'}); var csv=await res.text();
-      var ok=/(^|,)\s*"?id"?\s*(,|$)/im.test(csv)&&/(^|,)\s*"?cardId"?\s*(,|$)/im.test(csv);
-      SHEET_ROWS_CM = (ok && typeof parseCsvByHeader==='function') ? parseCsvByHeader(csv,['id','cardId']).map(normCM).filter(function(b){return b.id&&b.cardId;}) : [];
+      SHEET_ROWS_CM = (await sbSelect('content_comments')).map(normCM).filter(function(b){return b.id&&b.cardId;});
     }catch(e){ SHEET_ROWS_CM=[]; }
     var sheetSig={}; SHEET_ROWS_CM.forEach(function(b){ sheetSig[b.id]=cmSig(b); });
     var local=cmLocal(); var kept=local.filter(function(b){ var nb=normCM(b); var s=sheetSig[nb.id]; return !(s && s===cmSig(nb)); });
@@ -10050,9 +10044,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   }
   window.loadMustHaveFromSheet=async function(){
     try{
-      var res=await fetch(MH_CSV+'&_cb='+Date.now(),{cache:'no-store'}); var csv=await res.text();
-      var ok=/(^|,)\s*"?id"?\s*(,|$)/im.test(csv)&&/(^|,)\s*"?item"?\s*(,|$)/im.test(csv);
-      SHEET_ROWS_MH = (ok && typeof parseCsvByHeader==='function') ? parseCsvByHeader(csv,['id','item']).map(normMH).filter(function(b){return b.id&&b.item;}) : [];
+      SHEET_ROWS_MH = (await sbSelect('content_musthave')).map(normMH).filter(function(b){return b.id&&b.item;});
     }catch(e){ SHEET_ROWS_MH=[]; }
     var sheetSig={}; SHEET_ROWS_MH.forEach(function(b){ sheetSig[b.id]=mhSig(b); });
     var local=mhLocal(); var kept=local.filter(function(b){ var nb=normMH(b); var s=sheetSig[nb.id]; return !(s && s===mhSig(nb)); });
@@ -10231,9 +10223,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   }
   window.loadBrandIdFromSheet=async function(){
     try{
-      var res=await fetch(BI_CSV+'&_cb='+Date.now(),{cache:'no-store'}); var csv=await res.text();
-      var ok=/(^|,)\s*"?id"?\s*(,|$)/im.test(csv)&&/(^|,)\s*"?positioning"?\s*(,|$)/im.test(csv);
-      SHEET_ROWS_BI = (ok && typeof parseCsvByHeader==='function') ? parseCsvByHeader(csv,['id']).map(normBI).filter(function(b){return b.id;}) : [];
+      SHEET_ROWS_BI = (await sbSelect('brand_identity')).map(normBI).filter(function(b){return b.id;});
     }catch(e){ SHEET_ROWS_BI=[]; }
     var sheetSig={}; SHEET_ROWS_BI.forEach(function(b){ sheetSig[b.id]=biSig(b); });
     var local=biLocal(); var kept=local.filter(function(b){ var nb=normBI(b); var s=sheetSig[nb.id]; return !(s && s===biSig(nb)); });
@@ -10349,9 +10339,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   }
   window.loadHashtagsFromSheet=async function(){
     try{
-      var res=await fetch(HT_CSV+'&_cb='+Date.now(),{cache:'no-store'}); var csv=await res.text();
-      var ok=/(^|,)\s*"?id"?\s*(,|$)/im.test(csv)&&/(^|,)\s*"?groupName"?\s*(,|$)/im.test(csv);
-      SHEET_ROWS_HT = (ok && typeof parseCsvByHeader==='function') ? parseCsvByHeader(csv,['id','groupName']).map(normHT).filter(function(b){return b.id&&b.groupName;}) : [];
+      SHEET_ROWS_HT = (await sbSelect('hashtags')).map(normHT).filter(function(b){return b.id&&b.groupName;});
     }catch(e){ SHEET_ROWS_HT=[]; }
     var sheetSig={}; SHEET_ROWS_HT.forEach(function(b){ sheetSig[b.id]=htSig(b); });
     var local=htLocal(); var kept=local.filter(function(b){ var nb=normHT(b); var s=sheetSig[nb.id]; return !(s && s===htSig(nb)); });
@@ -10492,9 +10480,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function sig(b){ return [b.title,b.assignee,b.priority,b.tags,b.due,b.dueTime,b.product,b.note,b.done].join('|'); }
   function rebuild(){ var byId={},order=[]; SHEET.forEach(function(b){if(!(b.id in byId))order.push(b.id);byId[b.id]=b;}); qLocal().map(norm).forEach(function(b){if(b.id){if(!(b.id in byId))order.push(b.id);byId[b.id]=b;}}); TASKS=order.map(function(id){return byId[id];}).filter(function(b){return b&&b.title;}); }
   window.loadQuickTasksFromSheet=async function(){
-    try{ var res=await fetch(CSV+'&_cb='+Date.now(),{cache:'no-store'}); var csv=await res.text();
-      var ok=/(^|,)\s*"?id"?\s*(,|$)/im.test(csv)&&/(^|,)\s*"?title"?\s*(,|$)/im.test(csv);
-      SHEET=(ok&&typeof parseCsvByHeader==='function')?parseCsvByHeader(csv,['id','title']).map(norm).filter(function(b){return b.id&&b.title;}):[];
+    try{ SHEET=(await sbSelect('quick_tasks')).map(norm).filter(function(b){return b.id&&b.title;});
     }catch(e){ SHEET=[]; }
     var ss={}; SHEET.forEach(function(b){ss[b.id]=sig(b);}); var loc=qLocal(); var kept=loc.filter(function(b){var nb=norm(b);var s=ss[nb.id];return !(s&&s===sig(nb));}); if(kept.length!==loc.length) qSave(kept); rebuild();
   };
