@@ -3560,9 +3560,10 @@ function renderMilestoneTimeline(containerId, fieldKey, emptyLabel){
   const W=1180, xStart=60, xEnd=W-40;
   const totalDays = daysInYear(currentYear);
   const AV = 38;
-  const slotW = AV+14;
-  const levelGap = 54;
-  const baseGap = 30;
+  const slotW = AV+16;
+  const levelGap = 66;
+  const baseGap = 46;
+  const dateLabelPad = 20;   // room for the d/M date tag just outside each avatar
 
   const placed = grouped.map((g,i)=>{
     const doy = dayOfYear(g.date);
@@ -3582,17 +3583,23 @@ function renderMilestoneTimeline(containerId, fieldKey, emptyLabel){
 
   const maxAbove = Math.max(0, ...slots.above.map(s=>s.level));
   const maxBelow = Math.max(0, ...slots.below.map(s=>s.level));
-  const topPad = baseGap + maxAbove*levelGap + AV/2 + 20;
-  const botPad = baseGap + maxBelow*levelGap + AV/2 + 40;
+  const topPad = baseGap + maxAbove*levelGap + AV/2 + dateLabelPad + 14;
+  const botPad = baseGap + maxBelow*levelGap + AV/2 + dateLabelPad + 30;
   const H = topPad + botPad;
   const lineY = topPad;
 
-  let monthTicks = '';
+  // Month zones: alternating background bands + full-height gridlines + clear centered labels
+  const monthStartX = [];
+  for(let m=0;m<12;m++){ monthStartX[m] = xStart + (dayOfYear(new Date(currentYear,m,1))/totalDays)*(xEnd-xStart); }
+  let monthBands='', monthGrid='', monthTicks='';
   for(let m=0;m<12;m++){
-    const doy = dayOfYear(new Date(currentYear,m,1));
-    const x = xStart + (doy/totalDays)*(xEnd-xStart);
-    monthTicks += `<line x1="${x}" y1="${lineY-4}" x2="${x}" y2="${lineY+4}" stroke="var(--line)" stroke-width="2"/>
-      <text x="${x}" y="${lineY+24}" font-size="11" fill="var(--ink-soft)" text-anchor="middle" font-family="Prompt,sans-serif">${MONTH_NAMES[m].slice(0,3).toUpperCase()}</text>`;
+    const x0 = monthStartX[m];
+    const x1 = (m<11 ? monthStartX[m+1] : xEnd);
+    if(m%2===1) monthBands += `<rect x="${x0.toFixed(1)}" y="0" width="${(x1-x0).toFixed(1)}" height="${H}" fill="var(--blue-pale)" opacity="0.5"/>`;
+    monthGrid += `<line x1="${x0.toFixed(1)}" y1="0" x2="${x0.toFixed(1)}" y2="${H}" stroke="var(--line)" stroke-width="1"/>`;
+    const xc = (x0+x1)/2;
+    monthTicks += `<g><rect x="${(xc-20).toFixed(1)}" y="${(lineY+5).toFixed(1)}" width="40" height="18" rx="6" fill="#ffffff" opacity="0.92"/>`
+      + `<text x="${xc.toFixed(1)}" y="${(lineY+17.5).toFixed(1)}" font-size="12.5" font-weight="700" letter-spacing="0.8" fill="var(--ink)" text-anchor="middle" font-family="Anuphan,Prompt,sans-serif">${MONTH_NAMES[m].slice(0,3).toUpperCase()}</text></g>`;
   }
 
   let markers = '';
@@ -3611,6 +3618,9 @@ function renderMilestoneTimeline(containerId, fieldKey, emptyLabel){
       ? `<div style="position:absolute; top:-4px; right:-4px; background:${dotColor}; color:#fff; font-size:9px; font-weight:700; border-radius:999px; width:16px; height:16px; display:flex; align-items:center; justify-content:center; border:1.5px solid #fff;">${m.members.length}</div>`
       : '';
     const clickHandler = m.members.length>1 ? `openGroupFrom('${containerId}',${gi})` : `openTimeline(${PRODUCTS.indexOf(rep)})`;
+    // compact date tag (d/M) just outside each avatar, so the exact date is readable at a glance
+    const dTxt = m.date.getDate()+'/'+(m.date.getMonth()+1);
+    const dY = cy + dir*(AV/2 + 13);
     markers += `
       <line x1="${m.x}" y1="${lineY}" x2="${m.x}" y2="${cy}" stroke="${dotColor}" stroke-width="1.5" stroke-dasharray="3,3"/>
       <foreignObject x="${m.x-AV/2-4}" y="${cy-AV/2-4}" width="${AV+8}" height="${AV+8}">
@@ -3619,13 +3629,16 @@ function renderMilestoneTimeline(containerId, fieldKey, emptyLabel){
           ${avatarInner}
           ${badge}
         </div>
-      </foreignObject>`;
+      </foreignObject>
+      <g style="pointer-events:none;"><rect x="${(m.x-16).toFixed(1)}" y="${(dY-8).toFixed(1)}" width="32" height="15" rx="5" fill="#ffffff" opacity="0.95"/><text x="${m.x.toFixed(1)}" y="${(dY+3).toFixed(1)}" font-size="9.5" font-weight="700" fill="${dotColor}" text-anchor="middle" font-family="Anuphan,Prompt,sans-serif">${dTxt}</text></g>`;
   });
 
   window['GROUPS_'+containerId] = placed;
 
   container.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
-    <line x1="${xStart}" y1="${lineY}" x2="${xEnd}" y2="${lineY}" stroke="var(--blue)" stroke-width="2"/>
+    ${monthBands}
+    ${monthGrid}
+    <line x1="${xStart}" y1="${lineY}" x2="${xEnd}" y2="${lineY}" stroke="var(--blue-deep)" stroke-width="2.5"/>
     ${monthTicks}
     ${markers}
   </svg>`;
