@@ -9512,7 +9512,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   var TH_WDF=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
   var CAL_CSV='https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=ContentCalendar';
   var CAL_LKEY='npd_content_cal_v1';
-  var CAL_HEADERS=['id','date','due','title','brand','product','pillar','format','workType','channel','status','goal','time','owner','reviewer','followers','note','tags','reviseCount','extendCount','log'];
+  var CAL_HEADERS=['id','date','due','title','brand','product','pillar','format','workType','channel','status','goal','time','owner','reviewer','followers','note','tags','reviseCount','extendCount','log','drafts'];
   // ประเภทงานหลัก (สำหรับแดชบอร์ดวัดผล) — VDO / AW / Activities / Post / อื่นๆ
   var WORK_TYPES=[{k:'vdo',t:'🎬 VDO',c:'#9B7EF8'},{k:'aw',t:'🎨 AW (กราฟิก)',c:'#EF5350'},{k:'activities',t:'🎉 Activities',c:'#F2994A'},{k:'post',t:'📝 Post',c:'#5B8FF9'},{k:'other',t:'📦 อื่นๆ',c:'#8A94A6'}];
   var calWorkFilter = new Set();   // filter ประเภทงานในปฏิทิน Content (ว่าง = ทุกประเภท)
@@ -9553,7 +9553,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     goal:(r.goal||r.Goal||'').trim(),
     time:(r.time||r.Time||'').trim(), owner:(r.owner||r.Owner||'').trim(), reviewer:(r.reviewer||r.Reviewer||'').trim(),
     followers:(r.followers||r.Followers||'').trim(), tags:(r.tags||r.Tags||'').trim(), note:(r.note||r.Note||'').trim(),
-    reviseCount:parseInt(r.reviseCount||r.ReviseCount||'0',10)||0, extendCount:parseInt(r.extendCount||r.ExtendCount||'0',10)||0, log:(r.log||r.Log||'').trim() }; }
+    reviseCount:parseInt(r.reviseCount||r.ReviseCount||'0',10)||0, extendCount:parseInt(r.extendCount||r.ExtendCount||'0',10)||0, log:(r.log||r.Log||'').trim(),
+    drafts:(r.drafts||r.Drafts||'').trim() }; }
   function calSig(b){ return [b.date,b.due,b.title,b.brand,b.product,b.pillar,b.format,b.workType,b.channel,b.status,b.goal,b.time,b.owner,b.reviewer,b.followers,b.tags,b.note,b.reviseCount,b.extendCount,b.log].join('|'); }
   function rebuildCAL(){
     var byId={}, order=[];
@@ -9740,12 +9741,24 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     document.getElementById('cc-editor-body').innerHTML=rows+'<div style="display:flex;justify-content:flex-end;margin-top:16px;"><button class="btn-sm ghost" onclick="closeContentIdeaEditor()">ปิด</button></div>';
     document.getElementById('cc-editor-overlay').classList.add('open');
   };
+  // ---- draft deadlines (Final Task + 1st/2nd/... draft, เพิ่มรอบได้) ----
+  var ccDrafts=[];
+  function ccParseDrafts(s){ try{ var a=JSON.parse(s||'[]'); return Array.isArray(a)?a.filter(function(x){return typeof x==='string';}):[]; }catch(e){ return String(s||'').split(';').map(function(t){return t.trim();}).filter(Boolean); } }
+  function ccOrd(n){ return n + (['','st','nd','rd'][n] || 'th'); }
+  window.ccRenderDrafts=function(){ var host=document.getElementById('cc-cf-drafts'); if(!host) return;
+    var rows=ccDrafts.map(function(d,i){ return '<div class="cc-draft-row"><span class="cc-draft-lb">📝 '+ccOrd(i+1)+' draft</span><input type="date" value="'+e2(d||'')+'" onchange="ccDraftChange('+i+',this.value)"><button type="button" class="cc-draft-x" title="ลบรอบนี้" onclick="ccRemoveDraft('+i+')">✕</button></div>'; }).join('');
+    host.innerHTML=rows+'<button type="button" class="cc-draft-add" onclick="ccAddDraft()">➕ เพิ่มรอบแก้ไข (draft)</button>';
+  };
+  window.ccAddDraft=function(){ ccDrafts.push(''); ccRenderDrafts(); };
+  window.ccRemoveDraft=function(i){ ccDrafts.splice(i,1); ccRenderDrafts(); };
+  window.ccDraftChange=function(i,v){ ccDrafts[i]=v; };
   window.openContentCalEditor=function(id, presetDate){
     if(!unlocked()){ if(typeof toast==='function') toast('เข้าโหมดแก้ไข 🔓 ก่อนจึงจะเพิ่ม/แก้โพสต์ได้','info'); return; }
     calEditId=id||null;
     var x = id ? (window.CONTENT_CAL||[]).find(function(i){return i.id===id;}) : {};
     x = x || {}; if(presetDate && !x.date) x.date=presetDate;
     if(!id){ if(typeof plPresetStatus!=='undefined' && plPresetStatus){ x=Object.assign({},x,{status:plPresetStatus}); } plPresetStatus=null; }
+    ccDrafts = ccParseDrafts(x.drafts);
     var brandsPresent=[...new Set((typeof PRODUCTS!=='undefined'?PRODUCTS:[]).map(function(p){return p.brand;}).filter(Boolean))];
     if(!brandsPresent.length) brandsPresent=['godmami','glimmer','mamilabo'];
     var brandOpts='<option value="">— เลือกแบรนด์ —</option>'+brandsPresent.map(function(k){return '<option value="'+e2(k)+'"'+(x.brand===k?' selected':'')+'>'+e2(bLbl(k))+'</option>';}).join('');
@@ -9768,7 +9781,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +'<div class="pe-field full"><label>หัวข้อโพสต์ / คอนเทนต์ *</label><input type="text" id="cc-cf-title" value="'+e2(x.title||'')+'" placeholder="เช่น รีวิวลิปสีใหม่ Halloween"></div>'
       +'<div class="pe-field"><label>วันที่ลง *</label><input type="date" id="cc-cf-date" value="'+e2(x.date||'')+'"></div>'
       +'<div class="pe-field"><label>เวลา</label><input type="time" id="cc-cf-time" value="'+e2(x.time||'')+'"></div>'
-      +'<div class="pe-field"><label>⏰ กำหนดส่งงาน (Due)</label><input type="date" id="cc-cf-due" value="'+e2(x.due||'')+'"></div>'
+      +'<div class="pe-field"><label>🎯 กำหนดส่ง Final Task</label><input type="date" id="cc-cf-due" value="'+e2(x.due||'')+'"></div>'
+      +'<div class="pe-field full"><label>📝 กำหนดส่งแต่ละ Draft (เพิ่มรอบได้ ถ้าแก้หลายรอบ)</label><div id="cc-cf-drafts" class="cc-drafts"></div></div>'
       +'<div class="pe-field"><label>แบรนด์</label><select id="cc-cf-brand">'+brandOpts+'</select></div>'
       +'<div class="pe-field"><label>สถานะการผลิต</label><select id="cc-cf-status">'+statusOpts+'</select></div>'
       +'<div class="pe-field"><label>เสาหลักคอนเทนต์ (Pillar)</label><select id="cc-cf-pillar">'+pillarOpts+'</select></div>'
@@ -9785,6 +9799,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +'</div>'
       +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;"><button class="btn-sm ghost" onclick="closeContentIdeaEditor()">ยกเลิก</button><button class="btn-sm primary" onclick="saveContentCal()">💾 บันทึก</button></div>';
     document.getElementById('cc-editor-overlay').classList.add('open');
+    ccRenderDrafts();
     if(window.DraftGuard){   // เก็บร่างอัตโนมัติ + กู้คืนถ้าเผลอปิด
       DraftGuard.bindAutoSave(document.getElementById('cc-editor-body'), function(){ return (!calEditId && document.getElementById('cc-cf-date'))?'content_cal':null; }, null);
       if(!id && DraftGuard.load('content_cal')){ if(DraftGuard.restore('content_cal')){ DraftGuard.hint(document.getElementById('cc-editor-body'), function(){ DraftGuard.clear('content_cal'); window.openContentCalEditor(null); }); } }
@@ -9806,12 +9821,13 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var date=g('cc-cf-date'); if(!date){ if(typeof toast==='function') toast('เลือกวันที่ลงก่อน','err'); return; }
     var chans=[].slice.call(document.querySelectorAll('#cc-cf-channels input:checked')).map(function(c){return c.value;}).join(', ');
     var due=g('cc-cf-due');
+    var draftsJson = JSON.stringify([].slice.call(document.querySelectorAll('#cc-cf-drafts input[type=date]')).map(function(el){return el.value;}).filter(Boolean));
     var prev = calEditId ? (window.CONTENT_CAL||[]).find(function(z){return z.id===calEditId;}) : null;
     var reviseCount = prev?(prev.reviseCount||0):0, extendCount = prev?(prev.extendCount||0):0, log = prev?(prev.log||''):'';
     // ยืดกำหนดส่งออกไป (วันใหม่ช้ากว่าเดิม) → นับ + ลงประวัติอัตโนมัติ
     if(prev && prev.due && due && due>prev.due){ extendCount++; log=appendLog(log,'ขยายเวลาส่ง: '+prev.due+' → '+due); }
     var item={ id: calEditId || ('cc'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
-      date:date, due:due, title:title, brand:nBrand(g('cc-cf-brand')), product:g('cc-cf-product'),
+      date:date, due:due, drafts:draftsJson, title:title, brand:nBrand(g('cc-cf-brand')), product:g('cc-cf-product'),
       pillar:g('cc-cf-pillar'), format:g('cc-cf-format'), workType:g('cc-cf-worktype'), goal:g('cc-cf-goal'), channel:chans,
       status:g('cc-cf-status')||'brief', time:g('cc-cf-time'), owner:g('cc-cf-owner'), reviewer:g('cc-cf-reviewer'),
       followers:g('cc-cf-followers'), tags:g('cc-cf-tags'), note:g('cc-cf-note'),
