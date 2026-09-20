@@ -10833,6 +10833,13 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 #team-roadmap .rm-sku{font-size:11px; color:var(--ink-soft); margin:2px 0 6px;}
 #team-roadmap .rm-move{width:100%; font-family:'Sarabun',sans-serif; font-size:11px; padding:4px; border:1px solid var(--line); border-radius:7px; background:#fff;}
 #team-roadmap .rm-empty{color:var(--ink-soft); font-size:12px; text-align:center; padding:8px 0;}
+#team-roadmap .rm-toggle{display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; text-align:left; cursor:pointer; padding:12px 16px; border-radius:12px; border:1px solid var(--line); background:var(--accent-pale,#FDEAF3); font-family:'Sarabun',sans-serif;}
+#team-roadmap .rm-toggle.open{border-bottom-left-radius:0; border-bottom-right-radius:0;}
+#team-roadmap .rm-toggle-title{font-family:'Prompt',sans-serif; font-weight:700; font-size:15px; color:var(--accent-deep,#D14E88);}
+#team-roadmap .rm-toggle-title small{font-weight:400; font-size:12px; color:var(--ink-soft);}
+#team-roadmap .rm-toggle-meta{font-size:12px; color:var(--ink-soft); display:flex; align-items:center; gap:12px; white-space:nowrap;}
+#team-roadmap .rm-caret{font-weight:700; color:var(--accent-deep,#D14E88);}
+@media(max-width:640px){ #team-roadmap .rm-toggle{flex-direction:column; align-items:flex-start; gap:4px;} }
 /* ---- Final Product Sheet ---- */
 .fs-overlay{position:fixed; inset:0; background:rgba(20,28,45,.55); z-index:100000; display:none; align-items:flex-start; justify-content:center; padding:32px 14px; overflow:auto;}
 .fs-overlay.open{display:flex;}
@@ -10877,6 +10884,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   /* ---- stage storage (separate table so the whole NPD team can edit) ---- */
   var STAGE_MAP = {};
   var stagesLoaded = false, stagesLoading = false;
+  var roadmapOpen = false;   // Roadmap ยุบไว้ก่อน — กดปุ่ม "Product Stage" เพื่อกาง
   window.loadStages = async function(){
     try{ var rows = await sbSelect('product_stage'); STAGE_MAP={}; rows.forEach(function(r){ if(r.sku) STAGE_MAP[r.sku]=r.stage||''; }); }catch(e){}
   };
@@ -10914,13 +10922,17 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       return '<div class="rm-col"><div class="rm-col-head"><span class="rm-count">'+items.length+'</span>'+E(title)+'</div>'
         +(items.length?items.map(card).join(''):'<div class="rm-empty">—</div>')+'</div>';
     };
-    var html = '<p class="section-title" style="margin-top:0;">🗺️ Product Roadmap</p>'
-      +'<p class="section-sub">สินค้าแต่ละตัวอยู่ขั้นตอนหลักไหน'+(canEdit?' · เลือก “ย้ายไปขั้น” เพื่ออัปเดต (สลับขั้นได้อิสระ ไม่ต้องเรียงลำดับ)':' · (ดูอย่างเดียว)')+'</p>';
     var boardCols = ROADMAP_STAGES.map(function(s){ return col(s.t, prods.filter(function(p){ return stageOf(p.sku)===s.k; })); });
     var unset = prods.filter(function(p){ return !stageOf(p.sku); });
     if(unset.length) boardCols.push(col('❓ ยังไม่ระบุขั้น', unset));
-    host.innerHTML = html + '<div class="rm-board">'+boardCols.join('')+'</div>';
+    var head = '<button type="button" class="rm-toggle'+(roadmapOpen?' open':'')+'" onclick="toggleRoadmap()">'
+      +'<span class="rm-toggle-title">🗺️ Product Stage <small>(Roadmap)</small></span>'
+      +'<span class="rm-toggle-meta">'+prods.length+' สินค้า'+(unset.length?(' · ❓ '+unset.length+' ยังไม่ระบุ'):'')+'<span class="rm-caret">'+(roadmapOpen?'▲ ซ่อน':'▼ แสดง')+'</span></span></button>';
+    if(!roadmapOpen){ host.innerHTML = head; return; }
+    var sub = '<p class="section-sub" style="margin:8px 2px 12px;">สินค้าแต่ละตัวอยู่ขั้นตอนหลักไหน'+(canEdit?' · เลือก “ย้ายไปขั้น” เพื่ออัปเดต (สลับขั้นได้อิสระ ไม่ต้องเรียงลำดับ)':' · (ดูอย่างเดียว)')+'</p>';
+    host.innerHTML = head + sub + '<div class="rm-board">'+boardCols.join('')+'</div>';
   };
+  window.toggleRoadmap = function(){ roadmapOpen = !roadmapOpen; renderRoadmap(); };
 
   /* ---- Final Product Sheet (shareable, NO cost) ---- */
   function ensureFsOverlay(){
