@@ -212,7 +212,7 @@
   .link-btn:hover{text-decoration:underline;}
 
   /* Catalog */
-  .catalog-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; align-items:start;}
+  .catalog-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px; align-items:stretch;}
   /* หมวดสินค้า (category sections) ในหน้า Product Info */
   .cat-section{margin-bottom:22px;}
   .cat-section-head{display:flex; align-items:center; gap:8px; font-family:'Prompt',sans-serif; font-size:15px; font-weight:700; color:var(--ink); margin:4px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line);}
@@ -223,9 +223,10 @@
   .catalog-card .thumb-lg{width:100%; height:180px; object-fit:cover; background:var(--blue-pale); display:block;}
   .catalog-card .thumb-lg-empty{width:100%; height:180px; background:var(--blue-pale); display:flex; align-items:center; justify-content:center; color:var(--blue-deep); font-family:'Prompt'; font-size:13px;}
   .catalog-body{padding:14px 16px; display:flex; flex-direction:column; gap:6px; flex:1;}
-  .catalog-body .cname{font-weight:600; font-size:14.5px;}
+  .catalog-body .cname{font-weight:600; font-size:14.5px; line-height:1.3; min-height:2.6em; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
   .catalog-body .csku{color:var(--ink-soft); font-size:12px;}
-  .catalog-actions{display:flex; gap:8px; margin-top:auto; padding-top:8px;}
+  .catalog-actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:auto; padding-top:10px;}
+.catalog-actions .btn-sm{white-space:nowrap;}
   /* grouped product card (one product with many SKUs/shades) */
   .cat-group{border-left:4px solid var(--blue-ink);}
   .cgroup-count{font-size:11px; font-weight:700; color:#fff; background:var(--blue-ink); border-radius:999px; padding:1px 9px; vertical-align:middle; margin-left:4px; white-space:nowrap; display:inline-block;}
