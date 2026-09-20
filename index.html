@@ -8562,8 +8562,10 @@ function renderUpdateForm(){
     <div class="pe-field"><label>วันที่ *</label><input type="date" id="ue-Date" value="${esc(pf.Date||todayStr())}" onchange="maybeAutoNextDue()"></div>
     ${ueEditId ? '' : `<div class="pe-field full"><label class="ue-switch"><input type="checkbox" id="ue-multi" onchange="toggleMultiSku()"><span class="ue-track"></span><span class="ue-sw-text">อัปเดตหลายสินค้าพร้อมกัน<span class="ue-sw-sub">บันทึก Timeline เดียวกันให้ทุกตัวที่เลือกในครั้งเดียว</span></span></label></div>`}
     <div class="pe-field" id="ue-sku-single-cell"><label>สินค้า (SKU) *</label>
-      <input type="text" id="ue-SKU-search" list="ue-sku-dl" value="${esc(pfSkuDisplay)}" oninput="onSkuSearchInput()" placeholder="🔍 พิมพ์ชื่อ หรือ SKU แล้วเลือก…" autocomplete="off">
-      <datalist id="ue-sku-dl">${skuDatalist}</datalist>
+      <div class="ue-combo-wrap">
+        <input type="text" id="ue-SKU-search" value="${esc(pfSkuDisplay)}" oninput="onSkuSearchInput()" onfocus="skuComboFocus()" onblur="skuComboBlur()" placeholder="🔍 พิมพ์ชื่อ หรือ SKU…" autocomplete="off">
+        <div id="ue-sku-results" class="ue-combo-list" style="display:none;"></div>
+      </div>
       <input type="hidden" id="ue-SKU" value="${esc(pfSku)}">
     </div>
     <div class="pe-field" id="ue-scope-cell">${updateScopeCellHtml(pfSku, pf.scope)}</div>
@@ -8646,7 +8648,30 @@ function onSkuSearchInput(){
   hidden.value = p ? p.sku : '';
   refreshUpdateScope();
   renderContinueBar();   // โชว์ "ต่องานที่กำลังทำ" ของสินค้านี้
+  skuComboRender(v);     // dropdown ค้นหาเอง (เร็วกว่า datalist)
 }
+// ---- lightweight product search dropdown (แทน datalist ที่อืด) ----
+function skuComboRender(term){
+  const box=document.getElementById('ue-sku-results'); if(!box) return;
+  term=(term||'').trim().toLowerCase();
+  // ถ้าพิมพ์ตรงกับที่เลือกอยู่แล้ว (ชื่อ — SKU) ไม่ต้องเด้ง list
+  let list = PRODUCTS;
+  if(term){ list = PRODUCTS.filter(function(p){ return ((p.name||'')+' '+(p.sku||'')).toLowerCase().indexOf(term)>=0; }); }
+  list = list.slice(0,50);
+  if(!list.length){ box.innerHTML='<div class="ue-combo-empty">ไม่พบสินค้า</div>'; box.style.display='block'; return; }
+  box.innerHTML = list.map(function(p){ return '<div class="ue-combo-item" onmousedown="skuComboPick(\''+attrJs(p.sku)+'\')"><span class="ue-item-name">'+esc(p.name||p.sku)+'</span><span class="ue-item-sku">'+esc(p.sku||'')+'</span></div>'; }).join('');
+  box.style.display='block';
+}
+function skuComboPick(sku){
+  const p=PRODUCTS.find(function(x){return x.sku===sku;}); if(!p) return;
+  const inp=document.getElementById('ue-SKU-search'), hidden=document.getElementById('ue-SKU');
+  if(inp) inp.value=skuComboDisplay(p);
+  if(hidden) hidden.value=p.sku;
+  const box=document.getElementById('ue-sku-results'); if(box) box.style.display='none';
+  refreshUpdateScope(); renderContinueBar();
+}
+function skuComboFocus(){ const inp=document.getElementById('ue-SKU-search'); skuComboRender(inp?inp.value:''); }
+function skuComboBlur(){ setTimeout(function(){ const box=document.getElementById('ue-sku-results'); if(box) box.style.display='none'; }, 150); }
 function refreshUpdateScope(){
   const sel=document.getElementById('ue-SKU'); const cell=document.getElementById('ue-scope-cell');
   if(!sel||!cell) return;
@@ -9083,6 +9108,14 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   }
   window.renderOffice=function(){
     var host=document.getElementById('ofc-rooms'); if(!host) return;
+    // Task รายคนของออฟฟิศดึงจาก Content Calendar + Quick Tasks — โหลดเองครั้งแรกที่นี่
+    // เพื่อให้ Task ขึ้นเลย ไม่ต้องไปเปิดหน้า Content Creator ก่อน (แก้บั๊ก)
+    if(!window.__ofcDataInit){
+      window.__ofcDataInit = true;
+      var reOfc = function(){ try{ renderOffice(); }catch(e){} };
+      if(typeof loadContentCalFromSheet==='function') loadContentCalFromSheet().then(reOfc).catch(function(){});
+      if(typeof loadQuickTasksFromSheet==='function') loadQuickTasksFromSheet().then(reOfc).catch(function(){});
+    }
     var logo=document.getElementById('ofc-logo-img'); if(logo && !logo.src) logo.src=OFC.bld;
     renderOfcRoomNav();
     host.innerHTML=''; ofcState=[];
@@ -10856,6 +10889,13 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 #team-roadmap .rm-caret{font-weight:700; color:var(--accent-deep,#D14E88);}
 .cs-arch-btn{border:none; background:none; cursor:pointer; font-size:13px; padding:2px 4px; border-radius:6px; opacity:.6; vertical-align:middle;}
 .cs-arch-btn:hover{opacity:1; background:var(--bg,#eef);}
+.ue-combo-wrap{position:relative;}
+.ue-combo-list{position:absolute; left:0; right:0; top:calc(100% + 2px); z-index:50; background:#fff; border:1px solid var(--line,#E4E9F2); border-radius:10px; box-shadow:0 10px 30px -8px rgba(0,0,0,.28); max-height:280px; overflow-y:auto;}
+.ue-combo-item{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 12px; cursor:pointer; border-bottom:1px solid var(--bg,#F2F5FA);}
+.ue-combo-item:hover{background:var(--accent-pale,#FDEAF3);}
+.ue-combo-item .ue-item-name{font-size:13px; font-weight:600;}
+.ue-combo-item .ue-item-sku{font-size:11px; color:var(--ink-soft,#6B7684); white-space:nowrap;}
+.ue-combo-empty{padding:10px 12px; font-size:12.5px; color:var(--ink-soft,#6B7684);}
 @media(max-width:640px){ #team-roadmap .rm-toggle{flex-direction:column; align-items:flex-start; gap:4px;} }
 /* ---- Final Product Sheet ---- */
 .fs-overlay{position:fixed; inset:0; background:rgba(20,28,45,.55); z-index:100000; display:none; align-items:flex-start; justify-content:center; padding:32px 14px; overflow:auto;}
