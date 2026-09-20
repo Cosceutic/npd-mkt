@@ -840,9 +840,8 @@
     <div id="team-lock" class="team-lock">
       <div class="team-lock-box">
         <div class="team-lock-title">🔒 NPD Process</div>
-        <p class="team-lock-sub">หน้านี้จำกัดสิทธิ์เฉพาะทีม NPD — กรุณากรอกรหัสผ่าน</p>
-        <input type="password" id="team-pass" placeholder="รหัสผ่าน" onkeydown="if(event.key==='Enter') unlockTeam()">
-        <button class="btn-sm primary" style="width:100%; margin-top:10px; padding:9px;" onclick="unlockTeam()">เข้าสู่หน้า NPD Process</button>
+        <p class="team-lock-sub" id="team-lock-msg">หน้านี้เป็นความลับ จำกัดเฉพาะทีม NPD — กรุณาเข้าสู่ระบบด้วยบัญชีที่มีสิทธิ์</p>
+        <button class="btn-sm primary" style="width:100%; margin-top:10px; padding:9px;" onclick="teamLoginClick()">🔑 เข้าสู่ระบบ</button>
         <div id="team-lock-err" class="team-lock-err"></div>
       </div>
     </div>
@@ -2125,8 +2124,8 @@ async function sbInit(){
   try{ const { data } = await SB_CLIENT.auth.getSession(); SB_SESSION = data.session || null; }catch(e){}
   SB_CLIENT.auth.onAuthStateChange((_e,s)=>{ SB_SESSION = s||null; sbRenderAuthBtn();
     const on = !!SB_SESSION;
-    try{ if(on) sessionStorage.setItem('npdUnlocked','1'); else sessionStorage.removeItem('npdUnlocked'); }catch(e){}
     try{ EDIT_MODE = on; }catch(e){}
+    try{ if(typeof initTeamLock==='function') initTeamLock(); }catch(e){}  // NPD Process view follows the login's permission
     try{ if(typeof SHEET_ROWS!=='undefined' && SHEET_ROWS.length && typeof renderAll==='function'){ renderAll(); } else { if(typeof updateEditControls==='function') updateEditControls(); if(typeof renderBanner==='function') renderBanner(); } }catch(e){}
     try{ if(typeof updateSyncStatus==='function') updateSyncStatus(); }catch(e){}
   });
@@ -2142,6 +2141,19 @@ async function sbLoadCols(){
 }
 function sbFilterRow(table,row){ const c=SB_COLS[table]; if(!c||!row) return row; const o={}; for(const k in row){ if(c.has(k)) o[k]=row[k]; } return o; }
 function sbLoggedIn(){ return !!SB_SESSION; }
+/* ---- Phase 2: per-area edit/view permissions (by login email) ----
+   View is open to everyone EXCEPT NPD Process. Editing (and NPD Process view)
+   is limited to the emails below. This is the UI layer; Supabase RLS enforces
+   the same lists server-side for writes. Emails compared lowercase. */
+const AREA_EDITORS = {
+  products:    ['marketing.glimmersisters@gmail.com','theeranath@cosceutic.com','cbs@cosceutic.com','npd@cosceutic.com','npd1@cosceutic.com'],
+  npd_process: ['marketing.glimmersisters@gmail.com','theeranath@cosceutic.com','npd@cosceutic.com','npd1@cosceutic.com','sm@cosmanialab.com'],
+  content:     ['marketing.glimmersisters@gmail.com','theeranath@cosceutic.com','cbs@cosceutic.com','content03.cil@gmail.com','content04.cil@gmail.com','content@cosceutic.com','sm@cosmanialab.com'],
+};
+function sbEmail(){ try{ return String((SB_SESSION && SB_SESSION.user && SB_SESSION.user.email) || '').trim().toLowerCase(); }catch(e){ return ''; } }
+function canEditArea(area){ const list=AREA_EDITORS[area]; return !!(sbLoggedIn() && list && list.indexOf(sbEmail())>=0); }
+function canViewNpdProcess(){ return canEditArea('npd_process'); }   // NPD Process: view = same allow-list as edit (secret)
+window.canEditArea = canEditArea; window.canViewNpdProcess = canViewNpdProcess;
 async function sbLogin(email,password){ await sbInit(); const { data, error } = await SB_CLIENT.auth.signInWithPassword({ email, password }); if(error) throw error; SB_SESSION=data.session; return data.session; }
 async function sbLogout(){ try{ if(SB_CLIENT) await SB_CLIENT.auth.signOut(); }catch(e){} SB_SESSION=null; sbRenderAuthBtn(); }
 function sbRenderAuthBtn(){
@@ -4147,7 +4159,7 @@ function catalogSingleCard(p, idx){
             ? `<a class="btn-sm primary" href="${esc(p.canva)}" target="_blank" rel="noopener">Presentation</a>`
             : `<span class="btn-sm disabled">No link yet</span>`}
         </div>
-        ${EDIT_MODE ? `<div class="card-edit-row">
+        ${(EDIT_MODE && canEditArea('products')) ? `<div class="card-edit-row">
           <button class="btn-sm ghost" onclick="openProductEditor('${attrJs(p.sku)}')">✏️ แก้ไข</button>
           <button class="btn-sm warn-ghost" onclick="deleteProduct('${attrJs(p.sku)}')">🗑️ ลบ</button>
         </div>` : ''}
@@ -4166,7 +4178,7 @@ function catalogGroupCard(members){
   const gname = groupDisplayName(members[0].key);
   const shadeRows = members.map(m=>{
     const p=m.p; const short = shadeLabel(p.name, gname) || p.sku;
-    const edit = EDIT_MODE ? `<span class="shade-edit">
+    const edit = (EDIT_MODE && canEditArea('products')) ? `<span class="shade-edit">
         <button title="แก้ไข" onclick="event.stopPropagation(); openProductEditor('${attrJs(p.sku)}')">✏️</button>
         <button title="ลบ" onclick="event.stopPropagation(); deleteProduct('${attrJs(p.sku)}')">🗑️</button>
       </span>` : '';
@@ -4943,26 +4955,17 @@ function closeTrackLog(){
    Front-end only: this keeps the page out of casual view for people who open the
    link, but anyone who can read the page source can find the passcode. Good enough
    for internal "don't wander in here" purposes — not real security. */
-const TEAM_PASSCODE = 'npd2026!';
-
-function unlockTeam(){
-  const input = document.getElementById('team-pass');
-  const err = document.getElementById('team-lock-err');
-  if(input.value === TEAM_PASSCODE){
-    try{ sessionStorage.setItem('npdUnlocked','1'); }catch(e){}
-    applyTeamLockState(true);
-    err.textContent = '';
-    input.value = '';
-  } else {
-    err.textContent = 'รหัสผ่านไม่ถูกต้อง';
-    input.value = '';
-    input.focus();
+/* NPD Process is confidential: view + edit are limited to the
+   AREA_EDITORS.npd_process allow-list (canViewNpdProcess). No shared passcode. */
+function teamLoginClick(){
+  if(typeof sbLoggedIn==='function' && sbLoggedIn()){
+    const err=document.getElementById('team-lock-err');
+    if(err) err.textContent='บัญชีนี้ ('+(typeof sbEmail==='function'?sbEmail():'')+') ไม่มีสิทธิ์เข้าหน้า NPD Process — ติดต่อแอดมิน';
+    return;
   }
+  if(typeof sbShowLoginModal==='function') sbShowLoginModal();
 }
-function lockTeam(){
-  try{ sessionStorage.removeItem('npdUnlocked'); }catch(e){}
-  applyTeamLockState(false);
-}
+function lockTeam(){ applyTeamLockState(canViewNpdProcess()); }
 function isTeamUnlocked(){ try{ return (typeof sbLoggedIn==='function' && sbLoggedIn()); }catch(e){ return false; } }
 function applyTeamLockState(unlocked){
   const lock = document.getElementById('team-lock');
@@ -4970,15 +4973,16 @@ function applyTeamLockState(unlocked){
   if(!lock || !content) return;
   lock.style.display = unlocked ? 'none' : 'flex';
   content.style.display = unlocked ? 'block' : 'none';
-  // Current Status editing is available whenever this (password-gated) page is unlocked
   const addBtn = document.getElementById('btn-add-update');
   if(addBtn) addBtn.style.display = unlocked ? '' : 'none';
+  const msg=document.getElementById('team-lock-msg');
+  if(msg && !unlocked){
+    msg.textContent = (typeof sbLoggedIn==='function' && sbLoggedIn())
+      ? 'บัญชีนี้ไม่มีสิทธิ์เข้าหน้า NPD Process (ข้อมูลลับเฉพาะทีม) — ติดต่อแอดมินเพื่อขอสิทธิ์'
+      : 'หน้านี้เป็นความลับ จำกัดเฉพาะทีม NPD — กรุณาเข้าสู่ระบบด้วยบัญชีที่มีสิทธิ์';
+  }
 }
-function initTeamLock(){
-  let unlocked = false;
-  try{ unlocked = sessionStorage.getItem('npdUnlocked') === '1'; }catch(e){}
-  applyTeamLockState(unlocked);
-}
+function initTeamLock(){ applyTeamLockState(canViewNpdProcess()); }
 
 /* ---------- Task board (ฝากงาน NPD) ----------
    Reads the Google Form response tab. Submitting happens through the embedded form
@@ -7371,11 +7375,11 @@ function toggleEditMode(){
 function updateEditControls(){
   const show=(id,on)=>{ const el=document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; };
   const cfg=getWriteConfig(), pc=totalPending();
-  show('btn-add-product', EDIT_MODE);
+  show('btn-add-product', EDIT_MODE && canEditArea('products'));
   show('btn-refresh', EDIT_MODE);
   show('btn-export', EDIT_MODE);
   show('btn-notices', EDIT_MODE);
-  show('btn-add-update', isTeamUnlocked());
+  show('btn-add-update', canEditArea('npd_process'));
   show('btn-add-event-cal', isTeamUnlocked());
   show('btn-add-event-track', isTeamUnlocked());
   show('btn-sync-setup', EDIT_MODE);
@@ -7545,6 +7549,7 @@ function fillAutoSku(){
   if(typeof toast==='function') toast('รัน SKU อัตโนมัติแล้ว: '+el.value+' — แก้ไขได้ภายหลัง','ok');
 }
 function openProductEditor(sku){
+  if(!canEditArea('products')){ toast('บัญชีนี้ไม่มีสิทธิ์แก้ไข Product Info','info'); return; }
   editingSku = sku || null;
   let row = {};
   if(sku){
@@ -7564,6 +7569,7 @@ function skuExists(sku){
 }
 
 function saveProduct(){
+  if(!canEditArea('products')){ toast('บัญชีนี้ไม่มีสิทธิ์แก้ไข Product Info','info'); return; }
   const wasNew = !editingSku;   // capture before closeProductEditor() clears editingSku
   const row = collectProductForm();
   const name=(row.name||'').trim(), sku=(row.sku||'').trim();
@@ -7607,6 +7613,7 @@ function saveProduct(){
 }
 
 function deleteProduct(sku){
+  if(!canEditArea('products')){ toast('บัญชีนี้ไม่มีสิทธิ์แก้ไข Product Info','info'); return; }
   const p = PRODUCTS.find(x=>x.sku===sku);
   if(!confirm('ลบสินค้า "'+((p&&p.name)||sku)+'" ?\nถ้าเข้าสู่ระบบไว้ จะลบออกจาก Supabase ด้วย')) return;
   const inSheet = SHEET_ROWS.some(r=>(r.sku||'').trim()===sku);
@@ -9186,7 +9193,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   var CONTENT_PASSCODE='content!';
   function ccIsUnlocked(){ try{ return sessionStorage.getItem('ccUnlocked')==='1'; }catch(e){ return false; } }
   function teamUnlocked(){ return (typeof isTeamUnlocked==='function') && isTeamUnlocked(); }
-  function unlocked(){ return teamUnlocked(); }   // ประตูเดียว = เข้าสู่ระบบ (Supabase)
+  function unlocked(){ return teamUnlocked() && (typeof canEditArea==='function') && canEditArea('content'); }   // เข้าสู่ระบบ + อยู่ในรายชื่อผู้แก้ Content
   window.ccUnlock=function(){
     if(typeof toast==='function') toast('กรุณาเข้าสู่ระบบ (ปุ่มมุมขวาล่าง) เพื่อแก้ไข · แก้แล้วทีมจะเห็นตรงกัน','info');
     if(typeof sbShowLoginModal==='function') sbShowLoginModal();
