@@ -528,8 +528,11 @@
   .cal-legend{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 4px; font-size:11.5px; color:var(--ink-soft); align-items:center;}
   .cal-legend-item{display:inline-flex; align-items:center; gap:5px; cursor:pointer; border:1px solid var(--line); background:var(--card,#fff); border-radius:999px; padding:4px 10px; font-family:'Sarabun',sans-serif; font-size:11.5px; color:var(--ink,#2b3a4a); transition:opacity .12s, background .12s;}
   .cal-legend-item:hover{background:var(--bg,#eef);}
-  .cal-legend-item.off{opacity:.4; text-decoration:line-through;}
-  .cal-legend-all{cursor:pointer; border:1px dashed var(--blue-deep,#2563eb); background:var(--blue-pale,#eef4ff); color:var(--blue-deep,#2563eb); border-radius:999px; padding:4px 12px; font-family:'Sarabun',sans-serif; font-size:11.5px; font-weight:600;}
+  .cal-legend-item.dim{opacity:.38;}
+  .cal-legend-item.sel{font-weight:700;}
+  .cal-legend-all{cursor:pointer; border:1px solid var(--line); background:var(--card,#fff); color:var(--ink,#2b3a4a); border-radius:999px; padding:4px 12px; font-family:'Sarabun',sans-serif; font-size:11.5px; font-weight:600;}
+  .cal-legend-all.active{background:var(--blue-deep,#2563eb); color:#fff; border-color:var(--blue-deep,#2563eb);}
+  .cal-legend-hint{align-self:center; font-size:11px; color:var(--ink-soft); font-style:italic;}
   .cal-legend-dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
   .cal-dot-row{display:flex; flex-wrap:wrap; gap:3px; margin-top:3px;}
   .cal-dot{width:9px; height:9px; border-radius:50%; cursor:pointer; flex-shrink:0;}
@@ -3558,18 +3561,25 @@ const CAL_LEGEND = {
   launch:       {label:'Official Launch Date',     th:'เปิดตัวอย่างเป็นทางการ',           color:'#2E9E6D', field:'launch'},
 };
 
-// Filter: which milestone types to show on the calendar (empty set = show all).
-window.CAL_HIDDEN = window.CAL_HIDDEN || new Set();
+// Filter: pick which milestone types to VIEW (empty = show all). Click a category to
+// show ONLY it; click more categories to add; "ทั้งหมด" resets to all.
+window.CAL_SHOW = window.CAL_SHOW || new Set();
 function renderCalLegend(){
   const el = document.getElementById('cal-legend');
   if(!el) return;
-  el.innerHTML = Object.entries(CAL_LEGEND).map(([k,l])=>{
-    const off = window.CAL_HIDDEN.has(k);
-    return `<button type="button" class="cal-legend-item${off?' off':''}" onclick="toggleCalType('${k}')" title="คลิกเพื่อ${off?'แสดง':'ซ่อน'}: ${esc(l.label)}"><span class="cal-legend-dot" style="background:${l.color};"></span>${esc(l.label)}<span style="opacity:.7;">(${esc(l.th)})</span></button>`;
-  }).join('') + (window.CAL_HIDDEN.size ? `<button type="button" class="cal-legend-all" onclick="calTypeShowAll()">✓ แสดงทุกหมวด</button>` : '');
+  const anySel = window.CAL_SHOW.size>0;
+  let html = `<button type="button" class="cal-legend-all${anySel?'':' active'}" onclick="calShowAll()" title="ดูทุกหมวด">🗂️ ทั้งหมด</button>`;
+  html += Object.entries(CAL_LEGEND).map(([k,l])=>{
+    const sel = window.CAL_SHOW.has(k);
+    const cls = anySel ? (sel?' sel':' dim') : '';
+    const style = sel ? `border-color:${l.color}; background:${l.color}1A;` : '';
+    return `<button type="button" class="cal-legend-item${cls}" style="${style}" onclick="toggleCalType('${k}')" title="แตะเพื่อดูเฉพาะหมวดนี้ (แตะซ้ำ = เอาออก): ${esc(l.label)}"><span class="cal-legend-dot" style="background:${l.color};"></span>${esc(l.label)}<span style="opacity:.7;">(${esc(l.th)})</span></button>`;
+  }).join('');
+  if(anySel) html += `<span class="cal-legend-hint">แตะหลายหมวดเพื่อดูพร้อมกัน · กด “ทั้งหมด” เพื่อดูทุกหมวด</span>`;
+  el.innerHTML = html;
 }
-window.toggleCalType = function(k){ if(window.CAL_HIDDEN.has(k)) window.CAL_HIDDEN.delete(k); else window.CAL_HIDDEN.add(k); if(typeof renderStockCalendarGrid==='function') renderStockCalendarGrid(); };
-window.calTypeShowAll = function(){ window.CAL_HIDDEN.clear(); if(typeof renderStockCalendarGrid==='function') renderStockCalendarGrid(); };
+window.toggleCalType = function(k){ if(window.CAL_SHOW.has(k)) window.CAL_SHOW.delete(k); else window.CAL_SHOW.add(k); if(typeof renderStockCalendarGrid==='function') renderStockCalendarGrid(); };
+window.calShowAll = function(){ window.CAL_SHOW.clear(); if(typeof renderStockCalendarGrid==='function') renderStockCalendarGrid(); };
 
 function groupByBaseName(list){
   const map = {};
@@ -3942,7 +3952,7 @@ function renderStockCalendarGrid(){
   const byDay = {};
   const actualFlag = {};
   Object.entries(CAL_LEGEND).forEach(([typeKey, def])=>{
-    if(window.CAL_HIDDEN && window.CAL_HIDDEN.has(typeKey)) return;   // filter: หมวดที่ถูกปิด
+    if(window.CAL_SHOW && window.CAL_SHOW.size && !window.CAL_SHOW.has(typeKey)) return;   // filter: ดูเฉพาะหมวดที่เลือก
     PRODUCTS.forEach(p=>{
       const md = milestoneDate(p, def.field);
       const val = md.actual || md.deadline;
