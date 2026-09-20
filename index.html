@@ -665,6 +665,9 @@
   .pe-ms-key{padding:2px 9px; border-radius:999px;}
   .pe-ms-key.plan{background:#EAF2FD; color:#2563EB;}
   .pe-ms-key.actual{background:#E9F7EF; color:#1E8E5A;}
+  .pe-autocalc{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:8px 0 4px;}
+  .pe-autocalc .btn-edit{font-size:12px; padding:7px 14px; white-space:nowrap;}
+  .pe-autocalc-hint{font-size:11px; color:var(--ink-soft); flex:1; min-width:160px; line-height:1.4;}
   .pe-check{display:flex; align-items:center; gap:8px; font-size:13px;}
   .pe-check input{width:auto;}
   .pe-footer{display:flex; align-items:center; gap:10px; padding:14px 22px; border-top:1px solid var(--line); position:sticky; bottom:0; background:#fff; border-radius:0 0 16px 16px;}
@@ -4213,36 +4216,45 @@ function shadeLabel(name, gname){
 }
 function catalogGroupCard(members){
   const rep = (members.find(m=>m.p.image) || members[0]).p;
-  const gname = groupDisplayName(members[0].key);
-  const shadeRows = members.map(m=>{
-    const p=m.p; const short = shadeLabel(p.name, gname) || p.sku;
-    const edit = (EDIT_MODE && canEditArea('products')) ? `<span class="shade-edit">
-        <button title="แก้ไข" onclick="event.stopPropagation(); openProductEditor('${attrJs(p.sku)}')">✏️</button>
-        <button title="ลบ" onclick="event.stopPropagation(); deleteProduct('${attrJs(p.sku)}')">🗑️</button>
-      </span>` : '';
-    return `<div class="shade-row" onclick="openTimeline(${m.idx})" title="${esc(p.name)}">
-      <span class="shade-name">${esc(short)}</span>
-      <span class="shade-sku">${esc(p.sku)}</span>
-      ${p.canva?`<a class="shade-canva" href="${esc(p.canva)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Presentation">🎞️</a>`:''}
-      ${edit}
-    </div>`;
-  }).join('');
+  const key = members[0].key;
+  const gname = groupDisplayName(key);
   return `
     <div class="catalog-card cat-group">
       ${rep.image ? `<img class="thumb-lg" src="${esc(rep.image)}" alt="${esc(gname)}" style="cursor:pointer;" onclick="openLightbox('${esc(rep.image)}',event)">` : `<div class="thumb-lg-empty">No image yet</div>`}
       <div class="catalog-body">
         <div class="cname">${groupIsNew(members)?'<span class="new-badge">🆕 ใหม่</span> ':''}${esc(gname)} <span class="cgroup-count">${members.length} SKU</span></div>
-        <div class="csku">กลุ่ม ${esc(members[0].key)}</div>
+        <div class="csku">กลุ่ม ${esc(key)}</div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${brandBadge(rep,20)}${typeBadge(rep)}${categoryBadge(rep)}${collectionBadge((members.map(m=>(m.p.collection||'').trim()).find(Boolean)||''))}</div>
-        ${EDIT_MODE ? `<button class="btn-sm primary cgroup-edit" onclick="editGroupShared('${attrJs(members[0].p.sku)}')">✏️ แก้ข้อมูลร่วมทั้งกลุ่ม (${members.length} SKU)</button>` : ''}
-        <details class="cshades-details"${EDIT_MODE?' open':''}>
-          <summary class="cshades-summary">ดูทั้ง ${members.length} SKU / เฉด</summary>
-          <div class="cshades">${shadeRows}</div>
-        </details>
-        ${EDIT_MODE ? `<div class="cgroup-hint">แถว ✏️ = แก้เฉดเดียว · ปุ่มด้านบน = แก้ Timeline/แบรนด์/หมวด ครั้งเดียวลงทุก SKU</div>` : ''}
+        <div class="catalog-actions">
+          <button class="btn-sm ghost" onclick="openGroupShades('${attrJs(key)}')">🎨 ดูทั้ง ${members.length} SKU / เฉด</button>
+          ${(EDIT_MODE && canEditArea('products')) ? `<button class="btn-sm primary" onclick="editGroupShared('${attrJs(members[0].p.sku)}')">✏️ แก้ข้อมูลร่วม</button>` : ''}
+        </div>
       </div>
     </div>`;
 }
+/* Popup listing every SKU/shade in a group — keeps group cards compact (opened from the card) */
+function openGroupShades(key){
+  const members = PRODUCTS.map((p,idx)=>({p,idx})).filter(m=>productGroupOf(m.p.sku)===key);
+  if(!members.length) return;
+  const gname = groupDisplayName(key);
+  const canEd = EDIT_MODE && (typeof canEditArea==='function') && canEditArea('products');
+  const rows = members.map(m=>{
+    const p=m.p; const short = shadeLabel(p.name, gname) || p.sku;
+    const edit = canEd ? `<span class="gs-edit"><button title="แก้ไข" onclick="event.stopPropagation(); closeGroupShades(); openProductEditor('${attrJs(p.sku)}')">✏️</button><button title="ลบ" onclick="event.stopPropagation(); deleteProduct('${attrJs(p.sku)}')">🗑️</button></span>` : '';
+    const canva = p.canva ? `<a class="gs-canva" href="${esc(p.canva)}" target="_blank" rel="noopener" title="Presentation" onclick="event.stopPropagation()">🎞️</a>` : '';
+    return `<div class="gs-row" onclick="closeGroupShades(); openTimeline(${m.idx})" title="${esc(p.name)}"><span class="gs-name">${esc(short)}</span><span class="gs-sku">${esc(p.sku)}</span>${canva}${edit}</div>`;
+  }).join('');
+  let ov=document.getElementById('gs-overlay');
+  if(!ov){ ov=document.createElement('div'); ov.id='gs-overlay'; ov.className='fs-overlay'; ov.addEventListener('click',e=>{ if(e.target===ov) closeGroupShades(); }); document.body.appendChild(ov); }
+  ov.innerHTML = `<div class="fs-modal" style="max-width:460px;">
+    <div class="fs-head"><div><div class="fs-title">${esc(gname)}</div><div class="fs-sub">ทั้งหมด ${members.length} SKU / เฉด · แตะเพื่อดู Timeline</div></div></div>
+    <div class="gs-list">${rows}</div>
+    <div class="fs-actions"><button onclick="closeGroupShades()">ปิด</button></div>
+  </div>`;
+  ov.classList.add('open');
+}
+function closeGroupShades(){ const ov=document.getElementById('gs-overlay'); if(ov) ov.classList.remove('open'); }
+window.openGroupShades=openGroupShades; window.closeGroupShades=closeGroupShades;
 /* One-click "edit the shared data for the whole group" — opens the editor for a
    representative SKU with the copy-to-all-SKU boxes pre-checked. */
 function editGroupShared(sku){
@@ -7459,6 +7471,33 @@ function brandToLabel(raw){ const s=(raw||'').toLowerCase(); if(s.includes('glim
 function riskToVal(raw){ const s=(raw||'').toLowerCase(); if(s.includes('high'))return 'High'; if(s.includes('med'))return 'Medium'; if(s.includes('low'))return 'Low'; return ''; }
 function isoVal(raw){ const s=(raw||'').trim(); if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; const p=parseSheetDate(s); return /^\d{4}-\d{2}-\d{2}$/.test(p)?p:''; }
 
+/* Auto-schedule: count backward from Basket Open, skipping Sat/Sun (business days only). */
+function isoAddBusinessDays(iso, delta){
+  if(!iso) return '';
+  const d = new Date(iso+'T00:00:00'); if(isNaN(d.getTime())) return '';
+  const step = delta<0 ? -1 : 1; let remaining = Math.abs(delta);
+  while(remaining>0){ d.setDate(d.getDate()+step); const wd=d.getDay(); if(wd!==0 && wd!==6) remaining--; }
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+window.autoCalcMilestones = function(){
+  const g = id => document.getElementById(id);
+  const basket = (g('pe-basketOpen_deadline')||{}).value;
+  if(!basket){ if(typeof toast==='function') toast('กรอก “เปิดตะกร้า (Basket Open)” ช่องกำหนด/แผน ก่อน','info'); const el=g('pe-basketOpen_deadline'); if(el) el.focus(); return; }
+  const platformDone = isoAddBusinessDays(basket, -7);       // ขึ้นแพลตฟอร์มเสร็จ = ก่อนเปิดตะกร้า 7 วันทำการ
+  const dataReady    = isoAddBusinessDays(platformDone, -7); // Digital Asset = ก่อนอัปแพลตฟอร์ม 7
+  const productMedia = isoAddBusinessDays(dataReady, -45);   // ภาพ/วิดีโอเสร็จ = ก่อน Digital Asset 45
+  const photoShoot   = isoAddBusinessDays(productMedia, -7); // วันถ่ายภาพ = ก่อนใช้ภาพ 7
+  const refPhoto     = isoAddBusinessDays(photoShoot, -45);  // ส่งรูป Reference = ก่อนถ่ายภาพ 45
+  const sampleToMkt  = isoAddBusinessDays(photoShoot, -14);  // ส่งตัวอย่างให้ MKT = ก่อนถ่ายภาพ 14
+  const set = (id,v)=>{ const el=g(id); if(el && v) el.value=v; };
+  set('pe-platformDone_deadline', platformDone);
+  set('pe-dataReady_deadline',    dataReady);
+  set('pe-productMedia_deadline', productMedia);
+  set('pe-photoShoot_deadline',   photoShoot);
+  set('pe-refPhoto_deadline',     refPhoto);
+  set('pe-sampleToMkt_deadline',  sampleToMkt);
+  if(typeof toast==='function') toast('คำนวณวันให้แล้ว (นับเฉพาะวันทำการ จ.–ศ.) · แก้ไขเองได้','ok');
+};
 function renderProductForm(row, isEdit){
   const V=(c)=>esc(row[c]!=null?row[c]:'');
   const _sku=(row.sku||'').trim();
@@ -7503,6 +7542,7 @@ function renderProductForm(row, isEdit){
 
     <div class="pe-section">วันสำคัญ / Milestones (เว้นว่างได้ = ยังไม่กำหนด)</div>
     <div class="pe-ms-legend"><span class="pe-ms-key plan">📅 ช่องฟ้า = กำหนด/แผน</span><span class="pe-ms-key actual">✅ ช่องเขียว = วันจริง</span><span class="pe-team pe-team-npd">NPD</span>/<span class="pe-team pe-team-cbs">CBS</span> = ทีมที่รับผิดชอบกรอก</div>
+    <div class="pe-autocalc"><button type="button" class="btn-edit primary" onclick="autoCalcMilestones()">🧮 รันวันอัตโนมัติจากวันเปิดตะกร้า</button><span class="pe-autocalc-hint">กรอก “เปิดตะกร้า (Basket Open)” ช่องกำหนด/แผน แล้วกดปุ่มนี้ → ระบบนับถอยหลังให้ (เฉพาะวันทำการ จ.–ศ.) · แก้ไขเองได้</span></div>
     <div class="pe-ms-grid">${ms}</div>
 
     <div class="pe-section">ข้อมูลสำหรับส่งต่อทีมอื่น (Info)</div>
@@ -10949,6 +10989,15 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 .fs-actions{display:flex; gap:8px; justify-content:flex-end; padding:14px 20px; border-top:1px solid var(--line); flex-wrap:wrap;}
 .fs-actions button{padding:8px 16px; border-radius:999px; font-family:'Sarabun',sans-serif; font-size:13px; font-weight:600; cursor:pointer; border:1px solid var(--line); background:#fff;}
 .fs-actions .fs-primary{background:var(--blue-deep,#2563eb); color:#fff; border:none;}
+.gs-list{padding:6px 14px 4px; max-height:60vh; overflow-y:auto;}
+.gs-row{display:flex; align-items:center; gap:10px; padding:10px 6px; border-bottom:1px solid var(--bg,#F2F5FA); cursor:pointer;}
+.gs-row:hover{background:var(--blue-pale,#eef4ff);}
+.gs-name{font-weight:600; font-size:13.5px; flex:1;}
+.gs-sku{font-size:11.5px; color:var(--ink-soft,#6B7684); white-space:nowrap;}
+.gs-canva{text-decoration:none; font-size:15px;}
+.gs-edit{display:inline-flex; gap:2px; flex:0 0 auto;}
+.gs-edit button{background:none; border:none; cursor:pointer; font-size:14px; padding:2px 5px; border-radius:6px;}
+.gs-edit button:hover{background:var(--blue-pale,#eef4ff);}
 </style>
 
 <script>
