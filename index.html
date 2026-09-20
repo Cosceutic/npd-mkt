@@ -772,6 +772,31 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
 ::-webkit-scrollbar-thumb{ background:#CBD5E6; border-radius:99px; border:2px solid transparent; background-clip:content-box; }
 ::-webkit-scrollbar-thumb:hover{ background:#AEBBD3; background-clip:content-box; }
 
+/* ============ page-cohesion pass ============ */
+/* Panels = the section wrapper on every page → unify with soft elevation */
+.panel{ border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); border-color:var(--line); }
+
+/* Timeline: on phones, scroll horizontally instead of shrinking text to nothing */
+.tl-scroll{ width:100%; }
+.tl-svg{ width:100%; height:auto; display:block; }
+@media(max-width:760px){
+  .tl-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:8px; border-radius:12px; }
+  .tl-svg{ width:1100px; max-width:none; }
+}
+
+/* Timeline sub-tabs = modern segmented control (was flat, no active state) */
+#tlbtn-stock, #tlbtn-basket, #tlbtn-pr{ background:var(--card); color:var(--ink-soft); border:1px solid var(--line); box-shadow:var(--shadow-xs); transition:background .16s var(--ease), color .16s var(--ease), border-color .16s var(--ease), box-shadow .16s var(--ease); }
+#tlbtn-stock:hover, #tlbtn-basket:hover, #tlbtn-pr:hover{ color:var(--blue-ink); border-color:var(--blue); }
+#tlbtn-stock.subnav-active, #tlbtn-basket.subnav-active, #tlbtn-pr.subnav-active{ background:linear-gradient(135deg,#7AA0DE,#5C86D6); color:#fff; border-color:transparent; box-shadow:0 5px 14px -5px rgba(60,100,190,.6); }
+
+/* Calendar month grid: rounder cells + gentle hover */
+.cal-cell{ border-radius:10px; transition:box-shadow .15s var(--ease); }
+.cal-cell:hover{ box-shadow:var(--shadow-sm); }
+
+/* Legend chips + generic filter pills: subtle depth + smooth hover */
+.cal-legend-item, .cal-legend-all{ transition:background .14s var(--ease), border-color .14s var(--ease), box-shadow .14s var(--ease); }
+.cal-legend-item:hover, .cal-legend-all:hover{ box-shadow:var(--shadow-xs); }
+
 @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
 </style>
 </head>
@@ -1028,25 +1053,6 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
       <div id="team-feed-empty" class="empty" style="display:none;">No activity logged yet.</div>
     </div>
 
-    <details class="npd-guide">
-      <summary>วิธีกรอก Track / SubCategory / Detail ใน Sheet (คลิกเพื่อดู)</summary>
-      <div class="npd-guide-body">
-        <div class="npd-guide-track">
-          <div class="npd-guide-track-name">R&D <span style="font-weight:400; color:var(--ink-soft);">(รวม FDA)</span></div>
-          <div class="npd-guide-sub">พัฒนาสูตร &nbsp;·&nbsp; สั่ง Test Stability &nbsp;·&nbsp; <strong>FDA</strong> (ขึ้นทะเบียน/จดแจ้ง — ไม่มี SubCategory ย่อย เขียนรายละเอียดใน Note ได้เลย)</div>
-        </div>
-        <div class="npd-guide-track">
-          <div class="npd-guide-track-name">Packaging <span style="font-weight:400; color:var(--ink-soft);">(รวม Graphic/ดีไซน์)</span></div>
-          <div class="npd-guide-sub">ระบุขั้นตอนย่อยในคอลัมน์ <strong>Stage</strong> (คนละคอลัมน์กับ Detail) — แต่ละ SubCategory มีขั้นตอนของตัวเอง:</div>
-          <div class="npd-guide-sub" style="margin-left:14px;"><strong>Primary Packaging</strong> → Graphic Design · Design Approved · Functional Test · Decoration Test · Standard Max-Min</div>
-          <div class="npd-guide-sub" style="margin-left:14px;"><strong>Box</strong> / <strong>Sticker</strong> → Graphic Design · Design Approved · Standard Max-Min</div>
-          <div class="npd-guide-sub" style="margin-left:14px;"><strong>Shrink Film</strong> → ส่ง รง. Test</div>
-          <div class="npd-guide-sub" style="margin-top:4px;">คอลัมน์ <strong>Detail</strong> ใช้พิมพ์ข้อความอิสระได้ตามใจ ไม่กระทบตาราง Checklist</div>
-        </div>
-        <div class="npd-guide-note">ไม่แน่ใจก็เว้นว่างได้ ระบบจับคำแบบหลวมๆ อยู่แล้ว (เช่น พิมพ์ "ทดสอบเสถียรภาพ" หรือ "ขึ้นทะเบียน อย." ก็รู้ว่าเป็น R&D) · เพิ่มคอลัมน์ <strong>Risk</strong> ใน Sheet เพื่ออัปเดตช่องนั้นในตาราง Current Status</div>
-        <div class="npd-guide-note">รูปมากกว่า 1 รูปในช่อง Images ให้คั่นด้วย <strong>เซมิโคลอน ( ; )</strong> ไม่ใช่จุลภาค</div>
-      </div>
-    </details>
     </div>
 
     <div id="team-subview-nprsummary" style="display:none;">
@@ -3635,13 +3641,13 @@ function renderMilestoneTimeline(containerId, fieldKey, emptyLabel){
 
   window['GROUPS_'+containerId] = placed;
 
-  container.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
+  container.innerHTML = `<div class="tl-scroll"><svg class="tl-svg" viewBox="0 0 ${W} ${H}">
     ${monthBands}
     ${monthGrid}
     <line x1="${xStart}" y1="${lineY}" x2="${xEnd}" y2="${lineY}" stroke="var(--blue-deep)" stroke-width="2.5"/>
     ${monthTicks}
     ${markers}
-  </svg>`;
+  </svg></div>`;
 }
 function openGroupFrom(containerId, gi){
   const g = window['GROUPS_'+containerId][gi];
@@ -4952,14 +4958,11 @@ function renderTeamUpdates(){
   }
   document.getElementById('team-feed-empty').style.display = 'none';
 
-  let lastDate = null;
-  let html = '';
-  feed.forEach(f=>{
-    if(f.date !== lastDate){
-      const d = f.date ? formatDate(new Date(f.date+"T00:00:00")) : 'Undated';
-      html += `<div style="font-family:'Anuphan','Prompt'; font-weight:600; font-size:12.5px; color:var(--accent-deep); margin:16px 0 8px;">${d}</div>`;
-      lastDate = f.date;
-    }
+  // Show only the newest FEED_LIMIT entries; older ones collapse behind a "show more" button
+  const FEED_LIMIT = 30;
+  const dateHeader = ds => `<div style="font-family:'Anuphan','Prompt'; font-weight:600; font-size:12.5px; color:var(--accent-deep); margin:16px 0 8px;">${ds ? formatDate(new Date(ds+"T00:00:00")) : 'Undated'}</div>`;
+  let html = '', restHtml = '', lastDate = null, restLastDate = null;
+  feed.forEach((f,i)=>{
     const displayName = f.product ? f.product.name : (f.productName || f.sku || 'Unknown SKU');
     const nameHtml = f.product
       ? `<button class="link-btn" style="font-weight:600; font-size:13px;" onclick="openTimeline(${PRODUCTS.indexOf(f.product)})">${esc(displayName)}</button>`
@@ -4967,10 +4970,20 @@ function renderTeamUpdates(){
     const skuHtml = f.sku ? ` <span class="sku" style="display:inline;">(${esc(f.sku)})</span>` : '';
     const byHtml = (f.pic||f.updatedBy) ? ` <span class="tl-entry-by">— ${esc([f.pic?('👤 '+f.pic):'', f.updatedBy].filter(Boolean).join(' · '))}</span>` : '';
     const thumbs = attachmentTiles(f.imagesRaw, 'sm');
-    html += `<div class="mini-row">
-      <span>${nameHtml}${skuHtml} — ${esc(f.note)}${byHtml}${thumbs}</span>
-    </div>`;
+    const rowHtml = `<div class="mini-row"><span>${nameHtml}${skuHtml} — ${esc(f.note)}${byHtml}${thumbs}</span></div>`;
+    if(i < FEED_LIMIT){
+      if(f.date !== lastDate){ html += dateHeader(f.date); lastDate = f.date; }
+      html += rowHtml;
+    } else {
+      if(f.date !== restLastDate){ restHtml += dateHeader(f.date); restLastDate = f.date; }
+      restHtml += rowHtml;
+    }
   });
+  if(restHtml){
+    const restCount = feed.length - FEED_LIMIT;
+    html += `<div id="team-feed-rest" style="display:none;">${restHtml}</div>`
+      + `<button class="btn-sm ghost" style="margin-top:16px; flex:0 0 auto;" onclick="var r=document.getElementById('team-feed-rest'); if(r){r.style.display='block';} this.style.display='none';">▾ แสดงกิจกรรมเก่ากว่านี้ (${restCount} รายการ)</button>`;
+  }
   feedEl.innerHTML = html;
 }
 
