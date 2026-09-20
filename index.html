@@ -793,6 +793,10 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
 .cal-cell{ border-radius:10px; transition:box-shadow .15s var(--ease); }
 .cal-cell:hover{ box-shadow:var(--shadow-sm); }
 
+/* "+N เพิ่มเติม" chip in the tracking calendar day cells */
+.tev-more{ font-size:9.5px; font-weight:700; color:var(--accent-deep,#D14E88); background:var(--accent-pale,#FDEAF3); border:1px dashed #E9A9C6; border-radius:6px; padding:2px 6px; cursor:pointer; text-align:center; white-space:nowrap; transition:background .14s var(--ease); }
+.tev-more:hover{ background:#F7D3E4; }
+
 /* Legend chips + generic filter pills: subtle depth + smooth hover */
 .cal-legend-item, .cal-legend-all{ transition:background .14s var(--ease), border-color .14s var(--ease), box-shadow .14s var(--ease); }
 .cal-legend-item:hover, .cal-legend-all:hover{ box-shadow:var(--shadow-xs); }
@@ -4754,26 +4758,62 @@ function renderTrackingCalendar(){
   const wk=['อา','จ','อ','พ','พฤ','ศ','ส'];
   let html = wk.map(w=>`<div class="tcal-weekday">${w}</div>`).join('');
   for(let i=0;i<startWk;i++) html+=`<div class="tcal-cell empty"></div>`;
+  const TEV_CAP = 3;   // max chips per day cell — the rest collapse into a "+N" that opens a day popup
+  const tevChipHtml = ({e,idx})=>{
+    const pfx = e.kind==='due' ? '⏰ ' : '';
+    const dueDetail = (e.kind==='due' && e.log && e.log.nextDueDetail) ? e.log.nextDueDetail : '';
+    const chipLabel = dueDetail || e.label;
+    const tip = (e.kind==='due'?'ครบกำหนด: ':'')+e.name+' — '+chipLabel+(e.by?(' · '+e.by):'');
+    const short = chipLabel ? (chipLabel.length>22 ? chipLabel.slice(0,22)+'…' : chipLabel) : e.name;
+    return `<div class="tev ${tevClass(e)}" title="${esc(tip)}" onclick="openTrackEventFromCal(${idx})">${esc(pfx+e.name)}<span class="tev-sub">${esc(short)}</span></div>`;
+  };
   for(let day=1;day<=dim;day++){
     const isToday = new Date(y,m,day).getTime()===today.getTime();
-    const list=(byDay[day]||[]).sort((a,b)=> (a.e.kind===b.e.kind)?0 : (a.e.kind==='due'?-1:1));
-    const chips = list.map(({e,idx})=>{
-      const pfx = e.kind==='due' ? '⏰ ' : '';
-      const dueDetail = (e.kind==='due' && e.log && e.log.nextDueDetail) ? e.log.nextDueDetail : '';
-      const chipLabel = dueDetail || e.label;
-      const tip = (e.kind==='due'?'ครบกำหนด: ':'')+e.name+' — '+chipLabel+(e.by?(' · '+e.by):'');
-      const short = chipLabel ? (chipLabel.length>22 ? chipLabel.slice(0,22)+'…' : chipLabel) : e.name;
-      return `<div class="tev ${tevClass(e)}" title="${esc(tip)}" onclick="openTrackEventFromCal(${idx})">${esc(pfx+e.name)}<span class="tev-sub">${esc(short)}</span></div>`;
-    }).join('');
     const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const list=(byDay[day]||[]).sort((a,b)=> (a.e.kind===b.e.kind)?0 : (a.e.kind==='due'?-1:1));
+    const chips = list.slice(0, TEV_CAP).map(tevChipHtml).join('');
+    const moreN = list.length - Math.min(list.length, TEV_CAP);
+    const moreChip = moreN>0 ? `<div class="tev-more" title="ดูทั้งหมด ${list.length} รายการในวันนี้" onclick="openTrackDay('${iso}')">+${moreN} เพิ่มเติม</div>` : '';
     const dayEvents = eventsOnDay(iso);
     const hasHoliday = dayEvents.some(e=>e.type==='holiday');
     const evHtml = dayEvents.map(e=>eventChipHtml(e, iso)).join('');
-    html+=`<div class="tcal-cell ${isToday?'today':''}${hasHoliday?' cal-holiday':''}"><div class="tcal-daynum">${day}</div><div class="tev-list">${evHtml}${chips}</div></div>`;
+    html+=`<div class="tcal-cell ${isToday?'today':''}${hasHoliday?' cal-holiday':''}"><div class="tcal-daynum">${day}</div><div class="tev-list">${evHtml}${chips}${moreChip}</div></div>`;
   }
   host.innerHTML = `<div class="tcal-grid">${html}</div>`;
   const lbl=document.getElementById('tcal-label'); if(lbl) lbl.textContent = `${MONTH_NAMES[m]} ${y}`;
 }
+/* Day popup — lists every event on one day (opened by the "+N เพิ่มเติม" chip),
+   so a busy day never stretches its calendar cell. Reuses the .modal-* styling. */
+function ensureTDayOverlay(){
+  let ov=document.getElementById('tday-overlay');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='tday-overlay'; ov.className='modal-overlay';
+    ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('open'); });
+    ov.innerHTML='<div class="modal-box" style="max-width:440px;"><div class="modal-header"><div><div class="mh-name" id="tday-title"></div><div class="mh-sku" id="tday-sub"></div></div><button class="modal-close" onclick="document.getElementById(\'tday-overlay\').classList.remove(\'open\')">×</button></div><div class="modal-body" id="tday-body"></div></div>';
+    document.body.appendChild(ov);
+  }
+  return ov;
+}
+window.openTrackDay=function(iso){
+  if(typeof rebuildTrackEvents==='function') rebuildTrackEvents();
+  const ov=ensureTDayOverlay();
+  const d=new Date(iso+'T00:00:00');
+  document.getElementById('tday-title').textContent = (typeof formatDate==='function')?formatDate(d):iso;
+  const items=(ALL_TRACK_EVENTS||[]).map((e,idx)=>({e,idx})).filter(x=>x.e.date===iso)
+    .sort((a,b)=>(a.e.kind===b.e.kind)?0:(a.e.kind==='due'?-1:1));
+  const dayEvents=(typeof eventsOnDay==='function')?eventsOnDay(iso):[];
+  document.getElementById('tday-sub').textContent = (items.length+dayEvents.length)+' รายการ';
+  let html='';
+  if(dayEvents.length) html+=dayEvents.map(e=>eventChipHtml(e,iso)).join('');
+  html+=items.map(({e,idx})=>{
+    const pfx=e.kind==='due'?'⏰ ':'';
+    const detail=(e.kind==='due'&&e.log&&e.log.nextDueDetail)?e.log.nextDueDetail:e.label;
+    const by=e.by?(' · '+e.by):'';
+    return `<div class="tev ${tevClass(e)}" style="margin-bottom:7px; white-space:normal;" onclick="document.getElementById('tday-overlay').classList.remove('open'); openTrackEventFromCal(${idx})">${esc(pfx+e.name)}<span class="tev-sub" style="white-space:normal;">${esc((detail||'')+by)}</span></div>`;
+  }).join('');
+  document.getElementById('tday-body').innerHTML = html || '<div class="empty" style="padding:12px 0;">ไม่มีรายการ</div>';
+  ov.classList.add('open');
+};
 function renderTrackingUpcoming(){
   const host=document.getElementById('tcal-upcoming'); if(!host) return;
   rebuildTrackEvents();
