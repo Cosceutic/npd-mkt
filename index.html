@@ -851,6 +851,8 @@
       <button class="btn-sm ghost" onclick="lockTeam()">🔒 ล็อกหน้านี้</button>
     </div>
 
+    <div id="team-roadmap" style="margin-bottom:22px;"></div>
+
     <p class="section-title" style="margin-top:0;">Library</p>
     <p class="section-sub">เอกสารและโฟลเดอร์ที่ใช้บ่อย</p>
     <div class="panel" style="padding:16px 20px;">
@@ -1920,7 +1922,8 @@ const PRODUCT_COLUMNS = [
   'platformDone_deadline','platformDone_actual','basketOpen_deadline','basketOpen_actual',
   'launch_deadline','launch_actual','prDate_deadline','prDate_actual',
   'refPhoto_link','productMedia_link','dataReady_link','platformDone_link',
-  'canva','lot','exp','remark','saleHalted','saleHaltDate','saleHaltNote','risk','nextDue','history','image','group','collection'
+  'canva','lot','exp','remark','saleHalted','saleHaltDate','saleHaltNote','risk','nextDue','history','image','group','collection',
+  'price','size','sellingPoints','keyBenefits'
 ];
 
 /* Human-friendly milestone groups for the editor (prefix -> Thai label). */
@@ -2098,6 +2101,8 @@ function rowToProduct(row){
     risk: row.risk||'', nextDue: row.nextDue||'',
     history: parseHistory(row.history),
     image: resolveImage(row),
+    price: row.price||'', size: row.size||'',
+    sellingPoints: row.sellingPoints||'', keyBenefits: row.keyBenefits||'',
   };
 }
 
@@ -4155,6 +4160,7 @@ function catalogSingleCard(p, idx){
         ${(p.lot||p.exp) ? `<div class="csku">${p.lot?`Lot ${esc(p.lot)}`:''}${p.exp?` · EXP ${formatDate(new Date(p.exp+"T00:00:00"))}`:''}</div>` : ''}
         <div class="catalog-actions">
           <button class="btn-sm ghost" onclick="openTimeline(${idx})">Timeline</button>
+          <button class="btn-sm primary" onclick="openFinalSheet('${attrJs(p.sku)}')">📋 Final</button>
           ${p.canva
             ? `<a class="btn-sm primary" href="${esc(p.canva)}" target="_blank" rel="noopener">Presentation</a>`
             : `<span class="btn-sm disabled">No link yet</span>`}
@@ -4678,6 +4684,7 @@ function renderTeamBrandBar(){
 function setTeamBrandFilter(b){
   teamBrandFilter=b||'all';
   renderTeamUpdates();
+  if(typeof renderRoadmap==='function') renderRoadmap();
   const tv=document.getElementById('team-subview-tracking');
   if(tv && tv.style.display!=='none'){ if(typeof renderTrackingCalendar==='function') renderTrackingCalendar(); if(typeof renderTrackingUpcoming==='function') renderTrackingUpcoming(); }
 }
@@ -4981,6 +4988,7 @@ function applyTeamLockState(unlocked){
       ? 'บัญชีนี้ไม่มีสิทธิ์เข้าหน้า NPD Process (ข้อมูลลับเฉพาะทีม) — ติดต่อแอดมินเพื่อขอสิทธิ์'
       : 'หน้านี้เป็นความลับ จำกัดเฉพาะทีม NPD — กรุณาเข้าสู่ระบบด้วยบัญชีที่มีสิทธิ์';
   }
+  if(unlocked && typeof renderRoadmap==='function') renderRoadmap();
 }
 function initTeamLock(){ applyTeamLockState(canViewNpdProcess()); }
 
@@ -7449,6 +7457,14 @@ function renderProductForm(row, isEdit){
     <div class="pe-section">วันสำคัญ / Milestones (เว้นว่างได้ = ยังไม่กำหนด)</div>
     <div class="pe-ms-grid">${ms}</div>
 
+    <div class="pe-section">ข้อมูลสำหรับส่งต่อทีมอื่น (Final)</div>
+    <div class="pe-grid">
+      <div class="pe-field"><label>💵 ราคาขาย</label><input type="text" id="pe-price" value="${V('price')}" placeholder="เช่น 290 บาท"></div>
+      <div class="pe-field"><label>📏 ขนาด / ปริมาณ</label><input type="text" id="pe-size" value="${V('size')}" placeholder="เช่น 30ml / เซ็ต 3 ชิ้น"></div>
+      <div class="pe-field full"><label>⭐ จุดขายหลัก (Selling Points)</label><textarea id="pe-sellingPoints" rows="2" placeholder="จุดเด่น/สิ่งที่ใช้ขาย">${V('sellingPoints')}</textarea></div>
+      <div class="pe-field full"><label>🧪 สรรพคุณ / ส่วนผสมเด่น</label><textarea id="pe-keyBenefits" rows="2" placeholder="ส่วนผสม/สรรพคุณเด่น">${V('keyBenefits')}</textarea></div>
+    </div>
+
     <div class="pe-section">รายละเอียดเพิ่มเติม</div>
     <div class="pe-grid">
       <div class="pe-field full"><label>Canva / Presentation link</label><input type="text" id="pe-canva" value="${V('canva')}" placeholder="https://www.canva.com/…"></div>
@@ -7637,8 +7653,8 @@ function deleteProduct(sku){
 async function postToSheet(payload){
   await sbInit();
   if(!sbLoggedIn()) return { ok:false, error:'ยังไม่ได้เข้าสู่ระบบ (กดปุ่มเข้าสู่ระบบ มุมขวาล่าง)' };
-  const TBL = { products:'products', updates:'updates', task:'tasks', notice:'notice', officestatus:'office', events:'events', banners:'banners', briefs:'briefs', contentideas:'content_ideas', contentcal:'content_calendar', contentcomments:'content_comments', contentmusthave:'content_musthave', brandidentity:'brand_identity', hashtags:'hashtags', quicktasks:'quick_tasks' };
-  const KEY = { products:'sku', notice:'Message', task:'รายละเอียดงาน', officestatus:(payload.key||'name'), events:'id', banners:'id', briefs:'nprNo', contentideas:'id', contentcal:'id', contentcomments:'id', contentmusthave:'id', brandidentity:'id', hashtags:'id', quicktasks:'id' };
+  const TBL = { products:'products', updates:'updates', task:'tasks', notice:'notice', officestatus:'office', events:'events', banners:'banners', briefs:'briefs', contentideas:'content_ideas', contentcal:'content_calendar', contentcomments:'content_comments', contentmusthave:'content_musthave', brandidentity:'brand_identity', hashtags:'hashtags', quicktasks:'quick_tasks', productstage:'product_stage' };
+  const KEY = { products:'sku', notice:'Message', task:'รายละเอียดงาน', officestatus:(payload.key||'name'), events:'id', banners:'id', briefs:'nprNo', contentideas:'id', contentcal:'id', contentcomments:'id', contentmusthave:'id', brandidentity:'id', hashtags:'id', quicktasks:'id', productstage:'sku' };
   const table = TBL[payload.target];
   if(!table) return { ok:false, error:'unknown target: '+payload.target };
   const key = KEY[payload.target];
@@ -10802,6 +10818,198 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     try{ var r=await migrateAll(function(s){ out(s); }); out(r.err?('เสร็จ (มีบางตารางพลาด — ดูด้านบน)'):'เสร็จเรียบร้อย ✅ ตรวจใน Supabase → Table Editor ได้เลย'); }
     catch(e){ out('❌ '+(e&&e.message||e)); }
   };
+})();
+</script>
+
+<style>
+/* ---- Product Roadmap (NPD Process) ---- */
+#team-roadmap .rm-board{display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; align-items:flex-start;}
+#team-roadmap .rm-col{background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:10px; min-width:200px; width:200px; flex:0 0 auto;}
+#team-roadmap .rm-col-head{font-family:'Prompt',sans-serif; font-weight:600; font-size:12.5px; color:var(--accent-deep); margin-bottom:9px; line-height:1.35;}
+#team-roadmap .rm-count{background:#fff; border:1px solid var(--line); border-radius:999px; padding:0 8px; font-size:11px; color:var(--ink-soft); float:right;}
+#team-roadmap .rm-card{background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px; margin-bottom:8px;}
+#team-roadmap .rm-thumb{width:100%; height:78px; object-fit:cover; border-radius:7px; margin-bottom:6px;}
+#team-roadmap .rm-name{font-weight:600; font-size:12.5px; line-height:1.3;}
+#team-roadmap .rm-sku{font-size:11px; color:var(--ink-soft); margin:2px 0 6px;}
+#team-roadmap .rm-move{width:100%; font-family:'Sarabun',sans-serif; font-size:11px; padding:4px; border:1px solid var(--line); border-radius:7px; background:#fff;}
+#team-roadmap .rm-empty{color:var(--ink-soft); font-size:12px; text-align:center; padding:8px 0;}
+/* ---- Final Product Sheet ---- */
+.fs-overlay{position:fixed; inset:0; background:rgba(20,28,45,.55); z-index:100000; display:none; align-items:flex-start; justify-content:center; padding:32px 14px; overflow:auto;}
+.fs-overlay.open{display:flex;}
+.fs-modal{background:#fff; max-width:640px; width:100%; border-radius:16px; box-shadow:0 24px 60px -20px rgba(0,0,0,.5); overflow:hidden;}
+.fs-head{display:flex; gap:14px; padding:18px 20px; background:var(--blue-pale,#eef4ff); align-items:center;}
+.fs-head img{width:92px; height:92px; object-fit:cover; border-radius:12px; border:1px solid var(--line);}
+.fs-title{font-family:'Prompt',sans-serif; font-weight:700; font-size:18px; color:var(--blue-ink,#1f3a5f); line-height:1.25;}
+.fs-sub{font-size:12.5px; color:var(--ink-soft); margin-top:3px;}
+.fs-body{padding:16px 20px;}
+.fs-row{display:flex; gap:10px; padding:7px 0; border-bottom:1px dashed var(--line); font-size:13.5px;}
+.fs-row b{flex:0 0 120px; color:var(--ink-soft); font-weight:600;}
+.fs-row span{flex:1; white-space:pre-wrap;}
+.fs-row a{color:var(--blue-deep,#2563eb); word-break:break-all;}
+.fs-actions{display:flex; gap:8px; justify-content:flex-end; padding:14px 20px; border-top:1px solid var(--line); flex-wrap:wrap;}
+.fs-actions button{padding:8px 16px; border-radius:999px; font-family:'Sarabun',sans-serif; font-size:13px; font-weight:600; cursor:pointer; border:1px solid var(--line); background:#fff;}
+.fs-actions .fs-primary{background:var(--blue-deep,#2563eb); color:#fff; border:none;}
+</style>
+
+<script>
+/* ============================================================
+   Product Roadmap (NPD Process, secret) + Final Product Sheet (Product Info, ทุกทีมดูได้)
+   ============================================================ */
+(function(){
+  var E = (typeof esc==='function') ? esc : function(s){var d=document.createElement('div');d.textContent=(s==null?'':s);return d.innerHTML;};
+  var AJ = (typeof attrJs==='function') ? attrJs : function(s){return String(s==null?'':s).replace(/'/g,"\\'");};
+  var RD = (typeof resolveDriveLink==='function') ? resolveDriveLink : function(u){return u;};
+  var bLabel = function(b){ return (typeof brandDisplayLabel==='function')?brandDisplayLabel(b):(b||''); };
+  var catLabel = function(c){ try{ return (typeof CATEGORY_DEFS!=='undefined' && CATEGORY_DEFS[c]) ? CATEGORY_DEFS[c].label : (c||''); }catch(e){ return c||''; } };
+
+  /* ---- 8 main stages (non-linear — team picks per product) ---- */
+  window.ROADMAP_STAGES = [
+    {k:'concept',   t:'💡 Concept'},
+    {k:'cost',      t:'💰 Cost & Pay Back'},
+    {k:'dev',       t:'🧪 Product Development (Formula/Packaging)'},
+    {k:'massprod',  t:'🏭 Mass Production, Photoshoot & Sample'},
+    {k:'content',   t:'🎨 สื่อ/คอนเทนต์ & Digital Asset'},
+    {k:'instock',   t:'📦 เข้าสต็อก'},
+    {k:'prelaunch', t:'🛒 เตรียมขึ้นขาย (แพลตฟอร์ม/ตะกร้า)'},
+    {k:'launch',    t:'🚀 Launch / 🎬 Full PR'},
+  ];
+
+  /* ---- stage storage (separate table so the whole NPD team can edit) ---- */
+  var STAGE_MAP = {};
+  var stagesLoaded = false, stagesLoading = false;
+  window.loadStages = async function(){
+    try{ var rows = await sbSelect('product_stage'); STAGE_MAP={}; rows.forEach(function(r){ if(r.sku) STAGE_MAP[r.sku]=r.stage||''; }); }catch(e){}
+  };
+  window.stageOf = function(sku){ return STAGE_MAP[sku]||''; };
+  window.setStage = async function(sku, stage){
+    if(!(typeof canEditArea==='function' && canEditArea('npd_process'))){ if(typeof toast==='function') toast('เฉพาะทีม NPD เท่านั้นที่แก้ขั้นตอนได้','info'); return; }
+    STAGE_MAP[sku]=stage; renderRoadmap();
+    try{
+      var r = await postToSheet({target:'productstage', action:'upsert', keyValue:sku, row:{sku:sku, stage:stage, updatedAt:(typeof todayStr==='function'?todayStr():'')}});
+      if(r && r.ok===false){ if(typeof toast==='function') toast('บันทึกขั้นไม่สำเร็จ: '+(r.error||''),'err'); }
+      else if(typeof toast==='function') toast('อัปเดตขั้นตอนแล้ว','ok');
+    }catch(e){ if(typeof toast==='function') toast('ต่อ Supabase ไม่ได้','err'); }
+  };
+
+  window.renderRoadmap = function(){
+    var host = document.getElementById('team-roadmap'); if(!host) return;
+    if(typeof canViewNpdProcess==='function' && !canViewNpdProcess()){ host.innerHTML=''; return; }
+    if(!stagesLoaded && !stagesLoading){ stagesLoading=true; loadStages().then(function(){ stagesLoaded=true; stagesLoading=false; renderRoadmap(); }); }
+    var prods = (typeof PRODUCTS!=='undefined'?PRODUCTS:[]).slice();
+    var bf = (typeof teamBrandFilter!=='undefined') ? teamBrandFilter : 'all';
+    if(bf && bf!=='all') prods = prods.filter(function(p){ return (p.brand||'other')===bf; });
+    var canEdit = (typeof canEditArea==='function') && canEditArea('npd_process');
+    var moveSel = function(sku, cur){ if(!canEdit) return '';
+      var opts = '<option value="">— ย้ายไปขั้น —</option>' + ROADMAP_STAGES.map(function(s){ return '<option value="'+s.k+'"'+(s.k===cur?' selected':'')+'>'+E(s.t)+'</option>'; }).join('');
+      return '<select class="rm-move" onchange="setStage(\''+AJ(sku)+'\', this.value)">'+opts+'</select>';
+    };
+    var card = function(p){
+      var img = p.image ? '<img class="rm-thumb" src="'+E(RD(p.image)||p.image)+'" onerror="this.style.display=\'none\'">' : '';
+      return '<div class="rm-card">'+img
+        +'<div class="rm-name">'+E(p.name||p.sku)+'</div>'
+        +'<div class="rm-sku">'+E(p.sku||'')+(p.brand?' · '+E(bLabel(p.brand)):'')+'</div>'
+        +moveSel(p.sku, stageOf(p.sku))+'</div>';
+    };
+    var col = function(title, items){
+      return '<div class="rm-col"><div class="rm-col-head"><span class="rm-count">'+items.length+'</span>'+E(title)+'</div>'
+        +(items.length?items.map(card).join(''):'<div class="rm-empty">—</div>')+'</div>';
+    };
+    var html = '<p class="section-title" style="margin-top:0;">🗺️ Product Roadmap</p>'
+      +'<p class="section-sub">สินค้าแต่ละตัวอยู่ขั้นตอนหลักไหน'+(canEdit?' · เลือก “ย้ายไปขั้น” เพื่ออัปเดต (สลับขั้นได้อิสระ ไม่ต้องเรียงลำดับ)':' · (ดูอย่างเดียว)')+'</p>';
+    var boardCols = ROADMAP_STAGES.map(function(s){ return col(s.t, prods.filter(function(p){ return stageOf(p.sku)===s.k; })); });
+    var unset = prods.filter(function(p){ return !stageOf(p.sku); });
+    if(unset.length) boardCols.push(col('❓ ยังไม่ระบุขั้น', unset));
+    host.innerHTML = html + '<div class="rm-board">'+boardCols.join('')+'</div>';
+  };
+
+  /* ---- Final Product Sheet (shareable, NO cost) ---- */
+  function ensureFsOverlay(){
+    var ov = document.getElementById('fs-overlay');
+    if(!ov){ ov=document.createElement('div'); ov.id='fs-overlay'; ov.className='fs-overlay';
+      ov.addEventListener('click', function(e){ if(e.target===ov) closeFinalSheet(); });
+      document.body.appendChild(ov); }
+    return ov;
+  }
+  window.closeFinalSheet = function(){ var ov=document.getElementById('fs-overlay'); if(ov) ov.classList.remove('open'); };
+  function launchDateOf(p){ var l=p.launch||{}; var d=l.actual||l.deadline||''; return d; }
+  function fsFields(p){
+    var rows = [];
+    var add = function(label, val){ if(val && String(val).trim()) rows.push([label, String(val)]); };
+    add('SKU', p.sku);
+    add('Barcode', p.barcode);
+    add('แบรนด์', bLabel(p.brand));
+    add('หมวดหมู่', catLabel(p.category));
+    add('คอลเลกชัน', p.collection);
+    add('ขนาด/ปริมาณ', p.size);
+    add('ราคาขาย', p.price);
+    add('จุดขายหลัก', p.sellingPoints);
+    add('สรรพคุณ/ส่วนผสมเด่น', p.keyBenefits);
+    var ld = launchDateOf(p); add('วันวางขาย', ld ? ((typeof formatDate==='function' && !isNaN(new Date(ld))) ? formatDate(new Date(ld+'T00:00:00')) : ld) : '');
+    return rows;
+  }
+  function fsLinks(p){
+    var L = p.links||{}; var out=[];
+    var add=function(label,u){ if(u && String(u).trim()) out.push([label, String(u).trim()]); };
+    add('รูป Reference', L.refPhoto);
+    add('ภาพ/วิดีโอสินค้า', L.productMedia);
+    add('Digital Asset', L.dataReady);
+    add('หน้าแพลตฟอร์ม', L.platformDone);
+    add('Canva Presentation', p.canva);
+    return out;
+  }
+  window.openFinalSheet = function(sku){
+    var p = (typeof PRODUCTS!=='undefined'?PRODUCTS:[]).find(function(x){ return x.sku===sku; }); if(!p){ if(typeof toast==='function') toast('ไม่พบสินค้า','err'); return; }
+    var ov = ensureFsOverlay();
+    var rows = fsFields(p), links = fsLinks(p);
+    var img = p.image ? '<img src="'+E(RD(p.image)||p.image)+'" onerror="this.style.display=\'none\'">' : '';
+    var rowsHtml = rows.map(function(r){ return '<div class="fs-row"><b>'+E(r[0])+'</b><span>'+E(r[1])+'</span></div>'; }).join('');
+    var linksHtml = links.length ? ('<div class="fs-row" style="border:none;padding-top:12px;"><b>ไฟล์/ลิงก์</b><span></span></div>'
+      + links.map(function(r){ return '<div class="fs-row"><b>'+E(r[0])+'</b><span><a href="'+E(r[1])+'" target="_blank" rel="noopener">'+E(r[1])+'</a></span></div>'; }).join('')) : '';
+    ov.innerHTML = '<div class="fs-modal">'
+      +'<div class="fs-head">'+img+'<div><div class="fs-title">'+E(p.name||p.sku)+'</div><div class="fs-sub">ข้อมูลสินค้าพร้อมส่งต่อ (Final) · '+E(bLabel(p.brand))+'</div></div></div>'
+      +'<div class="fs-body">'+rowsHtml+linksHtml+'</div>'
+      +'<div class="fs-actions"><button onclick="closeFinalSheet()">ปิด</button>'
+      +'<button onclick="copyFinalSheet(\''+AJ(sku)+'\')">📋 คัดลอกข้อความ</button>'
+      +'<button class="fs-primary" onclick="printFinalSheet(\''+AJ(sku)+'\')">🖨️ พิมพ์ / บันทึก PDF</button></div>'
+      +'</div>';
+    ov.classList.add('open');
+  };
+  function finalSheetText(p){
+    var lines = ['ข้อมูลสินค้า (Final): '+(p.name||p.sku), ''];
+    fsFields(p).forEach(function(r){ lines.push(r[0]+': '+r[1]); });
+    var links = fsLinks(p);
+    if(links.length){ lines.push('', 'ไฟล์/ลิงก์:'); links.forEach(function(r){ lines.push('- '+r[0]+': '+r[1]); }); }
+    return lines.join('\n');
+  }
+  window.copyFinalSheet = function(sku){
+    var p=(typeof PRODUCTS!=='undefined'?PRODUCTS:[]).find(function(x){return x.sku===sku;}); if(!p) return;
+    var txt = finalSheetText(p);
+    var done=function(){ if(typeof toast==='function') toast('คัดลอกแล้ว 📋 ส่งต่อได้เลย','ok'); };
+    try{ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done, fb); return; } }catch(e){}
+    fb();
+    function fb(){ try{ var ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done(); }catch(e2){ if(typeof toast==='function') toast('คัดลอกไม่สำเร็จ','err'); } }
+  };
+  window.printFinalSheet = function(sku){
+    var p=(typeof PRODUCTS!=='undefined'?PRODUCTS:[]).find(function(x){return x.sku===sku;}); if(!p) return;
+    var rows=fsFields(p), links=fsLinks(p);
+    var img = p.image ? '<img src="'+E(RD(p.image)||p.image)+'" style="width:130px;height:130px;object-fit:cover;border-radius:12px;border:1px solid #ddd;">' : '';
+    var rowsHtml = rows.map(function(r){ return '<tr><td class="l">'+E(r[0])+'</td><td>'+E(r[1])+'</td></tr>'; }).join('');
+    var linksHtml = links.map(function(r){ return '<tr><td class="l">'+E(r[0])+'</td><td><a href="'+E(r[1])+'">'+E(r[1])+'</a></td></tr>'; }).join('');
+    var w = window.open('', '_blank');
+    if(!w){ if(typeof toast==='function') toast('เบราว์เซอร์บล็อกหน้าต่าง — อนุญาต popup แล้วลองใหม่ หรือใช้ปุ่มคัดลอก','err'); return; }
+    w.document.write('<!doctype html><html lang="th"><head><meta charset="utf-8"><title>'+E(p.name||p.sku)+' — Final</title>'
+      +'<style>body{font-family:Arial,"Helvetica Neue",sans-serif;color:#222;max-width:640px;margin:24px auto;padding:0 16px;}'
+      +'h1{font-size:20px;margin:0 0 2px;} .sub{color:#777;font-size:13px;margin-bottom:16px;}'
+      +'.top{display:flex;gap:16px;align-items:center;margin-bottom:16px;} table{width:100%;border-collapse:collapse;font-size:13.5px;}'
+      +'td{padding:7px 6px;border-bottom:1px solid #eee;vertical-align:top;} td.l{color:#777;width:150px;font-weight:600;} a{color:#2563eb;word-break:break-all;}</style>'
+      +'</head><body><div class="top">'+img+'<div><h1>'+E(p.name||p.sku)+'</h1><div class="sub">ข้อมูลสินค้าพร้อมส่งต่อ (Final) · '+E(bLabel(p.brand))+'</div></div></div>'
+      +'<table>'+rowsHtml+(linksHtml?('<tr><td class="l" style="padding-top:14px;">ไฟล์/ลิงก์</td><td></td></tr>'+linksHtml):'')+'</table>'
+      +'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},300);};</scr'+'ipt></body></html>');
+    w.document.close();
+  };
+
+  // initial stage load (view is gated; harmless if empty)
+  try{ loadStages().then(function(){ stagesLoaded=true; if(document.getElementById('team-content') && document.getElementById('team-content').style.display!=='none') renderRoadmap(); }); }catch(e){}
 })();
 </script>
 </body>
