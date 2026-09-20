@@ -4716,12 +4716,34 @@ function normalizeDueDate(raw){
   return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
 }
 let ALL_TRACK_EVENTS = [];
+/* Collapse duplicate group updates: many multi-SKU products share ONE timeline, so the same
+   update was historically logged once per SKU (+ a group row). Same group + same day + same
+   content → show ONE entry (prefer the group-code row as the representative). Sets _dupCount. */
+function dedupeGroupLogs(logs){
+  const seen={}, out=[];
+  (logs||[]).forEach(l=>{
+    const g = ((typeof productGroupOf==='function') ? productGroupOf(l.sku) : l.sku) || l.sku;
+    const key = g+'|'+(l.date||'')+'|'+(l.track||'')+'|'+(l.subCategory||'')+'|'+(l.stage||'')+'|'+((l.detail||'').trim())+'|'+((l.note||'').trim())+'|'+(l.nextDue||'');
+    if(key in seen){
+      const rep = out[seen[key]];
+      const n = (rep._dupCount||1) + 1;
+      if((typeof isGroupCode==='function') && isGroupCode(l.sku) && !isGroupCode(rep.sku)){
+        out[seen[key]] = Object.assign({}, l, {_dupCount:n});   // prefer the group-scoped row
+      } else { rep._dupCount = n; }
+      return;
+    }
+    seen[key] = out.length; out.push(Object.assign({}, l, {_dupCount:1}));
+  });
+  return out;
+}
 function trackingEvents(){
   const evs=[];
-  (UPDATE_LOGS||[]).forEach(l=>{
-    if(typeof teamLogVisible==='function' && !teamLogVisible(l.sku)) return;   // กรองตามแบรนด์ที่เลือกในหน้า NPD Process
-    const name = nameForSku(l.sku);
-    const label = [l.subCategory, l.stage, l.detail].filter(Boolean).join(' — ') || l.note || 'อัปเดต';
+  const logs = dedupeGroupLogs((UPDATE_LOGS||[]).filter(l=> (typeof teamLogVisible!=='function') || teamLogVisible(l.sku)));
+  logs.forEach(l=>{
+    const isGrp = (typeof isGroupCode==='function') && isGroupCode(l.sku);
+    const name = nameForSku(l.sku) || (isGrp && typeof groupDisplayName==='function' ? groupDisplayName(l.sku) : l.sku);
+    const dup = (l._dupCount>1) ? (' · รวม '+l._dupCount+' SKU') : '';
+    const label = ([l.subCategory, l.stage, l.detail].filter(Boolean).join(' — ') || l.note || 'อัปเดต') + dup;
     if(l.date) evs.push({date:l.date, kind:'done', sku:l.sku, track:l.track, name, label, by:l.updatedBy, log:l});
     const due = normalizeDueDate(l.nextDue);
     if(due) evs.push({date:due, kind:'due', sku:l.sku, track:l.track, name, label, by:l.updatedBy, log:l});
@@ -4980,12 +5002,15 @@ function renderTeamUpdates(){
   }
 
   // Activity feed: Updates Log entries only, newest first (respects brand filter)
-  const feed = UPDATE_LOGS.filter(l=>teamLogVisible(l.sku)).map(l=>{
+  const feed = dedupeGroupLogs(UPDATE_LOGS.filter(l=>teamLogVisible(l.sku))).map(l=>{
     const product = PRODUCTS.find(p=>p.sku===l.sku);
     const label = [l.subCategory, l.stage, l.detail].filter(Boolean).join(' — ');
     const noteText = [label, l.note].filter(Boolean).join(': ');
-    return {date:l.date, note:noteText || '(update logged)', product, sku:l.sku,
-      productName:l.productName,
+    const isGrp = (typeof isGroupCode==='function') && isGroupCode(l.sku);
+    const dispName = product ? product.name : (l.productName || (isGrp && typeof groupDisplayName==='function' ? groupDisplayName(l.sku) : '') || l.sku);
+    const dupSuffix = (l._dupCount>1) ? ` · ทั้งกลุ่ม (${l._dupCount} SKU)` : '';
+    return {date:l.date, note:(noteText || '(update logged)')+dupSuffix, product, sku:l.sku,
+      productName:dispName,
             track:l.track, updatedBy:l.updatedBy, pic:l.pic, images:l.images, imagesRaw:l.imagesRaw};
   });
   feed.sort((a,b)=> b.date.localeCompare(a.date));
@@ -8870,6 +8895,9 @@ function renderUpdateForm(){
         </div>
       </div>
     </div>
+    ${ueEditId ? '' : `<div class="pe-field full" style="background:#F1F5FF;border:1px solid #D6E2F7;border-radius:10px;padding:8px 12px;font-size:11.5px;color:#3E5C86;line-height:1.6;">
+      <b>อัปเดตยังไง?</b> &nbsp;▶ <b>ต่องานเดิม</b> — ถ้ามีปุ่มสีเหลือง “ต่องานที่กำลังทำ” ด้านบน ให้กดปุ่มนั้น (ระบบตั้ง Track/หัวข้อให้ตรงงานเดิม) แล้วแค่เปลี่ยน “ขั้น/สถานะ” &nbsp;·&nbsp; 🆕 <b>เริ่มงานใหม่</b> — เลือก Track แล้วกรอกได้เลย
+    </div>`}
     <div class="pe-field"><label>สาย/แผนก (Track)</label><select id="ue-Track" onchange="updateSubStageFields()">${trackOpts}</select></div>
     <div class="pe-field" id="ue-subcat-cell">${subcatCellHtml(initTrack, pf.SubCategory||'')}</div>
     <div class="pe-field" id="ue-stage-cell">${ueSelectOrText('ue-Stage','ขั้น/สถานะ (Stage)',stagesFor(initTrack, pf.SubCategory||''),pf.Stage||'','เช่น กำลังทำ, เสร็จ','maybeAutoNextDue()')}</div>
@@ -8884,7 +8912,7 @@ function renderUpdateForm(){
     <div class="pe-field"><label>PIC (ผู้รับผิดชอบ)</label><input type="text" id="ue-PIC" list="ue-pic-list" value="${esc(pf.PIC||'')}" placeholder="เลือกหรือพิมพ์ชื่อ (อื่นๆพิมพ์เองได้)"><datalist id="ue-pic-list">${picList}</datalist></div>
     <div class="pe-field"><label>ผู้อัปเดต (UpdatedBy)</label><select id="ue-UpdatedBy">${byOpts}</select></div>
     <div class="pe-field"><label>Risk</label><select id="ue-Risk">${riskOpts}</select></div>
-    <div class="pe-field"><label>กำหนดถัดไป (Next Due) — วันที่</label><input type="date" id="ue-NextDue" value="${esc(normalizeDueDate(pf.NextDue))}"><div id="ue-nextdue-hint" style="font-size:11px; color:#B26A00; font-weight:600; margin-top:3px;"></div><div style="font-size:11px; color:var(--muted); margin-top:3px;">เลือก "วันที่" ครบกำหนด แล้วอธิบายว่ารอบหน้าต้องทำอะไรในช่อง "รายละเอียดกำหนดถัดไป" ด้านล่าง</div></div>
+    <div class="pe-field"><label>กำหนดถัดไป (Next Due) <span style="color:var(--ink-soft);font-weight:400;">— ไม่บังคับ</span></label><input type="date" id="ue-NextDue" value="${esc(normalizeDueDate(pf.NextDue))}"><div id="ue-nextdue-hint" style="font-size:11px; color:#B26A00; font-weight:600; margin-top:3px;"></div><div style="font-size:11px; color:var(--muted); margin-top:3px;">ใส่เฉพาะถ้ามีงาน "รอบถัดไป" ต้องตามต่อ — เลือกวันครบกำหนด แล้วบอกว่ารอบหน้าต้องทำอะไรในช่องด้านล่าง (จะไปโผล่เตือนในปฏิทิน ⏰)</div></div>
     <div class="pe-field full"><label>รายละเอียดกำหนดถัดไป (Detail Next Due)</label><input type="text" id="ue-NextDueDetail" value="${esc(pf.NextDueDetail||'')}" placeholder="รอบถัดไปต้องทำอะไร เช่น ตามผล PPS, นัดส่งตัวอย่าง, เช็คสต็อกกล่อง"></div>
     <div class="pe-field full"><label>รายละเอียด (Detail) *<span style="font-weight:400; color:var(--muted); font-size:11px; margin-left:6px;">— รายละเอียดงานที่ทำรอบนี้</span></label><textarea id="ue-Detail" placeholder="อัปเดตความคืบหน้าที่ทำรอบนี้…">${esc(pf.Detail||'')}</textarea></div>
     <div class="pe-field full"><label>หมายเหตุ (Note)</label><input type="text" id="ue-Note" value="${esc(pf.Note||'')}"></div>
@@ -9048,19 +9076,26 @@ function saveMultiUpdateEntries(){
   if(!base.Detail){ toast('กรอกรายละเอียด (Detail) ก่อน','err'); return; }
   if(uploadNotReadyGuard()) return;
   if(window.DraftGuard) DraftGuard.clear('npd_update');
-  // ตระกูลไหนเลือกครบทุกตัว + มี "การ์ดกลุ่ม" ค้างอยู่ → อัปเดตภาพรวมกลุ่มให้ด้วย จะได้ไม่ค้างสถานะเก่า
-  var finalSet=new Set(skus), groupCodes=[];
-  var LOGS=(typeof UPDATE_LOGS!=='undefined'&&UPDATE_LOGS)||[];
-  new Set(skus.map(function(s){return productGroupOf(s);})).forEach(function(g){
-    if(typeof isGroupCode==='function' && isGroupCode(g) && !finalSet.has(g) && LOGS.some(function(l){return l.sku===g;})){
-      var mem=groupMembers(g);
-      if(mem.length && mem.every(function(m){return finalSet.has(m);})) groupCodes.push(g);
+  // ยุบให้เหลือการ์ดน้อยที่สุด: ตระกูลที่เลือก "ครบทุกตัว" → บันทึกเป็นการ์ดเดียวระดับกลุ่ม ("ทั้งกลุ่ม")
+  // ส่วนตระกูลที่เลือกไม่ครบ หรือสินค้าเดี่ยว → บันทึกราย SKU ตามเดิม (กรณีบางตัวต่างจากกลุ่ม)
+  var finalSet=new Set(skus);
+  var byGroup={};
+  skus.forEach(function(s){ var g=productGroupOf(s); (byGroup[g]=byGroup[g]||[]).push(s); });
+  var targets=[], groupCount=0;
+  Object.keys(byGroup).forEach(function(g){
+    var members = groupMembers(g);
+    var isMulti = members.length>1;
+    var allSelected = isMulti && members.every(function(m){ return finalSet.has(m); });
+    if(isMulti && allSelected){
+      targets.push({ sku:g, name:(typeof groupDisplayName==='function'?groupDisplayName(g):g) });   // การ์ดเดียวสำหรับทั้งกลุ่ม
+      groupCount++;
+    } else {
+      byGroup[g].forEach(function(s){ targets.push({ sku:s, name:(nameForSku(s)||s) }); });          // ราย SKU (เลือกไม่ครบ/สินค้าเดี่ยว)
     }
   });
-  var targets=skus.concat(groupCodes);
   var arr=getUpdatesLocal();
-  var rows=targets.map(function(sku,i){
-    var row=Object.assign({}, base, { SKU:sku, ProductName:(nameForSku(sku)|| (typeof groupDisplayName==='function'?groupDisplayName(sku):'') ||sku), id:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+i });
+  var rows=targets.map(function(t,i){
+    var row=Object.assign({}, base, { SKU:t.sku, ProductName:t.name, id:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+i });
     arr.push(row); return row;
   });
   saveUpdatesLocal(arr);
@@ -9068,7 +9103,7 @@ function saveMultiUpdateEntries(){
   closeUpdateEditor();
   // ส่งขึ้น Sheet ทีละตัว เว้นระยะ ~350ms กันชนกัน/โดน network ตัด
   rows.forEach(function(row,i){ setTimeout(function(){ syncToSheet('updates','append', null, row); }, i*350); });
-  toast('เพิ่มบันทึกแล้ว '+skus.length+' สินค้า'+(groupCodes.length?(' + ภาพรวมกลุ่ม '+groupCodes.length):'')+' (Timeline เดียวกัน)','ok');
+  toast('เพิ่มบันทึกแล้ว '+targets.length+' รายการ'+(groupCount?(' (รวมทั้งกลุ่ม '+groupCount+' กลุ่ม เป็นการ์ดเดียว)'):'')+' — Timeline เดียวกัน','ok');
   celebrateMilestone(base);
 }
 function openUpdateEditor(prefill, editId){
