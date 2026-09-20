@@ -1215,6 +1215,10 @@
 .ccal-wtf-pill.sel{font-weight:700;}
 .ccal-wtf-pill.dim{opacity:.42;}
 .ccal-statuslegend{display:flex;flex-wrap:wrap;align-items:center;gap:10px;width:100%;}
+.ccal-datemode{display:flex;flex-wrap:wrap;align-items:center;gap:6px;width:100%;margin-bottom:2px;}
+.ccal-dm-pill{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;font-family:'Sarabun',sans-serif;font-size:11.5px;color:var(--ink);font-weight:600;}
+.ccal-dm-pill.on{background:#b0356a;color:#fff;border-color:#b0356a;}
+.ccal-dm-hint{font-size:11px;color:var(--ink-soft);font-style:italic;}
 .ccal-chip-owner{opacity:.9;font-weight:500;}
 .cc-drafts{display:flex;flex-direction:column;gap:7px;}
 .cc-draft-row{display:flex;align-items:center;gap:8px;}
@@ -1383,7 +1387,9 @@
   /* searchable combo (owner/reviewer/product) — replaces slow datalist */
   .cc-combo-wrap{position:relative;}
   .cc-combo-list{position:absolute;left:0;right:0;top:calc(100% + 2px);z-index:60;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px -8px rgba(0,0,0,.28);max-height:230px;overflow-y:auto;}
-  .cc-combo-item{padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--bg);}
+  .cc-combo-item{padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--bg);display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .cc-combo-nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cc-combo-sku{font-size:11px;color:var(--ink-soft);white-space:nowrap;flex:0 0 auto;}
   .cc-combo-item:hover{background:var(--accent-pale,#FDEAF3);}
   .cc-combo-item.cc-combo-add{color:var(--blue-deep,#2563eb);font-weight:600;}
   .cc-combo-empty{padding:9px 12px;font-size:12px;color:var(--ink-soft);}
@@ -4269,14 +4275,17 @@ function openGroupShades(key){
   const canEd = EDIT_MODE && (typeof canEditArea==='function') && canEditArea('products');
   const rows = members.map(m=>{
     const p=m.p; const short = shadeLabel(p.name, gname) || p.sku;
-    const edit = canEd ? `<span class="gs-edit"><button title="แก้ไข" onclick="event.stopPropagation(); closeGroupShades(); openProductEditor('${attrJs(p.sku)}')">✏️</button><button title="ลบ" onclick="event.stopPropagation(); deleteProduct('${attrJs(p.sku)}')">🗑️</button></span>` : '';
-    const canva = p.canva ? `<a class="gs-canva" href="${esc(p.canva)}" target="_blank" rel="noopener" title="Presentation" onclick="event.stopPropagation()">🎞️</a>` : '';
-    return `<div class="gs-row" onclick="closeGroupShades(); openTimeline(${m.idx})" title="${esc(p.name)}"><span class="gs-name">${esc(short)}</span><span class="gs-sku">${esc(p.sku)}</span>${canva}${edit}</div>`;
+    const edit = canEd ? `<button class="gs-btn gs-x" title="แก้ไข" onclick="closeGroupShades(); openProductEditor('${attrJs(p.sku)}')">✏️</button><button class="gs-btn gs-x" title="ลบ" onclick="deleteProduct('${attrJs(p.sku)}')">🗑️</button>` : '';
+    const canva = p.canva ? `<a class="gs-btn" href="${esc(p.canva)}" target="_blank" rel="noopener">🎞️ Canva</a>` : `<span class="gs-btn gs-dim">🎞️ ยังไม่มี</span>`;
+    return `<div class="gs-row"><div class="gs-head" title="${esc(p.name)}"><span class="gs-name">${esc(short)}</span><span class="gs-sku">${esc(p.sku)}</span></div>`
+      +`<div class="gs-acts"><button class="gs-btn" onclick="closeGroupShades(); openTimeline(${m.idx})">Timeline</button>`
+      +`<button class="gs-btn gs-info" onclick="closeGroupShades(); openFinalSheet('${attrJs(p.sku)}')">📋 Info</button>`
+      +`${canva}${edit}</div></div>`;
   }).join('');
   let ov=document.getElementById('gs-overlay');
   if(!ov){ ov=document.createElement('div'); ov.id='gs-overlay'; ov.className='fs-overlay'; ov.addEventListener('click',e=>{ if(e.target===ov) closeGroupShades(); }); document.body.appendChild(ov); }
   ov.innerHTML = `<div class="fs-modal" style="max-width:460px;">
-    <div class="fs-head"><div><div class="fs-title">${esc(gname)}</div><div class="fs-sub">ทั้งหมด ${members.length} SKU / เฉด · แตะเพื่อดู Timeline</div></div></div>
+    <div class="fs-head"><div><div class="fs-title">${esc(gname)}</div><div class="fs-sub">ทั้งหมด ${members.length} SKU / เฉด · เลือก Timeline / Info / Canva รายตัวได้</div></div></div>
     <div class="gs-list">${rows}</div>
     <div class="fs-actions"><button onclick="closeGroupShades()">ปิด</button></div>
   </div>`;
@@ -9537,6 +9546,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   var WORK_TYPES=[{k:'vdo',t:'🎬 VDO',c:'#9B7EF8'},{k:'aw',t:'🎨 AW (กราฟิก)',c:'#EF5350'},{k:'activities',t:'🎉 Activities',c:'#F2994A'},{k:'post',t:'📝 Post',c:'#5B8FF9'},{k:'other',t:'📦 อื่นๆ',c:'#8A94A6'}];
   var calWorkFilter = new Set();   // filter ประเภทงานในปฏิทิน Content (ว่าง = ทุกประเภท)
   var calProductFilter = '';       // filter ตามชื่อสินค้า (ว่าง = ทุกสินค้า)
+  var calDateMode = 'post';        // ปฏิทินแสดงตาม: 'post'=วันลงโพสต์ · 'due'=กำหนดส่งงาน (Final+Draft)
   var WORK_TYPE_MAP={}; WORK_TYPES.forEach(function(w){ WORK_TYPE_MAP[w.k]=w; });
   function inferWorkType(x){ var f=((x.format||'')+' '+(x.title||'')).toLowerCase(); if(/vdo|video|reel|short|live|คลิป|วิดีโอ|วีดีโอ/.test(f)) return 'vdo'; if(/post|album|photo|carousel|story|โพส|รูปภาพ|อัลบั้ม/.test(f)) return 'post'; if(/aw|artwork|graphic|กราฟิก|สติกเกอร์|sticker|ออกแบบ|แบนเนอร์|banner/.test(f)) return 'aw'; if(/activit|event|กิจกรรม|แจกของ|มินิเกม|live event|แคมเปญ/.test(f)) return 'activities'; return ''; }
   function workTypeOf(x){ return (x.workType && WORK_TYPE_MAP[x.workType]) ? x.workType : (inferWorkType(x)||'other'); }
@@ -9654,7 +9664,11 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +'</div>';
     // legend สถานะ (เดิม)
     var lg='<div class="ccal-statuslegend">'+CAL_STATUS_ORDER.map(function(s){return '<span class="lg"><span class="dot" style="background:'+CAL_STATUS[s].c+'"></span>'+e2(CAL_STATUS[s].t)+'</span>';}).join('')+'</div>';
-    el.innerHTML=f+lg;
+    var dm='<div class="ccal-datemode"><span class="ccal-wtf-lead">มุมมอง:</span>'
+      +'<button type="button" class="ccal-dm-pill'+(calDateMode==='post'?' on':'')+'" onclick="calSetDateMode(\'post\')">📮 วันลงโพสต์</button>'
+      +'<button type="button" class="ccal-dm-pill'+(calDateMode==='due'?' on':'')+'" onclick="calSetDateMode(\'due\')">🎯 กำหนดส่งงาน (Final+Draft)</button>'
+      +'<span class="ccal-dm-hint">'+(calDateMode==='post'?'ดูว่าวันไหนต้องลงโพสต์อะไร':'ดูว่าวันไหนต้องส่งงานอะไร (🎯 Final · 📝 draft)')+'</span></div>';
+    el.innerHTML=dm+f+lg;
   }
   function calVisibleItems(){ var base=calItems();
     if(calWorkFilter.size) base=base.filter(function(x){ return calWorkFilter.has(workTypeOf(x)); });
@@ -9663,6 +9677,12 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   }
   function calRerenderView(){ var host=document.getElementById('ccal-host'); if(!host) return; if(calMode==='grid') renderCalGrid(host); else renderCalList(host); }
   window.calSetProductFilter=function(v){ calProductFilter=v; calRerenderView(); };
+  window.calSetDateMode=function(m){ calDateMode=m; if(typeof renderCalActive==='function') renderCalActive(); };
+  // แปลงรายการเป็น "จุดที่ต้องพล็อตบนปฏิทิน" ตามโหมด: วันลงโพสต์ หรือ กำหนดส่ง (Final + Draft แต่ละรอบ)
+  function calPlot(){ var out=[]; calVisibleItems().forEach(function(x){
+    if(calDateMode==='post'){ if(x.date) out.push({x:x, iso:x.date, kind:'post'}); }
+    else { if(x.due) out.push({x:x, iso:x.due, kind:'final'}); ccParseDrafts(x.drafts).forEach(function(d,i){ if(d) out.push({x:x, iso:d, kind:'draft', n:i+1}); }); }
+  }); return out; }
   window.toggleCalWork=function(k){ if(calWorkFilter.has(k)) calWorkFilter.delete(k); else calWorkFilter.add(k); if(typeof renderCalActive==='function') renderCalActive(); };
   window.calWorkAll=function(){ calWorkFilter.clear(); if(typeof renderCalActive==='function') renderCalActive(); };
   // Monthly performance snapshot (mirrors KINN's Dashboard) — respects month + brand filter
@@ -9704,9 +9724,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   };
   function renderCalGrid(host){
     var lbl=document.getElementById('ccal-label'); if(lbl) lbl.textContent=TH_MF[calM]+' '+calY;
-    var items=calVisibleItems();
     var byDay={};
-    items.forEach(function(x){ var d=new Date(x.date+'T00:00:00'); if(d.getFullYear()===calY && d.getMonth()===calM){ (byDay[d.getDate()]=byDay[d.getDate()]||[]).push(x); } });
+    calPlot().forEach(function(e){ var d=new Date(e.iso+'T00:00:00'); if(!isNaN(d.getTime()) && d.getFullYear()===calY && d.getMonth()===calM){ (byDay[d.getDate()]=byDay[d.getDate()]||[]).push(e); } });
     var startWk=new Date(calY,calM,1).getDay(); var dim=new Date(calY,calM+1,0).getDate();
     var today=new Date(); today.setHours(0,0,0,0);
     var h=TH_WD.map(function(w){return '<div class="ccal-wd">'+w+'</div>';}).join('');
@@ -9714,11 +9733,15 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     for(var day=1;day<=dim;day++){
       var iso=isoOf(calY,calM,day);
       var isToday=new Date(calY,calM,day).getTime()===today.getTime();
-      var list=(byDay[day]||[]).slice().sort(function(a,b){return (a.time||'').localeCompare(b.time||'');});
+      var list=(byDay[day]||[]).slice().sort(function(a,b){return (a.x.time||'').localeCompare(b.x.time||'');});
       var shown=list.slice(0,4);
-      var chips=shown.map(function(x){ var st=CAL_STATUS[x.status]||CAL_STATUS.brief; var wt=WORK_TYPE_MAP[workTypeOf(x)]||{}; var wc=wt.c||st.c;
-        var tip=(x.time?x.time+' ':'')+x.title+(wt.t?' · '+wt.t:'')+(x.owner?' · 👤'+x.owner:'')+(x.brand?' · '+bLbl(x.brand):'')+(x.channel?' · '+x.channel:'')+' · '+st.t;
-        return '<div class="ccal-chip" style="--s:'+wc+'" title="'+e2(tip)+'" onclick="event.stopPropagation();calChipClick(\''+aj(x.id)+'\')">'+(x.time?'<span class="ci">'+e2(x.time)+'</span> ':'')+e2(x.title)+(x.owner?' <span class="ccal-chip-owner">👤'+e2(x.owner)+'</span>':'')+'</div>';
+      var chips=shown.map(function(e){ var x=e.x; var st=CAL_STATUS[x.status]||CAL_STATUS.brief; var wt=WORK_TYPE_MAP[workTypeOf(x)]||{};
+        var wc, pre='', kindTxt;
+        if(e.kind==='final'){ wc='#EF5350'; pre='🎯 '; kindTxt='ส่ง Final'; }
+        else if(e.kind==='draft'){ wc='#F2994A'; pre='📝 draft'+e.n+': '; kindTxt='ส่ง draft '+e.n; }
+        else { wc=wt.c||st.c; kindTxt='ลงโพสต์'; }
+        var tip=(x.time?x.time+' ':'')+kindTxt+': '+x.title+(wt.t?' · '+wt.t:'')+(x.owner?' · 👤'+x.owner:'')+(x.brand?' · '+bLbl(x.brand):'')+' · '+st.t;
+        return '<div class="ccal-chip" style="--s:'+wc+'" title="'+e2(tip)+'" onclick="event.stopPropagation();calChipClick(\''+aj(x.id)+'\')">'+((e.kind==='post'&&x.time)?'<span class="ci">'+e2(x.time)+'</span> ':'')+e2(pre+x.title)+((e.kind==='post'&&x.owner)?' <span class="ccal-chip-owner">👤'+e2(x.owner)+'</span>':'')+'</div>';
       }).join('');
       if(list.length>shown.length) chips+='<div class="ccal-more">+'+(list.length-shown.length)+' เพิ่มเติม</div>';
       var addable=unlocked();
@@ -9792,6 +9815,11 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   window.ccComboInput=function(inputId,kind){
     var inp=document.getElementById(inputId), box=document.getElementById(inputId+'-res'); if(!inp||!box) return;
     var typed=(inp.value||'').trim(), term=typed.toLowerCase();
+    if(kind==='product'){   // ดึงสินค้าจริงจาก Product Info (ค้นด้วยชื่อ หรือ SKU)
+      var plist=(typeof PRODUCTS!=='undefined'?PRODUCTS:[]).filter(function(p){ return p.name && (!term || ((p.name||'')+' '+(p.sku||'')).toLowerCase().indexOf(term)>=0); }).slice(0,50);
+      box.innerHTML = plist.length ? plist.map(function(p){ return '<div class="cc-combo-item" onmousedown="ccComboPick(\''+inputId+'\',\''+aj(p.name)+'\')"><span class="cc-combo-nm">'+e2(p.name)+'</span><span class="cc-combo-sku">'+e2(p.sku||'')+'</span></div>'; }).join('') : '<div class="cc-combo-empty">ไม่พบสินค้า — พิมพ์ชื่อเองได้</div>';
+      box.style.display='block'; return;
+    }
     var all=ccListFor(kind);
     var list=all.filter(function(n){ return !term || n.toLowerCase().indexOf(term)>=0; }).slice(0,40);
     var html=list.map(function(n){ return '<div class="cc-combo-item" onmousedown="ccComboPick(\''+inputId+'\',\''+aj(n)+'\')">'+e2(n)+'</div>'; }).join('');
@@ -10131,7 +10159,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var logLines=(x.log||'').split('\n').filter(Boolean);
     var histTitle='📋 ประวัติงาน'+((x.reviseCount||x.extendCount)?(' — '+(x.reviseCount?('🔧 แก้ '+x.reviseCount+' ครั้ง'):'')+(x.reviseCount&&x.extendCount?' · ':'')+(x.extendCount?('⏱️ ขยายเวลา '+x.extendCount+' ครั้ง'):'')):'');
     var histHtml=(logLines.length)?('<div class="cc-cd-hist"><div class="cc-cd-hist-h">'+histTitle+'</div><ul class="cc-cd-loglist">'+logLines.map(function(l){return '<li>'+e2(l)+'</li>';}).reverse().join('')+'</ul></div>'):'';
-    var editBtn=unlocked()?('<div class="cc-cd-edit"><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="closeCardModal();openContentCalEditor(\''+aj(id)+'\')">✏️ แก้ไขรายละเอียด</button><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="extendDue(\''+aj(id)+'\')">⏱️ ขยายเวลาส่ง</button></div>'):'';
+    var editBtn=unlocked()?('<div class="cc-cd-edit"><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="closeCardModal();openContentCalEditor(\''+aj(id)+'\')">✏️ แก้ไขรายละเอียด</button><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="extendDue(\''+aj(id)+'\')">⏱️ ขยายเวลาส่ง</button><button class="btn-sm warn-ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="closeCardModal();deleteContentCal(\''+aj(id)+'\')">🗑️ ลบการ์ด</button></div>'):'';
     var badgeLine=tagChips(x.tags)+dueBadge(x)+reviseBadge(x)+extendBadge(x);
     var info='<div class="cc-cd-info"><div class="cc-cd-badges"><span class="cc-cd-s" style="background:'+st.c+'">'+st.t+'</span>'+(x.brand?'<span class="cc-brand" style="--b:'+((typeof BRAND_TINT!=='undefined'?BRAND_TINT:{})[x.brand]||'#6B7280')+'">'+e2(bLbl(x.brand))+'</span>':'')+badgeLine+'</div><div class="cc-cd-rows">'+rows+'</div>'+histHtml+editBtn+'</div>';
 
@@ -11086,15 +11114,17 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 .fs-actions{display:flex; gap:8px; justify-content:flex-end; padding:14px 20px; border-top:1px solid var(--line); flex-wrap:wrap;}
 .fs-actions button{padding:8px 16px; border-radius:999px; font-family:'Sarabun',sans-serif; font-size:13px; font-weight:600; cursor:pointer; border:1px solid var(--line); background:#fff;}
 .fs-actions .fs-primary{background:var(--blue-deep,#2563eb); color:#fff; border:none;}
-.gs-list{padding:6px 14px 4px; max-height:60vh; overflow-y:auto;}
-.gs-row{display:flex; align-items:center; gap:10px; padding:10px 6px; border-bottom:1px solid var(--bg,#F2F5FA); cursor:pointer;}
-.gs-row:hover{background:var(--blue-pale,#eef4ff);}
-.gs-name{font-weight:600; font-size:13.5px; flex:1;}
+.gs-list{padding:6px 14px 4px; max-height:62vh; overflow-y:auto;}
+.gs-row{display:flex; flex-direction:column; gap:6px; padding:10px 6px; border-bottom:1px solid var(--bg,#F2F5FA);}
+.gs-head{display:flex; align-items:baseline; gap:8px;}
+.gs-name{font-weight:600; font-size:13.5px; flex:1; min-width:0;}
 .gs-sku{font-size:11.5px; color:var(--ink-soft,#6B7684); white-space:nowrap;}
-.gs-canva{text-decoration:none; font-size:15px;}
-.gs-edit{display:inline-flex; gap:2px; flex:0 0 auto;}
-.gs-edit button{background:none; border:none; cursor:pointer; font-size:14px; padding:2px 5px; border-radius:6px;}
-.gs-edit button:hover{background:var(--blue-pale,#eef4ff);}
+.gs-acts{display:flex; flex-wrap:wrap; gap:6px;}
+.gs-btn{font-size:11.5px; padding:4px 10px; border-radius:7px; border:1px solid var(--line); background:var(--blue-pale,#eef4ff); color:var(--blue-ink,#1f3a5f); cursor:pointer; text-decoration:none; white-space:nowrap; font-family:'Sarabun',sans-serif;}
+.gs-btn:hover{background:#dce8f7;}
+.gs-btn.gs-info{background:var(--blue-deep,#2563eb); color:#fff; border-color:var(--blue-deep,#2563eb);}
+.gs-btn.gs-x{background:#FDECEC; color:#d33; border-color:#f3c6c6;}
+.gs-btn.gs-dim{background:var(--bg,#eef); color:var(--ink-soft,#889); cursor:default;}
 </style>
 
 <script>
