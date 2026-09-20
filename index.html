@@ -9,10 +9,17 @@
 <style>
   :root{
     --blue:#A8C8F0; --blue-deep:#6C9BD1; --blue-ink:#4A76A8; --blue-pale:#EAF2FF;
-    --bg:#F6F8FC; --card:#FFFFFF; --ink:#22303A; --ink-soft:#6B7684; --line:#E4E9F2;
+    --bg:#F3F5FB; --card:#FFFFFF; --ink:#1F2A36; --ink-soft:#6B7684; --line:#E7ECF5;
     --danger:#E5484D; --warn:#F2754A; --ok:#22A06B; --gray:#9AA5B1;
     --type-goods:#AECBFA; --type-diy:#D3C2F2; --type-newsku:#B5EAD7; --type-repack:#FFD6A5; --type-updatecost:#B8E0E0;
     --cat-makeup:#FFC2D1; --cat-skincare:#C7F0C2; --cat-accessory:#A8E6E6; --cat-scent:#C7CEEA;
+    /* UI-refresh 2026 — elevation, radius & motion tokens (used by #ui-refresh-2026) */
+    --shadow-xs:0 1px 2px rgba(31,42,54,.05);
+    --shadow-sm:0 2px 6px -2px rgba(31,42,54,.10), 0 1px 3px -1px rgba(31,42,54,.06);
+    --shadow-md:0 8px 24px -10px rgba(31,42,54,.16), 0 2px 6px -3px rgba(31,42,54,.08);
+    --shadow-lg:0 22px 48px -18px rgba(31,42,54,.30), 0 6px 16px -8px rgba(31,42,54,.14);
+    --radius-lg:18px; --radius:14px; --radius-sm:10px;
+    --ease:cubic-bezier(.4,0,.2,1);
   }
   .donut-wrap{display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
   .donut{width:120px; height:120px; border-radius:50%; flex-shrink:0;}
@@ -692,6 +699,80 @@
   .nm-del{background:#FDECEC; color:var(--danger); border:none; border-radius:7px; padding:5px 9px; cursor:pointer; font-size:12px;}
   .nm-add{display:flex; gap:8px; margin-top:14px;}
   .nm-add input{flex:1; border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-family:'Sarabun',sans-serif; font-size:13px;}
+</style>
+<style id="ui-refresh-2026">
+/* ============================================================
+   UI Refresh 2026 — layered modern polish (elevation, radius,
+   glass nav, refined gradient, micro-interactions).
+   Purely additive: wins by source order, no markup/JS change.
+   Revert = delete this whole <style> block.
+   ============================================================ */
+/* base polish + soft ambient background */
+body{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  background:
+    radial-gradient(1150px 460px at 88% -10%, rgba(196,131,201,.10), transparent 60%),
+    radial-gradient(1000px 420px at -6% -6%, rgba(122,165,230,.13), transparent 58%),
+    var(--bg);
+  background-attachment:fixed;
+}
+
+/* ---- Header: richer in-brand gradient + soft depth ---- */
+header{ background:linear-gradient(118deg,#6E9BE0 0%,#8A86DF 52%,#C283C9 100%);
+  box-shadow:0 8px 26px -14px rgba(64,80,150,.55); padding:15px 30px;
+  border-bottom:1px solid rgba(255,255,255,.14); }
+.brand img{ box-shadow:0 3px 10px rgba(0,0,0,.16); }
+.updated-badge{ backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  background:rgba(255,255,255,.20); border-color:rgba(255,255,255,.42); }
+
+/* ---- Glass pill nav + smooth tabs ---- */
+nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.24); border-radius:14px; padding:5px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16); }
+.tab{ border-radius:10px; transition:background .18s var(--ease), color .18s var(--ease), transform .12s var(--ease); }
+.tab:hover{ background:rgba(255,255,255,.24); }
+.tab.active{ background:#fff; color:#5B6FB8; box-shadow:0 5px 14px -5px rgba(40,54,110,.5); }
+
+/* ---- Card surfaces: soft elevation + hairline + rounder + hover lift ---- */
+.kpi-card,.brand-kpi-card,.catalog-card,.pe-box{
+  border-radius:var(--radius-lg); border:1px solid var(--line); box-shadow:var(--shadow-sm);
+  transition:box-shadow .2s var(--ease), transform .2s var(--ease), border-color .2s var(--ease); }
+.kpi-card:hover,.brand-kpi-card:hover{ box-shadow:var(--shadow-md); transform:translateY(-2px); }
+.catalog-card:hover{ box-shadow:var(--shadow-md); transform:translateY(-3px); border-color:#DCE4F2; }
+.cat-section-head{ border-bottom-color:var(--line); }
+
+/* banner + modals */
+.banner-wrap{ border-radius:var(--radius-lg); box-shadow:var(--shadow-md); }
+.modal-box{ border-radius:22px; box-shadow:var(--shadow-lg); border:1px solid var(--line); }
+.modal-overlay{ background:rgba(24,32,45,.5); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
+
+/* year tabs + filter chips */
+.year-tabs{ border-radius:12px; box-shadow:var(--shadow-xs); }
+.year-tab{ border-radius:9px; transition:background .16s var(--ease), color .16s var(--ease); }
+.brand-filter-btn{ box-shadow:var(--shadow-xs); }
+.brand-filter-btn:hover{ box-shadow:var(--shadow-sm); transform:translateY(-1px); }
+
+/* ---- Buttons ---- */
+.btn-sm{ transition:background .16s var(--ease), box-shadow .16s var(--ease), transform .12s var(--ease); }
+.btn-sm:hover{ transform:translateY(-1px); }
+.btn-sm.primary{ background:linear-gradient(135deg,#7AA0DE,#5C86D6); box-shadow:0 6px 16px -8px rgba(60,100,190,.7); }
+.btn-sm.primary:hover{ background:linear-gradient(135deg,#6D95D8,#4F79CC); box-shadow:0 10px 22px -8px rgba(60,100,190,.75); }
+
+/* ---- Inputs: modern focus ring ---- */
+.catalog-search:focus{ box-shadow:0 0 0 4px rgba(122,165,230,.22); border-color:#7AA5E6; }
+
+/* ---- NPD Process roadmap: white cards + soft elevation ---- */
+#team-roadmap .rm-col{ background:linear-gradient(180deg,#fff,#FBFCFE); border-radius:var(--radius); box-shadow:var(--shadow-sm); border-color:var(--line); }
+#team-roadmap .rm-card{ border-radius:11px; box-shadow:var(--shadow-xs); transition:box-shadow .18s var(--ease), transform .15s var(--ease); }
+#team-roadmap .rm-card:hover{ box-shadow:var(--shadow-sm); transform:translateY(-1px); }
+#team-roadmap .rm-toggle{ border-radius:14px; box-shadow:var(--shadow-sm); }
+
+/* ---- Modern thin scrollbars ---- */
+*{ scrollbar-width:thin; scrollbar-color:#C6D0E2 transparent; }
+::-webkit-scrollbar{ width:10px; height:10px; }
+::-webkit-scrollbar-thumb{ background:#CBD5E6; border-radius:99px; border:2px solid transparent; background-clip:content-box; }
+::-webkit-scrollbar-thumb:hover{ background:#AEBBD3; background-clip:content-box; }
+
+@media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
 </style>
 </head>
 <body>
