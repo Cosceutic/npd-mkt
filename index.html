@@ -654,6 +654,17 @@
   .pe-ms-label{grid-column:1/-1; font-size:12px; font-weight:600; color:var(--ink); margin-top:8px;}
   .pe-ms-cell label{font-size:10.5px; color:var(--ink-soft); display:block; margin-bottom:2px;}
   .pe-ms-cell input{border:1px solid var(--line); border-radius:7px; padding:6px 8px; font-size:12.5px; width:100%; font-family:'Sarabun',sans-serif;}
+  .pe-ms-cell.plan{background:#EAF2FD; border:1px solid #CFE0F5; border-radius:9px; padding:6px 8px;}
+  .pe-ms-cell.actual{background:#E9F7EF; border:1px solid #C7E9D5; border-radius:9px; padding:6px 8px;}
+  .pe-ms-cell.plan input{background:#fff; border-color:#BBD4F0;}
+  .pe-ms-cell.actual input{background:#fff; border-color:#B6DFC6;}
+  .pe-team{font-size:10px; font-weight:700; padding:1px 8px; border-radius:999px; vertical-align:middle;}
+  .pe-team-npd{background:#FDE7F1; color:#B0356A;}
+  .pe-team-cbs{background:#E3EEFB; color:#2563EB;}
+  .pe-ms-legend{display:flex; flex-wrap:wrap; align-items:center; gap:10px; font-size:11px; color:var(--ink-soft); margin:6px 0 2px;}
+  .pe-ms-key{padding:2px 9px; border-radius:999px;}
+  .pe-ms-key.plan{background:#EAF2FD; color:#2563EB;}
+  .pe-ms-key.actual{background:#E9F7EF; color:#1E8E5A;}
   .pe-check{display:flex; align-items:center; gap:8px; font-size:13px;}
   .pe-check input{width:auto;}
   .pe-footer{display:flex; align-items:center; gap:10px; padding:14px 22px; border-top:1px solid var(--line); position:sticky; bottom:0; background:#fff; border-radius:0 0 16px 16px;}
@@ -1930,7 +1941,7 @@ const PRODUCT_COLUMNS = [
   'launch_deadline','launch_actual','prDate_deadline','prDate_actual',
   'refPhoto_link','productMedia_link','dataReady_link','platformDone_link',
   'canva','lot','exp','remark','saleHalted','saleHaltDate','saleHaltNote','risk','nextDue','history','image','group','collection',
-  'price','size','sellingPoints','keyBenefits'
+  'price','size','sellingPoints','keyBenefits','rrp','mrp'
 ];
 
 /* Human-friendly milestone groups for the editor (prefix -> Thai label). */
@@ -2110,6 +2121,7 @@ function rowToProduct(row){
     image: resolveImage(row),
     price: row.price||'', size: row.size||'',
     sellingPoints: row.sellingPoints||'', keyBenefits: row.keyBenefits||'',
+    rrp: row.rrp||'', mrp: row.mrp||'',
   };
 }
 
@@ -4180,7 +4192,7 @@ function catalogSingleCard(p, idx){
         ${(p.lot||p.exp) ? `<div class="csku">${p.lot?`Lot ${esc(p.lot)}`:''}${p.exp?` · EXP ${formatDate(new Date(p.exp+"T00:00:00"))}`:''}</div>` : ''}
         <div class="catalog-actions">
           <button class="btn-sm ghost" onclick="openTimeline(${idx})">Timeline</button>
-          <button class="btn-sm primary" onclick="openFinalSheet('${attrJs(p.sku)}')">📋 Final</button>
+          <button class="btn-sm primary" onclick="openFinalSheet('${attrJs(p.sku)}')">📋 Info</button>
           ${p.canva
             ? `<a class="btn-sm primary" href="${esc(p.canva)}" target="_blank" rel="noopener">Presentation</a>`
             : `<span class="btn-sm disabled">No link yet</span>`}
@@ -7453,10 +7465,12 @@ function renderProductForm(row, isEdit){
   const _grp=(isEdit && _sku) ? productGroupOf(_sku) : '';
   const _siblings=_grp ? groupMembers(_grp).filter(s=>s!==_sku) : [];
   let ms='';
+  const NPD_MS = {arrival:1, sampleToMkt:1, launch:1};   // NPD รับผิดชอบ 3 หมวดนี้ · ที่เหลือ CBS
   MILESTONE_FIELDS.forEach(([pfx,label])=>{
-    ms += `<div class="pe-ms-label">${esc(label)}</div>
-      <div class="pe-ms-cell"><label>กำหนด / แผน</label><input type="date" id="pe-${pfx}_deadline" value="${isoVal(row[pfx+'_deadline'])}"></div>
-      <div class="pe-ms-cell"><label>วันจริง</label><input type="date" id="pe-${pfx}_actual" value="${isoVal(row[pfx+'_actual'])}"></div>`;
+    const team = NPD_MS[pfx] ? 'NPD' : 'CBS';
+    ms += `<div class="pe-ms-label">${esc(label)} <span class="pe-team pe-team-${team.toLowerCase()}">${team}</span></div>
+      <div class="pe-ms-cell plan"><label>📅 กำหนด / แผน</label><input type="date" id="pe-${pfx}_deadline" value="${isoVal(row[pfx+'_deadline'])}"></div>
+      <div class="pe-ms-cell actual"><label>✅ วันจริง (เกิดขึ้นแล้ว)</label><input type="date" id="pe-${pfx}_actual" value="${isoVal(row[pfx+'_actual'])}"></div>`;
     if(MS_LINK_FIELDS[pfx]){
       const lc=MS_LINK_FIELDS[pfx];
       ms += `<div class="pe-ms-cell" style="grid-column:1/-1;"><label>ลิงก์ไฟล์แนบ (ถ้ามี)</label><input type="text" id="pe-${lc}" value="${V(lc)}" placeholder="วางลิงก์ Google Drive / ไฟล์"></div>`;
@@ -7488,11 +7502,13 @@ function renderProductForm(row, isEdit){
     </div>
 
     <div class="pe-section">วันสำคัญ / Milestones (เว้นว่างได้ = ยังไม่กำหนด)</div>
+    <div class="pe-ms-legend"><span class="pe-ms-key plan">📅 ช่องฟ้า = กำหนด/แผน</span><span class="pe-ms-key actual">✅ ช่องเขียว = วันจริง</span><span class="pe-team pe-team-npd">NPD</span>/<span class="pe-team pe-team-cbs">CBS</span> = ทีมที่รับผิดชอบกรอก</div>
     <div class="pe-ms-grid">${ms}</div>
 
-    <div class="pe-section">ข้อมูลสำหรับส่งต่อทีมอื่น (Final)</div>
+    <div class="pe-section">ข้อมูลสำหรับส่งต่อทีมอื่น (Info)</div>
     <div class="pe-grid">
-      <div class="pe-field"><label>💵 ราคาขาย</label><input type="text" id="pe-price" value="${V('price')}" placeholder="เช่น 290 บาท"></div>
+      <div class="pe-field"><label>💵 RRP — ราคาขายปกติ (Regular Retail Price)</label><input type="text" id="pe-rrp" value="${V('rrp')}" placeholder="เช่น 290"></div>
+      <div class="pe-field"><label>🏷️ MRP — ราคาขายสูงสุด (Maximum Retail Price)</label><input type="text" id="pe-mrp" value="${V('mrp')}" placeholder="เช่น 390"></div>
       <div class="pe-field"><label>📏 ขนาด / ปริมาณ</label><input type="text" id="pe-size" value="${V('size')}" placeholder="เช่น 30ml / เซ็ต 3 ชิ้น"></div>
       <div class="pe-field full"><label>⭐ จุดขายหลัก (Selling Points)</label><textarea id="pe-sellingPoints" rows="2" placeholder="จุดเด่น/สิ่งที่ใช้ขาย">${V('sellingPoints')}</textarea></div>
       <div class="pe-field full"><label>🧪 สรรพคุณ / ส่วนผสมเด่น</label><textarea id="pe-keyBenefits" rows="2" placeholder="ส่วนผสม/สรรพคุณเด่น">${V('keyBenefits')}</textarea></div>
@@ -11055,7 +11071,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     add('หมวดหมู่', catLabel(p.category));
     add('คอลเลกชัน', p.collection);
     add('ขนาด/ปริมาณ', p.size);
-    add('ราคาขาย', p.price);
+    add('RRP (ราคาขายปกติ)', p.rrp);
+    add('MRP (ราคาขายสูงสุด)', p.mrp);
     add('จุดขายหลัก', p.sellingPoints);
     add('สรรพคุณ/ส่วนผสมเด่น', p.keyBenefits);
     var ld = launchDateOf(p); add('วันวางขาย', ld ? ((typeof formatDate==='function' && !isNaN(new Date(ld))) ? formatDate(new Date(ld+'T00:00:00')) : ld) : '');
@@ -11080,7 +11097,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var linksHtml = links.length ? ('<div class="fs-row" style="border:none;padding-top:12px;"><b>ไฟล์/ลิงก์</b><span></span></div>'
       + links.map(function(r){ return '<div class="fs-row"><b>'+E(r[0])+'</b><span><a href="'+E(r[1])+'" target="_blank" rel="noopener">'+E(r[1])+'</a></span></div>'; }).join('')) : '';
     ov.innerHTML = '<div class="fs-modal">'
-      +'<div class="fs-head">'+img+'<div><div class="fs-title">'+E(p.name||p.sku)+'</div><div class="fs-sub">ข้อมูลสินค้าพร้อมส่งต่อ (Final) · '+E(bLabel(p.brand))+'</div></div></div>'
+      +'<div class="fs-head">'+img+'<div><div class="fs-title">'+E(p.name||p.sku)+'</div><div class="fs-sub">ข้อมูลสินค้าพร้อมส่งต่อ (Info) · '+E(bLabel(p.brand))+'</div></div></div>'
       +'<div class="fs-body">'+rowsHtml+linksHtml+'</div>'
       +'<div class="fs-actions"><button onclick="closeFinalSheet()">ปิด</button>'
       +'<button onclick="copyFinalSheet(\''+AJ(sku)+'\')">📋 คัดลอกข้อความ</button>'
@@ -11116,7 +11133,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +'h1{font-size:20px;margin:0 0 2px;} .sub{color:#777;font-size:13px;margin-bottom:16px;}'
       +'.top{display:flex;gap:16px;align-items:center;margin-bottom:16px;} table{width:100%;border-collapse:collapse;font-size:13.5px;}'
       +'td{padding:7px 6px;border-bottom:1px solid #eee;vertical-align:top;} td.l{color:#777;width:150px;font-weight:600;} a{color:#2563eb;word-break:break-all;}</style>'
-      +'</head><body><div class="top">'+img+'<div><h1>'+E(p.name||p.sku)+'</h1><div class="sub">ข้อมูลสินค้าพร้อมส่งต่อ (Final) · '+E(bLabel(p.brand))+'</div></div></div>'
+      +'</head><body><div class="top">'+img+'<div><h1>'+E(p.name||p.sku)+'</h1><div class="sub">ข้อมูลสินค้าพร้อมส่งต่อ (Info) · '+E(bLabel(p.brand))+'</div></div></div>'
       +'<table>'+rowsHtml+(linksHtml?('<tr><td class="l" style="padding-top:14px;">ไฟล์/ลิงก์</td><td></td></tr>'+linksHtml):'')+'</table>'
       +'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},300);};</scr'+'ipt></body></html>');
     w.document.close();
