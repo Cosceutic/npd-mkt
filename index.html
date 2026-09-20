@@ -1396,9 +1396,12 @@
   .ccal-prodfilter{border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-family:'Sarabun',sans-serif;font-size:11.5px;min-width:150px;}
   #cc-card-body .cc-cd-badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:9px;}
   #cc-card-body .cc-cd-s{font-size:11px;font-weight:700;color:#fff;border-radius:999px;padding:2px 10px;}
-  #cc-card-body .cc-cd-rows{display:flex;flex-direction:column;gap:6px;}
-  #cc-card-body .cc-cd-row{display:flex;gap:8px;font-size:13px;color:var(--ink);}
-  #cc-card-body .cc-cd-row b{flex:0 0 84px;color:var(--ink-soft);font-weight:600;}
+  #cc-card-body .cc-cd-rows{display:flex;flex-direction:column;margin-top:4px;}
+  #cc-card-body .cc-cd-row{display:flex;gap:14px;font-size:13.5px;color:var(--ink);padding:9px 2px;border-bottom:1px solid var(--bg,#F2F5FA);align-items:baseline;line-height:1.55;}
+  #cc-card-body .cc-cd-row:last-child{border-bottom:none;}
+  #cc-card-body .cc-cd-row b{flex:0 0 118px;color:var(--ink-soft);font-weight:600;font-size:12.5px;}
+  #cc-card-body .cc-cd-row span{flex:1;min-width:0;}
+  @media(max-width:520px){ #cc-card-body .cc-cd-row{flex-direction:column;gap:3px;} #cc-card-body .cc-cd-row b{flex:none;} }
   #cc-card-body .cc-cd-edit{margin-top:11px;}
   #cc-card-body .cc-cm-sec{padding:14px 18px 18px;background:#f7f8fb;}
   #cc-card-body .cc-cm-h{font-family:'Prompt',sans-serif;font-weight:700;font-size:14px;color:var(--ink);margin-bottom:11px;}
@@ -6010,8 +6013,9 @@ function renderBriefPartB(){
     <div class="brief-section-h">B2. Technical Target & Testing</div>
     <div class="brief-check-grid">
       ${checks}
-      <label class="brief-check-item">${bfCheck('b2_other','อื่น ๆ')} ${bfTableInput('b2_other_txt')}</label>
+      ${bfCheck('b2_other','อื่น ๆ')}
     </div>
+    ${bfField('b2_other_txt','ระบุ "อื่น ๆ" (Target / Testing เพิ่มเติม)','text',{full:true})}
     ${briefSignBlock('b','ผู้จัดทำ Formula Brief (R&D)')}`;
 }
 
@@ -6894,12 +6898,24 @@ function printBriefSummaryA(){
 
   const netW = [g('a_weight'), g('a_weightUnit')].filter(Boolean).join(' ');
 
-  // SKU list (ชื่อสี / appearance) — numbered 01, 02, ...
+  // Packaging is a multi-select (stored as a JSON array) — join it, and append the "Other" free-text if any
+  const pkgArr = marr('a2_pkgForm');
+  let pkg = pkgArr.length ? pkgArr.join(' / ') : g('a2_pkgForm');
+  const pkgOther = g('a2_pkgFormOther'); if(pkgOther) pkg = (pkg ? pkg+' / ' : '') + pkgOther;
+
+  // SKU list — show ชื่อสี (shade name) + สี (appearance) + Formula No. (numbered 01, 02, ...)
   let skuRows=[]; try{ skuRows=JSON.parse(bfGet('a_skuDetail')||'[]'); }catch(e){}
-  const skuNames = skuRows.map(r=>String((r&&(r.color||r.appearance))||'').trim());
-  const skuFilled = skuNames.filter(Boolean);
-  const skuHtml = skuFilled.length
-    ? `<div class="sku-grid">${skuFilled.map((n,i)=>`<div class="sku-item"><span class="sku-no">${String(i+1).padStart(2,'0')}</span> ${esc(n)}</div>`).join('')}</div>`
+  const skuBuilt = skuRows.map(r=>{
+    if(!r) return null;
+    const name=String(r.color||'').trim();
+    const appear=String(r.appearance||'').trim();
+    const fno=String(r.formulaNo||'').trim();
+    const main=[name,appear].filter(Boolean).join(' — ') || name || appear;
+    if(!main && !fno) return null;
+    return {main, fno};
+  }).filter(Boolean);
+  const skuHtml = skuBuilt.length
+    ? `<div class="sku-grid">${skuBuilt.map((s,i)=>`<div class="sku-item"><span class="sku-no">${String(i+1).padStart(2,'0')}</span> ${esc(s.main)}${s.fno?` <span style="color:#9CA3AF;">(${esc(s.fno)})</span>`:''}</div>`).join('')}</div>`
     : dash;
 
   // Images (show if a section has them)
@@ -6987,7 +7003,7 @@ function printBriefSummaryA(){
         ['Area', g('a_catL2')],
         ['Product Type', gL('a_catL3')],
         ['Texture', gL('a_catL4')],
-        ['Packaging', g('a2_pkgForm')],
+        ['Packaging', pkg],
         ['Net Weight', netW]
       ])}
       ${pkgImgHtml}
@@ -7054,9 +7070,15 @@ function printBriefPart(key){
     const picked = [...grid.querySelectorAll('.brief-check-item')]
       .filter(item=>{ const i=item.querySelector('input[type="checkbox"]'); return i && i.checked; })
       .map(item=>item.textContent.trim()).filter(Boolean);
+    // preserve any companion free-text typed inside the grid (e.g. an "อื่น ๆ" box) —
+    // otherwise collapsing the grid to picked-checkbox labels would drop it on print
+    const extraTexts = [...grid.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), textarea, select')]
+      .map(el=>{ if(el.tagName==='SELECT'){ const o=el.options[el.selectedIndex]; return o?o.textContent.trim():''; } return (el.value||'').trim(); })
+      .filter(Boolean);
+    const all = picked.concat(extraTexts);
     const box = document.createElement('div');
     box.className = 'pv-box';
-    box.textContent = picked.length ? picked.join(', ') : '–';
+    box.textContent = all.length ? all.join(', ') : '–';
     grid.replaceWith(box);
   });
 
