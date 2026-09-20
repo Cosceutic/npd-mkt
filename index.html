@@ -1374,7 +1374,20 @@
   @media(max-width:640px){ #view-content .cc-pl-col{flex:0 0 232px;width:232px;} }
   /* ===== 💬 Card detail + comments ===== */
   #view-content #cc-card-title{font-family:'Prompt',sans-serif;font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  #cc-card-body .cc-cd-info{padding:14px 18px;border-bottom:1px solid var(--line);}
+  #cc-card-body .cc-cd-info{padding:14px 18px;}
+  .cc-card-2col{display:flex;align-items:stretch;min-height:200px;}
+  .cc-card-left{flex:1 1 46%;min-width:0;border-right:1px solid var(--line);}
+  .cc-card-right{flex:1 1 54%;min-width:0;display:flex;flex-direction:column;}
+  .cc-col-h{font-family:'Prompt',sans-serif;font-weight:700;font-size:13px;color:var(--blue-ink);padding:12px 18px 0;}
+  @media(max-width:760px){ .cc-card-2col{flex-direction:column;} .cc-card-left{border-right:none;border-bottom:1px solid var(--line);} }
+  /* searchable combo (owner/reviewer/product) — replaces slow datalist */
+  .cc-combo-wrap{position:relative;}
+  .cc-combo-list{position:absolute;left:0;right:0;top:calc(100% + 2px);z-index:60;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px -8px rgba(0,0,0,.28);max-height:230px;overflow-y:auto;}
+  .cc-combo-item{padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--bg);}
+  .cc-combo-item:hover{background:var(--accent-pale,#FDEAF3);}
+  .cc-combo-item.cc-combo-add{color:var(--blue-deep,#2563eb);font-weight:600;}
+  .cc-combo-empty{padding:9px 12px;font-size:12px;color:var(--ink-soft);}
+  .ccal-prodfilter{border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-family:'Sarabun',sans-serif;font-size:11.5px;min-width:150px;}
   #cc-card-body .cc-cd-badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:9px;}
   #cc-card-body .cc-cd-s{font-size:11px;font-weight:700;color:#fff;border-radius:999px;padding:2px 10px;}
   #cc-card-body .cc-cd-rows{display:flex;flex-direction:column;gap:6px;}
@@ -1513,7 +1526,6 @@
       </div>
       <div class="cc-subnav">
         <button class="btn-sm subnav-active" id="cc-nav-idea" onclick="switchContentSub('idea')">💡 Content Idea</button>
-        <button class="btn-sm" id="cc-nav-musthave" onclick="switchContentSub('musthave')">✅ Content Must Have</button>
         <button class="btn-sm" id="cc-nav-calendar" onclick="switchContentSub('calendar')">📅 Content Calendar</button>
         <button class="btn-sm" id="cc-nav-pipeline" onclick="switchContentSub('pipeline')">🗂️ Pipeline</button>
         <button class="btn-sm" id="cc-nav-dashboard" onclick="switchContentSub('dashboard')">📊 Dashboard</button>
@@ -1603,7 +1615,7 @@
       </div>
     </div>
     <div class="modal-overlay" id="cc-card-overlay" style="z-index:74;" onclick="if(event.target===this) closeCardModal()">
-      <div class="modal-box" style="max-width:740px;width:96vw;">
+      <div class="modal-box" style="max-width:980px;width:96vw;">
         <div class="modal-header"><div class="mh-name" id="cc-card-title" style="min-width:0;">การ์ด</div><button class="modal-close" onclick="closeCardModal()">✕</button></div>
         <div class="modal-body" id="cc-card-body" style="padding:0;max-height:82vh;overflow:auto;"></div>
       </div>
@@ -9524,6 +9536,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   // ประเภทงานหลัก (สำหรับแดชบอร์ดวัดผล) — VDO / AW / Activities / Post / อื่นๆ
   var WORK_TYPES=[{k:'vdo',t:'🎬 VDO',c:'#9B7EF8'},{k:'aw',t:'🎨 AW (กราฟิก)',c:'#EF5350'},{k:'activities',t:'🎉 Activities',c:'#F2994A'},{k:'post',t:'📝 Post',c:'#5B8FF9'},{k:'other',t:'📦 อื่นๆ',c:'#8A94A6'}];
   var calWorkFilter = new Set();   // filter ประเภทงานในปฏิทิน Content (ว่าง = ทุกประเภท)
+  var calProductFilter = '';       // filter ตามชื่อสินค้า (ว่าง = ทุกสินค้า)
   var WORK_TYPE_MAP={}; WORK_TYPES.forEach(function(w){ WORK_TYPE_MAP[w.k]=w; });
   function inferWorkType(x){ var f=((x.format||'')+' '+(x.title||'')).toLowerCase(); if(/vdo|video|reel|short|live|คลิป|วิดีโอ|วีดีโอ/.test(f)) return 'vdo'; if(/post|album|photo|carousel|story|โพส|รูปภาพ|อัลบั้ม/.test(f)) return 'post'; if(/aw|artwork|graphic|กราฟิก|สติกเกอร์|sticker|ออกแบบ|แบนเนอร์|banner/.test(f)) return 'aw'; if(/activit|event|กิจกรรม|แจกของ|มินิเกม|live event|แคมเปญ/.test(f)) return 'activities'; return ''; }
   function workTypeOf(x){ return (x.workType && WORK_TYPE_MAP[x.workType]) ? x.workType : (inferWorkType(x)||'other'); }
@@ -9637,12 +9650,19 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +WORK_TYPES.map(function(w){ var sel=calWorkFilter.has(w.k); var cls=anySel?(sel?' sel':' dim'):'';
         var stl=sel?('background:'+w.c+'22;border-color:'+w.c):('border-left:4px solid '+w.c);
         return '<button type="button" class="ccal-wtf-pill'+cls+'" style="'+stl+'" onclick="toggleCalWork(\''+w.k+'\')">'+e2(w.t)+'</button>'; }).join('')
+      +'<span class="ccal-wtf-lead" style="margin-left:6px;">สินค้า:</span><input class="ccal-prodfilter" id="ccal-prodfilter" value="'+e2(calProductFilter)+'" placeholder="🔎 กรองตามสินค้า" oninput="calSetProductFilter(this.value)">'
       +'</div>';
     // legend สถานะ (เดิม)
     var lg='<div class="ccal-statuslegend">'+CAL_STATUS_ORDER.map(function(s){return '<span class="lg"><span class="dot" style="background:'+CAL_STATUS[s].c+'"></span>'+e2(CAL_STATUS[s].t)+'</span>';}).join('')+'</div>';
     el.innerHTML=f+lg;
   }
-  function calVisibleItems(){ var base=calItems(); if(!calWorkFilter.size) return base; return base.filter(function(x){ return calWorkFilter.has(workTypeOf(x)); }); }
+  function calVisibleItems(){ var base=calItems();
+    if(calWorkFilter.size) base=base.filter(function(x){ return calWorkFilter.has(workTypeOf(x)); });
+    if(calProductFilter){ var q=calProductFilter.toLowerCase(); base=base.filter(function(x){ return (x.product||'').toLowerCase().indexOf(q)>=0; }); }
+    return base;
+  }
+  function calRerenderView(){ var host=document.getElementById('ccal-host'); if(!host) return; if(calMode==='grid') renderCalGrid(host); else renderCalList(host); }
+  window.calSetProductFilter=function(v){ calProductFilter=v; calRerenderView(); };
   window.toggleCalWork=function(k){ if(calWorkFilter.has(k)) calWorkFilter.delete(k); else calWorkFilter.add(k); if(typeof renderCalActive==='function') renderCalActive(); };
   window.calWorkAll=function(){ calWorkFilter.clear(); if(typeof renderCalActive==='function') renderCalActive(); };
   // Monthly performance snapshot (mirrors KINN's Dashboard) — respects month + brand filter
@@ -9760,6 +9780,30 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   window.ccAddDraft=function(){ ccDrafts.push(''); ccRenderDrafts(); };
   window.ccRemoveDraft=function(i){ ccDrafts.splice(i,1); ccRenderDrafts(); };
   window.ccDraftChange=function(i,v){ ccDrafts[i]=v; };
+  // ---- searchable combo: owner/reviewer (remember new names) + product (from PRODUCTS) ----
+  var CC_REMEMBER={ owner:'npd_cc_owner_names', reviewer:'npd_cc_reviewer_names' };
+  function ccListFor(kind){
+    if(kind==='product'){ return [...new Set((typeof PRODUCTS!=='undefined'?PRODUCTS:[]).map(function(p){return p.name;}).filter(Boolean))]; }
+    var base = kind==='owner'?PIC_NAMES_CC:(kind==='reviewer'?REVIEWER_NAMES:[]);
+    var rem=[]; try{ rem=JSON.parse(localStorage.getItem(CC_REMEMBER[kind])||'[]'); }catch(e){}
+    return [...new Set(base.concat(Array.isArray(rem)?rem:[]))];
+  }
+  function ccRememberName(kind,name){ if(!CC_REMEMBER[kind]||!name) return; try{ var a=JSON.parse(localStorage.getItem(CC_REMEMBER[kind])||'[]'); if(!Array.isArray(a))a=[]; if(a.indexOf(name)<0){ a.push(name); localStorage.setItem(CC_REMEMBER[kind],JSON.stringify(a)); } }catch(e){} }
+  window.ccComboInput=function(inputId,kind){
+    var inp=document.getElementById(inputId), box=document.getElementById(inputId+'-res'); if(!inp||!box) return;
+    var typed=(inp.value||'').trim(), term=typed.toLowerCase();
+    var all=ccListFor(kind);
+    var list=all.filter(function(n){ return !term || n.toLowerCase().indexOf(term)>=0; }).slice(0,40);
+    var html=list.map(function(n){ return '<div class="cc-combo-item" onmousedown="ccComboPick(\''+inputId+'\',\''+aj(n)+'\')">'+e2(n)+'</div>'; }).join('');
+    if(CC_REMEMBER[kind] && typed && all.map(function(s){return s.toLowerCase();}).indexOf(term)<0){
+      html+='<div class="cc-combo-item cc-combo-add" onmousedown="ccComboAdd(\''+inputId+'\',\''+kind+'\')">➕ เพิ่ม “'+e2(typed)+'” (จำไว้)</div>';
+    }
+    box.innerHTML=html||'<div class="cc-combo-empty">พิมพ์เพื่อค้นหา'+(CC_REMEMBER[kind]?' หรือเพิ่มชื่อใหม่':'')+'</div>'; box.style.display='block';
+  };
+  window.ccComboPick=function(inputId,val){ var inp=document.getElementById(inputId); if(inp) inp.value=val; var box=document.getElementById(inputId+'-res'); if(box) box.style.display='none'; };
+  window.ccComboAdd=function(inputId,kind){ var inp=document.getElementById(inputId); var v=(inp?inp.value:'').trim(); if(!v) return; ccRememberName(kind,v); var box=document.getElementById(inputId+'-res'); if(box) box.style.display='none'; if(typeof toast==='function') toast('เพิ่ม “'+v+'” แล้ว','ok'); };
+  window.ccComboFocus=function(inputId,kind){ ccComboInput(inputId,kind); };
+  window.ccComboBlur=function(inputId){ setTimeout(function(){ var box=document.getElementById(inputId+'-res'); if(box) box.style.display='none'; },160); };
   window.openContentCalEditor=function(id, presetDate){
     if(!unlocked()){ if(typeof toast==='function') toast('เข้าโหมดแก้ไข 🔓 ก่อนจึงจะเพิ่ม/แก้โพสต์ได้','info'); return; }
     calEditId=id||null;
@@ -9797,13 +9841,13 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +'<div class="pe-field"><label>รูปแบบ (Format)</label><select id="cc-cf-format">'+formatOpts+'</select></div>'
       +'<div class="pe-field"><label>📊 ประเภทงานหลัก (Work Type)</label><select id="cc-cf-worktype">'+wtOpts+'</select></div>'
       +'<div class="pe-field full"><label>เป้าหมาย / ตัวชี้วัด (Goal)</label><input type="text" id="cc-cf-goal" list="cc-cf-goals" value="'+e2(x.goal||'')+'" placeholder="เช่น Reach / Add to Cart / New Followers"><datalist id="cc-cf-goals">'+goalList+'</datalist></div>'
-      +'<div class="pe-field full"><label>สินค้า / คอลเลกชัน</label><input type="text" id="cc-cf-product" value="'+e2(x.product||'')+'" placeholder="เช่น Halloween Collection / MK005"></div>'
+      +'<div class="pe-field full"><label>📦 สินค้าที่เกี่ยวข้อง / คอลเลกชัน</label><div class="cc-combo-wrap"><input type="text" id="cc-cf-product" autocomplete="off" value="'+e2(x.product||'')+'" placeholder="พิมพ์ค้นหาสินค้า หรือพิมพ์เอง (เช่น Halloween Collection / MK005)" oninput="ccComboInput(\'cc-cf-product\',\'product\')" onfocus="ccComboFocus(\'cc-cf-product\',\'product\')" onblur="ccComboBlur(\'cc-cf-product\')"><div id="cc-cf-product-res" class="cc-combo-list" style="display:none;"></div></div></div>'
       +'<div class="pe-field full"><label>ช่องทางลง</label><div class="cc-chk" id="cc-cf-channels">'+chanChk+'</div></div>'
-      +'<div class="pe-field"><label>เจ้าของงาน / ผู้รับมอบหมาย (PIC)</label><input type="text" id="cc-cf-owner" list="cc-cf-pics" value="'+e2(x.owner||'')+'" placeholder="เลิฟ / สเปียร์ / เอ / หรา"><datalist id="cc-cf-pics">'+PIC_NAMES_CC.map(function(n){return '<option value="'+e2(n)+'">';}).join('')+'</datalist></div>'
-      +'<div class="pe-field"><label>ผู้ตรวจงาน</label><input type="text" id="cc-cf-reviewer" list="cc-cf-reviewers" value="'+e2(x.reviewer||'')+'" placeholder="พลอย / แพรว / ออม"><datalist id="cc-cf-reviewers">'+REVIEWER_NAMES.map(function(n){return '<option value="'+e2(n)+'">';}).join('')+'</datalist></div>'
+      +'<div class="pe-field"><label>เจ้าของงาน / ผู้รับมอบหมาย (PIC)</label><div class="cc-combo-wrap"><input type="text" id="cc-cf-owner" autocomplete="off" value="'+e2(x.owner||'')+'" placeholder="พิมพ์ค้นหา / เพิ่มชื่อใหม่" oninput="ccComboInput(\'cc-cf-owner\',\'owner\')" onfocus="ccComboFocus(\'cc-cf-owner\',\'owner\')" onblur="ccComboBlur(\'cc-cf-owner\')"><div id="cc-cf-owner-res" class="cc-combo-list" style="display:none;"></div></div></div>'
+      +'<div class="pe-field"><label>ผู้ตรวจงาน</label><div class="cc-combo-wrap"><input type="text" id="cc-cf-reviewer" autocomplete="off" value="'+e2(x.reviewer||'')+'" placeholder="พิมพ์ค้นหา / เพิ่มชื่อใหม่" oninput="ccComboInput(\'cc-cf-reviewer\',\'reviewer\')" onfocus="ccComboFocus(\'cc-cf-reviewer\',\'reviewer\')" onblur="ccComboBlur(\'cc-cf-reviewer\')"><div id="cc-cf-reviewer-res" class="cc-combo-list" style="display:none;"></div></div></div>'
       +'<div class="pe-field full"><label>👀 ผู้ติดตาม (Followers) — คั่นด้วย ,</label><input type="text" id="cc-cf-followers" list="cc-cf-flw" value="'+e2(x.followers||'')+'" placeholder="ใครบ้างที่ต้องตามงานนี้"><datalist id="cc-cf-flw">'+flwDl+'</datalist>'+(flwPick?'<div class="cc-pick">'+flwPick+'</div>':'')+'</div>'
       +'<div class="pe-field full"><label>🏷️ แท็ก (Tags) — คั่นด้วย , (คลิกเพิ่มด่วน หรือพิมพ์แท็กใหม่เองได้)</label><input type="text" id="cc-cf-tags" value="'+e2(x.tags||'')+'" placeholder="เช่น ด่วน, Collection, Halloween"><div class="cc-pick">'+tagPick+'</div></div>'
-      +'<div class="pe-field full"><label>โน้ต</label><textarea id="cc-cf-note" placeholder="แคปชัน / มุมเล่า / สิ่งที่ต้องเตรียม…">'+e2(x.note||'')+'</textarea></div>'
+      +'<div class="pe-field full"><label>📋 รายละเอียดงาน</label><textarea id="cc-cf-note" placeholder="รายละเอียดงาน / แคปชัน / มุมเล่า / สิ่งที่ต้องเตรียม…">'+e2(x.note||'')+'</textarea></div>'
       +'</div>'
       +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;"><button class="btn-sm ghost" onclick="closeContentIdeaEditor()">ยกเลิก</button><button class="btn-sm primary" onclick="saveContentCal()">💾 บันทึก</button></div>';
     document.getElementById('cc-editor-overlay').classList.add('open');
@@ -10113,8 +10157,11 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     } else {
       composer='<div class="cc-cm-empty">กด 🔓 ปลดล็อกทีม เพื่อคอมเมนต์/แนบไฟล์</div>';
     }
-    document.getElementById('cc-card-body').innerHTML = info
-      +'<div class="cc-cm-sec"><div class="cc-cm-h">💬 คอมเมนต์งาน ('+cms.length+')</div><div class="cc-cm-list">'+list+'</div>'+composer+'</div>';
+    document.getElementById('cc-card-body').innerHTML =
+      '<div class="cc-card-2col">'
+      +'<div class="cc-card-left"><div class="cc-col-h">📋 รายละเอียดงาน</div>'+info+'</div>'
+      +'<div class="cc-card-right"><div class="cc-cm-sec"><div class="cc-cm-h">💬 คอมเมนต์งาน ('+cms.length+')</div><div class="cc-cm-list">'+list+'</div>'+composer+'</div></div>'
+      +'</div>';
   };
   function commentImages(raw){
     var arr=(raw||'').split(';').map(function(s){return s.trim();}).filter(Boolean); if(!arr.length) return '';
