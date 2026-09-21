@@ -1038,6 +1038,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
       <button class="btn-sm subnav-active" id="subnav-status" onclick="switchTeamSubview('status')">Current Status</button>
       <button class="btn-sm" id="subnav-tracking" onclick="switchTeamSubview('tracking')">📅 Tracking (ปฏิทิน)</button>
       <button class="btn-sm" id="subnav-nprsummary" onclick="switchTeamSubview('nprsummary')">📊 NPR Summary</button>
+      <button class="btn-sm" id="subnav-yearmap" onclick="switchTeamSubview('yearmap')">🗺️ Roadmap รายปี</button>
     </div>
 
     <div id="team-subview-status">
@@ -1114,6 +1115,15 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
     <p class="section-title">⏰ กำหนดส่งถัดไป (Next Due)</p>
     <p class="section-sub">กรอกช่อง "กำหนดถัดไป (Next Due)" ตอนเพิ่มบันทึกความคืบหน้า แล้วจะมาโผล่ที่นี่เรียงตามวันที่</p>
     <div class="panel"><div id="tcal-upcoming"></div></div>
+    </div>
+
+    <div id="team-subview-yearmap" style="display:none;">
+    <p class="section-title" style="margin-top:0;">🗺️ Roadmap รายปี</p>
+    <p class="section-sub">ภาพรวมแผนออกสินค้าทั้งปี — แต่ละแบรนด์วางขายอะไร เดือนไหน · กรองตามปี/แบรนด์ · เพิ่ม–แก้–ลบได้ (เฉพาะทีม NPD)</p>
+    <div id="yearmap-yeartabs" class="year-tabs" style="margin-bottom:12px;"></div>
+    <div class="brand-filter-bar" style="margin-bottom:10px;"><div id="yearmap-brandbar" class="brand-filter-bar-inner"></div></div>
+    <div id="yearmap-addbar" style="margin-bottom:12px; display:none;"><button class="btn-sm ok" onclick="openYearItemEditor()">➕ เพิ่มสินค้าในแผน</button></div>
+    <div class="panel" style="padding:14px;"><div id="yearmap-host"></div></div>
     </div>
   </div>
   </div>
@@ -4690,11 +4700,14 @@ function switchTeamSubview(key){
   document.getElementById('team-subview-status').style.display = key==='status' ? 'block' : 'none';
   document.getElementById('team-subview-nprsummary').style.display = key==='nprsummary' ? 'block' : 'none';
   const tv=document.getElementById('team-subview-tracking'); if(tv) tv.style.display = key==='tracking' ? 'block' : 'none';
+  const yv=document.getElementById('team-subview-yearmap'); if(yv) yv.style.display = key==='yearmap' ? 'block' : 'none';
   document.getElementById('subnav-status').classList.toggle('subnav-active', key==='status');
   document.getElementById('subnav-nprsummary').classList.toggle('subnav-active', key==='nprsummary');
   const tb=document.getElementById('subnav-tracking'); if(tb) tb.classList.toggle('subnav-active', key==='tracking');
+  const yb=document.getElementById('subnav-yearmap'); if(yb) yb.classList.toggle('subnav-active', key==='yearmap');
   if(key==='nprsummary') renderNPRSummary();
   if(key==='tracking'){ renderTrackingCalendar(); renderTrackingUpcoming(); }
+  if(key==='yearmap' && typeof renderYearRoadmapView==='function') renderYearRoadmapView();
 }
 
 /* ===== Tracking calendar — plots every dated Current-Status update + Next-Due on a month grid ===== */
@@ -7980,8 +7993,8 @@ function deleteProduct(sku){
 async function postToSheet(payload){
   await sbInit();
   if(!sbLoggedIn()) return { ok:false, error:'ยังไม่ได้เข้าสู่ระบบ (กดปุ่มเข้าสู่ระบบ มุมขวาล่าง)' };
-  const TBL = { products:'products', updates:'updates', task:'tasks', notice:'notice', officestatus:'office', events:'events', banners:'banners', briefs:'briefs', contentideas:'content_ideas', contentcal:'content_calendar', contentcomments:'content_comments', contentmusthave:'content_musthave', brandidentity:'brand_identity', hashtags:'hashtags', quicktasks:'quick_tasks', productstage:'product_stage' };
-  const KEY = { products:'sku', notice:'Message', task:'รายละเอียดงาน', officestatus:(payload.key||'name'), events:'id', banners:'id', briefs:'nprNo', contentideas:'id', contentcal:'id', contentcomments:'id', contentmusthave:'id', brandidentity:'id', hashtags:'id', quicktasks:'id', productstage:'sku' };
+  const TBL = { products:'products', updates:'updates', task:'tasks', notice:'notice', officestatus:'office', events:'events', banners:'banners', briefs:'briefs', contentideas:'content_ideas', contentcal:'content_calendar', contentcomments:'content_comments', contentmusthave:'content_musthave', brandidentity:'brand_identity', hashtags:'hashtags', quicktasks:'quick_tasks', productstage:'product_stage', roadmapyear:'roadmap_year' };
+  const KEY = { products:'sku', notice:'Message', task:'รายละเอียดงาน', officestatus:(payload.key||'name'), events:'id', banners:'id', briefs:'nprNo', contentideas:'id', contentcal:'id', contentcomments:'id', contentmusthave:'id', brandidentity:'id', hashtags:'id', quicktasks:'id', productstage:'sku', roadmapyear:'id' };
   const table = TBL[payload.target];
   if(!table) return { ok:false, error:'unknown target: '+payload.target };
   const key = KEY[payload.target];
@@ -11526,6 +11539,180 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 
   // initial stage load (view is gated; harmless if empty)
   try{ loadStages().then(function(){ stagesLoaded=true; if(typeof renderTeamUpdates==='function') renderTeamUpdates(); if(document.getElementById('team-content') && document.getElementById('team-content').style.display!=='none') renderRoadmap(); }); }catch(e){}
+})();
+</script>
+<script>
+/* ============================================================
+   Annual Roadmap (Roadmap รายปี) — NPD Process sub-view.
+   Whole-year Jan–Dec timeline of planned launches per brand,
+   editable (+/-), filtered by year + brand. Data: Supabase table
+   roadmap_year (anon read, NPD-email write). Card style mirrors the
+   CIL-NPD poster: brand-coloured cards above/below a month axis.
+   ============================================================ */
+(function(){
+  var YM = [];                 // all roadmap_year rows
+  var ymYear = null;           // selected year (string)
+  var ymBrand = 'all';         // selected brand key
+  var ymLoaded = false, ymLoading = false;
+  var YM_MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  var YM_STATUS = { plan:{t:'📝 On Plan', c:'#6B7C93'}, stock:{t:'📦 On Stock', c:'#1FA8C9'}, launched:{t:'🚀 Launched', c:'#2E9E6D'} };
+
+  function E(s){ return (typeof esc==='function') ? esc(s) : String(s==null?'':s); }
+  function AJ(s){ return (typeof attrJs==='function') ? attrJs(s) : String(s==null?'':s); }
+  function ymBrandKey(b){ return String(b||'other').toLowerCase().trim(); }
+  function ymBrandColor(b){ var k=ymBrandKey(b); return (typeof BRAND_TINT!=='undefined' && BRAND_TINT[k]) || '#6B7280'; }
+  function ymBrandLabel(b){ return (typeof brandDisplayLabel==='function') ? brandDisplayLabel(ymBrandKey(b)) : b; }
+  function ymCanEdit(){ return (typeof canEditArea==='function') && canEditArea('npd_process'); }
+
+  window.loadYearRoadmap = async function(){
+    ymLoading = true;
+    try{ var rows = await sbSelect('roadmap_year'); YM = Array.isArray(rows)?rows:[]; }
+    catch(e){ YM = []; }        // table not created yet → empty (still shows; saving prompts to run SQL)
+    ymLoaded = true; ymLoading = false;
+  };
+  function ymYears(){
+    var ys = {}; YM.forEach(function(r){ if(r.year) ys[String(r.year)]=1; });
+    var now = new Date().getFullYear(); ys[String(now)]=1; ys[String(now+1)]=1;
+    return Object.keys(ys).sort();
+  }
+  function ymBrands(){
+    var bs = {}; YM.forEach(function(r){ if(r.brand) bs[ymBrandKey(r.brand)]=1; });
+    ['godmami','glimmer','mamilabo'].forEach(function(k){ bs[k]=1; });
+    return Object.keys(bs);
+  }
+  window.ymSetYear = function(y){ ymYear=String(y); renderYearRoadmapView(); };
+  window.ymSetBrand = function(b){ ymBrand=b||'all'; renderYearRoadmapView(); };
+
+  window.renderYearRoadmapView = async function(){
+    if(!ymLoaded && !ymLoading){ await loadYearRoadmap(); }
+    var years = ymYears();
+    if(!ymYear || years.indexOf(ymYear)<0) ymYear = years[years.length-1];
+    var yt=document.getElementById('yearmap-yeartabs');
+    if(yt) yt.innerHTML = years.map(function(y){ return '<div class="year-tab'+(y===ymYear?' active':'')+'" onclick="ymSetYear(\''+y+'\')">'+y+'</div>'; }).join('');
+    var bb=document.getElementById('yearmap-brandbar');
+    if(bb){
+      var btn=function(val,label,color){ return '<button class="brand-filter-btn'+(ymBrand===val?' active':'')+'" onclick="ymSetBrand(\''+val+'\')">'+(color?'<span class="brand-dot" style="background:'+color+'"></span>':'')+E(label)+'</button>'; };
+      var html = btn('all','ทั้งหมด (รวมทุกแบรนด์)','');
+      ymBrands().forEach(function(k){ html += btn(k, ymBrandLabel(k), ymBrandColor(k)); });
+      bb.innerHTML = html;
+    }
+    var ab=document.getElementById('yearmap-addbar'); if(ab) ab.style.display = ymCanEdit() ? '' : 'none';
+    renderYearRoadmap();
+  };
+
+  window.renderYearRoadmap = function(){
+    var host=document.getElementById('yearmap-host'); if(!host) return;
+    var items = YM.filter(function(r){ return String(r.year)===String(ymYear) && (ymBrand==='all' || ymBrandKey(r.brand)===ymBrand); });
+    items.forEach(function(r){ var m=parseInt(r.month,10); r._m=(m>=1&&m<=12)?m:1; });
+    items.sort(function(a,b){ return a._m-b._m || String(a.name||'').localeCompare(String(b.name||'')); });
+    if(!items.length){
+      host.innerHTML='<div class="empty" style="padding:26px 0; text-align:center;">ยังไม่มีสินค้าในแผนปี '+E(ymYear)+(ymBrand!=='all'?(' · '+E(ymBrandLabel(ymBrand))):'')+'<br><span style="font-size:12px;color:var(--ink-soft);">'+(ymCanEdit()?'กด “➕ เพิ่มสินค้าในแผน” เพื่อเริ่ม':'ยังไม่มีข้อมูล')+'</span></div>';
+      return;
+    }
+    var W=1180, xStart=64, xEnd=W-30, colW=(xEnd-xStart)/12;
+    var CARD_W=148, levelGap=66, baseGap=40, cardH=46;
+    var monthX=function(m){ return xStart+(m-0.5)*colW; };
+    var placed=items.map(function(r,i){ return {r:r, x:monthX(r._m), side:(i%2===0?'above':'below')}; });
+    var slots={above:[],below:[]};
+    placed.forEach(function(p){ var lv=0; while(slots[p.side].some(function(s){return s.level===lv && Math.abs(s.x-p.x)<CARD_W+8;})) lv++; slots[p.side].push({x:p.x,level:lv}); p.level=lv; });
+    var maxA=Math.max.apply(null,[0].concat(slots.above.map(function(s){return s.level;})));
+    var maxB=Math.max.apply(null,[0].concat(slots.below.map(function(s){return s.level;})));
+    var topPad=baseGap+maxA*levelGap+cardH+28, botPad=baseGap+maxB*levelGap+cardH+18;
+    var H=topPad+botPad, lineY=topPad;
+    var bands='',grid='',labels='',quarters='';
+    for(var m=0;m<12;m++){
+      var x0=xStart+m*colW, x1=xStart+(m+1)*colW, xc=(x0+x1)/2;
+      if(m%2===1) bands+='<rect x="'+x0.toFixed(1)+'" y="26" width="'+colW.toFixed(1)+'" height="'+(H-26)+'" fill="var(--blue-pale)" opacity="0.45"/>';
+      grid+='<line x1="'+x0.toFixed(1)+'" y1="26" x2="'+x0.toFixed(1)+'" y2="'+H+'" stroke="var(--line)" stroke-width="1"/>';
+      labels+='<g><rect x="'+(xc-20).toFixed(1)+'" y="'+(lineY+5).toFixed(1)+'" width="40" height="18" rx="6" fill="#fff" opacity="0.92"/><text x="'+xc.toFixed(1)+'" y="'+(lineY+17.5).toFixed(1)+'" font-size="12.5" font-weight="700" letter-spacing="0.8" fill="var(--ink)" text-anchor="middle" font-family="Anuphan,Prompt,sans-serif">'+YM_MONTHS[m]+'</text></g>';
+    }
+    for(var q=0;q<4;q++){
+      var qx0=xStart+q*3*colW, qxc=qx0+1.5*colW;
+      quarters+='<text x="'+qxc.toFixed(1)+'" y="16" font-size="13" font-weight="700" fill="var(--accent-deep,#D14E88)" text-anchor="middle" font-family="Anuphan,Prompt,sans-serif">Q'+(q+1)+'</text>';
+      if(q>0) quarters+='<line x1="'+qx0.toFixed(1)+'" y1="24" x2="'+qx0.toFixed(1)+'" y2="'+H+'" stroke="var(--accent-pale,#FDEAF3)" stroke-width="2"/>';
+    }
+    var cards='';
+    placed.forEach(function(p){
+      var r=p.r, dir=(p.side==='above'?-1:1), cy=lineY+dir*(baseGap+p.level*levelGap), col=ymBrandColor(r.brand);
+      var st=YM_STATUS[String(r.status||'').toLowerCase()]||null;
+      var stTag = st ? ('<div style="font-size:9px;font-weight:700;color:'+st.c+';margin-top:2px;">'+E(st.t)+'</div>') : (r.status?('<div style="font-size:9px;color:var(--ink-soft);margin-top:2px;">'+E(r.status)+'</div>'):'');
+      var launch = r.launchText ? ('<div style="font-size:9.5px;color:var(--ink-soft);">'+E(r.launchText)+'</div>') : '';
+      var click = ymCanEdit() ? ('openYearItemEditor(\''+AJ(r.id)+'\')') : '';
+      var top = cy - cardH/2;
+      cards += '<line x1="'+p.x.toFixed(1)+'" y1="'+lineY+'" x2="'+p.x.toFixed(1)+'" y2="'+cy.toFixed(1)+'" stroke="'+col+'" stroke-width="1.5" stroke-dasharray="3,3"/>';
+      cards += '<foreignObject x="'+(p.x-CARD_W/2).toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+CARD_W+'" height="'+(cardH+20)+'">'
+        + '<div xmlns="http://www.w3.org/1999/xhtml" '+(click?('onclick="'+click+'" '):'')+'style="'+(click?'cursor:pointer;':'')+'background:#fff;border:1px solid '+col+';border-left:4px solid '+col+';border-radius:9px;padding:5px 8px;box-shadow:0 2px 6px -2px rgba(31,42,54,.18);overflow:hidden;">'
+        + '<div style="font-size:8.5px;font-weight:700;color:'+col+';text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+E(ymBrandLabel(r.brand))+'</div>'
+        + '<div style="font-size:11.5px;font-weight:700;color:var(--ink);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+E(r.name||'(ไม่มีชื่อ)')+'</div>'
+        + launch + stTag
+        + '</div></foreignObject>';
+    });
+    host.innerHTML='<div class="tl-scroll"><svg class="tl-svg" viewBox="0 0 '+W+' '+H+'">'
+      + bands + grid
+      + '<line x1="'+xStart+'" y1="'+lineY+'" x2="'+xEnd+'" y2="'+lineY+'" stroke="var(--blue-deep)" stroke-width="2.5"/>'
+      + quarters + labels + cards + '</svg></div>';
+  };
+
+  /* ---- add / edit / delete ---- */
+  function ymEnsureOverlay(){
+    var ov=document.getElementById('ym-editor-overlay');
+    if(!ov){
+      ov=document.createElement('div'); ov.id='ym-editor-overlay'; ov.className='modal-overlay';
+      ov.addEventListener('click',function(e){ if(e.target===ov) ov.classList.remove('open'); });
+      ov.innerHTML='<div class="modal-box" style="max-width:460px;"><div class="modal-header"><div class="mh-name" id="ym-ed-title">เพิ่มสินค้าในแผน</div><button class="modal-close" onclick="document.getElementById(\'ym-editor-overlay\').classList.remove(\'open\')">×</button></div><div class="modal-body" id="ym-ed-body"></div></div>';
+      document.body.appendChild(ov);
+    }
+    return ov;
+  }
+  window.openYearItemEditor = function(id){
+    if(!ymCanEdit()){ if(typeof toast==='function') toast('เฉพาะทีม NPD เท่านั้น','info'); return; }
+    var r = id ? YM.find(function(x){return String(x.id)===String(id);}) : null;
+    var ov=ymEnsureOverlay();
+    document.getElementById('ym-ed-title').textContent = r ? '✏️ แก้ไขสินค้าในแผน' : '➕ เพิ่มสินค้าในแผน';
+    var brandOpts=['godmami','glimmer','mamilabo'].map(function(k){ var sel=(r?ymBrandKey(r.brand)===k:(ymBrand!=='all'&&ymBrand===k)); return '<option value="'+k+'"'+(sel?' selected':'')+'>'+E(ymBrandLabel(k))+'</option>'; }).join('');
+    var monthOpts=YM_MONTHS.map(function(mn,i){ var mv=i+1; return '<option value="'+mv+'"'+((r&&parseInt(r.month,10)===mv)?' selected':'')+'>'+mn+'</option>'; }).join('');
+    var statusOpts=[['','— ระบุสถานะ —'],['plan','📝 On Plan'],['stock','📦 On Stock'],['launched','🚀 Launched']].map(function(o){ return '<option value="'+o[0]+'"'+((r&&String(r.status||'')===o[0])?' selected':'')+'>'+o[1]+'</option>'; }).join('');
+    document.getElementById('ym-ed-body').innerHTML =
+      '<div class="pe-grid">'
+      + '<div class="pe-field"><label>ปี</label><input type="text" id="ym-ed-year" value="'+E(r?r.year:ymYear)+'"></div>'
+      + '<div class="pe-field"><label>แบรนด์</label><select id="ym-ed-brand">'+brandOpts+'</select></div>'
+      + '<div class="pe-field full"><label>ชื่อสินค้า *</label><input type="text" id="ym-ed-name" value="'+E(r?r.name:'')+'" placeholder="เช่น Mood Drop"></div>'
+      + '<div class="pe-field"><label>เดือนที่วางขาย</label><select id="ym-ed-month">'+monthOpts+'</select></div>'
+      + '<div class="pe-field"><label>สถานะ</label><select id="ym-ed-status">'+statusOpts+'</select></div>'
+      + '<div class="pe-field full"><label>ข้อความวันวางขาย (Launch)</label><input type="text" id="ym-ed-launch" value="'+E(r?r.launchText:'')+'" placeholder="เช่น Launch 15.1"></div>'
+      + '<div class="pe-field full"><label>หมายเหตุ</label><textarea id="ym-ed-note" rows="2">'+E(r?r.note:'')+'</textarea></div>'
+      + '</div>'
+      + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">'
+      + (r?('<button class="btn-sm warn-ghost" style="margin-right:auto;" onclick="deleteYearItem(\''+AJ(r.id)+'\')">🗑️ ลบ</button>'):'')
+      + '<button class="btn-sm neutral" onclick="document.getElementById(\'ym-editor-overlay\').classList.remove(\'open\')">ยกเลิก</button>'
+      + '<button class="btn-sm ok" onclick="saveYearItem('+(r?('\''+AJ(r.id)+'\''):'null')+')">💾 บันทึก</button>'
+      + '</div>';
+    ov.classList.add('open');
+  };
+  window.saveYearItem = async function(id){
+    var g=function(x){ return ((document.getElementById('ym-ed-'+x)||{}).value||''); };
+    var name=g('name').trim();
+    if(!name){ if(typeof toast==='function') toast('กรอกชื่อสินค้าก่อน','err'); return; }
+    var isNew=!id, rid=id||('ym'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+    var row={ id:rid, year:(g('year').trim()||ymYear), brand:g('brand'), name:name, month:g('month'), status:g('status'), launchText:g('launch').trim(), note:g('note').trim(), updatedAt:(typeof todayStr==='function'?todayStr():''), updatedBy:(typeof sbEmail==='function'?sbEmail():'') };
+    if(isNew) YM.push(row); else { var i=YM.findIndex(function(x){return String(x.id)===String(rid);}); if(i>-1) YM[i]=Object.assign({},YM[i],row); }
+    var ovv=document.getElementById('ym-editor-overlay'); if(ovv) ovv.classList.remove('open');
+    renderYearRoadmapView();
+    try{
+      var res=await postToSheet({target:'roadmapyear', action:(isNew?'append':'update'), keyValue:rid, row:row});
+      if(res && res.ok===false){ if(typeof toast==='function') toast('บันทึกไม่สำเร็จ: '+(res.error||'')+' (ตารางอาจยังไม่ถูกสร้าง — รัน SQL ที่ผมให้ก่อน)','err'); }
+      else if(typeof toast==='function') toast('บันทึกแผนแล้ว','ok');
+    }catch(e){ if(typeof toast==='function') toast('ต่อ Supabase ไม่ได้: '+e.message,'err'); }
+  };
+  window.deleteYearItem = async function(id){
+    if(!id) return;
+    if(!confirm('ลบสินค้านี้ออกจากแผน?')) return;
+    YM = YM.filter(function(x){ return String(x.id)!==String(id); });
+    var ovv=document.getElementById('ym-editor-overlay'); if(ovv) ovv.classList.remove('open');
+    renderYearRoadmapView();
+    try{ await postToSheet({target:'roadmapyear', action:'delete', keyValue:id}); if(typeof toast==='function') toast('ลบแล้ว','ok'); }
+    catch(e){ if(typeof toast==='function') toast('ต่อ Supabase ไม่ได้','err'); }
+  };
 })();
 </script>
 </body>
