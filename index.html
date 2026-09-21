@@ -789,6 +789,12 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
 #tlbtn-stock:hover, #tlbtn-basket:hover, #tlbtn-pr:hover{ color:var(--blue-ink); border-color:var(--blue); }
 #tlbtn-stock.subnav-active, #tlbtn-basket.subnav-active, #tlbtn-pr.subnav-active{ background:linear-gradient(135deg,#7AA0DE,#5C86D6); color:#fff; border-color:transparent; box-shadow:0 5px 14px -5px rgba(60,100,190,.6); }
 
+/* NPD Process sub-nav = one consistent segmented control (was uneven widths + mixed colors) */
+.team-subnav .btn-sm{ flex:0 0 auto; background:#fff; color:var(--ink-soft); border:1px solid var(--line); box-shadow:var(--shadow-xs); font-weight:600; padding:8px 15px; transition:background .16s var(--ease), color .16s var(--ease), border-color .16s var(--ease), box-shadow .16s var(--ease); }
+.team-subnav .btn-sm:hover{ color:var(--blue-ink); border-color:var(--blue); }
+.team-subnav .btn-sm:focus{ outline:none; }
+.team-subnav .btn-sm.subnav-active{ background:linear-gradient(135deg,#7AA0DE,#5C86D6) !important; color:#fff !important; border-color:transparent !important; box-shadow:0 5px 14px -5px rgba(60,100,190,.6); }
+
 /* Calendar month grid: rounder cells + gentle hover */
 .cal-cell{ border-radius:10px; transition:box-shadow .15s var(--ease); }
 .cal-cell:hover{ box-shadow:var(--shadow-sm); }
@@ -1034,8 +1040,8 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
 
     <div class="brand-filter-bar" id="team-brand-bar"></div>
 
-    <div style="display:flex; gap:8px; margin-bottom:16px;">
-      <button class="btn-sm subnav-active" id="subnav-status" onclick="switchTeamSubview('status')">Current Status</button>
+    <div class="team-subnav" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+      <button class="btn-sm subnav-active" id="subnav-status" onclick="switchTeamSubview('status')">📋 Current Status</button>
       <button class="btn-sm" id="subnav-tracking" onclick="switchTeamSubview('tracking')">📅 Tracking (ปฏิทิน)</button>
       <button class="btn-sm" id="subnav-nprsummary" onclick="switchTeamSubview('nprsummary')">📊 NPR Summary</button>
       <button class="btn-sm" id="subnav-yearmap" onclick="switchTeamSubview('yearmap')">🗺️ Roadmap รายปี</button>
