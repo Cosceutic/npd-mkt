@@ -793,6 +793,12 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
 .cal-cell{ border-radius:10px; transition:box-shadow .15s var(--ease); }
 .cal-cell:hover{ box-shadow:var(--shadow-sm); }
 
+/* Extra .btn-sm variants so toolbar buttons read as distinct actions (save=green, open-list=neutral) */
+.btn-sm.ok{ background:linear-gradient(135deg,#4FBF8B,#2FA36B); color:#fff; box-shadow:0 5px 14px -6px rgba(34,160,107,.55); }
+.btn-sm.ok:hover{ background:linear-gradient(135deg,#45B180,#28925F); }
+.btn-sm.neutral{ background:#fff; color:var(--ink); border:1px solid var(--line); box-shadow:var(--shadow-xs); }
+.btn-sm.neutral:hover{ background:var(--bg); border-color:#C7D2E5; }
+
 /* "+N เพิ่มเติม" chip in the tracking calendar day cells */
 .tev-more{ font-size:9.5px; font-weight:700; color:var(--accent-deep,#D14E88); background:var(--accent-pale,#FDEAF3); border:1px dashed #E9A9C6; border-radius:6px; padding:2px 6px; cursor:pointer; text-align:center; white-space:nowrap; transition:background .14s var(--ease); }
 .tev-more:hover{ background:#F7D3E4; }
@@ -1020,8 +1026,8 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
     <p class="section-sub">แบบฟอร์มบรีฟโรงงาน — กรอกแล้วพิมพ์/บันทึกเป็น PDF แยกทีละ Part เพื่อส่งบรีฟแต่ละแผนกได้เลย ข้อมูลที่กรอกจะถูกจำไว้ในเครื่องนี้อัตโนมัติ</p>
     <div class="panel" style="padding:16px 20px;">
       <button class="btn-sm primary" onclick="toggleBriefForm()" id="brief-toggle-btn">📋 เปิดฟอร์ม NPD Brief</button>
-      <button class="btn-sm ghost" onclick="saveBriefToCloud()" style="margin-left:8px;">💾 บันทึกบรีฟ (กลาง)</button>
-      <button class="btn-sm ghost" onclick="openSavedBriefsModal()" style="margin-left:6px;">📂 บรีฟที่บันทึกไว้</button>
+      <button class="btn-sm ok" onclick="saveBriefToCloud()" style="margin-left:8px;">💾 บันทึกบรีฟ (กลาง)</button>
+      <button class="btn-sm neutral" onclick="openSavedBriefsModal()" style="margin-left:6px;">📂 บรีฟที่บันทึกไว้</button>
       <button class="btn-sm warn-ghost" onclick="clearBriefForm()" style="margin-left:6px;">🆕 เริ่มบรีฟใหม่</button>
       <div id="brief-form-container" style="display:none; margin-top:16px;"></div>
     </div>
@@ -11347,8 +11353,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     {k:'concept',   t:'💡 Concept'},
     {k:'cost',      t:'💰 Cost & Pay Back'},
     {k:'dev',       t:'🧪 Product Development (Formula/Packaging)'},
-    {k:'massprod',  t:'🏭 Mass Production, Photoshoot & Sample'},
-    {k:'content',   t:'🎨 สื่อ/คอนเทนต์ & Digital Asset'},
+    {k:'massprod',  t:'🏭 Mass Production, Photoshoot & Sample, Digital Asset'},
     {k:'instock',   t:'📦 เข้าสต็อก'},
     {k:'prelaunch', t:'🛒 เตรียมขึ้นขาย (แพลตฟอร์ม/ตะกร้า)'},
     {k:'launch',    t:'🚀 Launch / 🎬 Full PR'},
@@ -11375,7 +11380,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     for(var i=0;i<skus.length;i++){ try{ await postToSheet({target:'productstage', action:'upsert', keyValue:skus[i], row:{sku:skus[i], archived: on?'1':'', updatedAt:(typeof todayStr==='function'?todayStr():'')}}); }catch(e){} }
     if(typeof toast==='function') toast(on?('จัดเก็บแล้ว '+skus.length+' รายการ'):'นำกลับแล้ว','ok');
   };
-  window.stageOf = function(sku){ return STAGE_MAP[sku]||''; };
+  window.stageOf = function(sku){ var s=STAGE_MAP[sku]||''; return s==='content' ? 'massprod' : s; };  // 'content' stage merged into massprod
   window.setStage = async function(sku, stage){
     if(!(typeof canEditArea==='function' && canEditArea('npd_process'))){ if(typeof toast==='function') toast('เฉพาะทีม NPD เท่านั้นที่แก้ขั้นตอนได้','info'); return; }
     STAGE_MAP[sku]=stage; renderRoadmap();
