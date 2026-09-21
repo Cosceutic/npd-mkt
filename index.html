@@ -11701,23 +11701,32 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     if(!name){ if(typeof toast==='function') toast('กรอกชื่อสินค้าก่อน','err'); return; }
     var isNew=!id, rid=id||('ym'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
     var row={ id:rid, year:(g('year').trim()||ymYear), brand:g('brand'), name:name, month:g('month'), status:g('status'), launchText:g('launch').trim(), note:g('note').trim(), updatedAt:(typeof todayStr==='function'?todayStr():''), updatedBy:(typeof sbEmail==='function'?sbEmail():'') };
-    if(isNew) YM.push(row); else { var i=YM.findIndex(function(x){return String(x.id)===String(rid);}); if(i>-1) YM[i]=Object.assign({},YM[i],row); }
-    var ovv=document.getElementById('ym-editor-overlay'); if(ovv) ovv.classList.remove('open');
-    renderYearRoadmapView();
+    if(!(typeof sbLoggedIn==='function' && sbLoggedIn())){ if(typeof toast==='function') toast('กรุณาเข้าสู่ระบบก่อนบันทึก (ปุ่ม 🔑 มุมขวาล่าง)','err'); if(typeof sbShowLoginModal==='function') sbShowLoginModal(); return; }
+    var saveBtn=document.querySelector('#ym-editor-overlay .btn-sm.ok'); if(saveBtn){ saveBtn.disabled=true; saveBtn.textContent='กำลังบันทึก…'; }
+    // Save to Supabase FIRST — only touch the board after it truly persisted, so a card never
+    // "looks saved" then vanishes on reload (that was the bug: UI updated before the save landed).
     try{
       var res=await postToSheet({target:'roadmapyear', action:(isNew?'append':'update'), keyValue:rid, row:row});
-      if(res && res.ok===false){ if(typeof toast==='function') toast('บันทึกไม่สำเร็จ: '+(res.error||'')+' (ตารางอาจยังไม่ถูกสร้าง — รัน SQL ที่ผมให้ก่อน)','err'); }
-      else if(typeof toast==='function') toast('บันทึกแผนแล้ว','ok');
-    }catch(e){ if(typeof toast==='function') toast('ต่อ Supabase ไม่ได้: '+e.message,'err'); }
+      if(res && res.ok===false){ if(typeof toast==='function') toast('❌ ยังไม่ได้บันทึก: '+(res.error||'')+' — ลองใหม่อีกครั้ง','err'); if(saveBtn){ saveBtn.disabled=false; saveBtn.textContent='💾 บันทึก'; } return; }
+    }catch(e){ if(typeof toast==='function') toast('❌ ต่อ Supabase ไม่ได้: '+((e&&e.message)||e)+' — ยังไม่บันทึก','err'); if(saveBtn){ saveBtn.disabled=false; saveBtn.textContent='💾 บันทึก'; } return; }
+    // reload from the server to CONFIRM it persisted, then refresh the board + close
+    try{ await loadYearRoadmap(); }catch(e){}
+    var ovv=document.getElementById('ym-editor-overlay'); if(ovv) ovv.classList.remove('open');
+    renderYearRoadmapView();
+    if(typeof toast==='function') toast('✓ บันทึกแล้ว · ทั้งทีมเห็น (ไม่หายแม้รีเฟรช/อัปไฟล์)','ok');
   };
   window.deleteYearItem = async function(id){
     if(!id) return;
+    if(!(typeof sbLoggedIn==='function' && sbLoggedIn())){ if(typeof toast==='function') toast('กรุณาเข้าสู่ระบบก่อนลบ','err'); return; }
     if(!confirm('ลบสินค้านี้ออกจากแผน?')) return;
-    YM = YM.filter(function(x){ return String(x.id)!==String(id); });
+    try{
+      var res=await postToSheet({target:'roadmapyear', action:'delete', keyValue:id});
+      if(res && res.ok===false){ if(typeof toast==='function') toast('❌ ลบไม่สำเร็จ: '+(res.error||''),'err'); return; }
+    }catch(e){ if(typeof toast==='function') toast('❌ ต่อ Supabase ไม่ได้','err'); return; }
+    try{ await loadYearRoadmap(); }catch(e){}
     var ovv=document.getElementById('ym-editor-overlay'); if(ovv) ovv.classList.remove('open');
     renderYearRoadmapView();
-    try{ await postToSheet({target:'roadmapyear', action:'delete', keyValue:id}); if(typeof toast==='function') toast('ลบแล้ว','ok'); }
-    catch(e){ if(typeof toast==='function') toast('ต่อ Supabase ไม่ได้','err'); }
+    if(typeof toast==='function') toast('ลบแล้ว','ok');
   };
 })();
 </script>
