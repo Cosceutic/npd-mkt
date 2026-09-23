@@ -1684,7 +1684,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
             <button class="btn-sm" id="ccal-mode-grid" onclick="setCalMode('grid')">🗓️ เดือน</button>
             <button class="btn-sm" id="ccal-mode-list" onclick="setCalMode('list')">📋 รายการ</button>
           </span>
-          <span class="ccal-add-wrap"><button class="btn-edit primary" id="ccal-add" onclick="openContentCalEditor()" style="display:none;">➕ เพิ่มโพสต์</button></span>
+          <span class="ccal-add-wrap"><button class="btn-edit" id="ccal-add-event" onclick="openEventEditor()" style="display:none;background:#8B5CF6;color:#fff;margin-right:8px;">📌 Event/Task/วันหยุด</button><button class="btn-edit primary" id="ccal-add" onclick="openContentCalEditor()" style="display:none;">➕ เพิ่มโพสต์</button></span>
         </div>
         <div id="ccal-perf"></div>
         <div id="ccal-legend" class="ccal-legend"></div>
@@ -1967,7 +1967,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
     <div class="modal-header">
       <div>
         <div class="mh-name" id="ev-title-h">📅 เพิ่มวันหยุด / นัด / ประชุม</div>
-        <div class="mh-sku">โผล่ทั้งใน Milestone Calendar และ Tracking Calendar · ทั้งทีมเห็นตรงกัน</div>
+        <div class="mh-sku">โผล่ในทุกปฏิทิน (Milestone · Tracking · Content Calendar) · ทั้งทีมเห็นตรงกัน</div>
       </div>
       <button class="modal-close" onclick="closeEventEditor()">✕</button>
     </div>
@@ -3777,11 +3777,13 @@ function groupByBaseName(list){
 const EVENTS_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=Events";
 const EVENTS_LOCAL_KEY = 'npd_events_v1';
 const EVENT_TYPES = {
+  event:   {label:'Event',       emoji:'🎉', color:'#EC4899', bg:'#FCE7F3'},
+  task:    {label:'Task',        emoji:'✅', color:'#10B981', bg:'#D1FAE5'},
   holiday: {label:'วันหยุด',    emoji:'🏖️', color:'#EF4444', bg:'#FEE2E2'},
   meeting: {label:'ประชุม/นัด',  emoji:'📌', color:'#6366F1', bg:'#E0E7FF'},
   other:   {label:'อื่นๆ',        emoji:'📎', color:'#0EA5E9', bg:'#E0F2FE'},
 };
-const EVENT_HEADERS = ['id','title','type','start','end','note','updatedBy','updatedAt'];
+const EVENT_HEADERS = ['id','title','type','start','end','pic','note','updatedBy','updatedAt'];
 function eventTypeDef(t){ return EVENT_TYPES[t] || EVENT_TYPES.other; }
 function getEventsLocal(){ try{ return JSON.parse(localStorage.getItem(EVENTS_LOCAL_KEY))||[]; }catch(e){ return []; } }
 function saveEventsLocal(a){ try{ localStorage.setItem(EVENTS_LOCAL_KEY, JSON.stringify(a)); }catch(e){} }
@@ -3796,6 +3798,7 @@ function normEventRow(r){
     title:(r.title||r.Title||'').trim(),
     type:((r.type||r.Type||'other').trim().toLowerCase()) || 'other',
     start, end,
+    pic:(r.pic||r.Pic||r.PIC||'').trim(),
     note:(r.note||r.Note||'').trim(),
     updatedBy:(r.updatedBy||r.UpdatedBy||'').trim()
   };
@@ -3831,8 +3834,8 @@ function eventChipHtml(e, iso){
   const multi = e.end && e.end!==e.start;
   const isStart = iso===e.start, isEnd = iso===e.end;
   const cls = multi ? ('ev-chip ev-span'+(isStart?' ev-start':'')+(isEnd?' ev-end':'')) : 'ev-chip';
-  const tip = `${def.emoji} ${def.label}: ${e.title}`+(multi?` (${e.start} → ${e.end})`:'')+(e.note?` · ${e.note}`:'');
-  const label = (multi && !isStart) ? '' : `${def.emoji} ${esc(e.title)}`;
+  const tip = `${def.emoji} ${def.label}: ${e.title}`+(e.pic?` · 👤 ${e.pic}`:'')+(multi?` (${e.start} → ${e.end})`:'')+(e.note?` · ${e.note}`:'');
+  const label = (multi && !isStart) ? '' : `${def.emoji} ${esc(e.title)}`+(e.pic?` <span style="opacity:.85;">👤${esc(e.pic)}</span>`:'');
   return `<div class="${cls}" style="--ev:${def.color}; --evbg:${def.bg};" title="${esc(tip)}" onclick="event.stopPropagation(); openEventEditor(null,'${attrJs(e.id)}')">${label||'&nbsp;'}</div>`;
 }
 
@@ -3842,16 +3845,17 @@ function openEventEditor(prefill, editId){
   if(!isTeamUnlocked()){ toast('เข้าโหมดแก้ไข (🔓) ก่อนจึงจะเพิ่ม/แก้ Event ได้','info'); return; }
   evEditId = editId || null;
   const e = editId ? (eventById(editId) || {}) : (prefill || {});
-  const typeOpts = Object.entries(EVENT_TYPES).map(([k,d])=>`<option value="${k}"${(e.type||'holiday')===k?' selected':''}>${d.emoji} ${d.label}</option>`).join('');
-  document.getElementById('ev-title-h').textContent = editId ? '✏️ แก้ไข Event' : '📅 เพิ่มวันหยุด / นัด / ประชุม';
+  const typeOpts = Object.entries(EVENT_TYPES).map(([k,d])=>`<option value="${k}"${(e.type||'event')===k?' selected':''}>${d.emoji} ${d.label}</option>`).join('');
+  document.getElementById('ev-title-h').textContent = editId ? '✏️ แก้ไข Event/Task' : '📌 เพิ่ม Event / Task / วันหยุด';
   document.getElementById('ev-form').innerHTML = `
     <div class="pe-grid">
-      <div class="pe-field full"><label>หัวข้อ (Title) *</label><input type="text" id="ev-title" value="${esc(e.title||'')}" placeholder="เช่น วันหยุดสงกรานต์ / ประชุมทีม NPD"></div>
+      <div class="pe-field full"><label>หัวข้อ (Title) *</label><input type="text" id="ev-title" value="${esc(e.title||'')}" placeholder="เช่น ถ่าย Event Halloween / ประชุมทีม / วันหยุดสงกรานต์"></div>
       <div class="pe-field"><label>ประเภท (Type)</label><select id="ev-type">${typeOpts}</select></div>
-      <div class="pe-field"><label>&nbsp;</label><div style="font-size:11px; color:var(--muted); padding-top:8px;">🏖️ วันหยุด = แรเงาทั้งช่อง · 📌 นัด/ประชุม</div></div>
+      <div class="pe-field"><label>ผู้รับผิดชอบ (PIC) — ไม่บังคับ</label><input type="text" id="ev-pic" value="${esc(e.pic||'')}" placeholder="เช่น เลิฟ, สเปียร์ (เว้นว่างได้)"></div>
       <div class="pe-field"><label>วันเริ่ม (Start) *</label><input type="date" id="ev-start" value="${esc(e.start||todayStr())}"></div>
       <div class="pe-field"><label>วันจบ (End) — ว่าง = วันเดียว</label><input type="date" id="ev-end" value="${esc(e.end&&e.end!==e.start?e.end:'')}"></div>
       <div class="pe-field full"><label>หมายเหตุ (Note)</label><input type="text" id="ev-note" value="${esc(e.note||'')}" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"></div>
+      <div class="pe-field full"><div style="font-size:11px; color:var(--muted);">🎉 Event · ✅ Task · 🏖️ วันหยุด (แรเงาทั้งช่อง) · 📌 ประชุม/นัด — ใช้บันทึกงานนอกเหนือจาก Pipeline</div></div>
     </div>`;
   document.getElementById('ev-delete-btn').style.display = editId ? '' : 'none';
   document.getElementById('ev-overlay').classList.add('open');
@@ -3861,7 +3865,7 @@ function collectEventForm(){
   const g=id=>String((document.getElementById(id)||{}).value||'').trim();
   const start=g('ev-start');
   let end=g('ev-end'); if(!end) end=start; if(end<start) end=start;
-  return { title:g('ev-title'), type:g('ev-type')||'other', start, end, note:g('ev-note') };
+  return { title:g('ev-title'), type:g('ev-type')||'other', start, end, pic:g('ev-pic'), note:g('ev-note') };
 }
 function saveEventEntry(){
   const f=collectEventForm();
@@ -3894,6 +3898,8 @@ function deleteEventEntry(){
 function refreshCalendarsAfterEvent(){
   if(typeof renderStockCalendarGrid==='function' && document.getElementById('stock-calendar-grid')) renderStockCalendarGrid();
   if(typeof renderTrackingCalendar==='function' && document.getElementById('tcal-host') && document.getElementById('tcal-host').innerHTML) renderTrackingCalendar();
+  // ปฏิทิน Content Creator ก็แสดง Event/Task/วันหยุด ด้วย
+  if(typeof renderContentCal==='function'){ var cs=document.getElementById('cc-sub-calendar'); if(cs && cs.style.display!=='none') renderContentCal(); }
 }
 async function syncEventToSheet(action, ev){
   const cfg=getWriteConfig();
@@ -3903,7 +3909,7 @@ async function syncEventToSheet(action, ev){
     action, keyValue: ev.id,
     row: action==='delete' ? undefined : {
       id:ev.id, title:ev.title||'', type:ev.type||'other',
-      start:ev.start||'', end:ev.end||ev.start||'', note:ev.note||'',
+      start:ev.start||'', end:ev.end||ev.start||'', pic:ev.pic||'', note:ev.note||'',
       updatedBy:ev.updatedBy||'', updatedAt: todayStr()
     }
   };
@@ -10159,6 +10165,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var host=document.getElementById('ccal-host'); if(!host) return;
     calLegend(); renderCalPerf();
     var addBtn=document.getElementById('ccal-add'); if(addBtn) addBtn.style.display=unlocked()?'':'none';
+    var addEv=document.getElementById('ccal-add-event'); if(addEv) addEv.style.display=unlocked()?'':'none';
     document.getElementById('ccal-mode-grid').classList.toggle('on',calMode==='grid');
     document.getElementById('ccal-mode-list').classList.toggle('on',calMode==='list');
     var nav=document.getElementById('ccal-nav'); if(nav) nav.style.display=(calMode==='grid')?'inline-flex':'none';
@@ -10186,22 +10193,39 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
         return '<div class="ccal-chip" style="--s:'+wc+'" title="'+e2(tip)+'" onclick="event.stopPropagation();calChipClick(\''+aj(x.id)+'\')">'+((e.kind==='post'&&x.time)?'<span class="ci">'+e2(x.time)+'</span> ':'')+e2(pre+x.title)+((e.kind==='post'&&x.owner)?' <span class="ccal-chip-owner">👤'+e2(x.owner)+'</span>':'')+'</div>';
       }).join('');
       if(list.length>shown.length) chips+='<div class="ccal-more">+'+(list.length-shown.length)+' เพิ่มเติม</div>';
+      // Event/Task/วันหยุด (นอกเหนือจาก Pipeline) แสดงบนสุดของช่อง
+      var evs=(typeof eventsOnDay==='function')?eventsOnDay(iso):[];
+      var evHtml=evs.map(function(ev){ return eventChipHtml(ev, iso); }).join('');
+      var hasHoliday=evs.some(function(ev){return ev.type==='holiday';});
       var addable=unlocked();
-      h+='<div class="ccal-cell'+(isToday?' today':'')+(addable?' addable':'')+'"'+(addable?' onclick="openContentCalEditor(null,\''+iso+'\')"':'')+'>'
-        +'<div class="ccal-dn"><span>'+day+'</span>'+(addable?'<span class="plus">＋</span>':'')+'</div>'+chips+'</div>';
+      h+='<div class="ccal-cell'+(isToday?' today':'')+(hasHoliday?' cal-holiday':'')+(addable?' addable':'')+'"'+(addable?' onclick="openContentCalEditor(null,\''+iso+'\')"':'')+'>'
+        +'<div class="ccal-dn"><span>'+day+'</span>'+(addable?'<span class="plus">＋</span>':'')+'</div>'+evHtml+chips+'</div>';
     }
     host.innerHTML='<div class="ccal-grid">'+h+'</div>';
   }
+  function evListRow(ev){
+    var def=(typeof eventTypeDef==='function')?eventTypeDef(ev.type):{color:'#8A94A6',emoji:'📎',label:'อื่นๆ'};
+    var span=(ev.end&&ev.end!==ev.start)?(' ('+ev.start+' → '+ev.end+')'):'';
+    var meta=[]; if(ev.pic) meta.push('👤 '+e2(ev.pic)); if(ev.note) meta.push(e2(ev.note));
+    var act=(typeof isTeamUnlocked==='function'&&isTeamUnlocked())?'<div class="ccal-post-actions"><button class="btn-sm ghost" onclick="openEventEditor(null,\''+aj(ev.id)+'\')">✏️</button></div>':'';
+    return '<div class="ccal-post"><span class="ccal-post-s" style="--s:'+def.color+'">'+def.emoji+' '+e2(def.label)+'</span><div class="ccal-post-main"><div class="ccal-post-title">'+e2(ev.title)+e2(span)+'</div>'+(meta.length?'<div class="ccal-post-meta">'+meta.join(' · ')+'</div>':'')+'</div>'+act+'</div>';
+  }
   function renderCalList(host){
     var items=calVisibleItems().slice().sort(function(a,b){ return (a.date+ (a.time||'')).localeCompare(b.date+(b.time||'')); });
-    if(!items.length){ host.innerHTML='<div class="ccal-empty">ยังไม่มีโพสต์ในปฏิทิน'+(unlocked()?' — กด “➕ เพิ่มโพสต์” หรือกดวันในมุมมองเดือน':' · กด 🔓 ปลดล็อกทีมเพื่อเพิ่ม')+'</div>'; return; }
+    var evByDate={}; if(typeof ALL_EVENTS!=='undefined'&&ALL_EVENTS){ ALL_EVENTS.forEach(function(ev){ if(ev&&ev.start){ (evByDate[ev.start]=evByDate[ev.start]||[]).push(ev); } }); }
+    if(!items.length && !Object.keys(evByDate).length){ host.innerHTML='<div class="ccal-empty">ยังไม่มีโพสต์ในปฏิทิน'+(unlocked()?' — กด “➕ เพิ่มโพสต์” / “📌 Event/Task/วันหยุด” หรือกดวันในมุมมองเดือน':' · กด 🔓 ปลดล็อกทีมเพื่อเพิ่ม')+'</div>'; return; }
     var today=new Date(); today.setHours(0,0,0,0);
     var byDate={}, order=[];
     items.forEach(function(x){ if(!(x.date in byDate)){byDate[x.date]=[];order.push(x.date);} byDate[x.date].push(x); });
+    Object.keys(evByDate).forEach(function(dt){ if(!(dt in byDate)){ byDate[dt]=[]; order.push(dt); } });
+    order.sort();
     var h=order.map(function(dt){
       var d=new Date(dt+'T00:00:00'); var past=d<today;
-      var head='<div class="ccal-day-head">'+TH_WDF[d.getDay()]+' '+d.getDate()+' '+TH_MF[d.getMonth()]+' '+d.getFullYear()+'<span class="cnt">'+byDate[dt].length+' โพสต์</span></div>';
-      var rows=byDate[dt].slice().sort(function(a,b){return (a.time||'').localeCompare(b.time||'');}).map(function(x){
+      var evs=evByDate[dt]||[]; var nPost=byDate[dt].length;
+      var cntTxt=(nPost?nPost+' โพสต์':'')+(nPost&&evs.length?' · ':'')+(evs.length?evs.length+' event':'');
+      var head='<div class="ccal-day-head">'+TH_WDF[d.getDay()]+' '+d.getDate()+' '+TH_MF[d.getMonth()]+' '+d.getFullYear()+'<span class="cnt">'+cntTxt+'</span></div>';
+      var evRows=evs.map(evListRow).join('');
+      var rows=evRows+byDate[dt].slice().sort(function(a,b){return (a.time||'').localeCompare(b.time||'');}).map(function(x){
         var st=CAL_STATUS[x.status]||CAL_STATUS.brief;
         var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); if(x.brand) meta.push('🏷️ '+e2(bLbl(x.brand))); if(x.product) meta.push('📦 '+e2(x.product)); if(x.goal) meta.push('🎯 '+e2(x.goal)); if(x.owner) meta.push('👤 '+e2(x.owner)); if(x.reviewer) meta.push('🔍 '+e2(x.reviewer));
         var tags=tagChips(x.tags)+pillarTag(x.pillar)+fmtTag(x.format)+dueBadge(x)+reviseBadge(x)+extendBadge(x);
