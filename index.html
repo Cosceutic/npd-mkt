@@ -7024,6 +7024,8 @@ function toggleBriefForm(){
         : '';
       const summaryBtn = key==='a'
         ? `<button class="brief-print-btn" onclick="event.stopPropagation(); printBriefSummaryA()" style="margin-right:6px; background:var(--accent-deep,#D14E88); color:#fff; border-color:var(--accent-deep,#D14E88);">📄 Summary Print</button>`
+        : key==='f'
+        ? `<button class="brief-print-btn" onclick="event.stopPropagation(); printBriefSummaryG()" style="margin-right:6px; background:#5C7A93; color:#fff; border-color:#5C7A93;">📄 Summary Print</button>`
         : '';
       return `<div class="brief-part pc-${key}" id="brief-part-${key}">
         <div class="brief-part-head" onclick="toggleBriefPart('${key}')">
@@ -7230,6 +7232,143 @@ function printBriefSummaryA(){
   setTimeout(()=>{ try{ win.focus(); }catch(e){} win.print(); }, 450);
 }
 
+/* ===== G. Supply Chain — Summary Print (โทนเทา/ขาว/ฟ้าอ่อน, one-page layout) ===== */
+function printBriefSummaryG(){
+  const bodyF=document.getElementById('brief-part-body-f');
+  if(bodyF && !bodyF.dataset.rendered){ bodyF.innerHTML=BRIEF_RENDERERS['f'](); bodyF.dataset.rendered='1'; }
+  const g=id=>String(bfGet(id)||'').trim();
+  const dash='<span style="color:#B6BDC8;">–</span>';
+  const val=v=>(v&&String(v).trim())?esc(v):dash;
+  const grid=id=>{ try{ return JSON.parse(bfGet(id)||'[]')||[]; }catch(e){ return []; } };
+  const imgSrc=v=>esc(typeof briefImgSrc==='function'?briefImgSrc(v):v);
+  const imgTag=(v,max)=>v?`<img src="${imgSrc(v)}" style="max-width:${max||120}px; max-height:${max||90}px; border:1px solid #E1E7EE; border-radius:6px; display:block; margin:0 auto;">`:'<span style="color:#C3CAD3; font-size:10px;">— ไม่มีรูป —</span>';
+  const kv=(label,v)=>`<div class="g-kv"><span class="g-k">${esc(label)}</span><span class="g-v">${v}</span></div>`;
+  const brand=(typeof brandToLabel==='function'?brandToLabel(bfGet('a_brand')):bfGet('a_brand'))||'Godmami';
+
+  const orderRows=grid('f_orderSkus').filter(r=>r&&(r.sku||r.name||r.qty||r.weight||r.channel));
+  const orderTbl=(orderRows.length?orderRows:[{}]).map(r=>`<tr><td>${val(r.sku)}</td><td>${val(r.name)}</td><td>${val(r.qty)}</td><td>${val(r.weight)}</td><td>${val(r.channel)}</td></tr>`).join('');
+
+  const fdaDone=bfGet('f_fdaDone')==='1', fdaProc=bfGet('f_fdaProcessing')==='1';
+  const fdaPill=fdaDone?`<span class="g-pill g-pill-done">✔ แล้วเสร็จ</span>`:(fdaProc?`<span class="g-pill">● กำลังดำเนินการ</span>`:dash);
+
+  const pkg=grid('f_pkgList').filter(r=>r&&(r.code||r.name||r.img)); const pkg0=pkg[0]||{};
+
+  const stk=grid('f_stickers').filter(r=>r&&(r.type||r.points||r.material||r.img||r.cf));
+  const stkTbl=(stk.length?stk:[{}]).map(r=>`<tr><td>${val(r.type)}</td><td>${val(r.points)}</td><td>${val(r.material)}</td><td style="text-align:center;">${r.img?imgTag(r.img,60):dash}</td><td style="word-break:break-all;">${val(r.cf)}</td></tr>`).join('');
+  let shrinkArr=[]; try{ shrinkArr=JSON.parse(bfGet('f_shrinkWrap')||'[]'); }catch(e){}
+  const shrink=bfGet('f_shrinkYes')==='1'?('มีหุ้มฟิล์ม'+(shrinkArr.length?' ('+shrinkArr.join(', ')+')':'')):(bfGet('f_shrinkNo')==='1'?'ไม่มี':'');
+
+  const shoot=bfGet('f_shootYes')==='1'?'ยิงล็อต (มี)':(bfGet('f_shootNo')==='1'?'ไม่ยิง':'');
+
+  const acc=grid('f_accessories').filter(r=>r&&(r.name||r.qty||r.position||r.img||r.cf));
+  const accTbl=(acc.length?acc:[{}]).map(r=>`<tr><td>${val(r.name)}</td><td>${val(r.qty)}</td><td>${val(r.position)}</td><td style="text-align:center;">${r.img?imgTag(r.img,52):dash}</td><td style="word-break:break-all;">${val(r.cf)}</td></tr>`).join('');
+
+  const cil=grid('f_cilComponents').filter(r=>r&&(r.sku||r.name||r.qty));
+  const cilTbl=(cil.length?cil:[{}]).map(r=>`<tr><td>${val(r.sku)}</td><td>${val(r.name)}</td><td>${val(r.qty)}</td></tr>`).join('');
+
+  const s1={name:g('f_signName'),date:g('f_signDate'),img:bfGet('f_signImg')};
+  const s2={name:g('f2_signName'),date:g('f2_signDate'),img:bfGet('f2_signImg')};
+
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>G. Supply Chain — ${esc(g('f_productName'))}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    @page{ margin:12mm 11mm; } *{ box-sizing:border-box; }
+    body{ font-family:'Sarabun','Tahoma',Arial,sans-serif; color:#33414F; font-size:11px; line-height:1.5; margin:0; background:#fff; }
+    .doc{ max-width:760px; margin:0 auto; }
+    .hd{ display:flex; justify-content:space-between; align-items:flex-start; }
+    .hd-brand{ font-family:'Prompt',sans-serif; font-weight:700; font-size:22px; color:#3A4A5A; letter-spacing:1px; }
+    .hd-sub{ font-size:9px; letter-spacing:2px; color:#8A97A4; margin-top:1px; }
+    .hd-tag{ text-align:right; font-size:8.5px; letter-spacing:2px; color:#9AA6B2; line-height:1.7; }
+    .title-row{ display:flex; align-items:center; justify-content:center; gap:16px; margin:8px 0 12px; }
+    .title{ text-align:center; }
+    .title h1{ font-family:'Prompt',sans-serif; font-size:23px; margin:0; color:#2E3B48; letter-spacing:.5px; }
+    .title h1 b{ font-weight:700; } .title h1 span{ font-weight:400; color:#5E6B78; }
+    .title .th{ font-size:11px; color:#7A8794; margin-top:1px; }
+    .title-date{ border-left:1px solid #D3DAE1; padding-left:14px; font-size:10.5px; color:#5E6B78; white-space:nowrap; text-align:left; }
+    hr.rule{ border:0; border-top:2px solid #C9D3DD; margin:0 0 12px; }
+    .g-sec{ margin-bottom:11px; break-inside:avoid; }
+    .g-head{ display:flex; align-items:center; gap:9px; background:#EDF1F5; border-radius:7px; padding:6px 9px; margin-bottom:8px; }
+    .g-badge{ font-family:'Prompt',sans-serif; font-weight:700; font-size:11px; color:#fff; background:#4A5A6A; border-radius:6px; min-width:30px; height:24px; display:flex; align-items:center; justify-content:center; flex:none; }
+    .g-title{ font-family:'Prompt',sans-serif; font-weight:600; font-size:12px; color:#3A4A5A; }
+    .cols{ display:flex; gap:14px; align-items:flex-start; }
+    .col{ flex:1; min-width:0; }
+    table{ width:100%; border-collapse:collapse; }
+    th{ background:#5C7A93; color:#fff; font-family:'Prompt',sans-serif; font-weight:600; font-size:9.5px; text-align:left; padding:5px 7px; }
+    td{ border:1px solid #DCE3EA; padding:5px 7px; font-size:10px; vertical-align:top; }
+    tr:nth-child(even) td{ background:#F6F9FB; }
+    .g-kv{ display:flex; border:1px solid #E1E7EE; border-radius:6px; overflow:hidden; margin-bottom:5px; }
+    .g-k{ background:#F1F5F8; color:#5E6B78; font-weight:600; padding:5px 8px; width:46%; flex:none; border-right:1px solid #E1E7EE; }
+    .g-v{ padding:5px 8px; flex:1; word-break:break-word; }
+    .g-pill{ display:inline-flex; align-items:center; gap:6px; font-family:'Prompt',sans-serif; font-weight:600; font-size:11px; color:#fff; background:#8894A0; border-radius:999px; padding:5px 14px; }
+    .g-pill-done{ background:#3F4A55; }
+    .g-imgbox{ text-align:center; }
+    .g-sub{ font-family:'Prompt',sans-serif; font-weight:600; font-size:10px; color:#5C7A93; margin:6px 0 4px; }
+    .sign-wrap{ display:flex; gap:16px; margin-top:16px; break-inside:avoid; }
+    .sign-box{ flex:1; border-top:2px solid #C9D3DD; padding-top:8px; }
+    .sign-role{ font-family:'Prompt',sans-serif; font-weight:600; font-size:11px; color:#3A4A5A; margin-bottom:6px; }
+    .sign-sig{ height:46px; display:flex; align-items:flex-end; gap:8px; }
+    .sign-sig img{ max-height:44px; }
+    .sign-line{ border-bottom:1px dotted #9AA6B2; flex:1; margin-bottom:4px; }
+    .sign-meta{ font-size:10px; color:#5E6B78; margin-top:5px; line-height:1.7; }
+    .sign-meta b{ color:#33414F; }
+    .foot{ display:flex; justify-content:space-between; border-top:1px solid #DCE3EA; margin-top:14px; padding-top:8px; font-size:8.5px; letter-spacing:1.5px; color:#9AA6B2; }
+    a{ color:#3F6E9E; }
+    @media print{ body{ -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+  </style></head><body><div class="doc">
+    <div class="hd">
+      <div><div class="hd-brand">${esc(String(brand).toUpperCase())}</div><div class="hd-sub">G. SUPPLY CHAIN</div></div>
+      <div class="hd-tag">GOOD BEAUTY<br>BRIGHTER TOMORROW</div>
+    </div>
+    <div class="title-row">
+      <div class="title"><h1><b>PRODUCT DEVELOPMENT</b> <span>BRIEF</span></h1><div class="th">สรุปข้อมูลการพัฒนาผลิตภัณฑ์</div></div>
+      <div class="title-date">📅 พิมพ์เมื่อ<br><b>${esc(formatDate(new Date()))}</b></div>
+    </div>
+    <hr class="rule">
+    <div class="g-sec">
+      <div class="g-head"><span class="g-badge">G1</span><span class="g-title">ข้อมูลสินค้า (ดึงอัตโนมัติ)</span></div>
+      <div class="cols">
+        <div class="col">${kv('Product Name',val(g('f_productName')))}${kv('Formula No. (Trial No.)',val(g('f_formulaNo')))}${kv('Launch Date',val(g('f_launchDate')))}</div>
+        <div class="col"><div class="g-sub">SKU / Order Qty.</div><table><thead><tr><th>SKU</th><th>ชื่อ</th><th>Order Qty.</th><th>Declare Weight</th><th>ช่องทางการขาย</th></tr></thead><tbody>${orderTbl}</tbody></table></div>
+      </div>
+    </div>
+    <div class="cols">
+      <div class="col g-sec"><div class="g-head"><span class="g-badge">G2</span><span class="g-title">สถานะจดแจ้ง อย.</span></div>
+        <div style="margin-bottom:7px;">${fdaPill}</div>${kv('เลข อย. (ถ้ามี)',val(g('f_fdaNo')))}${kv('วันที่คาดว่าจะได้ผล อย.',val(g('f_fdaExpectDate')))}</div>
+      <div class="col g-sec"><div class="g-head"><span class="g-badge">G3</span><span class="g-title">Packaging (PKG)</span></div>
+        <div class="cols"><div class="col">${kv('รหัสบรรจุภัณฑ์',val(pkg0.code))}${kv('ชื่อบรรจุภัณฑ์',val(pkg0.name))}${kv('รหัสสกรีนสินค้า',val(g('f_screenCode')))}</div>
+        <div class="g-imgbox" style="flex:none; width:104px;">${imgTag(pkg0.img,96)}<div style="font-size:9px; color:#9AA6B2; margin-top:2px;">รูปภาพ</div></div></div></div>
+    </div>
+    <div class="cols">
+      <div class="col g-sec"><div class="g-head"><span class="g-badge">G4</span><span class="g-title">Soft Component</span></div>
+        <div class="g-sub">Sticker</div><table><thead><tr><th>ชนิด STK</th><th>จำนวนจุด</th><th>ชนิดสติกเกอร์</th><th>รูปภาพ</th><th>ลิงก์ใบ CF</th></tr></thead><tbody>${stkTbl}</tbody></table>
+        <div style="margin-top:6px;">${kv('ช่องทางส่งใบ CF',val(g('f_stickerCFchannel')))}${kv('Shrink Film',val(shrink))}</div></div>
+      <div class="col g-sec"><div class="g-head"><span class="g-badge">G5</span><span class="g-title">Shooting Lot / MFG / EXP</span></div>
+        ${kv('ยิงล็อต',val(shoot))}${kv('ชื่อสินค้า',val(g('f_shootProduct')))}${kv('SKU',val(g('f_shootSku')))}${kv('TRIAL NO.',val(g('f_shootTrial')))}${kv('MFG',val(g('f_shootMfg')))}${kv('EXP',val(g('f_shootExp')))}${kv('อายุสินค้า (Shelf Life)',val(g('f_shootYears')))}${kv('หมายเหตุ',val(g('f_shootRemark')))}${bfGet('f_noShootLabel')==='1'?kv('กรณีไม่ยิง','พิมพ์เลขล็อตที่ฉลากทั้งหมด'):''}${bfGet('f_shootPosImg')?`<div class="g-sub">ภาพระบุตำแหน่งยิง</div><div class="g-imgbox">${imgTag(bfGet('f_shootPosImg'),150)}</div>`:''}</div>
+    </div>
+    <div class="cols">
+      <div class="col g-sec"><div class="g-head"><span class="g-badge">G6</span><span class="g-title">Accessories / ของแถม</span></div>
+        <table><thead><tr><th>ชื่อสินค้า</th><th>จำนวน</th><th>ตำแหน่งที่ใส่</th><th>รูปภาพ</th><th>ลิงก์ใบ CF</th></tr></thead><tbody>${accTbl}</tbody></table></div>
+      <div class="col g-sec"><div class="g-head"><span class="g-badge">G7</span><span class="g-title">ส่วนประกอบที่ซื้อจาก CIL</span></div>
+        <table><thead><tr><th>SKU</th><th>ชื่อส่วนประกอบ</th><th>จำนวน</th></tr></thead><tbody>${cilTbl}</tbody></table></div>
+    </div>
+    <div class="cols">
+      <div class="col g-sec"><div class="g-head"><span class="g-badge">G8</span><span class="g-title">การเรียงสี — กรณีชุดเซต</span></div>
+        ${kv('ชี้แจงการเรียงสีที่ต้องการ',val(g('f_setColorNote')))}${bfGet('f_setColorImg')?`<div class="g-sub">ภาพไฟนอลการเรียงสี</div><div class="g-imgbox">${imgTag(bfGet('f_setColorImg'),150)}</div>`:''}</div>
+      <div class="col g-sec"><div class="g-head"><span class="g-badge">G9</span><span class="g-title">หมายเหตุเพิ่มเติม</span></div>
+        ${kv('กรณีชุดเซต/กล่องพับซับซ้อน',val(g('f_assemblyNote')))}${g('f_assemblyLink')?kv('ลิงก์วิดีโอ',`<a href="${esc(g('f_assemblyLink'))}" style="word-break:break-all;">${esc(g('f_assemblyLink'))}</a>`):''}${bfGet('f_assemblyImg')?`<div class="g-sub">ภาพขั้นตอนประกอบ</div><div class="g-imgbox">${imgTag(bfGet('f_assemblyImg'),150)}</div>`:''}</div>
+    </div>
+    <div class="sign-wrap">
+      <div class="sign-box"><div class="sign-role">✍️ ผู้จัดทำ</div><div class="sign-sig">${s1.img?`<img src="${imgSrc(s1.img)}">`:'<span class="sign-line"></span>'}</div><div class="sign-meta">ชื่อ-สกุล: <b>${val(s1.name)}</b><br>วันที่: <b>${val(s1.date)}</b></div></div>
+      <div class="sign-box"><div class="sign-role">✍️ ผู้รับทราบ</div><div class="sign-sig">${s2.img?`<img src="${imgSrc(s2.img)}">`:'<span class="sign-line"></span>'}</div><div class="sign-meta">ชื่อ-สกุล: <b>${val(s2.name)}</b><br>วันที่: <b>${val(s2.date)}</b></div></div>
+    </div>
+    <div class="foot"><span>${esc(String(brand).toUpperCase())} &nbsp;|&nbsp; G. SUPPLY CHAIN</span><span>SMALL DETAILS MAKE A BIG DIFFERENCE</span></div>
+  </div></body></html>`;
+
+  const win=window.open('','_blank');
+  if(!win){ if(typeof toast==='function') toast('เบราว์เซอร์บล็อกป๊อปอัป — อนุญาต popup แล้วลองใหม่','err'); return; }
+  win.document.write(html); win.document.close();
+  setTimeout(()=>{ try{ win.focus(); }catch(e){} win.print(); }, 450);
+}
 function printBriefPart(key){
   const col = PART_COLORS[key] || PART_COLORS.a;
   const body = document.getElementById('brief-part-body-'+key);
