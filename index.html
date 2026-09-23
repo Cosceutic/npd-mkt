@@ -1507,6 +1507,8 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   .cc-combo-item.cc-combo-add{color:var(--blue-deep,#2563eb);font-weight:600;}
   .cc-combo-empty{padding:9px 12px;font-size:12px;color:var(--ink-soft);}
   .ccal-prodfilter{border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-family:'Sarabun',sans-serif;font-size:11.5px;min-width:150px;}
+  .ccal-selfilter{border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-family:'Sarabun',sans-serif;font-size:11.5px;background:#fff;color:var(--ink);cursor:pointer;max-width:170px;}
+  .ccal-selfilter:focus{outline:none;border-color:var(--accent,#F067A6);box-shadow:0 0 0 3px rgba(240,103,166,.15);}
   #cc-card-body .cc-cd-badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:9px;}
   #cc-card-body .cc-cd-s{font-size:11px;font-weight:700;color:#fff;border-radius:999px;padding:2px 10px;}
   #cc-card-body .cc-cd-rows{display:flex;flex-direction:column;margin-top:4px;}
@@ -1647,16 +1649,15 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
         <button class="btn-sm primary" id="cc-lock-btn" style="flex:0 0 auto;" onclick="ccLockBtnClick()">🔓 ปลดล็อกแก้ไข</button>
       </div>
       <div class="cc-subnav">
-        <button class="btn-sm subnav-active" id="cc-nav-idea" onclick="switchContentSub('idea')">💡 Content Idea</button>
-        <button class="btn-sm" id="cc-nav-calendar" onclick="switchContentSub('calendar')">📅 Content Calendar</button>
-        <button class="btn-sm" id="cc-nav-pipeline" onclick="switchContentSub('pipeline')">🗂️ Pipeline</button>
+        <button class="btn-sm subnav-active" id="cc-nav-calendar" onclick="switchContentSub('calendar')">📅 Content Calendar</button>
+        <button class="btn-sm" id="cc-nav-pipeline" onclick="switchContentSub('pipeline')">🗂️ Task Pipeline</button>
         <button class="btn-sm" id="cc-nav-dashboard" onclick="switchContentSub('dashboard')">📊 Dashboard</button>
-        <button class="btn-sm" id="cc-nav-roadmap" onclick="switchContentSub('roadmap')">🚀 Road Map Plan</button>
-        <button class="btn-sm" id="cc-nav-brandid" onclick="switchContentSub('brandid')">🎨 Brand Identity</button>
+        <button class="btn-sm" id="cc-nav-idea" onclick="switchContentSub('idea')">💡 Content Idea</button>
         <button class="btn-sm" id="cc-nav-hashtag" onclick="switchContentSub('hashtag')">#️⃣ Hashtags</button>
+        <button class="btn-sm" id="cc-nav-brandid" onclick="switchContentSub('brandid')">🎨 Brand Identity</button>
       </div>
       <div class="brand-filter-bar" id="cc-brand-bar"></div>
-      <div id="cc-sub-idea">
+      <div id="cc-sub-idea" style="display:none;">
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
           <button class="btn-edit primary" id="cc-idea-add" onclick="openContentIdeaEditor()" style="display:none;flex:0 0 auto;">➕ เพิ่มไอเดีย</button>
           <div id="cc-status-bar" class="cc-fpills"></div>
@@ -1671,7 +1672,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
         </div>
         <div id="cc-mh-host"></div>
       </div>
-      <div id="cc-sub-calendar" style="display:none;">
+      <div id="cc-sub-calendar">
         <div class="ccal-toolbar">
           <span id="ccal-nav" style="display:inline-flex;align-items:center;gap:8px;">
             <button class="btn-sm ghost" onclick="calMove(-1)" style="flex:0 0 auto;">‹</button>
@@ -2732,7 +2733,7 @@ document.querySelectorAll('#nav .tab').forEach(t=>{
     document.getElementById('view-'+t.dataset.view).classList.add('active');
     if(t.dataset.view==='workflow'){ loadWorkflowFrame(); }
     if(t.dataset.view==='office'){ if(typeof renderOffice==='function') renderOffice(); }
-    if(t.dataset.view==='content'){ if(typeof renderContentCreator==='function') renderContentCreator(); }
+    if(t.dataset.view==='content'){ if(typeof switchContentSub==='function') switchContentSub(); else if(typeof renderContentCreator==='function') renderContentCreator(); }
     if(typeof qtSyncVisibility==='function') qtSyncVisibility();   // To-Do โชว์เฉพาะหน้าออฟฟิศ
   });
 });
@@ -9787,7 +9788,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   var STATUS_ORDER=['idea','doing','posted','archived'];
   var CHANNELS=['Facebook','Instagram','TikTok','Lemon8','Shopee','Lazada','YouTube','LINE OA'];
   var SHEET_ROWS_CI=[]; window.CONTENT_IDEAS=[];
-  var ciBrand='all', ciStatus='all', ciSub='idea', ciEditId=null;
+  var ciBrand='all', ciStatus='all', ciSub='calendar', ciEditId=null;
 
   function e2(s){var d=document.createElement('div');d.textContent=(s==null?'':s);return d.innerHTML;}
   function aj(s){ return (typeof attrJs==='function')?attrJs(s):String(s==null?'':s).replace(/'/g,"\\'"); }
@@ -9840,7 +9841,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     setTimeout(function(){ if(typeof loadContentIdeasFromSheet==='function') loadContentIdeasFromSheet().then(function(){ renderContentIdea(); }); }, 6000);
   }
 
-  window.switchContentSub=function(key){ ciSub=key;
+  window.switchContentSub=function(key){ key=key||ciSub||'calendar'; ciSub=key;
     ['idea','musthave','calendar','pipeline','dashboard','roadmap','brandid','hashtag'].forEach(function(k){ var el=document.getElementById('cc-sub-'+k); if(el) el.style.display=(k===key)?'':'none'; var b=document.getElementById('cc-nav-'+k); if(b) b.classList.toggle('subnav-active',k===key); });
     var bar=document.getElementById('cc-brand-bar'); if(bar) bar.style.display=(key==='musthave')?'none':''; // brand view applies to everything except the checklist
     if((key==='calendar'||key==='pipeline'||key==='dashboard') && !calLoaded){ calLoaded=true; if(typeof loadContentCalFromSheet==='function') loadContentCalFromSheet().then(function(){ if(ciSub==='calendar') renderContentCal(); else if(ciSub==='pipeline') renderPipeline(); else if(ciSub==='dashboard') renderDashboard(); }).catch(function(){}); }
@@ -9972,6 +9973,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   var WORK_TYPES=[{k:'vdo',t:'🎬 VDO',c:'#9B7EF8'},{k:'aw',t:'🎨 AW (กราฟิก)',c:'#EF5350'},{k:'activities',t:'🎉 Activities',c:'#F2994A'},{k:'post',t:'📝 Post',c:'#5B8FF9'},{k:'other',t:'📦 อื่นๆ',c:'#8A94A6'}];
   var calWorkFilter = new Set();   // filter ประเภทงานในปฏิทิน Content (ว่าง = ทุกประเภท)
   var calProductFilter = '';       // filter ตามชื่อสินค้า (ว่าง = ทุกสินค้า)
+  var calOwnerFilter = '';         // filter ตามเจ้าของงาน (PIC) (ว่าง = ทุกคน)
+  var calPillarFilter = '';        // filter ตามเสาหลักคอนเทนต์ (ว่าง = ทุกเสาหลัก)
   var calDateMode = 'post';        // ปฏิทินแสดงตาม: 'post'=วันลงโพสต์ · 'due'=กำหนดส่งงาน (Final+Draft)
   var WORK_TYPE_MAP={}; WORK_TYPES.forEach(function(w){ WORK_TYPE_MAP[w.k]=w; });
   function inferWorkType(x){ var f=((x.format||'')+' '+(x.title||'')).toLowerCase(); if(/vdo|video|reel|short|live|คลิป|วิดีโอ|วีดีโอ/.test(f)) return 'vdo'; if(/post|album|photo|carousel|story|โพส|รูปภาพ|อัลบั้ม/.test(f)) return 'post'; if(/aw|artwork|graphic|กราฟิก|สติกเกอร์|sticker|ออกแบบ|แบนเนอร์|banner/.test(f)) return 'aw'; if(/activit|event|กิจกรรม|แจกของ|มินิเกม|live event|แคมเปญ/.test(f)) return 'activities'; return ''; }
@@ -10080,12 +10083,21 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function calLegend(){
     var el=document.getElementById('ccal-legend'); if(!el) return;
     var anySel=calWorkFilter.size>0;
+    // รายชื่อเจ้าของงาน (PIC) ทั้งหมดจากปฏิทิน (สำหรับ dropdown filter)
+    var owners=[...new Set(calItems().map(function(x){return (x.owner||'').trim();}).filter(Boolean))].sort(function(a,b){return a.localeCompare(b,'th');});
+    if(calOwnerFilter && owners.indexOf(calOwnerFilter)<0) calOwnerFilter=''; // เจ้าของถูกลบไปแล้ว → รีเซ็ต
     // แถบ filter ประเภทงาน (กดเลือก) — สีตามประเภท: VDO ม่วง / AW แดง ฯลฯ
     var f='<div class="ccal-wtf"><span class="ccal-wtf-lead">ประเภทงาน:</span>'
       +'<button type="button" class="ccal-wtf-pill'+(anySel?'':' active')+'" onclick="calWorkAll()">ทั้งหมด</button>'
       +WORK_TYPES.map(function(w){ var sel=calWorkFilter.has(w.k); var cls=anySel?(sel?' sel':' dim'):'';
         var stl=sel?('background:'+w.c+'22;border-color:'+w.c):('border-left:4px solid '+w.c);
         return '<button type="button" class="ccal-wtf-pill'+cls+'" style="'+stl+'" onclick="toggleCalWork(\''+w.k+'\')">'+e2(w.t)+'</button>'; }).join('')
+      +'<span class="ccal-wtf-lead" style="margin-left:6px;">เจ้าของงาน:</span>'
+      +'<select class="ccal-selfilter" id="ccal-ownerfilter" onchange="calSetOwnerFilter(this.value)"><option value="">👥 ทุกคน</option>'
+        +owners.map(function(o){return '<option value="'+e2(o)+'"'+(calOwnerFilter===o?' selected':'')+'>'+e2(o)+'</option>';}).join('')+'</select>'
+      +'<span class="ccal-wtf-lead" style="margin-left:6px;">เสาหลัก:</span>'
+      +'<select class="ccal-selfilter" id="ccal-pillarfilter" onchange="calSetPillarFilter(this.value)"><option value="">🧭 ทุกเสาหลัก</option>'
+        +PILLAR_ORDER.map(function(k){return '<option value="'+k+'"'+(calPillarFilter===k?' selected':'')+'>'+e2(PILLARS[k].t)+'</option>';}).join('')+'</select>'
       +'<span class="ccal-wtf-lead" style="margin-left:6px;">สินค้า:</span><input class="ccal-prodfilter" id="ccal-prodfilter" value="'+e2(calProductFilter)+'" placeholder="🔎 กรองตามสินค้า" oninput="calSetProductFilter(this.value)">'
       +'</div>';
     // legend สถานะ (เดิม)
@@ -10099,10 +10111,14 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function calVisibleItems(){ var base=calItems();
     if(calWorkFilter.size) base=base.filter(function(x){ return calWorkFilter.has(workTypeOf(x)); });
     if(calProductFilter){ var q=calProductFilter.toLowerCase(); base=base.filter(function(x){ return (x.product||'').toLowerCase().indexOf(q)>=0; }); }
+    if(calOwnerFilter){ base=base.filter(function(x){ return (x.owner||'').trim()===calOwnerFilter; }); }
+    if(calPillarFilter){ base=base.filter(function(x){ return (x.pillar||'')===calPillarFilter; }); }
     return base;
   }
   function calRerenderView(){ var host=document.getElementById('ccal-host'); if(!host) return; if(calMode==='grid') renderCalGrid(host); else renderCalList(host); }
   window.calSetProductFilter=function(v){ calProductFilter=v; calRerenderView(); };
+  window.calSetOwnerFilter=function(v){ calOwnerFilter=v||''; if(typeof renderCalActive==='function') renderCalActive(); };
+  window.calSetPillarFilter=function(v){ calPillarFilter=v||''; if(typeof renderCalActive==='function') renderCalActive(); };
   window.calSetDateMode=function(m){ calDateMode=m; if(typeof renderCalActive==='function') renderCalActive(); };
   // แปลงรายการเป็น "จุดที่ต้องพล็อตบนปฏิทิน" ตามโหมด: วันลงโพสต์ หรือ กำหนดส่ง (Final + Draft แต่ละรอบ)
   function calPlot(){ var out=[]; calVisibleItems().forEach(function(x){
