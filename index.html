@@ -9513,7 +9513,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       {n:'จ๋า',  role:'NPD', x:65,y:35, px:65,py:17},
       {n:'โบนัส',role:'NPD', x:32,y:58, px:31,py:75},
       {n:'มีน',  role:'NPD', av:'Office/av-meen.jpg', x:48,y:56, px:48,py:74},
-      {n:'พีท',  role:'NPD', x:72,y:56, px:73,py:70}
+      {n:'พีท',  role:'NPD', x:72,y:56, px:72,py:79}
     ]},
     {key:'supply', label:'🚚 Supply Chain', bg:'Office/supply.jpg', ar:'1672 / 941', members:[
       {n:'ข้าวหอม', role:'Data Support', av:'Office/av-khaohom.jpg', x:27,y:44, px:27,py:27},
@@ -9615,6 +9615,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   }
   window.renderOffice=function(){
     var host=document.getElementById('ofc-rooms'); if(!host) return;
+    var _ofcSy=(window.scrollY||document.documentElement.scrollTop||0); // จำตำแหน่งเลื่อนไว้ กันหน้าเด้งขึ้นบนตอน re-render (เช่น หลังบันทึกสถานะ)
     // Task รายคนของออฟฟิศดึงจาก Content Calendar + Quick Tasks — โหลดเองครั้งแรกที่นี่
     // เพื่อให้ Task ขึ้นเลย ไม่ต้องไปเปิดหน้า Content Creator ก่อน (แก้บั๊ก)
     if(!window.__ofcDataInit){
@@ -9670,7 +9671,26 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       });
       addOfcDuck(stage);
     });
+    // คืนตำแหน่งเลื่อนเดิม (ความสูงห้องคำนวณจาก aspect-ratio ทันที ไม่ต้องรอรูปโหลด)
+    try{ window.scrollTo(0,_ofcSy); requestAnimationFrame(function(){ window.scrollTo(0,_ofcSy); }); }catch(e){}
   };
+  function ofcScrollParent(){
+    var el=document.getElementById('ofc-rooms');
+    for(var n=el&&el.parentElement; n && n!==document.body; n=n.parentElement){
+      var oy=getComputedStyle(n).overflowY;
+      if((oy==='auto'||oy==='scroll')&&n.scrollHeight>n.clientHeight+4) return n;
+    }
+    return null;
+  }
+  // re-render โดยคงตำแหน่งสกรอลล์ไว้ (กันจอเด้งขึ้นบนสุดหลังกดบันทึก/ล้างสถานะ)
+  function ofcReRender(){
+    var se=document.scrollingElement||document.documentElement;
+    var wy=window.pageYOffset||(se&&se.scrollTop)||0;
+    var cp=ofcScrollParent(); var cy=cp?cp.scrollTop:null;
+    renderOffice();
+    function put(){ try{ if(se) se.scrollTop=wy; window.scrollTo(0,wy); if(cp&&cy!=null) cp.scrollTop=cy; }catch(e){} }
+    put(); requestAnimationFrame(put);
+  }
   function addOfcDuck(stage){
     var duck=document.createElement('div'); duck.className='ofc-duck'; duck.innerHTML='<img src="'+OFC.duck+'" alt="เป็ดน้อยสู้ๆ">';
     stage.appendChild(duck);
@@ -9728,14 +9748,14 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       body.querySelector('#ofc-savebtn').addEventListener('click',async function(){
         var m=body.querySelector('#ofc-msgin').value.trim();
         var shared=await ofcSaveStatus(p.n,selE,m);
-        renderOffice();
-        ofcToast(shared?'บันทึกแล้ว · ทั้งทีมเห็นเมื่อรีเฟรช 💖':'บันทึกในเครื่องแล้ว · (เข้าสู่ระบบเพื่อแชร์ทีม)');
         closeOfficeSheet();
+        ofcReRender();
+        ofcToast(shared?'บันทึกแล้ว · ทั้งทีมเห็นเมื่อรีเฟรช 💖':'บันทึกในเครื่องแล้ว · (เข้าสู่ระบบเพื่อแชร์ทีม)');
       });
       body.querySelector('#ofc-clrbtn').addEventListener('click',async function(){
         var l=ofcLocal(); delete l[p.n]; ofcSaveLocal(l);
         await ofcSaveStatus(p.n,'','');
-        renderOffice(); ofcToast('ล้างสถานะแล้ว'); closeOfficeSheet();
+        closeOfficeSheet(); ofcReRender(); ofcToast('ล้างสถานะแล้ว');
       });
     }
   };
