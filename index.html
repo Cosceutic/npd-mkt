@@ -1199,9 +1199,9 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   #view-office .ofc-pmsg{position:absolute;transform:translate(-50%,-50%);max-width:42%;background:#fff6fb;border:1.5px solid #ffd3e6;color:var(--ofc-pinkd);font-family:"Mitr";font-weight:500;font-size:calc(11px*var(--sc,1));padding:calc(3px*var(--sc,1)) calc(9px*var(--sc,1));border-radius:12px;box-shadow:0 6px 14px -7px rgba(236,95,151,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:7;opacity:0;pointer-events:none;transition:.2s;}
   #view-office .ofc-pmsg.on{opacity:1;pointer-events:auto;cursor:pointer;}
   #view-office .ofc-pmsg::after{content:"";position:absolute;left:50%;bottom:-6px;width:10px;height:10px;background:#fff6fb;border-right:1.5px solid #ffd3e6;border-bottom:1.5px solid #ffd3e6;transform:translateX(-50%) rotate(45deg);}
-  #view-office .ofc-duck{position:absolute;bottom:4%;left:0;width:13%;z-index:20;animation:ofc-walk 22s linear infinite;pointer-events:none;}
+  #view-office .ofc-duck{position:absolute;bottom:3%;left:1.5%;width:12%;z-index:20;pointer-events:none;}
   #view-office .ofc-duck img{width:100%;display:block;animation:ofc-waddle 1.1s ease-in-out infinite;filter:drop-shadow(0 6px 6px rgba(0,0,0,.18));}
-  #view-office .ofc-dbub{position:absolute;bottom:8%;left:0;z-index:21;background:#fff;border:1.5px solid var(--ofc-line);border-radius:14px;padding:6px 11px;font-size:12px;font-weight:600;font-family:"Mitr";color:var(--ofc-pinkd);box-shadow:var(--ofc-shadow);opacity:0;transform:translateY(6px);transition:.3s;pointer-events:none;white-space:nowrap;}
+  #view-office .ofc-dbub{position:absolute;bottom:15%;left:2%;max-width:44%;z-index:21;background:#fff;border:1.5px solid var(--ofc-line);border-radius:14px;padding:6px 11px;font-size:12px;font-weight:600;font-family:"Mitr";color:var(--ofc-pinkd);box-shadow:var(--ofc-shadow);opacity:0;transform:translateY(6px);transition:.3s;pointer-events:none;white-space:normal;line-height:1.3;}
   #view-office .ofc-dbub::after{content:"";position:absolute;bottom:-7px;left:22px;width:12px;height:12px;background:#fff;border-right:1.5px solid var(--ofc-line);border-bottom:1.5px solid var(--ofc-line);transform:rotate(45deg);}
   #view-office .ofc-dbub.on{opacity:1;transform:translateY(0);}
   #view-office .ofc-foot{text-align:center;color:var(--ofc-ink2);font-size:11.5px;margin:14px 0 4px;line-height:1.7;}
@@ -9496,10 +9496,10 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       {n:'แนน',    role:'Marketing', av:'Office/av-nan.jpg',   x:15,y:48, px:17,py:64},
       {n:'ออม',    role:'Marketing', av:'Office/av-om.jpg',    x:32,y:54, px:33,py:70},
       {n:'สมายด์', role:'Marketing', av:'Office/av-smile.jpg', x:48,y:60, px:49,py:78},
-      {n:'เอ',     role:'Marketing', av:'Office/av-a.jpg',     x:48,y:35, px:47,py:52},
-      {n:'หรา',    role:'Marketing', av:'Office/av-ra.jpg',    x:66,y:32, px:65,py:49},
-      {n:'เลิฟ',   role:'Marketing', av:'Office/av-love.jpg',  x:85,y:35, px:83,py:52},
-      {n:'สเปียร์',role:'Marketing', av:'Office/av-spear.jpg', x:76,y:52, px:77,py:70}
+      {n:'เอ',     role:'Marketing', av:'Office/av-a.jpg',     x:48,y:35, px:47,py:17},
+      {n:'หรา',    role:'Marketing', av:'Office/av-ra.jpg',    x:66,y:32, px:65,py:14},
+      {n:'เลิฟ',   role:'Marketing', av:'Office/av-love.jpg',  x:85,y:35, px:85,py:18},
+      {n:'สเปียร์',role:'Marketing', av:'Office/av-spear.jpg', x:76,y:52, px:77,py:34}
     ]},
     {key:'graphic', label:'🎨 Graphic', bg:'Office/graphic.jpg', ar:'1672 / 941', members:[
       {n:'เมษา',  role:'Graphic', av:'Office/av-mesa.jpg',        x:20,y:42, px:20,py:59},
@@ -9508,12 +9508,12 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       {n:'เหมียว',role:'Graphic', av:'Office/av-meaw.jpg',        x:80,y:44, px:79,py:61}
     ]},
     {key:'npd', label:'🧪 NPD', bg:'Office/npd.jpg', ar:'1672 / 941', members:[
-      {n:'พลอย', role:'NPD', x:28,y:38, px:27,py:55},
-      {n:'แพรว', role:'NPD', x:45,y:28, px:45,py:45},
-      {n:'จ๋า',  role:'NPD', x:65,y:35, px:65,py:52},
+      {n:'พลอย', role:'NPD', x:28,y:38, px:27,py:20},
+      {n:'แพรว', role:'NPD', x:45,y:28, px:45,py:12},
+      {n:'จ๋า',  role:'NPD', x:65,y:35, px:65,py:17},
       {n:'โบนัส',role:'NPD', x:32,y:58, px:31,py:75},
       {n:'มีน',  role:'NPD', av:'Office/av-meen.jpg', x:48,y:56, px:48,py:74},
-      {n:'พีท',  role:'NPD', x:72,y:56, px:72,py:73}
+      {n:'พีท',  role:'NPD', x:72,y:56, px:72,py:38}
     ]},
     {key:'supply', label:'🚚 Supply Chain', bg:'Office/supply.jpg', ar:'1672 / 941', members:[
       {n:'ข้าวหอม', role:'Data Support', av:'Office/av-khaohom.jpg', x:27,y:44, px:27,py:27},
@@ -9659,7 +9659,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
         var side = plateX>70?'l':'r';
         var av = face ? '<img class="ofc-pav" src="'+face+'" alt="">' : '<span class="ofc-pav ofc-pav-txt">'+person.n.slice(0,1)+'</span>';
         plate.innerHTML=av+'<span>'+person.n+'</span>'+cc+'<span class="ofc-fmo '+side+'" style="animation-delay:'+(gi*0.4).toFixed(2)+'s">'+emoji+'</span>';
-        var msg=document.createElement('div'); msg.className='ofc-pmsg'; msg.style.left=plateX+'%'; msg.style.top=(person.py-7)+'%';
+        var msg=document.createElement('div'); msg.className='ofc-pmsg'; msg.style.left=plateX+'%'; msg.style.top=Math.max(4,person.py-13)+'%';
         if(c.message){ msg.textContent=c.message; msg.classList.add('on'); }
         var open=(function(idx){return function(){ openOfficePerson(idx); };})(gi);
         pin.addEventListener('click',open); plate.addEventListener('click',open); msg.addEventListener('click',open);
@@ -9674,10 +9674,22 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var duck=document.createElement('div'); duck.className='ofc-duck'; duck.innerHTML='<img src="'+OFC.duck+'" alt="เป็ดน้อยสู้ๆ">';
     stage.appendChild(duck);
     var bub=document.createElement('div'); bub.className='ofc-dbub'; stage.appendChild(bub);
-    var LINES=["สู้ๆ นะทุกคน! 💪","วันนี้เก่งมากเลย ✨","พักดื่มน้ำบ้างน้า ☕","อีกนิดเดียวเอง! 🐤","งานใกล้เสร็จแล้ว 💖"];
-    var li=Math.floor(Math.random()*LINES.length);
-    function speak(){ bub.textContent=LINES[li%LINES.length]; li++; var r=duck.getBoundingClientRect(),s=stage.getBoundingClientRect(); if(s.width){bub.style.left=Math.max(6,Math.min(s.width-bub.offsetWidth-6, r.left-s.left))+'px';} bub.classList.add('on'); setTimeout(function(){bub.classList.remove('on');},2600); }
-    setTimeout(speak,1500+Math.random()*1200); ofcDuckTimers.push(setInterval(speak,5200));
+    var LINES=[
+      // ให้กำลังใจ
+      "สู้ๆ นะทุกคน! 💪","วันนี้เก่งมากเลย ✨","ทีมเราเจ๋งที่สุด! 🌟","ยิ้มหน่อยน้า วันนี้สดใส 😊","พักสายตาบ้าง มองไกลๆ 👀",
+      // แซวขำๆ
+      "แอบเล่นมือถืออยู่ป่าวเอ่ย 📱👀","กาแฟหมดแก้วยังเอ่ย ☕😆","อย่าเพิ่งหลับน้า เดี๋ยวเป็ดฟ้อง 😴","ใครแอบกินขนม แบ่งเป็ดบ้าง 🍪","เผลอแป๊บเดียว บ่ายแล้ว! 🕒",
+      // เตือนให้ทำงาน
+      "อย่าลืมส่งงานวันนี้นะ 📌","เช็ก Deadline หน่อยน้า ⏰","อัปเดตสถานะงานด้วยน้า 📝","มีประชุมป่าววันนี้ อย่าลืมนะ 📅",
+      // งานเยอะ
+      "งานเยอะจัง แต่เราไหว! 🔥","ค่อยๆ ทำทีละอย่างนะ 🧩","เหนื่อยก็พักได้ เดี๋ยวไปต่อ 💗","อีกนิดเดียวก็เสร็จแล้ว! 🐤"
+    ];
+    // สุ่มลำดับใหม่ทุกครั้งที่เข้าห้อง เพื่อไม่ให้ซ้ำเดิม
+    for(var k=LINES.length-1;k>0;k--){ var j2=Math.floor(Math.random()*(k+1)); var tmp=LINES[k]; LINES[k]=LINES[j2]; LINES[j2]=tmp; }
+    var li=0;
+    // ป้ายอยู่นิ่งๆ มุมห้อง (ซ้ายล่าง) ไม่ลอยตามเป็ด — แค่สลับข้อความ
+    function speak(){ bub.textContent=LINES[li%LINES.length]; li++; bub.classList.add('on'); setTimeout(function(){bub.classList.remove('on');},3200); }
+    setTimeout(speak,1200); ofcDuckTimers.push(setInterval(speak,5600));
   }
 
   var ofcResizeT=null;
