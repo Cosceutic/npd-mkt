@@ -9966,8 +9966,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       var shown=list.slice(0,4);
       var chips=shown.map(function(e){ var x=e.x; var st=CAL_STATUS[x.status]||CAL_STATUS.brief; var wt=WORK_TYPE_MAP[workTypeOf(x)]||{};
         var wc, pre='', kindTxt;
-        if(e.kind==='final'){ wc='#EF5350'; pre='🎯 '; kindTxt='ส่ง Final'; }
-        else if(e.kind==='draft'){ wc='#F2994A'; pre='📝 draft'+e.n+': '; kindTxt='ส่ง draft '+e.n; }
+        if(e.kind==='final'){ wc=st.c; pre='🎯 '; kindTxt='ส่ง Final'; }
+        else if(e.kind==='draft'){ wc=st.c; pre='📝 draft'+e.n+': '; kindTxt='ส่ง draft '+e.n; }
         else { wc=wt.c||st.c; kindTxt='ลงโพสต์'; }
         var tip=(x.time?x.time+' ':'')+kindTxt+': '+x.title+(wt.t?' · '+wt.t:'')+(x.owner?' · 👤'+x.owner:'')+(x.brand?' · '+bLbl(x.brand):'')+' · '+st.t;
         return '<div class="ccal-chip" style="--s:'+wc+'" title="'+e2(tip)+'" onclick="event.stopPropagation();calChipClick(\''+aj(x.id)+'\')">'+((e.kind==='post'&&x.time)?'<span class="ci">'+e2(x.time)+'</span> ':'')+e2(pre+x.title)+((e.kind==='post'&&x.owner)?' <span class="ccal-chip-owner">👤'+e2(x.owner)+'</span>':'')+'</div>';
