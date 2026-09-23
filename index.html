@@ -1354,7 +1354,24 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   #view-content .ccal-cell.addable:hover .ccal-dn .plus{opacity:.8;}
   #view-content .ccal-chip{font-size:10.5px;line-height:1.25;padding:2px 6px;border-radius:6px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:#fff;background:var(--s);}
   #view-content .ccal-chip .ci{opacity:.82;font-weight:500;}
-  #view-content .ccal-more{font-size:10px;color:var(--ink-soft);padding-left:2px;}
+  #view-content .ccal-more{font-size:10px;color:var(--ink-soft);padding:1px 4px;cursor:pointer;border-radius:6px;font-weight:600;}
+  #view-content .ccal-more:hover{background:var(--accent-pale);color:var(--accent-deep);}
+  /* Popup รายการงานทั้งวัน (กด "+N เพิ่มเติม") */
+  #cc-day-overlay .cc-day-head{font-family:'Anuphan','Prompt',sans-serif;font-weight:700;font-size:15px;color:var(--ink,#1F2A36);padding:16px 18px 11px;border-bottom:1px solid var(--line,#E7ECF5);}
+  #cc-day-overlay .cc-day-body{padding:12px 14px 16px;display:flex;flex-direction:column;gap:8px;}
+  #cc-day-overlay .cc-day-row{display:flex;gap:9px;align-items:flex-start;background:#fff;border:1px solid var(--line,#E7ECF5);border-left:4px solid var(--s,#ccc);border-radius:10px;padding:8px 11px;cursor:pointer;transition:background .12s;}
+  #cc-day-overlay .cc-day-row:hover{background:#f6f8fc;}
+  #cc-day-overlay .cc-day-t{font-family:'Anuphan','Prompt',sans-serif;font-weight:600;font-size:13.5px;color:var(--ink,#1F2A36);line-height:1.3;}
+  #cc-day-overlay .cc-day-m{font-size:11.5px;color:var(--ink-soft,#6b7794);margin-top:2px;line-height:1.35;}
+  /* สรุป Event/Task (อ่านอย่างเดียว) */
+  #ev-detail-overlay .evd-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:16px 18px 11px;border-bottom:1px solid var(--line,#E7ECF5);}
+  #ev-detail-overlay .evd-title{font-family:'Anuphan','Prompt',sans-serif;font-weight:700;font-size:16px;color:var(--ink,#1F2A36);line-height:1.3;}
+  #ev-detail-overlay .evd-body{padding:13px 18px;display:flex;flex-direction:column;gap:10px;}
+  #ev-detail-overlay .evd-row{display:flex;gap:10px;font-size:13.5px;align-items:flex-start;}
+  #ev-detail-overlay .evd-k{flex:0 0 74px;color:var(--ink-soft,#6b7794);font-weight:600;}
+  #ev-detail-overlay .evd-v{color:var(--ink,#1F2A36);flex:1;line-height:1.4;}
+  #ev-detail-overlay .evd-badge{display:inline-block;padding:2px 11px;border-radius:999px;font-weight:700;font-size:12px;}
+  #ev-detail-overlay .evd-foot{display:flex;justify-content:flex-end;gap:8px;padding:11px 18px 16px;border-top:1px solid var(--line,#E7ECF5);}
   #view-content .ccal-agenda{display:flex;flex-direction:column;gap:14px;}
   #view-content .ccal-day{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
   #view-content .ccal-day.past{opacity:.62;}
@@ -1459,6 +1476,12 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   /* ===== 🗂️ Pipeline (Kanban board) ===== */
   #view-content .cc-pl-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start;}
   #view-content .cc-pl-col{flex:0 0 264px;width:264px;background:#eef1f6;border-radius:13px;padding:9px;display:flex;flex-direction:column;gap:9px;min-height:120px;transition:background .12s,box-shadow .12s;}
+  /* คอลัมน์การ์ดเลื่อนดูในตัวเอง ไม่ยืดยาวทั้งหน้า (หัวคอลัมน์+ปุ่มเพิ่มอยู่กับที่) */
+  #view-content .cc-pl-cards{display:flex;flex-direction:column;gap:9px;max-height:min(68vh,720px);overflow-y:auto;overflow-x:hidden;padding:2px 4px 2px 2px;margin:0 -2px;}
+  #view-content .cc-pl-cards::-webkit-scrollbar{width:7px;}
+  #view-content .cc-pl-cards::-webkit-scrollbar-thumb{background:#c7cfdd;border-radius:7px;}
+  #view-content .cc-pl-cards::-webkit-scrollbar-thumb:hover{background:#aab5c8;}
+  #view-content .cc-pl-cards{scrollbar-width:thin;scrollbar-color:#c7cfdd transparent;}
   #view-content .cc-pl-col.dragover{background:var(--accent-pale);box-shadow:inset 0 0 0 2px var(--accent);}
   #view-content .cc-pl-colhead{display:flex;align-items:center;gap:7px;padding:3px 5px;}
   #view-content .cc-pl-dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;}
@@ -3779,6 +3802,7 @@ const EVENTS_LOCAL_KEY = 'npd_events_v1';
 const EVENT_TYPES = {
   event:   {label:'Event',       emoji:'🎉', color:'#EC4899', bg:'#FCE7F3'},
   task:    {label:'Task',        emoji:'✅', color:'#10B981', bg:'#D1FAE5'},
+  shoot:   {label:'ถ่ายงาน',    emoji:'📸', color:'#F59E0B', bg:'#FEF3C7'},
   holiday: {label:'วันหยุด',    emoji:'🏖️', color:'#EF4444', bg:'#FEE2E2'},
   meeting: {label:'ประชุม/นัด',  emoji:'📌', color:'#6366F1', bg:'#E0E7FF'},
   other:   {label:'อื่นๆ',        emoji:'📎', color:'#0EA5E9', bg:'#E0F2FE'},
@@ -3836,26 +3860,75 @@ function eventChipHtml(e, iso){
   const cls = multi ? ('ev-chip ev-span'+(isStart?' ev-start':'')+(isEnd?' ev-end':'')) : 'ev-chip';
   const tip = `${def.emoji} ${def.label}: ${e.title}`+(e.pic?` · 👤 ${e.pic}`:'')+(multi?` (${e.start} → ${e.end})`:'')+(e.note?` · ${e.note}`:'');
   const label = (multi && !isStart) ? '' : `${def.emoji} ${esc(e.title)}`+(e.pic?` <span style="opacity:.85;">👤${esc(e.pic)}</span>`:'');
-  return `<div class="${cls}" style="--ev:${def.color}; --evbg:${def.bg};" title="${esc(tip)}" onclick="event.stopPropagation(); openEventEditor(null,'${attrJs(e.id)}')">${label||'&nbsp;'}</div>`;
+  return `<div class="${cls}" style="--ev:${def.color}; --evbg:${def.bg};" title="${esc(tip)}" onclick="event.stopPropagation(); openEventDetail('${attrJs(e.id)}')">${label||'&nbsp;'}</div>`;
 }
 
 /* ---- Event editor modal ---- */
+// ---- PIC dropdown (team names + remember) + custom type + read-only summary ----
+function eventPicOptions(){
+  var s={};
+  try{ if(typeof window.ofcAllNames==='function') window.ofcAllNames().forEach(function(n){ if(n) s[n]=1; }); }catch(e){}
+  ['npd_cc_owner_names','npd_event_pic_names'].forEach(function(k){ try{ (JSON.parse(localStorage.getItem(k))||[]).forEach(function(n){ if(n) s[n]=1; }); }catch(e){} });
+  try{ (typeof ALL_EVENTS!=='undefined'?ALL_EVENTS:[]).forEach(function(ev){ String(ev.pic||'').split(/[,\/、]/).forEach(function(p){ p=p.trim(); if(p) s[p]=1; }); }); }catch(e){}
+  return Object.keys(s).sort(function(a,b){return a.localeCompare(b,'th');});
+}
+function rememberEventPic(str){
+  if(!str) return; var arr=[]; try{ arr=JSON.parse(localStorage.getItem('npd_event_pic_names'))||[]; }catch(e){}
+  String(str).split(/[,\/、]/).forEach(function(p){ p=p.trim(); if(p && arr.indexOf(p)<0) arr.push(p); });
+  try{ localStorage.setItem('npd_event_pic_names', JSON.stringify(arr)); }catch(e){}
+}
+function eventTypeLabelOf(t){ return (EVENT_TYPES[t] && EVENT_TYPES[t].label) || t || 'อื่นๆ'; }
+function evTypeChanged(){ var s=document.getElementById('ev-type'); var w=document.getElementById('ev-typeother-wrap'); if(w) w.style.display=(s&&s.value==='__custom__')?'':'none'; }
+// คลิกที่ event → โชว์สรุปแบบอ่านอย่างเดียวก่อน กด "แก้ไข" ถึงจะแก้ได้
+function openEventDetail(id){
+  var ev=eventById(id); if(!ev){ return; }
+  var ov=document.getElementById('ev-detail-overlay');
+  if(!ov){ ov=document.createElement('div'); ov.id='ev-detail-overlay'; ov.className='modal-overlay'; ov.style.zIndex='76';
+    ov.addEventListener('click',function(e){ if(e.target===ov) ov.classList.remove('open'); });
+    ov.innerHTML='<div class="modal-box" style="max-width:460px;width:94vw;"><div id="ev-detail-body"></div></div>';
+    document.body.appendChild(ov);
+  }
+  var def=eventTypeDef(ev.type);
+  var fmt=function(iso){ if(!iso) return ''; var d=new Date(iso+'T00:00:00'); if(isNaN(d.getTime())) return iso; var M=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']; return d.getDate()+' '+M[d.getMonth()]+' '+d.getFullYear(); };
+  var span=(ev.end&&ev.end!==ev.start)?(fmt(ev.start)+'  →  '+fmt(ev.end)):fmt(ev.start);
+  var rows='';
+  rows+='<div class="evd-row"><span class="evd-k">ประเภท</span><span class="evd-v"><span class="evd-badge" style="background:'+def.bg+';color:'+def.color+'">'+def.emoji+' '+esc(eventTypeLabelOf(ev.type))+'</span></span></div>';
+  rows+='<div class="evd-row"><span class="evd-k">วันที่</span><span class="evd-v">📅 '+esc(span)+'</span></div>';
+  if(ev.pic) rows+='<div class="evd-row"><span class="evd-k">PIC</span><span class="evd-v">👤 '+esc(ev.pic)+'</span></div>';
+  if(ev.note) rows+='<div class="evd-row"><span class="evd-k">หมายเหตุ</span><span class="evd-v">'+esc(ev.note)+'</span></div>';
+  var canEdit=(typeof isTeamUnlocked==='function'&&isTeamUnlocked());
+  var closeJs="document.getElementById('ev-detail-overlay').classList.remove('open')";
+  var editBtn=canEdit?'<button onclick="evDetailEdit(\''+attrJs(ev.id)+'\')" style="background:#5C86D6;color:#fff;border:none;border-radius:9px;padding:8px 16px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;">✏️ แก้ไข</button>':'';
+  document.getElementById('ev-detail-body').innerHTML=
+    '<div class="evd-head"><div class="evd-title">'+def.emoji+' '+esc(ev.title)+'</div>'
+      +'<span onclick="'+closeJs+'" style="cursor:pointer;font-size:20px;color:#9aa4b5;line-height:1;">✕</span></div>'
+    +'<div class="evd-body">'+rows+'</div>'
+    +'<div class="evd-foot">'+editBtn+'<button onclick="'+closeJs+'" style="background:#fff;border:1px solid #dfe4ee;border-radius:9px;padding:8px 16px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;color:#5b6472;">ปิด</button></div>';
+  ov.classList.add('open');
+}
+function evDetailEdit(id){ var ov=document.getElementById('ev-detail-overlay'); if(ov) ov.classList.remove('open'); openEventEditor(null,id); }
 let evEditId = null;
 function openEventEditor(prefill, editId){
   if(!isTeamUnlocked()){ toast('เข้าโหมดแก้ไข (🔓) ก่อนจึงจะเพิ่ม/แก้ Event ได้','info'); return; }
   evEditId = editId || null;
   const e = editId ? (eventById(editId) || {}) : (prefill || {});
-  const typeOpts = Object.entries(EVENT_TYPES).map(([k,d])=>`<option value="${k}"${(e.type||'event')===k?' selected':''}>${d.emoji} ${d.label}</option>`).join('');
+  const KNOWN_EVT=['event','task','shoot','holiday','meeting'];
+  const isCustom = !!(e.type && KNOWN_EVT.indexOf(e.type)<0);        // 'other' หรือประเภทที่พิมพ์เอง
+  const customTxt = (isCustom && !EVENT_TYPES[e.type]) ? e.type : '';
+  const typeOpts = KNOWN_EVT.map(k=>{ const d=EVENT_TYPES[k]; return `<option value="${k}"${(!isCustom && (e.type||'event')===k)?' selected':''}>${d.emoji} ${d.label}</option>`; }).join('')
+    + `<option value="__custom__"${isCustom?' selected':''}>📎 อื่นๆ (โปรดระบุ)</option>`;
+  const picOpts = eventPicOptions().map(n=>`<option value="${esc(n)}"></option>`).join('');
   document.getElementById('ev-title-h').textContent = editId ? '✏️ แก้ไข Event/Task' : '📌 เพิ่ม Event / Task / วันหยุด';
   document.getElementById('ev-form').innerHTML = `
     <div class="pe-grid">
       <div class="pe-field full"><label>หัวข้อ (Title) *</label><input type="text" id="ev-title" value="${esc(e.title||'')}" placeholder="เช่น ถ่าย Event Halloween / ประชุมทีม / วันหยุดสงกรานต์"></div>
-      <div class="pe-field"><label>ประเภท (Type)</label><select id="ev-type">${typeOpts}</select></div>
-      <div class="pe-field"><label>ผู้รับผิดชอบ (PIC) — ไม่บังคับ</label><input type="text" id="ev-pic" value="${esc(e.pic||'')}" placeholder="เช่น เลิฟ, สเปียร์ (เว้นว่างได้)"></div>
+      <div class="pe-field"><label>ประเภท (Type)</label><select id="ev-type" onchange="evTypeChanged()">${typeOpts}</select></div>
+      <div class="pe-field" id="ev-typeother-wrap"${isCustom?'':' style="display:none;"'}><label>ระบุประเภท</label><input type="text" id="ev-typeother" value="${esc(customTxt)}" placeholder="เช่น ถ่ายพรีเซ็นเตอร์ / ออกบูธ"></div>
+      <div class="pe-field"><label>ผู้รับผิดชอบ (PIC)</label><input type="text" id="ev-pic" list="ev-pic-list" value="${esc(e.pic||'')}" placeholder="เลือก/พิมพ์ชื่อ (หลายคนคั่นด้วย ,)"><datalist id="ev-pic-list">${picOpts}</datalist></div>
       <div class="pe-field"><label>วันเริ่ม (Start) *</label><input type="date" id="ev-start" value="${esc(e.start||todayStr())}"></div>
       <div class="pe-field"><label>วันจบ (End) — ว่าง = วันเดียว</label><input type="date" id="ev-end" value="${esc(e.end&&e.end!==e.start?e.end:'')}"></div>
       <div class="pe-field full"><label>หมายเหตุ (Note)</label><input type="text" id="ev-note" value="${esc(e.note||'')}" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"></div>
-      <div class="pe-field full"><div style="font-size:11px; color:var(--muted);">🎉 Event · ✅ Task · 🏖️ วันหยุด (แรเงาทั้งช่อง) · 📌 ประชุม/นัด — ใช้บันทึกงานนอกเหนือจาก Pipeline</div></div>
+      <div class="pe-field full"><div style="font-size:11px; color:var(--muted);">🎉 Event · ✅ Task · 📸 ถ่ายงาน · 🏖️ วันหยุด (แรเงาทั้งช่อง) · 📌 ประชุม/นัด · 📎 อื่นๆ — บันทึกงานนอกเหนือจาก Pipeline · ใส่ PIC แล้วงานจะไปโผล่เป็น Task ในหน้าออฟฟิศของคนนั้น</div></div>
     </div>`;
   document.getElementById('ev-delete-btn').style.display = editId ? '' : 'none';
   document.getElementById('ev-overlay').classList.add('open');
@@ -3865,12 +3938,15 @@ function collectEventForm(){
   const g=id=>String((document.getElementById(id)||{}).value||'').trim();
   const start=g('ev-start');
   let end=g('ev-end'); if(!end) end=start; if(end<start) end=start;
-  return { title:g('ev-title'), type:g('ev-type')||'other', start, end, pic:g('ev-pic'), note:g('ev-note') };
+  let type=g('ev-type')||'event';
+  if(type==='__custom__'){ type=g('ev-typeother').trim()||'other'; }
+  return { title:g('ev-title'), type, start, end, pic:g('ev-pic'), note:g('ev-note') };
 }
 function saveEventEntry(){
   const f=collectEventForm();
   if(!f.title){ toast('กรอกหัวข้อ (Title) ก่อน','err'); return; }
   if(!f.start){ toast('เลือกวันเริ่ม (Start) ก่อน','err'); return; }
+  rememberEventPic(f.pic);
   const id = evEditId || ('ev'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
   const ev = Object.assign({id}, f, {updatedBy:''});
   const arr=getEventsLocal();
@@ -3900,6 +3976,8 @@ function refreshCalendarsAfterEvent(){
   if(typeof renderTrackingCalendar==='function' && document.getElementById('tcal-host') && document.getElementById('tcal-host').innerHTML) renderTrackingCalendar();
   // ปฏิทิน Content Creator ก็แสดง Event/Task/วันหยุด ด้วย
   if(typeof renderContentCal==='function'){ var cs=document.getElementById('cc-sub-calendar'); if(cs && cs.style.display!=='none') renderContentCal(); }
+  // หน้าออฟฟิศ (Task รายคนอาจมี Event ที่ระบุ PIC)
+  if(typeof renderOffice==='function'){ var vo=document.getElementById('view-office'); if(vo && vo.classList.contains('active')) renderOffice(); }
 }
 async function syncEventToSheet(action, ev){
   const cfg=getWriteConfig();
@@ -9570,6 +9648,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   }
 
   function ofcParseDate(s){ if(!s) return null; if(typeof parseSheetDate==='function'){var iso=parseSheetDate(s); if(iso) return new Date(iso+'T00:00:00');} var d=new Date(s); return isNaN(d)?null:d; }
+  // รายชื่อทีมทั้งหมด (ใช้เป็นตัวเลือก dropdown PIC ของ Event/Task)
+  window.ofcAllNames=function(){ try{ return OFC_ROOMS.reduce(function(a,r){ (r.members||[]).forEach(function(m){ if(m.n) a.push(m.n); }); return a; },[]); }catch(e){ return []; } };
   function ofcTasks(person){
     const done=/เรียบร้อย|เสร็จ|ได้ของ|ชำระเงินแล้ว|ยกเลิก|ปิดงาน|จบงาน|ส่งมอบ/;
     const logs=(typeof UPDATE_LOGS!=='undefined'&&UPDATE_LOGS)||[];
@@ -9597,6 +9677,20 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     if(typeof window.qtOfficeTasks==='function'){ try{ (window.qtOfficeTasks(person.n)||[]).forEach(function(q){ out.push(q); }); }catch(e){} }
     // งานจากหน้า Content (PIC/ผู้ตรวจ/ผู้ติดตาม = คนนี้) — โชว์ในเกมส์ด้วย
     if(typeof window.ccOfficeTasks==='function'){ try{ (window.ccOfficeTasks(person.n)||[]).forEach(function(q){ out.push(q); }); }catch(e){} }
+    // Event/Task/ถ่ายงาน ที่ระบุ PIC = คนนี้ (งานนอกเหนือ Pipeline) → โชว์เป็น Task ในออฟฟิศ
+    try{
+      (typeof ALL_EVENTS!=='undefined'?ALL_EVENTS:[]).forEach(function(ev){
+        if(!ev.pic || ev.type==='holiday') return;
+        var names=String(ev.pic).split(/[,\/、]/).map(function(s){return s.trim();}).filter(Boolean);
+        if(names.indexOf(person.n)<0) return;
+        var endD=ofcParseDate(ev.end||ev.start); if(endD && endD<today) return;   // เลยวันไปแล้ว = ไม่ค้าง
+        var days=null,due=''; var sd=ofcParseDate(ev.start);
+        if(sd){ days=Math.round((sd-today)/86400000); due=sd.getDate()+' '+THMON[sd.getMonth()]; }
+        var def=(typeof eventTypeDef==='function')?eventTypeDef(ev.type):{emoji:'📌'};
+        var lbl=(typeof eventTypeLabelOf==='function')?eventTypeLabelOf(ev.type):(ev.type||'งาน');
+        out.push({p:ev.title, sku:'', s:(def.emoji||'📌')+' '+lbl+(ev.note?' · '+ev.note:''), due:due, days:days, nd:''});
+      });
+    }catch(e){}
     out.sort(function(a,b){ if(a.days==null&&b.days==null) return 0; if(a.days==null) return 1; if(b.days==null) return -1; return a.days-b.days; });
     return out;
   }
@@ -10192,7 +10286,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
         var tip=(x.time?x.time+' ':'')+kindTxt+': '+x.title+(wt.t?' · '+wt.t:'')+(x.owner?' · 👤'+x.owner:'')+(x.brand?' · '+bLbl(x.brand):'')+' · '+st.t;
         return '<div class="ccal-chip" style="--s:'+wc+'" title="'+e2(tip)+'" onclick="event.stopPropagation();calChipClick(\''+aj(x.id)+'\')">'+((e.kind==='post'&&x.time)?'<span class="ci">'+e2(x.time)+'</span> ':'')+e2(pre+x.title)+((e.kind==='post'&&x.owner)?' <span class="ccal-chip-owner">👤'+e2(x.owner)+'</span>':'')+'</div>';
       }).join('');
-      if(list.length>shown.length) chips+='<div class="ccal-more">+'+(list.length-shown.length)+' เพิ่มเติม</div>';
+      if(list.length>shown.length) chips+='<div class="ccal-more" onclick="event.stopPropagation();openCalDay(\''+iso+'\')">+'+(list.length-shown.length)+' เพิ่มเติม</div>';
       // Event/Task/วันหยุด (นอกเหนือจาก Pipeline) แสดงบนสุดของช่อง
       var evs=(typeof eventsOnDay==='function')?eventsOnDay(iso):[];
       var evHtml=evs.map(function(ev){ return eventChipHtml(ev, iso); }).join('');
@@ -10240,6 +10334,37 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     host.innerHTML='<div class="ccal-agenda">'+h+'</div>';
   }
   window.calChipClick=function(id){ openCardModal(id); };
+  // Popup แสดงงานทั้งหมดของวันนั้น (เปิดจากปุ่ม "+N เพิ่มเติม")
+  window.calDayGo=function(id){ var ov=document.getElementById('cc-day-overlay'); if(ov) ov.classList.remove('open'); if(typeof openCardModal==='function') openCardModal(id); };
+  window.calDayEv=function(id){ var ov=document.getElementById('cc-day-overlay'); if(ov) ov.classList.remove('open'); if(typeof openEventDetail==='function') openEventDetail(id); else if(typeof openEventEditor==='function') openEventEditor(null,id); };
+  window.openCalDay=function(iso){
+    var ov=document.getElementById('cc-day-overlay');
+    if(!ov){ ov=document.createElement('div'); ov.id='cc-day-overlay'; ov.className='modal-overlay'; ov.style.zIndex='75';
+      ov.addEventListener('click',function(e){ if(e.target===ov) ov.classList.remove('open'); });
+      ov.innerHTML='<div class="modal-box" style="max-width:520px;width:94vw;"><div class="cc-day-head" id="cc-day-head"></div><div class="cc-day-body" id="cc-day-body"></div></div>';
+      document.body.appendChild(ov);
+    }
+    var d=new Date(iso+'T00:00:00');
+    var head=(typeof TH_WDF!=='undefined'?TH_WDF[d.getDay()]+' ':'')+d.getDate()+' '+TH_MF[d.getMonth()]+' '+d.getFullYear();
+    var evs=(typeof eventsOnDay==='function')?eventsOnDay(iso):[];
+    var entries=calPlot().filter(function(e){return e.iso===iso;}).sort(function(a,b){return (a.x.time||'').localeCompare(b.x.time||'');});
+    var rows='';
+    evs.forEach(function(ev){ var def=(typeof eventTypeDef==='function')?eventTypeDef(ev.type):{color:'#8A94A6',emoji:'📎',label:'อื่นๆ'};
+      rows+='<div class="cc-day-row" style="--s:'+def.color+'" onclick="calDayEv(\''+aj(ev.id)+'\')"><div class="cc-day-main"><div class="cc-day-t">'+def.emoji+' '+e2(ev.title)+'</div><div class="cc-day-m">'+e2(def.label)+(ev.pic?' · 👤 '+e2(ev.pic):'')+(ev.note?' · '+e2(ev.note):'')+'</div></div></div>';
+    });
+    entries.forEach(function(e){ var x=e.x; var st=CAL_STATUS[x.status]||CAL_STATUS.brief; var wt=WORK_TYPE_MAP[workTypeOf(x)]||{};
+      var wc,pre='',kindTxt;
+      if(e.kind==='final'){ wc=st.c; pre='🎯 '; kindTxt='ส่ง Final'; }
+      else if(e.kind==='draft'){ wc=st.c; pre='📝 draft'+e.n+': '; kindTxt='ส่ง draft '+e.n; }
+      else { wc=wt.c||st.c; kindTxt='ลงโพสต์'; }
+      var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); meta.push(kindTxt); if(wt.t) meta.push(e2(wt.t)); if(x.owner) meta.push('👤 '+e2(x.owner)); if(x.brand) meta.push(e2(bLbl(x.brand))); meta.push(e2(st.t));
+      rows+='<div class="cc-day-row" style="--s:'+wc+'" onclick="calDayGo(\''+aj(x.id)+'\')"><div class="cc-day-main"><div class="cc-day-t">'+e2(pre+x.title)+'</div><div class="cc-day-m">'+meta.join(' · ')+'</div></div></div>';
+    });
+    var total=evs.length+entries.length;
+    document.getElementById('cc-day-head').innerHTML='<span onclick="var o=document.getElementById(\'cc-day-overlay\');if(o)o.classList.remove(\'open\')" style="float:right;cursor:pointer;font-size:18px;color:#9aa4b5;line-height:1;">✕</span>📅 '+e2(head)+' <span style="font-weight:600;color:var(--ink-soft,#6b7794);font-size:12.5px;">· '+total+' รายการ</span>';
+    document.getElementById('cc-day-body').innerHTML=rows||'<div style="text-align:center;color:#6b7794;padding:18px;">— ไม่มีงาน —</div>';
+    ov.classList.add('open');
+  };
   window.openContentCalDetail=function(id){
     var x=(window.CONTENT_CAL||[]).find(function(i){return i.id===id;}); if(!x) return;
     var st=CAL_STATUS[x.status]||CAL_STATUS.brief; var d=new Date(x.date+'T00:00:00');
@@ -10414,7 +10539,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       var addC = canEdit ? '<button class="cc-pl-add" onclick="plAddIn(\''+s+'\')">➕ เพิ่มการ์ด</button>' : '';
       return '<div class="cc-pl-col" data-status="'+s+'"'+(canEdit?' ondragover="plDragOver(event)" ondragleave="plDragLeave(event)" ondrop="plDrop(event,\''+s+'\')"':'')+'>'
         +'<div class="cc-pl-colhead"><span class="cc-pl-dot" style="background:'+st.c+'"></span><span class="cc-pl-colname">'+e2(st.t)+'</span><span class="cc-pl-colcount">'+list.length+'</span></div>'
-        +cards+addC+'</div>';
+        +'<div class="cc-pl-cards">'+cards+'</div>'+addC+'</div>';
     }).join('')+'</div>';
   };
   function plCard(x,s,canEdit){
