@@ -11717,6 +11717,44 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 .gs-btn.gs-x{background:#FDECEC; color:#d33; border-color:#f3c6c6;}
 .gs-btn.gs-dim{background:var(--bg,#eef); color:var(--ink-soft,#889); cursor:default;}
 </style>
+<style id="ui-flat-2026">
+/* ===== FLAT / MATTE restyle — no gloss, gradients, drop-shadows or hover-lift · solid colors, clean + modern ===== */
+:root{ --shadow-xs:none; --shadow-sm:none; --shadow-md:none; --shadow-lg:none; --ofc-shadow:none; }
+/* 1) remove every decorative drop-shadow (focus rings stay) */
+*:not(:focus):not(:focus-visible){ box-shadow:none !important; }
+/* 2) no glass blur anywhere */
+*{ backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+/* 3) header: solid blue (was gradient) */
+header{ background:#5C86D6 !important; }
+#nav{ background:rgba(255,255,255,.12) !important; border:1px solid rgba(255,255,255,.22) !important; }
+/* 4) no hover-lift on cards/buttons/chips (keep positioning transforms like the office plates & qt toggle) */
+.btn-sm:hover, #back-to-top:hover, .lib-btn:hover, .kpi-card:hover, .brand-kpi-card:hover,
+.catalog-card:hover, .brand-filter-btn:hover, #team-roadmap .rm-card:hover,
+#view-content .cc-rm-card:hover, #view-content .cc-card:hover, #cc-editor-body .cc-pick-chip:hover{ transform:none !important; }
+/* 5) buttons — solid fills */
+.btn-sm.primary{ background:#5C86D6 !important; }
+.btn-sm.primary:hover{ background:#4F79CC !important; }
+.btn-sm.ok{ background:#2FA36B !important; }
+.btn-sm.ok:hover{ background:#28925F !important; }
+/* 6) timeline + NPD-process sub-nav active — solid blue */
+#tlbtn-stock.subnav-active, #tlbtn-basket.subnav-active, #tlbtn-pr.subnav-active,
+.team-subnav .btn-sm.subnav-active{ background:#5C86D6 !important; }
+/* 7) flat white panels (were subtle gradients) */
+#team-roadmap .rm-col{ background:#fff !important; }
+.ue-multi-panel{ background:#fff !important; }
+/* 8) office — solid pink */
+#view-office .ofc-savebtn, #view-office .ofc-roombtn.on, #view-office .ofc-pav-txt{ background:var(--ofc-pinkd,#ec5f97) !important; }
+/* 9) Content Creator accent actives — solid pink */
+#view-content .cc-subnav .btn-sm.subnav-active,
+#view-content .brand-filter-btn.active,
+#view-content .cc-fpill.on,
+#view-content .btn-edit.primary, #view-content .btn-sm.primary,
+#view-content .btn-edit.primary:hover, #view-content .btn-sm.primary:hover{ background:var(--accent-deep,#D14E88) !important; }
+/* 10) To-Do (quick tasks) — solid blue */
+#qt-toggle, .qt-top, .qt-addbtn{ background:#3d6fd0 !important; }
+/* 11) keep definition without shadows: hairline borders on elevated surfaces */
+.panel, .kpi-card, .brand-kpi-card, .catalog-card, .banner-wrap, .modal-box{ border:1px solid var(--line,#E7ECF5) !important; }
+</style>
 
 <script>
 /* ============================================================
