@@ -10930,7 +10930,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   window.closeCardModal=function(){ var el=document.getElementById('cc-card-overlay'); if(el) el.classList.remove('open'); cmModalCard=null; ccDraft={images:[],links:[]}; };
   window.renderCardModal=function(){
     var id=cmModalCard; if(!id) return;
-    var x=(window.CONTENT_CAL||[]).find(function(c){return c.id===id;}); if(!x){ closeCardModal(); return; }
+    var x=(window.CONTENT_CAL||[]).find(function(c){return c.id===id;});
+    if(!x){ if(typeof window.ecomGetCard==='function' && window.ecomGetCard(id)){ ecomRenderCardModal(id); return; } closeCardModal(); return; }
     var st=CAL_STATUS[x.status]||CAL_STATUS.brief;
     var d=x.date?new Date(x.date+'T00:00:00'):null;
     var dstr=(d&&!isNaN(d))?(TH_WDF[d.getDay()]+' '+d.getDate()+' '+TH_MF[d.getMonth()]+' '+d.getFullYear()+(x.time?' · '+e2(x.time):'')):'';
@@ -10958,7 +10959,15 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var badgeLine=tagChips(x.tags)+dueBadge(x)+reviseBadge(x)+extendBadge(x);
     var info='<div class="cc-cd-info"><div class="cc-cd-badges"><span class="cc-cd-s" style="background:'+st.c+'">'+st.t+'</span>'+(x.brand?'<span class="cc-brand" style="--b:'+((typeof BRAND_TINT!=='undefined'?BRAND_TINT:{})[x.brand]||'#6B7280')+'">'+e2(bLbl(x.brand))+'</span>':'')+badgeLine+'</div><div class="cc-cd-rows">'+rows+'</div>'+histHtml+editBtn+'</div>';
 
-    var cms=commentsFor(id);
+    document.getElementById('cc-card-body').innerHTML =
+      '<div class="cc-card-2col">'
+      +'<div class="cc-card-left"><div class="cc-col-h">📋 รายละเอียดงาน</div>'+info+'</div>'
+      +'<div class="cc-card-right">'+cmCommentPaneHtml()+'</div>'
+      +'</div>';
+  };
+  // แผงคอมเมนต์ (ใช้ร่วมกันทั้งการ์ด Content และการ์ด E-Commerce) — อิงจาก cmModalCard
+  function cmCommentPaneHtml(){
+    var cms=commentsFor(cmModalCard);
     var list = cms.length ? cms.map(cmItem).join('') : '<div class="cc-cm-empty">ยังไม่มีคอมเมนต์ — เริ่มคุยงานกันได้เลย 💬</div>';
     var composer='';
     if(unlocked()){
@@ -10980,12 +10989,18 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     } else {
       composer='<div class="cc-cm-empty">กด 🔓 ปลดล็อกทีม เพื่อคอมเมนต์/แนบไฟล์</div>';
     }
+    return '<div class="cc-cm-sec"><div class="cc-cm-h">💬 คอมเมนต์งาน ('+cms.length+')</div><div class="cc-cm-list">'+list+'</div>'+composer+'</div>';
+  }
+  // การ์ด E-Commerce: ใช้ modal เดียวกัน (ซ้าย = รายละเอียดจากโมดูล ecom, ขวา = คอมเมนต์ร่วม)
+  function ecomRenderCardModal(id){
+    var titleEl=document.getElementById('cc-card-title'); if(titleEl) titleEl.textContent=(typeof window.ecomCardTitle==='function'?window.ecomCardTitle(id):'การ์ด');
+    var detail=(typeof window.ecomCardDetailHtml==='function')?window.ecomCardDetailHtml(id):'';
     document.getElementById('cc-card-body').innerHTML =
       '<div class="cc-card-2col">'
-      +'<div class="cc-card-left"><div class="cc-col-h">📋 รายละเอียดงาน</div>'+info+'</div>'
-      +'<div class="cc-card-right"><div class="cc-cm-sec"><div class="cc-cm-h">💬 คอมเมนต์งาน ('+cms.length+')</div><div class="cc-cm-list">'+list+'</div>'+composer+'</div></div>'
+      +'<div class="cc-card-left"><div class="cc-col-h">📋 รายละเอียดงาน</div>'+detail+'</div>'
+      +'<div class="cc-card-right">'+cmCommentPaneHtml()+'</div>'
       +'</div>';
-  };
+  }
   function commentImages(raw){
     var arr=(raw||'').split(';').map(function(s){return s.trim();}).filter(Boolean); if(!arr.length) return '';
     return '<div class="cc-cm-imgs">'+arr.map(function(u){ var thumb=resolveDriveLink(u)||u; var href=/^https?:/i.test(u)?u:thumb;
@@ -12355,28 +12370,33 @@ header{ background:#5C86D6 !important; }
   var E=(typeof esc==='function')?esc:function(s){var d=document.createElement('div');d.textContent=(s==null?'':s);return d.innerHTML;};
   var AJ=(typeof attrJs==='function')?attrJs:function(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/\n/g,' ');};
   var TS=function(){ return (typeof todayStr==='function')?todayStr():new Date().toISOString().slice(0,10); };
-  var ECOM_STATUS_ORDER=['briefsrc','brief','production','review','revise','approved','posted','track'];
+  var ECOM_STATUS_ORDER=['checklist','onprocess','done'];
   var ECOM_STATUS={
-    briefsrc:{t:'📄 ต้นฉบับ Brief',c:'#8b7ef8'},
-    brief:{t:'📝 บรีฟ/ไอเดีย',c:'#f2c94c'},
-    production:{t:'🎬 กำลังผลิต',c:'#ffb454'},
-    review:{t:'👀 รอตรวจสอบ',c:'#a78bfa'},
-    revise:{t:'🔧 แก้ไข (ตีกลับ)',c:'#ef6b6b'},
-    approved:{t:'✅ อนุมัติ (รอโพสต์)',c:'#5fd0a8'},
-    posted:{t:'🚀 โพสต์แล้ว',c:'#4b9ef8'},
-    track:{t:'📈 ติดตามผล',c:'#26a69a'}
+    checklist:{t:'📄 Check List',c:'#8b7ef8'},
+    onprocess:{t:'🎬 On Process',c:'#ffb454'},
+    done:{t:'✅ Done',c:'#26a69a'}
   };
+  var ECOM_STATUS_MIGRATE={briefsrc:'checklist',brief:'onprocess',production:'onprocess',review:'onprocess',revise:'onprocess',approved:'onprocess',posted:'done',track:'done'};
   var ECOM_BRANDS=[['all','ทั้งหมด (รวมทุกแบรนด์)'],['godmami','Godmami'],['glimmer','Glimmer Sisters']];
   var PIC_PRESET=['เลิฟ','สเปียร์','เอ','หรา'];
-  var ECOM=[], ecomBrand='all', ecomOwner='', ecomDragId=null, ecomEditId=null, ecomPreset='briefsrc';
+  var GRAPHIC_PRESET=['เมษา','น้ำฝน','ไอซ์'];
+  var ECOM_TAGS_KEY='npd_ecom_tags';
+  var ECOM=[], ecomBrand='all', ecomOwner='', ecomDragId=null, ecomEditId=null, ecomPreset='checklist';
   var ECOM_LOCAL_KEY='npd_ecom_v1';
   function ecomLocal(){ try{ return JSON.parse(localStorage.getItem(ECOM_LOCAL_KEY))||[]; }catch(e){ return []; } }
   function ecomSaveLocal(a){ try{ localStorage.setItem(ECOM_LOCAL_KEY, JSON.stringify(a)); }catch(e){} }
-  function normEcom(r){ return {id:(r.id||'').trim(), title:r.title||'', brand:(typeof normalizeBrand==='function'?normalizeBrand(r.brand):(r.brand||'').trim().toLowerCase()), owner:(r.owner||'').trim(), status:ECOM_STATUS[r.status]?r.status:'briefsrc', note:r.note||'', updatedAt:r.updatedAt||'', updatedBy:r.updatedBy||''}; }
+  function ecomStat(s){ if(ECOM_STATUS[s]) return s; if(ECOM_STATUS_MIGRATE[s]) return ECOM_STATUS_MIGRATE[s]; return 'checklist'; }
+  function normEcom(r){ return {id:(r.id||'').trim(), title:r.title||'', brand:(typeof normalizeBrand==='function'?normalizeBrand(r.brand):(r.brand||'').trim().toLowerCase()), owner:(r.owner||'').trim(), graphic:(r.graphic||'').trim(), status:ecomStat(r.status), submitDate:r.submitDate||'', submitTime:r.submitTime||'', draftDate:r.draftDate||'', finalDate:r.finalDate||'', tags:r.tags||'', note:r.note||'', updatedAt:r.updatedAt||'', updatedBy:r.updatedBy||''}; }
   function ecomCanEdit(){ return (typeof sbLoggedIn==='function'&&sbLoggedIn()) && (typeof canEditArea==='function') && canEditArea('content'); }
   function ecomBrandLabel(k){ var f=ECOM_BRANDS.find(function(b){return b[0]===k;}); if(f) return f[1]; return (typeof brandDisplayLabel==='function')?brandDisplayLabel(k):k; }
   function ecomOwnerHas(owner,name){ return String(owner||'').split(/[,\/、]/).map(function(s){return s.trim();}).indexOf(name)>=0; }
   function ecomOwnerNames(){ var s={}; PIC_PRESET.forEach(function(n){s[n]=1;}); ECOM.forEach(function(x){ String(x.owner||'').split(/[,\/、]/).forEach(function(p){ p=p.trim(); if(p) s[p]=1; }); }); return Object.keys(s); }
+  function ecomGraphicNames(){ var s={}; GRAPHIC_PRESET.forEach(function(n){s[n]=1;}); ECOM.forEach(function(x){ String(x.graphic||'').split(/[,\/、]/).forEach(function(p){ p=p.trim(); if(p) s[p]=1; }); }); return Object.keys(s); }
+  function ecomTagList(){ var s={}; ECOM.forEach(function(x){ String(x.tags||'').split(',').forEach(function(t){ t=t.trim(); if(t) s[t]=1; }); }); try{ (JSON.parse(localStorage.getItem(ECOM_TAGS_KEY))||[]).forEach(function(t){ if(t) s[t]=1; }); }catch(e){} return Object.keys(s); }
+  function ecomRememberTags(str){ if(!str) return; var arr=[]; try{ arr=JSON.parse(localStorage.getItem(ECOM_TAGS_KEY))||[]; }catch(e){} String(str).split(',').forEach(function(t){ t=t.trim(); if(t && arr.indexOf(t)<0) arr.push(t); }); try{ localStorage.setItem(ECOM_TAGS_KEY, JSON.stringify(arr)); }catch(e){} }
+  function ecomDcnt(id){ try{ return (typeof commentCount==='function')?commentCount(id):0; }catch(e){ return 0; } }
+  window.ecomGetCard=function(id){ return ECOM.find(function(x){return x.id===id;})||null; };
+  window.ecomCardTitle=function(id){ var c=window.ecomGetCard(id); return c?(c.title||'การ์ด'):'การ์ด'; };
 
   async function loadEcom(){
     var cache=ecomLocal();
@@ -12390,7 +12410,7 @@ header{ background:#5C86D6 !important; }
   }
   async function ecomSync(card){
     var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
-    try{ await postToSheet({target:'ecom', action:'upsert', keyValue:card.id, row:{id:card.id,title:card.title,brand:card.brand,owner:card.owner,status:card.status,note:card.note,updatedAt:card.updatedAt||TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){}
+    try{ await postToSheet({target:'ecom', action:'upsert', keyValue:card.id, row:{id:card.id,title:card.title,brand:card.brand,owner:card.owner,graphic:card.graphic||'',status:card.status,submitDate:card.submitDate||'',submitTime:card.submitTime||'',draftDate:card.draftDate||'',finalDate:card.finalDate||'',tags:card.tags||'',note:card.note,updatedAt:card.updatedAt||TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){}
   }
   function ecomUpsertLocal(card){ var i=ECOM.findIndex(function(x){return x.id===card.id;}); if(i>-1) ECOM[i]=card; else ECOM.push(card); ecomSaveLocal(ECOM); }
 
@@ -12411,7 +12431,7 @@ header{ background:#5C86D6 !important; }
         +'<div id="ecom-picbar" class="cc-pl-picbar"></div>'
         +'<div id="ecom-host"></div>';
       // editor modal
-      var ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='ecom-editor-overlay'; ov.style.zIndex='73';
+      var ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='ecom-editor-overlay'; ov.style.zIndex='80';
       ov.addEventListener('click',function(e){ if(e.target===ov) ov.classList.remove('open'); });
       ov.innerHTML='<div class="modal-box" style="max-width:520px;width:94vw;"><div id="ecom-editor-body"></div></div>';
       document.body.appendChild(ov);
@@ -12450,39 +12470,62 @@ header{ background:#5C86D6 !important; }
         +'<div class="cc-pl-cards">'+cards+'</div>'+addC+'</div>';
     }).join('')+'</div>';
   };
+  function ecomFmtDDMM(iso){ if(!iso) return ''; var d=new Date(iso+'T00:00:00'); if(isNaN(d)) return iso; var M=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']; return d.getDate()+' '+M[d.getMonth()]; }
   function ecomCard(x,s,canEd){
     var st=ECOM_STATUS[s];
     var brand=x.brand?'<span>'+E(ecomBrandLabel(x.brand))+'</span>':'';
-    var who=x.owner?'<span class="cc-pl-who"><span class="cc-pl-pic" title="ผู้รับผิดชอบ (PIC)">👤 '+E(x.owner)+'</span></span>':'';
+    var who=x.owner?'<span class="cc-pl-who"><span class="cc-pl-pic" title="ผู้รับผิดชอบ">👤 '+E(x.owner)+'</span></span>':'';
+    var gr=x.graphic?'<span class="cc-pl-who"><span class="cc-pl-pic" title="กราฟฟิก">🎨 '+E(x.graphic)+'</span></span>':'';
+    var dd=x.submitDate?ecomFmtDDMM(x.submitDate):'';
+    var dateStr=dd?('<span>📅 '+E(dd)+(x.submitTime?' '+E(x.submitTime):'')+'</span>'):'';
+    var cn=ecomDcnt(x.id); var cmn=cn?'<span class="cc-pl-badge">💬 '+cn+'</span>':'';
+    var tags=(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+((typeof tagColor==='function')?tagColor(t):'#8A94A6')+'">'+E(t)+'</span>';}).join(''):'');
     var moveOpts=ECOM_STATUS_ORDER.map(function(k){return '<option value="'+k+'"'+(k===s?' selected':'')+'>'+E(ECOM_STATUS[k].t)+'</option>';}).join('');
-    var actions=canEd?('<div class="cc-pl-actions"><select class="cc-pl-move" title="ย้ายคอลัมน์" onclick="event.stopPropagation();" onchange="ecomMove(\''+AJ(x.id)+'\',this.value)">'+moveOpts+'</select><button class="cc-pl-no" onclick="event.stopPropagation();ecomDel(\''+AJ(x.id)+'\')" title="ลบ">🗑️</button></div>'):'';
+    var actions=canEd?('<div class="cc-pl-actions"><button class="cc-pl-send" onclick="event.stopPropagation();ecomEdit(\''+AJ(x.id)+'\')">✏️ แก้</button><select class="cc-pl-move" title="ย้ายคอลัมน์" onclick="event.stopPropagation();" onchange="ecomMove(\''+AJ(x.id)+'\',this.value)">'+moveOpts+'</select><button class="cc-pl-no" onclick="event.stopPropagation();ecomDel(\''+AJ(x.id)+'\')" title="ลบ">🗑️</button></div>'):'';
     return '<div class="cc-pl-card" style="--s:'+st.c+'"'+(canEd?' draggable="true" ondragstart="ecomDragStart(event,\''+AJ(x.id)+'\')" ondragend="ecomDragEnd(event)"':'')+'>'
-      +'<div class="cc-pl-ct" style="cursor:pointer;" onclick="ecomEdit(\''+AJ(x.id)+'\')">'+E(x.title||'(ไม่มีชื่อ)')+'</div>'
-      +((brand||who)?'<div class="cc-pl-meta">'+brand+who+'</div>':'')
-      +(x.note?'<div class="cc-pl-tags" style="font-size:11.5px;color:var(--ink-soft);white-space:pre-wrap;">'+E(x.note)+'</div>':'')
+      +'<div class="cc-pl-ct" style="cursor:pointer;" onclick="openCardModal(\''+AJ(x.id)+'\')">'+E(x.title||'(ไม่มีชื่อ)')+'</div>'
+      +(tags?'<div class="cc-pl-tags">'+tags+'</div>':'')
+      +((brand||who||gr)?'<div class="cc-pl-meta">'+brand+who+gr+'</div>':'')
+      +((dateStr||cmn)?'<div class="cc-pl-meta">'+dateStr+cmn+'</div>':'')
       +actions+'</div>';
   }
   window.ecomMove=function(id,ns){ if(!ecomCanEdit()||!ECOM_STATUS[ns]) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||c.status===ns) return; c.status=ns; c.updatedAt=TS(); ecomUpsertLocal(c); renderEcomBoard(); if(typeof toast==='function') toast('ย้ายไป “'+ECOM_STATUS[ns].t+'” แล้ว','ok'); ecomSync(c); };
   window.ecomDel=function(id){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;}); if(!confirm('ลบการ์ด “'+((c&&c.title)||'')+'” ?')) return; ECOM=ECOM.filter(function(x){return x.id!==id;}); ecomSaveLocal(ECOM); renderEcomBoard(); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(cfg.url){ try{ postToSheet({target:'ecom',action:'delete',keyValue:id}); }catch(e){} } if(typeof toast==='function') toast('ลบแล้ว','ok'); };
-  window.ecomAddIn=function(s){ if(!ecomCanEdit()){ if(typeof toast==='function') toast('เข้าสู่ระบบ (สิทธิ์ Content) ก่อนจึงจะเพิ่มได้','info'); return; } ecomPreset=s||'briefsrc'; ecomEditId=null; openEcomEditor(null); };
+  window.ecomAddIn=function(s){ if(!ecomCanEdit()){ if(typeof toast==='function') toast('เข้าสู่ระบบ (สิทธิ์ Content) ก่อนจึงจะเพิ่มได้','info'); return; } ecomPreset=s||'checklist'; ecomEditId=null; openEcomEditor(null); };
   window.ecomEdit=function(id){ var c=ECOM.find(function(x){return x.id===id;}); if(!c) return; if(!ecomCanEdit()){ if(typeof toast==='function') toast('ดูอย่างเดียว — เข้าสู่ระบบเพื่อแก้','info'); return; } ecomEditId=id; openEcomEditor(c); };
 
   function openEcomEditor(c){
     ensureEcomView();
-    c=c||{title:'',brand:(ecomBrand!=='all'?ecomBrand:'godmami'),owner:'',status:ecomPreset,note:''};
+    c=c||{title:'',brand:(ecomBrand!=='all'?ecomBrand:'godmami'),owner:'',graphic:'',status:ecomPreset,submitDate:'',submitTime:'',draftDate:'',finalDate:'',tags:'',note:''};
+    var LB=function(t){ return '<label style="font-size:12px;font-weight:600;color:var(--ink-soft);">'+t+'</label>'; };
+    var INP='style="width:100%;padding:8px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;"';
     var brandOpts=ECOM_BRANDS.filter(function(b){return b[0]!=='all';}).map(function(b){return '<option value="'+b[0]+'"'+((c.brand||'godmami')===b[0]?' selected':'')+'>'+E(b[1])+'</option>';}).join('');
-    var statusOpts=ECOM_STATUS_ORDER.map(function(k){return '<option value="'+k+'"'+((c.status||'briefsrc')===k?' selected':'')+'>'+E(ECOM_STATUS[k].t)+'</option>';}).join('');
+    var statusOpts=ECOM_STATUS_ORDER.map(function(k){return '<option value="'+k+'"'+((c.status||'checklist')===k?' selected':'')+'>'+E(ECOM_STATUS[k].t)+'</option>';}).join('');
     var picOpts=ecomOwnerNames().map(function(n){return '<option value="'+E(n)+'"></option>';}).join('');
+    var grOpts=ecomGraphicNames().map(function(n){return '<option value="'+E(n)+'"></option>';}).join('');
+    var tagOpts=ecomTagList().map(function(t){return '<option value="'+E(t)+'"></option>';}).join('');
     document.getElementById('ecom-editor-body').innerHTML=
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:16px 18px 11px;border-bottom:1px solid var(--line,#E7ECF5);"><div style="font-family:\'Anuphan\',\'Prompt\',sans-serif;font-weight:700;font-size:16px;">'+(ecomEditId?'✏️ แก้ไขการ์ด':'➕ เพิ่มการ์ด')+'</div><span onclick="document.getElementById(\'ecom-editor-overlay\').classList.remove(\'open\')" style="cursor:pointer;font-size:20px;color:#9aa4b5;">✕</span></div>'
-      +'<div style="padding:14px 18px;display:flex;flex-direction:column;gap:11px;">'
-        +'<div><label class="pe-lbl" style="font-size:12px;font-weight:600;color:var(--ink-soft);">หัวข้องาน *</label><input type="text" id="ecom-f-title" value="'+E(c.title)+'" placeholder="เช่น ถ่ายรูปสินค้า A ลงหน้าร้าน Shopee" style="width:100%;padding:8px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;"></div>'
+      +'<div style="padding:14px 18px;display:flex;flex-direction:column;gap:11px;max-height:70vh;overflow:auto;">'
+        +'<div>'+LB('หัวข้องาน *')+'<input type="text" id="ecom-f-title" value="'+E(c.title)+'" placeholder="เช่น ถ่ายรูปสินค้า A ลงหน้าร้าน Shopee" '+INP+'></div>'
         +'<div style="display:flex;gap:10px;flex-wrap:wrap;">'
-          +'<div style="flex:1;min-width:150px;"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);">แบรนด์</label><select id="ecom-f-brand" style="width:100%;padding:8px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;">'+brandOpts+'</select></div>'
-          +'<div style="flex:1;min-width:150px;"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);">ผู้รับผิดชอบ (PIC)</label><input type="text" id="ecom-f-owner" list="ecom-pic-list" value="'+E(c.owner)+'" placeholder="เลือก/พิมพ์ (หลายคนคั่น ,)" style="width:100%;padding:8px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;"><datalist id="ecom-pic-list">'+picOpts+'</datalist></div>'
+          +'<div style="flex:1;min-width:150px;">'+LB('แบรนด์')+'<select id="ecom-f-brand" '+INP+'>'+brandOpts+'</select></div>'
+          +'<div style="flex:1;min-width:150px;">'+LB('สถานะ (คอลัมน์)')+'<select id="ecom-f-status" '+INP+'>'+statusOpts+'</select></div>'
         +'</div>'
-        +'<div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);">สถานะ (คอลัมน์)</label><select id="ecom-f-status" style="width:100%;padding:8px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;">'+statusOpts+'</select></div>'
-        +'<div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);">หมายเหตุ</label><textarea id="ecom-f-note" rows="2" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" style="width:100%;padding:8px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;">'+E(c.note)+'</textarea></div>'
+        +'<div style="display:flex;gap:10px;flex-wrap:wrap;">'
+          +'<div style="flex:1;min-width:150px;">'+LB('ผู้รับผิดชอบ (PIC)')+'<input type="text" id="ecom-f-owner" list="ecom-pic-list" value="'+E(c.owner)+'" placeholder="เลือก/พิมพ์ (หลายคนคั่น ,)" '+INP+'><datalist id="ecom-pic-list">'+picOpts+'</datalist></div>'
+          +'<div style="flex:1;min-width:150px;">'+LB('กราฟฟิก')+'<input type="text" id="ecom-f-graphic" list="ecom-gr-list" value="'+E(c.graphic)+'" placeholder="เมษา / น้ำฝน / ไอซ์" '+INP+'><datalist id="ecom-gr-list">'+grOpts+'</datalist></div>'
+        +'</div>'
+        +'<div style="display:flex;gap:10px;flex-wrap:wrap;">'
+          +'<div style="flex:2;min-width:150px;">'+LB('วันที่ส่งงาน')+'<input type="date" id="ecom-f-submitDate" value="'+E(c.submitDate)+'" '+INP+'></div>'
+          +'<div style="flex:1;min-width:110px;">'+LB('เวลา')+'<input type="time" id="ecom-f-submitTime" value="'+E(c.submitTime)+'" '+INP+'></div>'
+        +'</div>'
+        +'<div style="display:flex;gap:10px;flex-wrap:wrap;">'
+          +'<div style="flex:1;min-width:150px;">'+LB('วันที่ Draft')+'<input type="date" id="ecom-f-draftDate" value="'+E(c.draftDate)+'" '+INP+'></div>'
+          +'<div style="flex:1;min-width:150px;">'+LB('วันที่ Final')+'<input type="date" id="ecom-f-finalDate" value="'+E(c.finalDate)+'" '+INP+'></div>'
+        +'</div>'
+        +'<div>'+LB('แท็ก (คั่นด้วย , — เพิ่มเองได้ ระบบจำไว้)')+'<input type="text" id="ecom-f-tags" list="ecom-tag-list" value="'+E(c.tags)+'" placeholder="เช่น ด่วน, โปรโมชัน" '+INP+'><datalist id="ecom-tag-list">'+tagOpts+'</datalist></div>'
+        +'<div>'+LB('หมายเหตุ')+'<textarea id="ecom-f-note" rows="2" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" '+INP+'>'+E(c.note)+'</textarea></div>'
       +'</div>'
       +'<div style="display:flex;justify-content:flex-end;gap:8px;padding:11px 18px 16px;border-top:1px solid var(--line,#E7ECF5);">'
         +(ecomEditId?'<button onclick="ecomDel(\''+AJ(ecomEditId)+'\');document.getElementById(\'ecom-editor-overlay\').classList.remove(\'open\')" style="background:#fff;border:1px solid #f3c6c6;color:#d33;border-radius:9px;padding:8px 14px;font-weight:600;cursor:pointer;margin-right:auto;">🗑️ ลบ</button>':'')
@@ -12495,14 +12538,34 @@ header{ background:#5C86D6 !important; }
     var g=function(id){ var el=document.getElementById(id); return el?String(el.value||'').trim():''; };
     var title=g('ecom-f-title'); if(!title){ if(typeof toast==='function') toast('กรอกหัวข้องานก่อน','err'); return; }
     var id=ecomEditId||('ec'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
-    var existing=ECOM.find(function(x){return x.id===id;})||{};
-    var card={id:id, title:title, brand:g('ecom-f-brand')||'godmami', owner:g('ecom-f-owner'), status:g('ecom-f-status')||'briefsrc', note:g('ecom-f-note'), updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'')};
+    var tags=g('ecom-f-tags'); ecomRememberTags(tags);
+    var card={id:id, title:title, brand:g('ecom-f-brand')||'godmami', owner:g('ecom-f-owner'), graphic:g('ecom-f-graphic'), status:g('ecom-f-status')||'checklist', submitDate:g('ecom-f-submitDate'), submitTime:g('ecom-f-submitTime'), draftDate:g('ecom-f-draftDate'), finalDate:g('ecom-f-finalDate'), tags:tags, note:g('ecom-f-note'), updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'')};
     ecomUpsertLocal(card);
     document.getElementById('ecom-editor-overlay').classList.remove('open');
     renderEcomBoard();
+    var cov=document.getElementById('cc-card-overlay'); if(cov && cov.classList.contains('open') && typeof renderCardModal==='function') renderCardModal();   // อัปเดต modal ถ้าเปิดค้างอยู่
     if(typeof toast==='function') toast(ecomEditId?'บันทึกแล้ว':'เพิ่มการ์ดแล้ว','ok');
     ecomSync(card);
     ecomEditId=null;
+  };
+  // รายละเอียดการ์ด (ฝั่งซ้ายของ modal ที่ใช้ร่วมกับ Content) — โชว์แบบอ่าน + ปุ่มแก้ไข
+  window.ecomCardDetailHtml=function(id){
+    var x=window.ecomGetCard(id); if(!x) return '';
+    var st=ECOM_STATUS[x.status]||ECOM_STATUS.checklist;
+    var row=function(lb,val){ return val?'<div class="cc-cd-row"><b>'+lb+'</b><span>'+val+'</span></div>':''; };
+    var dfmt=function(iso){ return iso?ecomFmtDDMM(iso):''; };
+    var tags=(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+((typeof tagColor==='function')?tagColor(t):'#8A94A6')+'">'+E(t)+'</span>';}).join(''):'');
+    var rows='';
+    rows+=row('แบรนด์', x.brand?E(ecomBrandLabel(x.brand)):'');
+    rows+=row('วันที่ส่งงาน', x.submitDate?('📅 '+E(dfmt(x.submitDate))+(x.submitTime?' '+E(x.submitTime):'')):'');
+    rows+=row('กำหนดส่ง Draft', x.draftDate?('📝 '+E(dfmt(x.draftDate))):'');
+    rows+=row('กำหนดส่ง Final', x.finalDate?('🎯 '+E(dfmt(x.finalDate))):'');
+    rows+=row('ผู้รับผิดชอบ', x.owner?('👤 '+E(x.owner)):'');
+    rows+=row('กราฟฟิก', x.graphic?('🎨 '+E(x.graphic)):'');
+    rows+=row('แท็ก', tags);
+    rows+=row('หมายเหตุ', x.note?E(x.note):'');
+    var editBtn=ecomCanEdit()?('<div class="cc-cd-edit"><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="ecomEdit(\''+AJ(id)+'\')">✏️ แก้ไขรายละเอียด</button><button class="btn-sm warn-ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="closeCardModal();ecomDel(\''+AJ(id)+'\')">🗑️ ลบการ์ด</button></div>'):'';
+    return '<div class="cc-cd-info"><div class="cc-cd-badges"><span class="cc-cd-s" style="background:'+st.c+'">'+E(st.t)+'</span>'+(x.brand?'<span class="cc-brand" style="--b:'+((typeof BRAND_TINT!=='undefined'?BRAND_TINT:{})[x.brand]||'#6B7280')+'">'+E(ecomBrandLabel(x.brand))+'</span>':'')+tags+'</div><div class="cc-cd-rows">'+rows+'</div>'+editBtn+'</div>';
   };
   window.ecomDragStart=function(ev,id){ ecomDragId=id; try{ ev.dataTransfer.setData('text/plain',id); ev.dataTransfer.effectAllowed='move'; }catch(e){} var c=ev.currentTarget; if(c) c.classList.add('dragging'); };
   window.ecomDragEnd=function(ev){ var c=ev.currentTarget; if(c) c.classList.remove('dragging'); ecomDragId=null; [].forEach.call(document.querySelectorAll('#ecom-host .cc-pl-col.dragover'),function(el){el.classList.remove('dragover');}); };
