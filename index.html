@@ -830,6 +830,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
       <div class="tab" data-view="team">NPD Process</div>
       <div class="tab" data-view="office">🏢 ออฟฟิศ</div>
       <div class="tab" data-view="content">✨ Content Creator</div>
+      <div class="tab" data-view="ecom">🛒 E-Commerce Content</div>
     </nav>
     <div class="updated-badge" id="updated-badge"></div>
   </div>
@@ -1474,44 +1475,48 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   #view-content .cc-ht-actions .btn-sm{flex:0 0 auto;}
   #view-content .cc-ht-copy{flex:1 !important;}
   /* ===== 🗂️ Pipeline (Kanban board) ===== */
-  #view-content .cc-pl-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start;}
-  #view-content .cc-pl-col{flex:0 0 264px;width:264px;background:#eef1f6;border-radius:13px;padding:9px;display:flex;flex-direction:column;gap:9px;min-height:120px;transition:background .12s,box-shadow .12s;}
+  .cc-pl-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start;}
+  .cc-pl-col{flex:0 0 264px;width:264px;background:#eef1f6;border-radius:13px;padding:9px;display:flex;flex-direction:column;gap:9px;min-height:120px;transition:background .12s,box-shadow .12s;}
   /* คอลัมน์การ์ดเลื่อนดูในตัวเอง ไม่ยืดยาวทั้งหน้า (หัวคอลัมน์+ปุ่มเพิ่มอยู่กับที่) */
-  #view-content .cc-pl-cards{display:flex;flex-direction:column;gap:9px;max-height:min(68vh,720px);overflow-y:auto;overflow-x:hidden;padding:2px 4px 2px 2px;margin:0 -2px;}
-  #view-content .cc-pl-cards::-webkit-scrollbar{width:7px;}
-  #view-content .cc-pl-cards::-webkit-scrollbar-thumb{background:#c7cfdd;border-radius:7px;}
-  #view-content .cc-pl-cards::-webkit-scrollbar-thumb:hover{background:#aab5c8;}
-  #view-content .cc-pl-cards{scrollbar-width:thin;scrollbar-color:#c7cfdd transparent;}
-  #view-content .cc-pl-col.dragover{background:var(--accent-pale);box-shadow:inset 0 0 0 2px var(--accent);}
-  #view-content .cc-pl-colhead{display:flex;align-items:center;gap:7px;padding:3px 5px;}
-  #view-content .cc-pl-dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;}
-  #view-content .cc-pl-colname{font-family:'Anuphan','Prompt',sans-serif;font-weight:700;font-size:12.5px;color:var(--ink);flex:1;line-height:1.2;}
-  #view-content .cc-pl-colcount{font-size:11px;font-weight:700;color:var(--ink-soft);background:#fff;border-radius:999px;padding:1px 8px;}
-  #view-content .cc-pl-add{border:1px dashed var(--line);background:transparent;border-radius:9px;padding:6px;font-size:12px;color:var(--ink-soft);cursor:pointer;font-weight:600;}
-  #view-content .cc-pl-add:hover{background:#fff;color:var(--accent-deep);border-color:var(--accent);}
-  #view-content .cc-pl-card{background:#fff;border:1px solid var(--line);border-left:4px solid var(--s);border-radius:11px;padding:10px 11px;display:flex;flex-direction:column;gap:6px;box-shadow:0 2px 8px -5px rgba(80,100,150,.5);cursor:grab;}
-  #view-content .cc-pl-card:active{cursor:grabbing;}
-  #view-content .cc-pl-card.dragging{opacity:.45;}
-  #view-content .cc-pl-ct{font-family:'Anuphan','Prompt',sans-serif;font-weight:600;font-size:13px;color:var(--ink);line-height:1.35;}
-  #view-content .cc-pl-tags{display:flex;gap:4px;flex-wrap:wrap;}
-  #view-content .cc-pl-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--ink-soft);align-items:center;}
-  #view-content .cc-pl-who{display:flex;gap:6px;flex-wrap:wrap;}
-  #view-content .cc-pl-pic,#view-content .cc-pl-rev{font-size:10.5px;font-weight:600;border-radius:999px;padding:1px 8px;white-space:nowrap;}
-  #view-content .cc-pl-pic{background:#EAF1FF;color:#2456B0;}
-  #view-content .cc-pl-rev{background:#F3ECFF;color:#6A3FC0;}
-  #view-content .cc-pl-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:1px;}
-  #view-content .cc-pl-actions button{font-size:11px;font-weight:700;border:none;border-radius:7px;padding:4px 9px;cursor:pointer;}
-  #view-content .cc-pl-send{background:#EDE7FB;color:#5B3FC0;}
-  #view-content .cc-pl-send:hover{background:#a78bfa;color:#fff;}
-  #view-content .cc-pl-ok{background:#DEF3E7;color:#1E7C4B;}
-  #view-content .cc-pl-ok:hover{background:#5fd0a8;color:#fff;}
-  #view-content .cc-pl-no{background:#FCE4E4;color:#C0392B;}
-  #view-content .cc-pl-no:hover{background:#ef6b6b;color:#fff;}
-  #view-content .cc-pl-post{background:#E4EEFC;color:#2456B0;}
-  #view-content .cc-pl-post:hover{background:#4b9ef8;color:#fff;}
-  #view-content .cc-pl-move{font-size:10.5px;color:var(--ink-soft);border:1px solid var(--line);border-radius:7px;padding:3px 5px;background:#fff;max-width:100%;}
-  #view-content .cc-pl-empty{font-size:11.5px;color:var(--ink-soft);text-align:center;padding:14px 6px;opacity:.75;}
-  @media(max-width:640px){ #view-content .cc-pl-col{flex:0 0 232px;width:232px;} }
+  .cc-pl-cards{display:flex;flex-direction:column;gap:9px;max-height:min(68vh,720px);overflow-y:auto;overflow-x:hidden;padding:2px 4px 2px 2px;margin:0 -2px;}
+  .cc-pl-cards::-webkit-scrollbar{width:7px;}
+  .cc-pl-cards::-webkit-scrollbar-thumb{background:#c7cfdd;border-radius:7px;}
+  .cc-pl-cards::-webkit-scrollbar-thumb:hover{background:#aab5c8;}
+  .cc-pl-cards{scrollbar-width:thin;scrollbar-color:#c7cfdd transparent;}
+  .cc-pl-col.dragover{background:var(--accent-pale);box-shadow:inset 0 0 0 2px var(--accent);}
+  .cc-pl-colhead{display:flex;align-items:center;gap:7px;padding:3px 5px;}
+  .cc-pl-dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;}
+  .cc-pl-colname{font-family:'Anuphan','Prompt',sans-serif;font-weight:700;font-size:12.5px;color:var(--ink);flex:1;line-height:1.2;}
+  .cc-pl-colcount{font-size:11px;font-weight:700;color:var(--ink-soft);background:#fff;border-radius:999px;padding:1px 8px;}
+  .cc-pl-add{border:1px dashed var(--line);background:transparent;border-radius:9px;padding:6px;font-size:12px;color:var(--ink-soft);cursor:pointer;font-weight:600;}
+  .cc-pl-add:hover{background:#fff;color:var(--accent-deep);border-color:var(--accent);}
+  .cc-pl-card{background:#fff;border:1px solid var(--line);border-left:4px solid var(--s);border-radius:11px;padding:10px 11px;display:flex;flex-direction:column;gap:6px;box-shadow:0 2px 8px -5px rgba(80,100,150,.5);cursor:grab;}
+  .cc-pl-card:active{cursor:grabbing;}
+  .cc-pl-card.dragging{opacity:.45;}
+  .cc-pl-ct{font-family:'Anuphan','Prompt',sans-serif;font-weight:600;font-size:13px;color:var(--ink);line-height:1.35;}
+  .cc-pl-tags{display:flex;gap:4px;flex-wrap:wrap;}
+  .cc-pl-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--ink-soft);align-items:center;}
+  .cc-pl-who{display:flex;gap:6px;flex-wrap:wrap;}
+  .cc-pl-pic,.cc-pl-rev{font-size:10.5px;font-weight:600;border-radius:999px;padding:1px 8px;white-space:nowrap;}
+  .cc-pl-pic{background:#EAF1FF;color:#2456B0;}
+  .cc-pl-rev{background:#F3ECFF;color:#6A3FC0;}
+  .cc-pl-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:1px;}
+  .cc-pl-actions button{font-size:11px;font-weight:700;border:none;border-radius:7px;padding:4px 9px;cursor:pointer;}
+  .cc-pl-send{background:#EDE7FB;color:#5B3FC0;}
+  .cc-pl-send:hover{background:#a78bfa;color:#fff;}
+  .cc-pl-ok{background:#DEF3E7;color:#1E7C4B;}
+  .cc-pl-ok:hover{background:#5fd0a8;color:#fff;}
+  .cc-pl-no{background:#FCE4E4;color:#C0392B;}
+  .cc-pl-no:hover{background:#ef6b6b;color:#fff;}
+  .cc-pl-post{background:#E4EEFC;color:#2456B0;}
+  .cc-pl-post:hover{background:#4b9ef8;color:#fff;}
+  .cc-pl-move{font-size:10.5px;color:var(--ink-soft);border:1px solid var(--line);border-radius:7px;padding:3px 5px;background:#fff;max-width:100%;}
+  .cc-pl-empty{font-size:11.5px;color:var(--ink-soft);text-align:center;padding:14px 6px;opacity:.75;}
+  .cc-pl-picbar,#view-ecom .cc-pl-picbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+  .cc-pl-picbar-lead,#view-ecom .cc-pl-picbar-lead{font-size:12px;font-weight:600;color:var(--ink-soft);}
+  .cc-pl-picpill,#view-ecom .cc-pl-picpill{font-size:12px;font-weight:600;color:var(--ink-soft);background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 12px;cursor:pointer;}
+  .cc-pl-picpill.on,#view-ecom .cc-pl-picpill.on{background:#ffafdf;color:#5b6472;border-color:#ffafdf;}
+  @media(max-width:640px){ .cc-pl-col{flex:0 0 232px;width:232px;} }
   /* ===== 💬 Card detail + comments ===== */
   #view-content #cc-card-title{font-family:'Anuphan','Prompt',sans-serif;font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #cc-card-body .cc-cd-info{padding:14px 18px;}
@@ -1571,7 +1576,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   #cc-card-body .cc-cm-send{margin-left:auto;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:7px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Anuphan','Prompt',sans-serif;}
   #cc-card-body .cc-cm-send:disabled{opacity:.5;cursor:not-allowed;}
   #cc-card-body .cc-cm-status{font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
-  #view-content .cc-pl-badge,#view-content .ccal-cmn{font-size:11px;color:var(--ink-soft);font-weight:600;}
+  .cc-pl-badge,#view-content .ccal-cmn{font-size:11px;color:var(--ink-soft);font-weight:600;}
   /* ===== due date · revise/extend · overdue dashboard ===== */
   #view-content .cc-due,#cc-card-body .cc-due{font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 9px;background:#EEF1F6;color:#556;white-space:nowrap;}
   #view-content .cc-due-soon,#cc-card-body .cc-due-soon{background:#FCEFD8;color:#B26A00;}
@@ -1579,8 +1584,8 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   #view-content .cc-due-done,#cc-card-body .cc-due-done{background:#E3F3E1;color:#2E7D32;}
   #view-content .cc-rev-badge,#cc-card-body .cc-rev-badge{font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 9px;background:#FDE7EF;color:#C0286B;white-space:nowrap;}
   #view-content .cc-ext-badge,#cc-card-body .cc-ext-badge{font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 9px;background:#EAF1FF;color:#2456B0;white-space:nowrap;}
-  #view-content .cc-pl-badges{display:flex;gap:4px;flex-wrap:wrap;}
-  #view-content .cc-pl-card.cc-pl-late{border-color:#f3b4b4;box-shadow:0 0 0 1px #f3b4b4, 0 2px 8px -5px rgba(192,57,43,.4);}
+  .cc-pl-badges{display:flex;gap:4px;flex-wrap:wrap;}
+  .cc-pl-card.cc-pl-late{border-color:#f3b4b4;box-shadow:0 0 0 1px #f3b4b4, 0 2px 8px -5px rgba(192,57,43,.4);}
   #view-content .cc-od-banner{background:#FCECEC;border:1px solid #F3C0C0;border-radius:12px;padding:11px 14px;margin-bottom:14px;}
   #view-content .cc-od-h{font-family:'Anuphan','Prompt',sans-serif;font-weight:700;font-size:13.5px;color:#C0392B;margin-bottom:8px;}
   #view-content .cc-od-chips{display:flex;gap:7px;flex-wrap:wrap;}
@@ -1642,8 +1647,8 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   #cc-card-body .cc-cm-img.cc-cm-img-broken::after{content:'📎 เปิดไฟล์แนบ';}
   #cc-card-body .cc-cm-draftnote{font-size:11px;color:var(--accent-deep);background:var(--accent-pale);border-radius:7px;padding:4px 9px;margin-bottom:8px;display:inline-block;}
   /* pipeline card preview image */
-  #view-content .cc-pl-img{display:block;border-radius:9px;overflow:hidden;border:1px solid var(--line);line-height:0;}
-  #view-content .cc-pl-img img{display:block;width:100%;height:150px;object-fit:cover;}
+  .cc-pl-img{display:block;border-radius:9px;overflow:hidden;border:1px solid var(--line);line-height:0;}
+  .cc-pl-img img{display:block;width:100%;height:150px;object-fit:cover;}
   /* ===== 📊 Dashboard ===== */
   #view-content .cc-wt,#cc-card-body .cc-wt{font-size:10.5px;font-weight:700;color:#fff;background:var(--wt);border-radius:6px;padding:1px 9px;white-space:nowrap;}
   #view-content .cc-db-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px;box-shadow:0 4px 16px -12px rgba(80,100,150,.5);}
@@ -1718,6 +1723,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
           <p class="cc-rm-lead">บอร์ดสถานะคอนเทนต์ — ลากการ์ดเพื่อเปลี่ยนสถานะ · ข้อมูลชุดเดียวกับปฏิทิน · ส่งตรวจ/อนุมัติ/ตีกลับได้ในคลิกเดียว</p>
           <button class="btn-edit primary" id="cc-pl-add" onclick="openContentCalEditor()" style="display:none;flex:0 0 auto;">➕ เพิ่มการ์ด</button>
         </div>
+        <div id="cc-pl-picbar" class="cc-pl-picbar"></div>
         <div id="cc-pl-host"></div>
       </div>
       <div id="cc-sub-dashboard" style="display:none;">
@@ -2768,6 +2774,7 @@ document.querySelectorAll('#nav .tab').forEach(t=>{
     if(t.dataset.view==='workflow'){ loadWorkflowFrame(); }
     if(t.dataset.view==='office'){ if(typeof renderOffice==='function') renderOffice(); }
     if(t.dataset.view==='content'){ if(typeof switchContentSub==='function') switchContentSub(); else if(typeof renderContentCreator==='function') renderContentCreator(); }
+    if(t.dataset.view==='ecom'){ if(typeof renderEcomBoard==='function') renderEcomBoard(); }
     if(typeof qtSyncVisibility==='function') qtSyncVisibility();   // To-Do โชว์เฉพาะหน้าออฟฟิศ
   });
 });
@@ -8421,8 +8428,8 @@ function deleteProduct(sku){
 async function postToSheet(payload){
   await sbInit();
   if(!sbLoggedIn()) return { ok:false, error:'ยังไม่ได้เข้าสู่ระบบ (กดปุ่มเข้าสู่ระบบ มุมขวาล่าง)' };
-  const TBL = { products:'products', updates:'updates', task:'tasks', notice:'notice', officestatus:'office', events:'events', banners:'banners', briefs:'briefs', contentideas:'content_ideas', contentcal:'content_calendar', contentcomments:'content_comments', contentmusthave:'content_musthave', brandidentity:'brand_identity', hashtags:'hashtags', quicktasks:'quick_tasks', productstage:'product_stage', roadmapyear:'roadmap_year' };
-  const KEY = { products:'sku', notice:'Message', task:'รายละเอียดงาน', officestatus:(payload.key||'name'), events:'id', banners:'id', briefs:'nprNo', contentideas:'id', contentcal:'id', contentcomments:'id', contentmusthave:'id', brandidentity:'id', hashtags:'id', quicktasks:'id', productstage:'sku', roadmapyear:'id' };
+  const TBL = { products:'products', updates:'updates', task:'tasks', notice:'notice', officestatus:'office', events:'events', banners:'banners', briefs:'briefs', contentideas:'content_ideas', contentcal:'content_calendar', contentcomments:'content_comments', contentmusthave:'content_musthave', brandidentity:'brand_identity', hashtags:'hashtags', quicktasks:'quick_tasks', productstage:'product_stage', roadmapyear:'roadmap_year', ecom:'ecom_content' };
+  const KEY = { products:'sku', notice:'Message', task:'รายละเอียดงาน', officestatus:(payload.key||'name'), events:'id', banners:'id', briefs:'nprNo', contentideas:'id', contentcal:'id', contentcomments:'id', contentmusthave:'id', brandidentity:'id', hashtags:'id', quicktasks:'id', productstage:'sku', roadmapyear:'id', ecom:'id' };
   const table = TBL[payload.target];
   if(!table) return { ok:false, error:'unknown target: '+payload.target };
   const key = KEY[payload.target];
@@ -10711,10 +10718,22 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
      ============================================================ */
   var plDragId=null, plPresetStatus=null;
   function renderCalActive(){ if(ciSub==='pipeline') renderPipeline(); else renderContentCal(); }
+  var plOwnerFilter='';
+  function plOwnerHas(owner, name){ return String(owner||'').split(/[,\/、]/).map(function(s){return s.trim();}).indexOf(name)>=0; }
+  function plOwnerNames(){ var s={}; ['เลิฟ','สเปียร์','เอ','หรา'].forEach(function(n){s[n]=1;}); (window.CONTENT_CAL||[]).forEach(function(x){ String(x.owner||'').split(/[,\/、]/).forEach(function(p){ p=p.trim(); if(p) s[p]=1; }); }); return Object.keys(s); }
+  window.setPlOwner=function(n){ plOwnerFilter=(plOwnerFilter===n)?'':n; renderPipeline(); };
+  function renderPlPicBar(){
+    var bar=document.getElementById('cc-pl-picbar'); if(!bar) return;
+    bar.innerHTML='<span class="cc-pl-picbar-lead">👤 ผู้รับผิดชอบ (PIC):</span>'
+      +'<button type="button" class="cc-pl-picpill'+(plOwnerFilter?'':' on')+'" onclick="setPlOwner(\'\')">ทุกคน</button>'
+      +plOwnerNames().map(function(n){ return '<button type="button" class="cc-pl-picpill'+(plOwnerFilter===n?' on':'')+'" onclick="setPlOwner(\''+aj(n)+'\')">'+e2(n)+'</button>'; }).join('');
+  }
   window.renderPipeline=function(){
     var host=document.getElementById('cc-pl-host'); if(!host) return;
     var addBtn=document.getElementById('cc-pl-add'); if(addBtn) addBtn.style.display=unlocked()?'':'none';
+    renderPlPicBar();
     var items=(window.CONTENT_CAL||[]).filter(function(x){ return ciBrand==='all' || (x.brand||'other')===ciBrand; });
+    if(plOwnerFilter){ items=items.filter(function(x){ return plOwnerHas(x.owner, plOwnerFilter); }); }
     var byStatus={}; CAL_STATUS_ORDER.forEach(function(s){byStatus[s]=[];});
     items.forEach(function(x){ var s=CAL_STATUS[x.status]?x.status:'brief'; byStatus[s].push(x); });
     var canEdit=unlocked();
@@ -11939,6 +11958,18 @@ header{ background:#5C86D6 !important; }
 #qt-toggle, .qt-top, .qt-addbtn{ background:#3d6fd0 !important; }
 /* 11) keep definition without shadows: hairline borders on elevated surfaces */
 .panel, .kpi-card, .brand-kpi-card, .catalog-card, .banner-wrap, .modal-box{ border:1px solid var(--line,#E7ECF5) !important; }
+/* 12) ปุ่มชมพูเข้ม (#D14E88) → ชมพูอ่อน #ffafdf + ตัวหนังสือสีเทา */
+#view-content .cc-subnav .btn-sm.subnav-active,
+#view-content .brand-filter-btn.active,
+#view-content .cc-fpill.on,
+#view-content .btn-edit.primary, #view-content .btn-sm.primary,
+#view-content .btn-edit.primary:hover, #view-content .btn-sm.primary:hover,
+#view-content .ccal-dm-pill.on,
+#view-content .ccal-wtf-pill.active,
+#view-ecom .brand-filter-btn.active,
+#view-ecom .ecom-pic-pill.on,
+#view-ecom .btn-edit.primary, #view-ecom .btn-sm.primary{ background:#ffafdf !important; color:#5b6472 !important; border-color:#ffafdf !important; }
+#team-roadmap .rm-count{ background:#ffafdf !important; color:#5b6472 !important; }
 </style>
 
 <script>
@@ -12313,6 +12344,174 @@ header{ background:#5C86D6 !important; }
     renderYearRoadmapView();
     if(typeof toast==='function') toast('ลบแล้ว','ok');
   };
+})();
+</script>
+<script>
+/* ============================================================
+   🛒 E-Commerce Content — บอร์ด Kanban ใหม่ (ข้อมูลแยกของตัวเอง: ตาราง ecom_content)
+   คอลัมน์ = "ต้นฉบับ Brief" + สถานะเหมือน Task Pipeline · มี Filter ตาม PIC
+   ============================================================ */
+(function(){
+  var E=(typeof esc==='function')?esc:function(s){var d=document.createElement('div');d.textContent=(s==null?'':s);return d.innerHTML;};
+  var AJ=(typeof attrJs==='function')?attrJs:function(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/\n/g,' ');};
+  var TS=function(){ return (typeof todayStr==='function')?todayStr():new Date().toISOString().slice(0,10); };
+  var ECOM_STATUS_ORDER=['briefsrc','brief','production','review','revise','approved','posted','track'];
+  var ECOM_STATUS={
+    briefsrc:{t:'📄 ต้นฉบับ Brief',c:'#8b7ef8'},
+    brief:{t:'📝 บรีฟ/ไอเดีย',c:'#f2c94c'},
+    production:{t:'🎬 กำลังผลิต',c:'#ffb454'},
+    review:{t:'👀 รอตรวจสอบ',c:'#a78bfa'},
+    revise:{t:'🔧 แก้ไข (ตีกลับ)',c:'#ef6b6b'},
+    approved:{t:'✅ อนุมัติ (รอโพสต์)',c:'#5fd0a8'},
+    posted:{t:'🚀 โพสต์แล้ว',c:'#4b9ef8'},
+    track:{t:'📈 ติดตามผล',c:'#26a69a'}
+  };
+  var ECOM_BRANDS=[['all','ทั้งหมด (รวมทุกแบรนด์)'],['godmami','Godmami'],['glimmer','Glimmer Sisters']];
+  var PIC_PRESET=['เลิฟ','สเปียร์','เอ','หรา'];
+  var ECOM=[], ecomBrand='all', ecomOwner='', ecomDragId=null, ecomEditId=null, ecomPreset='briefsrc';
+  var ECOM_LOCAL_KEY='npd_ecom_v1';
+  function ecomLocal(){ try{ return JSON.parse(localStorage.getItem(ECOM_LOCAL_KEY))||[]; }catch(e){ return []; } }
+  function ecomSaveLocal(a){ try{ localStorage.setItem(ECOM_LOCAL_KEY, JSON.stringify(a)); }catch(e){} }
+  function normEcom(r){ return {id:(r.id||'').trim(), title:r.title||'', brand:(typeof normalizeBrand==='function'?normalizeBrand(r.brand):(r.brand||'').trim().toLowerCase()), owner:(r.owner||'').trim(), status:ECOM_STATUS[r.status]?r.status:'briefsrc', note:r.note||'', updatedAt:r.updatedAt||'', updatedBy:r.updatedBy||''}; }
+  function ecomCanEdit(){ return (typeof sbLoggedIn==='function'&&sbLoggedIn()) && (typeof canEditArea==='function') && canEditArea('content'); }
+  function ecomBrandLabel(k){ var f=ECOM_BRANDS.find(function(b){return b[0]===k;}); if(f) return f[1]; return (typeof brandDisplayLabel==='function')?brandDisplayLabel(k):k; }
+  function ecomOwnerHas(owner,name){ return String(owner||'').split(/[,\/、]/).map(function(s){return s.trim();}).indexOf(name)>=0; }
+  function ecomOwnerNames(){ var s={}; PIC_PRESET.forEach(function(n){s[n]=1;}); ECOM.forEach(function(x){ String(x.owner||'').split(/[,\/、]/).forEach(function(p){ p=p.trim(); if(p) s[p]=1; }); }); return Object.keys(s); }
+
+  async function loadEcom(){
+    var cache=ecomLocal();
+    try{
+      var rows=(await sbSelect('ecom_content')).map(normEcom).filter(function(r){return r.id;});
+      var byId={}; rows.forEach(function(r){byId[r.id]=r;});
+      cache.forEach(function(c){ if(c.id && !byId[c.id]) rows.push(normEcom(c)); });   // เก็บการ์ดที่ยังไม่ซิงค์
+      ECOM=rows; ecomSaveLocal(ECOM);
+    }catch(e){ ECOM=cache.map(normEcom); }
+    return ECOM;
+  }
+  async function ecomSync(card){
+    var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
+    try{ await postToSheet({target:'ecom', action:'upsert', keyValue:card.id, row:{id:card.id,title:card.title,brand:card.brand,owner:card.owner,status:card.status,note:card.note,updatedAt:card.updatedAt||TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){}
+  }
+  function ecomUpsertLocal(card){ var i=ECOM.findIndex(function(x){return x.id===card.id;}); if(i>-1) ECOM[i]=card; else ECOM.push(card); ecomSaveLocal(ECOM); }
+
+  /* ---- view + modal (สร้างครั้งเดียว) ---- */
+  function ensureEcomView(){
+    var v=document.getElementById('view-ecom');
+    if(!v){
+      var host=document.getElementById('view-content');
+      v=document.createElement('div'); v.className='view'; v.id='view-ecom';
+      if(host&&host.parentNode) host.parentNode.insertBefore(v, host.nextSibling); else document.body.appendChild(v);
+    }
+    if(!v.dataset.built){
+      v.dataset.built='1';
+      v.innerHTML=''
+        +'<h2 style="font-family:\'Anuphan\',\'Prompt\',sans-serif;font-weight:700;font-size:22px;margin:0 0 4px;color:var(--ink);">🛒 E-Commerce Content</h2>'
+        +'<p class="section-sub" style="margin-top:0;">บอร์ดงานคอนเทนต์อีคอมเมิร์ซ (ข้อมูลแยกจาก Task Pipeline) — ลากการ์ดเปลี่ยนสถานะ · กรองตามผู้รับผิดชอบได้</p>'
+        +'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0;"><span style="font-size:13px;color:var(--ink-soft);font-weight:600;">มุมมองแบรนด์:</span><span id="ecom-brandbar" class="brand-filter-bar-inner" style="display:inline-flex;gap:6px;flex-wrap:wrap;"></span><button class="btn-edit primary" id="ecom-add" onclick="ecomAddIn(\'briefsrc\')" style="margin-left:auto;flex:0 0 auto;display:none;">➕ เพิ่มการ์ด</button></div>'
+        +'<div id="ecom-picbar" class="cc-pl-picbar"></div>'
+        +'<div id="ecom-host"></div>';
+      // editor modal
+      var ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='ecom-editor-overlay'; ov.style.zIndex='73';
+      ov.addEventListener('click',function(e){ if(e.target===ov) ov.classList.remove('open'); });
+      ov.innerHTML='<div class="modal-box" style="max-width:520px;width:94vw;"><div id="ecom-editor-body"></div></div>';
+      document.body.appendChild(ov);
+    }
+  }
+  function renderEcomBrandBar(){
+    var bar=document.getElementById('ecom-brandbar'); if(!bar) return;
+    bar.innerHTML=ECOM_BRANDS.map(function(b){ return '<button class="brand-filter-btn'+(ecomBrand===b[0]?' active':'')+'" onclick="ecomSetBrand(\''+b[0]+'\')">'+E(b[1])+'</button>'; }).join('');
+  }
+  function renderEcomPicBar(){
+    var bar=document.getElementById('ecom-picbar'); if(!bar) return;
+    bar.innerHTML='<span class="cc-pl-picbar-lead">👤 ผู้รับผิดชอบ (PIC):</span>'
+      +'<button type="button" class="cc-pl-picpill'+(ecomOwner?'':' on')+'" onclick="ecomSetOwner(\'\')">ทุกคน</button>'
+      +ecomOwnerNames().map(function(n){ return '<button type="button" class="cc-pl-picpill'+(ecomOwner===n?' on':'')+'" onclick="ecomSetOwner(\''+AJ(n)+'\')">'+E(n)+'</button>'; }).join('');
+  }
+  window.ecomSetBrand=function(b){ ecomBrand=b||'all'; renderEcomBoard(); };
+  window.ecomSetOwner=function(n){ ecomOwner=(ecomOwner===n)?'':n; renderEcomBoard(); };
+
+  window.renderEcomBoard=function(){
+    ensureEcomView();
+    if(!window.__ecomLoaded){ window.__ecomLoaded=true; loadEcom().then(function(){ renderEcomBoard(); }).catch(function(){}); }
+    var host=document.getElementById('ecom-host'); if(!host) return;
+    var canEd=ecomCanEdit();
+    var addBtn=document.getElementById('ecom-add'); if(addBtn) addBtn.style.display=canEd?'':'none';
+    renderEcomBrandBar(); renderEcomPicBar();
+    var items=ECOM.filter(function(x){ return ecomBrand==='all' || (x.brand||'other')===ecomBrand; });
+    if(ecomOwner) items=items.filter(function(x){ return ecomOwnerHas(x.owner, ecomOwner); });
+    var byStatus={}; ECOM_STATUS_ORDER.forEach(function(s){byStatus[s]=[];});
+    items.forEach(function(x){ var s=ECOM_STATUS[x.status]?x.status:'briefsrc'; byStatus[s].push(x); });
+    host.innerHTML='<div class="cc-pl-board">'+ECOM_STATUS_ORDER.map(function(s){
+      var st=ECOM_STATUS[s]; var list=byStatus[s];
+      var cards=list.map(function(x){ return ecomCard(x,s,canEd); }).join('')||'<div class="cc-pl-empty">— ว่าง —</div>';
+      var addC=canEd?'<button class="cc-pl-add" onclick="ecomAddIn(\''+s+'\')">➕ เพิ่มการ์ด</button>':'';
+      return '<div class="cc-pl-col" data-status="'+s+'"'+(canEd?' ondragover="ecomDragOver(event)" ondragleave="ecomDragLeave(event)" ondrop="ecomDrop(event,\''+s+'\')"':'')+'>'
+        +'<div class="cc-pl-colhead"><span class="cc-pl-dot" style="background:'+st.c+'"></span><span class="cc-pl-colname">'+E(st.t)+'</span><span class="cc-pl-colcount">'+list.length+'</span></div>'
+        +'<div class="cc-pl-cards">'+cards+'</div>'+addC+'</div>';
+    }).join('')+'</div>';
+  };
+  function ecomCard(x,s,canEd){
+    var st=ECOM_STATUS[s];
+    var brand=x.brand?'<span>'+E(ecomBrandLabel(x.brand))+'</span>':'';
+    var who=x.owner?'<span class="cc-pl-who"><span class="cc-pl-pic" title="ผู้รับผิดชอบ (PIC)">👤 '+E(x.owner)+'</span></span>':'';
+    var moveOpts=ECOM_STATUS_ORDER.map(function(k){return '<option value="'+k+'"'+(k===s?' selected':'')+'>'+E(ECOM_STATUS[k].t)+'</option>';}).join('');
+    var actions=canEd?('<div class="cc-pl-actions"><select class="cc-pl-move" title="ย้ายคอลัมน์" onclick="event.stopPropagation();" onchange="ecomMove(\''+AJ(x.id)+'\',this.value)">'+moveOpts+'</select><button class="cc-pl-no" onclick="event.stopPropagation();ecomDel(\''+AJ(x.id)+'\')" title="ลบ">🗑️</button></div>'):'';
+    return '<div class="cc-pl-card" style="--s:'+st.c+'"'+(canEd?' draggable="true" ondragstart="ecomDragStart(event,\''+AJ(x.id)+'\')" ondragend="ecomDragEnd(event)"':'')+'>'
+      +'<div class="cc-pl-ct" style="cursor:pointer;" onclick="ecomEdit(\''+AJ(x.id)+'\')">'+E(x.title||'(ไม่มีชื่อ)')+'</div>'
+      +((brand||who)?'<div class="cc-pl-meta">'+brand+who+'</div>':'')
+      +(x.note?'<div class="cc-pl-tags" style="font-size:11.5px;color:var(--ink-soft);white-space:pre-wrap;">'+E(x.note)+'</div>':'')
+      +actions+'</div>';
+  }
+  window.ecomMove=function(id,ns){ if(!ecomCanEdit()||!ECOM_STATUS[ns]) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||c.status===ns) return; c.status=ns; c.updatedAt=TS(); ecomUpsertLocal(c); renderEcomBoard(); if(typeof toast==='function') toast('ย้ายไป “'+ECOM_STATUS[ns].t+'” แล้ว','ok'); ecomSync(c); };
+  window.ecomDel=function(id){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;}); if(!confirm('ลบการ์ด “'+((c&&c.title)||'')+'” ?')) return; ECOM=ECOM.filter(function(x){return x.id!==id;}); ecomSaveLocal(ECOM); renderEcomBoard(); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(cfg.url){ try{ postToSheet({target:'ecom',action:'delete',keyValue:id}); }catch(e){} } if(typeof toast==='function') toast('ลบแล้ว','ok'); };
+  window.ecomAddIn=function(s){ if(!ecomCanEdit()){ if(typeof toast==='function') toast('เข้าสู่ระบบ (สิทธิ์ Content) ก่อนจึงจะเพิ่มได้','info'); return; } ecomPreset=s||'briefsrc'; ecomEditId=null; openEcomEditor(null); };
+  window.ecomEdit=function(id){ var c=ECOM.find(function(x){return x.id===id;}); if(!c) return; if(!ecomCanEdit()){ if(typeof toast==='function') toast('ดูอย่างเดียว — เข้าสู่ระบบเพื่อแก้','info'); return; } ecomEditId=id; openEcomEditor(c); };
+
+  function openEcomEditor(c){
+    ensureEcomView();
+    c=c||{title:'',brand:(ecomBrand!=='all'?ecomBrand:'godmami'),owner:'',status:ecomPreset,note:''};
+    var brandOpts=ECOM_BRANDS.filter(function(b){return b[0]!=='all';}).map(function(b){return '<option value="'+b[0]+'"'+((c.brand||'godmami')===b[0]?' selected':'')+'>'+E(b[1])+'</option>';}).join('');
+    var statusOpts=ECOM_STATUS_ORDER.map(function(k){return '<option value="'+k+'"'+((c.status||'briefsrc')===k?' selected':'')+'>'+E(ECOM_STATUS[k].t)+'</option>';}).join('');
+    var picOpts=ecomOwnerNames().map(function(n){return '<option value="'+E(n)+'"></option>';}).join('');
+    document.getElementById('ecom-editor-body').innerHTML=
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:16px 18px 11px;border-bottom:1px solid var(--line,#E7ECF5);"><div style="font-family:\'Anuphan\',\'Prompt\',sans-serif;font-weight:700;font-size:16px;">'+(ecomEditId?'✏️ แก้ไขการ์ด':'➕ เพิ่มการ์ด')+'</div><span onclick="document.getElementById(\'ecom-editor-overlay\').classList.remove(\'open\')" style="cursor:pointer;font-size:20px;color:#9aa4b5;">✕</span></div>'
+      +'<div style="padding:14px 18px;display:flex;flex-direction:column;gap:11px;">'
+        +'<div><label class="pe-lbl" style="font-size:12px;font-weight:600;color:var(--ink-soft);">หัวข้องาน *</label><input type="text" id="ecom-f-title" value="'+E(c.title)+'" placeholder="เช่น ถ่ายรูปสินค้า A ลงหน้าร้าน Shopee" style="width:100%;padding:8px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;"></div>'
+        +'<div style="display:flex;gap:10px;flex-wrap:wrap;">'
+          +'<div style="flex:1;min-width:150px;"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);">แบรนด์</label><select id="ecom-f-brand" style="width:100%;padding:8px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;">'+brandOpts+'</select></div>'
+          +'<div style="flex:1;min-width:150px;"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);">ผู้รับผิดชอบ (PIC)</label><input type="text" id="ecom-f-owner" list="ecom-pic-list" value="'+E(c.owner)+'" placeholder="เลือก/พิมพ์ (หลายคนคั่น ,)" style="width:100%;padding:8px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;"><datalist id="ecom-pic-list">'+picOpts+'</datalist></div>'
+        +'</div>'
+        +'<div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);">สถานะ (คอลัมน์)</label><select id="ecom-f-status" style="width:100%;padding:8px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;">'+statusOpts+'</select></div>'
+        +'<div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);">หมายเหตุ</label><textarea id="ecom-f-note" rows="2" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" style="width:100%;padding:8px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;">'+E(c.note)+'</textarea></div>'
+      +'</div>'
+      +'<div style="display:flex;justify-content:flex-end;gap:8px;padding:11px 18px 16px;border-top:1px solid var(--line,#E7ECF5);">'
+        +(ecomEditId?'<button onclick="ecomDel(\''+AJ(ecomEditId)+'\');document.getElementById(\'ecom-editor-overlay\').classList.remove(\'open\')" style="background:#fff;border:1px solid #f3c6c6;color:#d33;border-radius:9px;padding:8px 14px;font-weight:600;cursor:pointer;margin-right:auto;">🗑️ ลบ</button>':'')
+        +'<button onclick="document.getElementById(\'ecom-editor-overlay\').classList.remove(\'open\')" style="background:#fff;border:1px solid #dfe4ee;color:#5b6472;border-radius:9px;padding:8px 16px;font-weight:600;cursor:pointer;">ยกเลิก</button>'
+        +'<button onclick="ecomSaveEditor()" style="background:#ffafdf;color:#5b6472;border:none;border-radius:9px;padding:8px 18px;font-weight:700;cursor:pointer;">💾 บันทึก</button>'
+      +'</div>';
+    document.getElementById('ecom-editor-overlay').classList.add('open');
+  }
+  window.ecomSaveEditor=function(){
+    var g=function(id){ var el=document.getElementById(id); return el?String(el.value||'').trim():''; };
+    var title=g('ecom-f-title'); if(!title){ if(typeof toast==='function') toast('กรอกหัวข้องานก่อน','err'); return; }
+    var id=ecomEditId||('ec'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+    var existing=ECOM.find(function(x){return x.id===id;})||{};
+    var card={id:id, title:title, brand:g('ecom-f-brand')||'godmami', owner:g('ecom-f-owner'), status:g('ecom-f-status')||'briefsrc', note:g('ecom-f-note'), updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'')};
+    ecomUpsertLocal(card);
+    document.getElementById('ecom-editor-overlay').classList.remove('open');
+    renderEcomBoard();
+    if(typeof toast==='function') toast(ecomEditId?'บันทึกแล้ว':'เพิ่มการ์ดแล้ว','ok');
+    ecomSync(card);
+    ecomEditId=null;
+  };
+  window.ecomDragStart=function(ev,id){ ecomDragId=id; try{ ev.dataTransfer.setData('text/plain',id); ev.dataTransfer.effectAllowed='move'; }catch(e){} var c=ev.currentTarget; if(c) c.classList.add('dragging'); };
+  window.ecomDragEnd=function(ev){ var c=ev.currentTarget; if(c) c.classList.remove('dragging'); ecomDragId=null; [].forEach.call(document.querySelectorAll('#ecom-host .cc-pl-col.dragover'),function(el){el.classList.remove('dragover');}); };
+  window.ecomDragOver=function(ev){ ev.preventDefault(); try{ ev.dataTransfer.dropEffect='move'; }catch(e){} ev.currentTarget.classList.add('dragover'); };
+  window.ecomDragLeave=function(ev){ if(!ev.currentTarget.contains(ev.relatedTarget)) ev.currentTarget.classList.remove('dragover'); };
+  window.ecomDrop=function(ev,s){ ev.preventDefault(); ev.currentTarget.classList.remove('dragover'); var id=ecomDragId; try{ var dt=ev.dataTransfer.getData('text/plain'); if(dt) id=dt; }catch(e){} if(id) ecomMove(id,s); };
+
+  // สร้าง view ล่วงหน้า (ให้แท็บกดแล้วเจอ) + โหลดข้อมูลเงียบๆ
+  ensureEcomView();
 })();
 </script>
 </body>
