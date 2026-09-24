@@ -4402,9 +4402,10 @@ function renderCalendar(){
   items.forEach(p=>{
     const idx = PRODUCTS.indexOf(p);
     const d = effectiveDate(p,'launch') || effectiveDate(p,'arrival');
-    const monthLabel = d ? MONTH_NAMES[new Date(d+"T00:00:00").getMonth()] : 'Date TBC';
+    const dObj = d ? new Date(d+"T00:00:00") : null;
+    const monthLabel = dObj ? MONTH_NAMES[dObj.getMonth()] : 'Date TBC';
     if(monthLabel !== lastMonth){
-      rows += `<tr class="month-group"><td colspan="19">${monthLabel} ${currentYear}</td></tr>`;
+      rows += `<tr class="month-group" data-m="${dObj?dObj.getMonth():-1}"><td colspan="19">${monthLabel} ${currentYear}</td></tr>`;
       lastMonth = monthLabel;
     }
     const status = computeStatus(p);
@@ -4431,6 +4432,24 @@ function renderCalendar(){
     </tr>`;
   });
   tbody.innerHTML = rows;
+  // เลื่อนกล่องตาราง "สินค้าใหม่" มาที่เดือนปัจจุบันอัตโนมัติครั้งแรก (จากนั้นผู้ใช้เลื่อนดูเดือนอื่นเองได้)
+  if(!window.__npScrolledToMonth){
+    window.__npScrolledToMonth = true;
+    requestAnimationFrame(function(){
+      try{
+        var now=new Date(); if(currentYear!==now.getFullYear()) return;
+        var tm=now.getMonth();
+        var groups=[].slice.call(tbody.querySelectorAll('tr.month-group'));
+        var target=null;
+        for(var i=0;i<groups.length;i++){ if(+groups[i].dataset.m===tm){ target=groups[i]; break; } }
+        if(!target){ var best=null; groups.forEach(function(g){ var m=+g.dataset.m; if(m>tm && (best===null || m<+best.dataset.m)) best=g; }); target=best; }
+        if(!target) return;
+        var sc=tbody.closest('.table-scroll'); if(!sc) return;
+        var thead=sc.querySelector('thead'); var headH=thead?thead.getBoundingClientRect().height:0;
+        sc.scrollTop += target.getBoundingClientRect().top - sc.getBoundingClientRect().top - headH - 2;
+      }catch(e){}
+    });
+  }
 }
 
 function catalogSingleCard(p, idx){
