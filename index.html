@@ -2119,7 +2119,8 @@ const PRODUCT_COLUMNS = [
   'launch_deadline','launch_actual','prDate_deadline','prDate_actual',
   'refPhoto_link','productMedia_link','dataReady_link','platformDone_link',
   'canva','lot','exp','remark','saleHalted','saleHaltDate','saleHaltNote','risk','nextDue','history','image','group','collection',
-  'price','size','sellingPoints','keyBenefits','rrp','mrp'
+  'price','size','sellingPoints','keyBenefits','rrp','mrp',
+  'setComponents','setOnly','parentSet'
 ];
 
 /* Human-friendly milestone groups for the editor (prefix -> Thai label). */
@@ -2300,8 +2301,18 @@ function rowToProduct(row){
     price: row.price||'', size: row.size||'',
     sellingPoints: row.sellingPoints||'', keyBenefits: row.keyBenefits||'',
     rrp: row.rrp||'', mrp: row.mrp||'',
+    setComponents: parseSetComponents(row.setComponents),
+    setOnly: toBool(row.setOnly),
+    parentSet: (row.parentSet||'').trim(),
   };
 }
+/* ส่วนประกอบของเซต — เก็บเป็น JSON string ในคอลัมน์ setComponents · [{code,name,qty,kind}] */
+function parseSetComponents(v){
+  if(Array.isArray(v)) return v;
+  if(!v) return [];
+  try{ var a=JSON.parse(v); return Array.isArray(a)?a:[]; }catch(e){ return []; }
+}
+function isSetType(t){ return String(t||'').trim().toLowerCase()==='ชุด set'; }
 
 // ---- Supabase (Calendar data backend; replaces Supabase reads) ----
 const SB_URL = "https://oamvkcjuhnaytthzngci.supabase.co";
@@ -4459,11 +4470,12 @@ function catalogSingleCard(p, idx){
       <div class="catalog-body">
         <div class="cname">${isNewProduct(p)?'<span class="new-badge">🆕 ใหม่</span> ':''}${esc(p.name)}</div>
         <div class="csku">${esc(p.sku)||'SKU TBC'}${p.barcode?` · ${esc(p.barcode)}`:''}</div>
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${brandBadge(p,20)}${typeBadge(p)}${categoryBadge(p)}${collectionBadge(p.collection)}</div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${brandBadge(p,20)}${typeBadge(p)}${categoryBadge(p)}${collectionBadge(p.collection)}${p.setOnly?`<span style="font-size:10.5px;font-weight:700;color:#b26a00;background:#fef3c7;border-radius:999px;padding:2px 9px;">🔒 ไม่ขายเดี่ยว${p.parentSet?' · '+esc(p.parentSet):''}</span>`:''}</div>
         ${(p.lot||p.exp) ? `<div class="csku">${p.lot?`Lot ${esc(p.lot)}`:''}${p.exp?` · EXP ${formatDate(new Date(p.exp+"T00:00:00"))}`:''}</div>` : ''}
         <div class="catalog-actions">
           <button class="btn-sm ghost" onclick="openTimeline(${idx})">Timeline</button>
           <button class="btn-sm primary" onclick="openFinalSheet('${attrJs(p.sku)}')">📋 Info</button>
+          ${(p.setComponents&&p.setComponents.length)?`<button class="btn-sm ghost" onclick="openSetContents('${attrJs(p.sku)}')">🧩 ส่วนประกอบ ${p.setComponents.length}</button>`:''}
           ${p.canva
             ? `<a class="btn-sm primary" href="${esc(p.canva)}" target="_blank" rel="noopener">Presentation</a>`
             : `<span class="btn-sm disabled">No link yet</span>`}
@@ -4474,6 +4486,29 @@ function catalogSingleCard(p, idx){
         </div>` : ''}
       </div>
     </div>`;
+}
+/* Popup แสดงส่วนประกอบของเซต (เปิดจากปุ่ม 🧩 ส่วนประกอบ ในการ์ด Product Info) */
+function openSetContents(sku){
+  var set=(PRODUCTS||[]).find(function(p){return p.sku===sku;}); if(!set) return;
+  var comps=set.setComponents||[];
+  var ov=document.getElementById('setc-overlay');
+  if(!ov){ ov=document.createElement('div'); ov.id='setc-overlay'; ov.className='modal-overlay'; ov.style.zIndex='75';
+    ov.addEventListener('click',function(e){ if(e.target===ov) ov.classList.remove('open'); });
+    ov.innerHTML='<div class="modal-box" style="max-width:520px;width:94vw;"><div id="setc-body"></div></div>';
+    document.body.appendChild(ov);
+  }
+  var rows=comps.map(function(c){
+    var idx=(PRODUCTS||[]).findIndex(function(p){return p.sku===c.code;});
+    var icon=(c.kind==='setonly')?'🆕':'🔗';
+    var nm=esc(c.name||'')||'(ไม่มีชื่อ)';
+    var codeTxt=c.code?('<span style="font-family:monospace;font-size:11.5px;color:var(--ink-soft,#6b7794);">'+esc(c.code)+'</span>'):'';
+    var link=(idx>=0)?'<button class="btn-sm ghost" style="flex:0 0 auto;" onclick="document.getElementById(\'setc-overlay\').classList.remove(\'open\');openTimeline('+idx+')">Timeline</button>':'';
+    return '<div style="display:flex;gap:10px;align-items:center;border:1px solid var(--line,#E7ECF5);border-radius:10px;padding:8px 11px;margin-bottom:7px;"><span style="flex:0 0 auto;">'+icon+'</span><div style="flex:1;min-width:0;"><div style="font-weight:600;">'+nm+(c.kind==='setonly'?' <span style="font-size:10px;color:#b26a00;">ผลิตเฉพาะเซต</span>':'')+'</div>'+codeTxt+'</div><span style="flex:0 0 auto;font-weight:700;color:var(--accent-deep,#D14E88);">×'+esc(c.qty||'1')+'</span>'+link+'</div>';
+  }).join('') || '<div style="text-align:center;color:#6b7794;padding:16px;">— ยังไม่มีส่วนประกอบ —</div>';
+  document.getElementById('setc-body').innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:16px 18px 11px;border-bottom:1px solid var(--line,#E7ECF5);"><div style="font-family:\'Anuphan\',\'Prompt\',sans-serif;font-weight:700;font-size:16px;">🧩 ส่วนประกอบเซต · '+esc(set.name)+'</div><span onclick="document.getElementById(\'setc-overlay\').classList.remove(\'open\')" style="cursor:pointer;font-size:20px;color:#9aa4b5;">✕</span></div>'
+    +'<div style="padding:13px 16px 16px;">'+rows+'</div>';
+  ov.classList.add('open');
 }
 /* the distinguishing part of a variant's name (shade), i.e. name with the group base removed */
 function shadeLabel(name, gname){
@@ -6097,6 +6132,19 @@ function renderBriefPartA(){
     ])}
     <div class="brief-note-box no-print-hint">☑️ ติ๊ก "สร้าง Bar" = แจ้งทีมระบบให้สร้าง Barcode ให้ SKU นั้น (ไม่ต้องกรอกเลขเอง)</div>
 
+    <div class="brief-section-h">🧩 ส่วนประกอบของเซต (Set) <span style="font-weight:400;font-size:11px;color:var(--ink-soft);">— กรอกเมื่อ Product Type = ชุด Set</span></div>
+    <div class="no-print" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+      <input type="text" id="a_setSku" value="${esc(bfGet('a_setSku'))}" onchange="bfOnChange('a_setSku')" placeholder="SKU ของเซต เช่น MS065" style="max-width:200px;">
+      <button type="button" class="brief-print-btn" onclick="briefPullSetComponents()">⬇️ ดึงส่วนประกอบจากสินค้าเซตนี้</button>
+    </div>
+    ${bfGridField('a_setComponents','', [
+      {key:'kind',label:'ประเภท',type:'select',options:['ของขายเดี่ยว','ผลิตใหม่เฉพาะเซต']},
+      {key:'code',label:'รหัส/SKU'},
+      {key:'name',label:'ชื่อชิ้น'},
+      {key:'qty',label:'จำนวน/เซต'}
+    ])}
+    <div class="brief-note-box no-print-hint">🆕 ชิ้น “ผลิตใหม่เฉพาะเซต” เป็นสินค้าแยกในระบบ (รหัสเช่น MS065_S01) — เปิด/กรอกบรีฟของชิ้นนั้นแยกได้เหมือนสินค้าปกติ · ชิ้น “ของขายเดี่ยว” ใช้ของที่มีบรีฟอยู่แล้ว</div>
+
     <div class="brief-field-grid" style="margin-top:14px;">
       <div class="brief-field">
         <label>Declare Weight</label>
@@ -6111,6 +6159,20 @@ function renderBriefPartA(){
       ${bfField('a_remark','Remark','textarea',{full:true})}
     </div>
     ${briefSignBlock('a','NPD ผู้จัดทำบรีฟ')}`;
+}
+
+/* ดึงส่วนประกอบของเซตจากสินค้า (Phase 1) เข้ามาในกริดบรีฟ a_setComponents */
+function briefPullSetComponents(){
+  var el=document.getElementById('a_setSku'); var sku=el?String(el.value||'').trim():'';
+  if(!sku){ toast('ใส่ SKU ของเซตก่อน','err'); return; }
+  var p=(PRODUCTS||[]).find(function(x){return x.sku===sku;});
+  if(!p){ toast('ไม่พบสินค้า SKU นี้','err'); return; }
+  var comps=(p.setComponents||[]);
+  if(!comps.length){ toast('SKU นี้ยังไม่มีส่วนประกอบเซต (ไปตั้งค่าที่ Product Info ก่อน)','info'); return; }
+  var arr=comps.map(function(c){ return {kind:(c.kind==='setonly'?'ผลิตใหม่เฉพาะเซต':'ของขายเดี่ยว'), code:c.code||'', name:c.name||'', qty:(c.qty!=null&&c.qty!==''?String(c.qty):'1')}; });
+  bfGridSave('a_setComponents', arr);
+  reRenderGrid('a_setComponents');
+  toast('ดึงส่วนประกอบ '+arr.length+' รายการแล้ว','ok');
 }
 
 const B_MARKET_ROWS = 3;
@@ -7231,6 +7293,17 @@ function printBriefSummaryA(){
 
   const remark = g('a_remark');
 
+  // Set components (ส่วนประกอบของเซต) — โชว์เฉพาะเมื่อมี
+  let setRows=[]; try{ setRows=JSON.parse(bfGet('a_setComponents')||'[]'); }catch(e){}
+  setRows = setRows.filter(r=>r && (r.code||r.name));
+  const setHtml = setRows.length ? `<section>
+      <h2>Set Components · ส่วนประกอบของเซต</h2><hr class="rule">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr>${['ประเภท','รหัส/SKU','ชื่อชิ้น','จำนวน/เซต'].map(hh=>`<th style="text-align:left;border-bottom:1px solid #C9CFD8;padding:4px 6px;color:#4B5563;">${hh}</th>`).join('')}</tr></thead>
+        <tbody>${setRows.map(r=>`<tr>${[r.kind||'',r.code||'',r.name||'',r.qty||''].map(c=>`<td style="border-bottom:1px solid #EEF1F5;padding:4px 6px;">${(c&&String(c).trim())?esc(c):'—'}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table>
+    </section>` : '';
+
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Product Brief — ${esc(g('a_projectName')||'')}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
@@ -7316,6 +7389,8 @@ function printBriefSummaryA(){
       <h2>SKU Information</h2><hr class="rule">
       ${skuHtml}
     </section>
+
+    ${setHtml}
 
     <section>
       <h2>Remark</h2><hr class="rule">
@@ -8037,6 +8112,8 @@ function renderProductForm(row, isEdit){
   const riskOpts = ['','Low','Medium','High'].map(r=>peOpt(r, r||'— ไม่ระบุ —', riskCur)).join('');
   // รายชื่อ Collection ที่มีอยู่แล้ว → autocomplete
   const collOpts = [...new Set(PRODUCTS.map(p=>(p.collection||'').trim()).filter(Boolean))].sort().map(c=>`<option value="${esc(c)}"></option>`).join('');
+  const _setComps = parseSetComponents(row.setComponents);
+  const _isSet = isSetType(row.type);
 
   document.getElementById('pe-form').innerHTML = `
     <div class="pe-section">ข้อมูลหลัก</div>
@@ -8047,10 +8124,19 @@ function renderProductForm(row, isEdit){
         : `<div style="display:flex; gap:8px; align-items:stretch;"><input type="text" id="pe-sku" value="${V('sku')}" placeholder="เช่น GM-LS-01 หรือกด 🎲" style="flex:1; min-width:0;"><button type="button" class="btn-sm ghost" style="flex:0 0 auto; white-space:nowrap;" onclick="fillAutoSku()">🎲 รันอัตโนมัติ</button></div>`}</div>
       <div class="pe-field"><label>Barcode</label><input type="text" id="pe-barcode" value="${V('barcode')}" placeholder="เว้นว่างได้ / ให้ทีมระบบสร้าง"></div>
       <div class="pe-field"><label>Brand</label><select id="pe-brand">${brandOpts}</select></div>
-      <div class="pe-field"><label>Type</label><select id="pe-type">${typeOpts}</select></div>
+      <div class="pe-field"><label>Type</label><select id="pe-type" onchange="peSetToggleSection()">${typeOpts}</select></div>
       <div class="pe-field"><label>Category</label><select id="pe-category">${catOpts}</select></div>
       <div class="pe-field full"><label>กลุ่มสินค้า (Group) — SKU กลุ่มเดียวกันใส่ค่านี้เหมือนกัน · เว้นว่าง = ระบบเดาจากรหัส (${esc(_grp||'—')})</label><input type="text" id="pe-group" value="${V('group')}" placeholder="เช่น MK064 หรือ FR-perfume"></div>
       <div class="pe-field full"><label>🎁 Collection (คอลเลกชัน) — สินค้าชุดเดียวกันใส่ชื่อเหมือนกัน แม้ SKU/กลุ่มต่างกัน · เว้นว่างได้</label><input type="text" id="pe-collection" list="pe-collection-list" value="${V('collection')}" placeholder="เช่น Halloween 2026, Princess Hour"><datalist id="pe-collection-list">${collOpts}</datalist></div>
+    </div>
+    <input type="hidden" id="pe-setComponents" value="${esc(JSON.stringify(_setComps))}">
+    <input type="hidden" id="pe-setOnly" value="${V('setOnly')}">
+    <input type="hidden" id="pe-parentSet" value="${V('parentSet')}">
+    <div class="pe-section" id="pe-set-section" style="display:${_isSet?'block':'none'};">🧩 ส่วนประกอบของเซต (Set) <span style="font-weight:400;color:var(--ink-soft);font-size:11px;">— เลือกประเภท = “ชุด Set” เพื่อใช้</span></div>
+    <div id="pe-set-box" style="display:${_isSet?'block':'none'};">
+      <div class="pe-set-hint" style="font-size:11.5px;color:var(--ink-soft);margin-bottom:8px;line-height:1.5;">แต่ละแถวเลือกได้ว่าเป็น <b>ของขายเดี่ยวที่มีอยู่</b> (เลือกจากรายการ) หรือ <b>ผลิตใหม่เฉพาะเซต</b> (ระบบออกรหัสภายในให้ = <code>SKUเซต_S01</code>, ไม่ขายเดี่ยว, มี Timeline ของตัวเอง) · ใส่จำนวนต่อเซต · ผสมกันได้</div>
+      <div id="pe-set-rows"></div>
+      <button type="button" class="btn-sm ok" onclick="peSetAddRow()" style="margin-top:8px;flex:0 0 auto;">➕ เพิ่มส่วนประกอบ</button>
     </div>
 
     <div class="pe-section">วันสำคัญ / Milestones (เว้นว่างได้ = ยังไม่กำหนด)</div>
@@ -8107,7 +8193,72 @@ function renderProductForm(row, isEdit){
     </div>` : ''}
   `;
   document.getElementById('pe-hint').textContent = isEdit ? 'กำลังแก้ไขสินค้าที่มีอยู่' : 'สินค้าใหม่ — SKU ต้องไม่ซ้ำของเดิม';
+  peSetInit(_setComps);
 }
+
+/* ===== ส่วนประกอบของเซต (Set components) — ตารางในหน้าสร้าง/แก้สินค้า ===== */
+var PE_SET = [];
+function peSetInit(arr){ PE_SET = (Array.isArray(arr)?arr:[]).map(function(r){ return {kind:(r.kind==='setonly'?'setonly':'standalone'), code:r.code||'', name:r.name||'', qty:(r.qty!=null&&r.qty!==''?String(r.qty):'1')}; }); peSetRender(); }
+function peSetToggleSection(){
+  var isSet=isSetType((document.getElementById('pe-type')||{}).value);
+  var sec=document.getElementById('pe-set-section'), box=document.getElementById('pe-set-box');
+  if(sec) sec.style.display=isSet?'block':'none';
+  if(box) box.style.display=isSet?'block':'none';
+  if(isSet && !PE_SET.length){ peSetAddRow(); }
+}
+function peSetGenCode(){
+  var setSku=String((document.getElementById('pe-sku')||{}).value||'').trim();
+  var base = setSku ? setSku : 'SET';
+  // หาเลข _S ที่มากสุดที่ใช้ไปแล้วในเซตนี้ + 1
+  var max=0; PE_SET.forEach(function(r){ if(r.kind==='setonly' && r.code){ var m=String(r.code).match(/_S(\d+)$/i); if(m){ var n=parseInt(m[1],10); if(n>max) max=n; } } });
+  return base+'_S'+String(max+1).padStart(2,'0');
+}
+function peSetProductOptions(selCode){
+  var cur=String((document.getElementById('pe-sku')||{}).value||'').trim();
+  var opts='<option value="">— เลือกสินค้าขายเดี่ยว —</option>';
+  (PRODUCTS||[]).filter(function(p){ return p.sku && p.sku!==cur && !isSetType(p.type) && !p.setOnly; })
+    .forEach(function(p){ opts+='<option value="'+esc(p.sku)+'"'+(p.sku===selCode?' selected':'')+'>'+esc(p.sku+' — '+p.name)+'</option>'; });
+  // ถ้า code เดิมไม่อยู่ในรายการ (เช่นถูกลบ) ยังคงโชว์ไว้
+  if(selCode && !(PRODUCTS||[]).some(function(p){return p.sku===selCode;})) opts+='<option value="'+esc(selCode)+'" selected>'+esc(selCode)+' (ไม่พบในระบบ)</option>';
+  return opts;
+}
+function peSetRender(){
+  var host=document.getElementById('pe-set-rows'); if(!host) return;
+  if(!PE_SET.length){ host.innerHTML='<div style="font-size:12px;color:var(--ink-soft);padding:6px 2px;">ยังไม่มีส่วนประกอบ — กด “➕ เพิ่มส่วนประกอบ”</div>'; peSetSerialize(); return; }
+  host.innerHTML = PE_SET.map(function(r,i){
+    var kindSel='<select onchange="peSetSet('+i+',\'kind\',this.value)" style="flex:0 0 auto;">'
+      +'<option value="standalone"'+(r.kind==='standalone'?' selected':'')+'>🔗 ของขายเดี่ยว</option>'
+      +'<option value="setonly"'+(r.kind==='setonly'?' selected':'')+'>🆕 ผลิตใหม่เฉพาะเซต</option></select>';
+    var mid = (r.kind==='setonly')
+      ? '<input type="text" value="'+esc(r.code||'(รอ SKU เซต)')+'" readonly title="รหัสภายใน (อัตโนมัติ)" style="flex:0 0 120px;background:var(--bg);font-size:12px;">'
+        +'<input type="text" value="'+esc(r.name)+'" oninput="peSetSet('+i+',\'name\',this.value)" placeholder="ชื่อชิ้นผลิตใหม่ เช่น กระเป๋าเซต" style="flex:1;min-width:120px;">'
+      : '<select onchange="peSetSet('+i+',\'code\',this.value)" style="flex:1;min-width:150px;">'+peSetProductOptions(r.code)+'</select>';
+    return '<div class="pe-set-row" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">'
+      +kindSel+mid
+      +'<input type="number" min="1" value="'+esc(r.qty||'1')+'" oninput="peSetSet('+i+',\'qty\',this.value)" title="จำนวนต่อเซต" style="flex:0 0 64px;text-align:center;">'
+      +'<button type="button" class="btn-sm warn-ghost" onclick="peSetDelRow('+i+')" style="flex:0 0 auto;">✕</button></div>';
+  }).join('');
+  peSetSerialize();
+}
+function peSetSet(i,field,val){
+  if(!PE_SET[i]) return;
+  if(field==='kind'){
+    PE_SET[i].kind = (val==='setonly')?'setonly':'standalone';
+    if(PE_SET[i].kind==='setonly'){ if(!PE_SET[i].code || !/_S\d+$/i.test(PE_SET[i].code)) PE_SET[i].code=peSetGenCode(); }
+    else { PE_SET[i].code=''; PE_SET[i].name=''; }
+    peSetRender(); return;
+  }
+  if(field==='code'){
+    PE_SET[i].code=val;
+    var p=(PRODUCTS||[]).find(function(x){return x.sku===val;});
+    if(p) PE_SET[i].name=p.name;   // ดึงชื่อจากสินค้าที่เลือก
+    peSetSerialize(); return;
+  }
+  PE_SET[i][field]=val; peSetSerialize();
+}
+function peSetAddRow(){ PE_SET.push({kind:'standalone',code:'',name:'',qty:'1'}); peSetRender(); }
+function peSetDelRow(i){ PE_SET.splice(i,1); peSetRender(); }
+function peSetSerialize(){ var h=document.getElementById('pe-setComponents'); if(h) h.value=JSON.stringify(PE_SET.filter(function(r){return r.code||r.name;})); }
 
 function collectProductForm(){
   const row={};
@@ -8200,6 +8351,21 @@ function saveProduct(){
   const store=getPendingStore();
   store.edits[sku]=row;
   store.deletes=(store.deletes||[]).filter(s=>s!==sku);
+
+  // สินค้าเซต: ชิ้นที่ "ผลิตใหม่เฉพาะเซต" → สร้าง/อัปเดตเป็นสินค้าของตัวเอง (setOnly + parentSet) จะได้มี Timeline/ติดตามผลิตเอง
+  if(isSetType(row.type)){
+    parseSetComponents(row.setComponents).forEach(function(c){
+      if(c.kind!=='setonly' || !c.code) return;
+      const existing = store.edits[c.code] || SHEET_ROWS.find(r=>(r.sku||'').trim()===c.code);
+      const crow = existing ? Object.assign({}, existing) : {};
+      crow.sku=c.code; crow.name=c.name||crow.name||c.code;
+      crow.setOnly='TRUE'; crow.parentSet=sku;
+      if(!crow.brand) crow.brand=row.brand||'';
+      if(!crow.type) crow.type='New Product';
+      store.edits[c.code]=crow;
+      syncRowToSheet('upsert', crow);
+    });
+  }
 
   // Phase 2b — copy shared fields to every other SKU in the group (edit once → all SKUs)
   const applyBasic = (document.getElementById('pe-applyGroupBasic')||{}).checked;
