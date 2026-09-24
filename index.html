@@ -2349,8 +2349,8 @@ function sbLoggedIn(){ return !!SB_SESSION; }
    the same lists server-side for writes. Emails compared lowercase. */
 const AREA_EDITORS = {
   products:    ['marketing.glimmersisters@gmail.com','theeranath@cosceutic.com','cbs@cosceutic.com','npd@cosceutic.com','npd1@cosceutic.com'],
-  npd_process: ['marketing.glimmersisters@gmail.com','theeranath@cosceutic.com','npd@cosceutic.com','npd1@cosceutic.com','sm@cosmanialab.com','supplychain@cosceutic.com'],
-  content:     ['marketing.glimmersisters@gmail.com','theeranath@cosceutic.com','cbs@cosceutic.com','content03.cil@gmail.com','content04.cil@gmail.com','content@cosceutic.com','sm@cosmanialab.com','marketing1@cosceutic.com','mkl@cosceutic.com'],
+  npd_process: ['marketing.glimmersisters@gmail.com','theeranath@cosceutic.com','npd@cosceutic.com','npd1@cosceutic.com','sm@cosmanialab.com','supplychain@cosceutic.com','kanticha.rd@cosmanialab.com'],
+  content:     ['marketing.glimmersisters@gmail.com','theeranath@cosceutic.com','cbs@cosceutic.com','content03.cil@gmail.com','content04.cil@gmail.com','content@cosceutic.com','sm@cosmanialab.com','marketing1@cosceutic.com','mkl@cosceutic.com','content.cosmanialab@gmail.com','content2.cosmania@gmail.com'],
 };
 function sbEmail(){ try{ return String((SB_SESSION && SB_SESSION.user && SB_SESSION.user.email) || '').trim().toLowerCase(); }catch(e){ return ''; } }
 function canEditArea(area){ const list=AREA_EDITORS[area]; return !!(sbLoggedIn() && list && list.indexOf(sbEmail())>=0); }
