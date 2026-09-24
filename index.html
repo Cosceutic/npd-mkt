@@ -12584,6 +12584,8 @@ header{ background:#5C86D6 !important; }
 
   // สร้าง view ล่วงหน้า (ให้แท็บกดแล้วเจอ) + โหลดข้อมูลเงียบๆ
   ensureEcomView();
+  // ย้าย modal การ์ด (cc-card-overlay) ออกมาไว้ที่ body — เดิมอยู่ใน #view-content ซึ่งถูกซ่อน (display:none) ตอนดูบอร์ด ecom → modal เลยขนาด 0 ไม่โผล่
+  try{ var _cov=document.getElementById('cc-card-overlay'); if(_cov && _cov.parentElement && _cov.parentElement.id==='view-content'){ document.body.appendChild(_cov); } }catch(e){}
 })();
 </script>
 </body>
