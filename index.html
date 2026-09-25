@@ -12775,7 +12775,7 @@ header{ background:#7BA7E6 !important; }
     owner:(r.owner||'').trim(), graphic:(r.graphic||'').trim(), followers:(r.followers||'').trim(), images:gfxParseImages(r.images),
     submitDate:r.submitDate||'', submitTime:r.submitTime||'', tags:r.tags||'', note:r.note||'',
     checklist:gfxParseChecklist(r.checklist), revisions:gfxParseRevisions(r.revisions),
-    doneAt:r.doneAt||'', updatedAt:r.updatedAt||'', updatedBy:r.updatedBy||'' }; }
+    srcContent:(r.srcContent||'').trim(), doneAt:r.doneAt||'', updatedAt:r.updatedAt||'', updatedBy:r.updatedBy||'' }; }
 
   function gfxPeople(){ return (GFX_PEOPLE && GFX_PEOPLE.length)?GFX_PEOPLE:GFX_PEOPLE_DEFAULT.slice(); }
   function gfxColsFor(p){ var c=GFX_COLS[p]; if(c && c.length) return c; return gfxDefaultCols(); }
@@ -12806,7 +12806,7 @@ header{ background:#7BA7E6 !important; }
       id:card.id, person:card.person, col:card.col, title:card.title, brand:card.brand, owner:card.owner||'', graphic:card.graphic||'', followers:card.followers||'',
       submitDate:card.submitDate||'', submitTime:card.submitTime||'', tags:card.tags||'', note:card.note||'',
       checklist:JSON.stringify(card.checklist||[]), revisions:JSON.stringify(card.revisions||[]), images:JSON.stringify(card.images||[]),
-      doneAt:card.doneAt||'', updatedAt:card.updatedAt||TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') }}); }catch(e){}
+      srcContent:card.srcContent||'', doneAt:card.doneAt||'', updatedAt:card.updatedAt||TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') }}); }catch(e){}
   }
   async function gfxSavePeople(){ lset(PPL_LKEY, gfxPeople()); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'people',row:{k:'people',v:JSON.stringify(gfxPeople()),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
   async function gfxSaveCols(p){ lset(COLS_LKEY, GFX_COLS); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'cols::'+p,row:{k:'cols::'+p,v:JSON.stringify(GFX_COLS[p]||[]),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
@@ -12925,6 +12925,10 @@ header{ background:#7BA7E6 !important; }
         +'.gfx-cal-legend{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;}'
         +'.gfx-cal-leg{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink);}'
         +'.gfx-cal-dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;}'
+        +'.gfx-cal-filt{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px;}'
+        +'.gfx-cfp{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line,#E7ECF5);background:#fff;border-radius:999px;padding:6px 14px;font-size:12.5px;font-weight:600;color:var(--ink,#1F2A36);cursor:pointer;transition:.12s;font-family:inherit;line-height:1.2;}'
+        +'.gfx-cfp:hover{border-color:#c9bff0;}'
+        +'.gfx-cfp b{font-weight:800;}'
         +'@media(max-width:640px){ .gfx-cal-cell{min-height:58px;} .gfx-cal-grid{gap:3px;} }'
         +'@media(max-width:760px){ .gfx-wrap{flex-direction:column;} .gfx-side{width:100%;flex:0 0 auto;flex-direction:row;flex-wrap:wrap;} }';
       document.head.appendChild(st);
@@ -12945,6 +12949,7 @@ header{ background:#7BA7E6 !important; }
   window.renderGraphicTeam=function(){
     ensureGraphicView();
     if(!window.__gfxLoaded){ window.__gfxLoaded=true; loadGfx().then(function(){ renderGraphicTeam(); }).catch(function(){}); }
+    if(!window.__gfxContentLoaded && typeof loadContentCalFromSheet==='function'){ window.__gfxContentLoaded=true; if(!(window.CONTENT_CAL&&window.CONTENT_CAL.length)) loadContentCalFromSheet().then(function(){ renderGraphicTeam(); }).catch(function(){}); }
     var root=document.getElementById('gfx-root'); if(!root) return;
     if(!gfxPerson){ root.innerHTML=gfxLandingHtml(); renderGfxCal(); return; }
     root.innerHTML=gfxWorkspaceHtml();
@@ -12974,12 +12979,20 @@ header{ background:#7BA7E6 !important; }
       +'<div id="gfx-cal-host" style="margin-top:24px;"></div>';
   }
   // ---------- ปฏิทินงานทีม (พล็อตตามวันส่งงาน · สีตามคน) ----------
-  var gfxCalY=null, gfxCalM=null;
+  var gfxCalY=null, gfxCalM=null, gfxCalPerson='';
   function gfxCalInit(){ if(gfxCalY==null){ var d=new Date(); gfxCalY=d.getFullYear(); gfxCalM=d.getMonth(); } }
+  window.gfxCalSetPerson=function(name){ gfxCalPerson=(gfxCalPerson===name)?'':(name||''); renderGfxCal(); };
   function gfxPersonColor(name){ var pal=['#8b7ef8','#ffb454','#26a69a','#EB5FA0','#5B8FF9','#F2994A','#7C5CFC','#3CA5A5','#E9557F','#2D9CDB']; name=String(name||''); var idx=gfxPeople().indexOf(name); if(idx>=0) return pal[idx%pal.length]; var h=0; for(var i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))>>>0; return pal[h%pal.length]; }
   window.gfxCalMove=function(delta){ gfxCalInit(); var m=gfxCalM+delta, y=gfxCalY; while(m<0){m+=12;y--;} while(m>11){m-=12;y++;} gfxCalY=y; gfxCalM=m; renderGfxCal(); };
   window.gfxCalToday=function(){ var d=new Date(); gfxCalY=d.getFullYear(); gfxCalM=d.getMonth(); renderGfxCal(); };
-  function gfxCalCards(Y,M){ var out={}; GFX.forEach(function(x){ if(!x.submitDate) return; var d=new Date(String(x.submitDate).slice(0,10)+'T00:00:00'); if(isNaN(d)||d.getFullYear()!==Y||d.getMonth()!==M) return; var k=d.getDate(); (out[k]=out[k]||[]).push(x); }); return out; }
+  function gfxCalCards(Y,M){
+    var out={}; function add(day,it){ (out[day]=out[day]||[]).push(it); }
+    GFX.forEach(function(x){ if(!x.submitDate) return; var d=new Date(String(x.submitDate).slice(0,10)+'T00:00:00'); if(isNaN(d)||d.getFullYear()!==Y||d.getMonth()!==M) return; add(d.getDate(), {id:x.id, person:x.person, title:x.title, col:x.col, src:'gfx'}); });
+    // งาน Content ที่ PIC = ชื่อกราฟฟิก → พล็อตตามวันลงโพสต์ (สีตามคน · ตรา ✨)
+    var people=gfxPeople(); var cal=(window.CONTENT_CAL||[]);
+    cal.forEach(function(x){ if(!x||x.status==='posted'||x.status==='track'||!x.date) return; var d=new Date(String(x.date).slice(0,10)+'T00:00:00'); if(isNaN(d)||d.getFullYear()!==Y||d.getMonth()!==M) return; var owners=String(x.owner||'').split(/[,\/、]/).map(function(s){return s.trim();}); people.forEach(function(p){ if(owners.indexOf(p)<0) return; if(gfxAdoptedCardId(p,x.id)) return; add(d.getDate(), {id:x.id, person:p, title:x.title, src:'content'}); }); });
+    return out;
+  }
   function renderGfxCal(){
     var host=document.getElementById('gfx-cal-host'); if(!host) return;
     gfxCalInit(); var Y=gfxCalY, M=gfxCalM;
@@ -12988,17 +13001,20 @@ header{ background:#7BA7E6 !important; }
     var byDay=gfxCalCards(Y,M);
     var monthCount={}; var totalMonth=0;
     Object.keys(byDay).forEach(function(k){ byDay[k].forEach(function(x){ monthCount[x.person]=(monthCount[x.person]||0)+1; totalMonth++; }); });
-    var legend=gfxPeople().map(function(p){ var n=monthCount[p]||0; var pctp=totalMonth?Math.round(n/totalMonth*100):0; return '<span class="gfx-cal-leg"><span class="gfx-cal-dot" style="background:'+gfxPersonColor(p)+';opacity:'+(n?1:.35)+'"></span>'+E(p)+' <b>'+n+'</b>'+(n?' <span style="color:var(--ink-soft);font-size:11px;">('+pctp+'%)</span>':'')+'</span>'; }).join('');
-    var header='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">'
+    if(gfxCalPerson && gfxPeople().indexOf(gfxCalPerson)<0) gfxCalPerson='';   // คนถูกลบไปแล้ว → รีเซ็ต
+    var filtPills='<button class="gfx-cfp'+(gfxCalPerson===''?' on':'')+'" style="'+(gfxCalPerson===''?'background:linear-gradient(120deg,#8b7ef8,#a78bfa);border-color:transparent;color:#fff;':'')+'" onclick="gfxCalSetPerson(\'\')">👥 ทั้งทีม <b>'+totalMonth+'</b></button>'
+      +gfxPeople().map(function(p){ var n=monthCount[p]||0; var col=gfxPersonColor(p); var on=(gfxCalPerson===p); var pctp=totalMonth?Math.round(n/totalMonth*100):0; return '<button class="gfx-cfp'+(on?' on':'')+'" style="'+(on?('background:'+col+';border-color:transparent;color:#fff;'):'')+'" onclick="gfxCalSetPerson(\''+AJ(p)+'\')"><span class="gfx-cal-dot" style="background:'+(on?'#fff':col)+';opacity:'+(n||on?1:.4)+'"></span>'+E(p)+' <b>'+n+'</b>'+(n?' <span style="opacity:.72;font-size:11px;">'+pctp+'%</span>':'')+'</button>'; }).join('');
+    var header='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:11px;">'
       +'<div style="font-weight:700;font-size:17px;font-family:\'Anuphan\',\'Prompt\',sans-serif;">📅 ปฏิทินงานทีม</div>'
-      +'<div style="display:inline-flex;gap:5px;align-items:center;">'
-        +'<button class="gfx-tbtn" style="padding:4px 11px;font-size:15px;" onclick="gfxCalMove(-1)">‹</button>'
+      +'<div style="display:inline-flex;gap:5px;align-items:center;margin-left:auto;">'
+        +'<button class="gfx-tbtn" style="padding:4px 12px;font-size:15px;" onclick="gfxCalMove(-1)">‹</button>'
         +'<span style="font-weight:700;min-width:130px;text-align:center;">'+MN[M]+' '+(Y+543)+'</span>'
-        +'<button class="gfx-tbtn" style="padding:4px 11px;font-size:15px;" onclick="gfxCalMove(1)">›</button>'
-        +'<button class="gfx-tbtn" style="padding:4px 11px;" onclick="gfxCalToday()">วันนี้</button>'
+        +'<button class="gfx-tbtn" style="padding:4px 12px;font-size:15px;" onclick="gfxCalMove(1)">›</button>'
+        +'<button class="gfx-tbtn" style="padding:4px 12px;" onclick="gfxCalToday()">วันนี้</button>'
       +'</div>'
-      +'<div class="gfx-cal-legend" style="margin-left:auto;">'+(totalMonth?legend:'<span style="color:var(--ink-soft);font-size:12.5px;">— ยังไม่มีงานที่มีวันส่งในเดือนนี้ —</span>')+'</div>'
-    +'</div>';
+    +'</div>'
+    +'<div style="font-size:12px;color:var(--ink-soft);margin:-2px 0 6px;">เลือกดูงานรายคน · ตัวเลข = จำนวนงานที่มีกำหนดส่งเดือนนี้</div>'
+    +'<div class="gfx-cal-filt">'+filtPills+'</div>';
     var first=new Date(Y,M,1); var startDow=first.getDay(); var daysIn=new Date(Y,M+1,0).getDate(); var prevDays=new Date(Y,M,0).getDate();
     var today=new Date(); var isThisMonth=(today.getFullYear()===Y&&today.getMonth()===M); var td=today.getDate();
     var grid='<div class="gfx-cal-grid">'+DOW.map(function(d){return '<div class="gfx-cal-dow">'+d+'</div>';}).join('');
@@ -13009,8 +13025,8 @@ header{ background:#7BA7E6 !important; }
       var dispNum=inMonth?dayNum:(dayNum<1?prevDays+dayNum:dayNum-daysIn);
       var chips='';
       if(inMonth){
-        var list=byDay[dayNum]||[]; var cap=3;
-        chips=list.slice(0,cap).map(function(x){ return '<span class="gfx-cal-chip" style="background:'+gfxPersonColor(x.person)+'" onclick="openCardModal(\''+AJ(x.id)+'\')" title="'+E(x.person)+' · '+E(x.title||'')+'">'+E(x.person)+': '+E(x.title||'(ไม่มีชื่อ)')+'</span>'; }).join('');
+        var list=(byDay[dayNum]||[]).filter(function(x){ return gfxCalPerson===''||x.person===gfxCalPerson; }); var cap=3;
+        chips=list.slice(0,cap).map(function(x){ var pre=(x.src==='content'?'✨ ':''); var lbl=pre+(gfxCalPerson?E(x.title||'(ไม่มีชื่อ)'):(E(x.person)+': '+E(x.title||'(ไม่มีชื่อ)'))); return '<span class="gfx-cal-chip" style="background:'+gfxPersonColor(x.person)+(x.src==='content'?';box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.65);':'')+'" onclick="openCardModal(\''+AJ(x.id)+'\')" title="'+(x.src==='content'?'งาน Content · ':'')+E(x.person)+' · '+E(x.title||'')+'">'+lbl+'</span>'; }).join('');
         if(list.length>cap){ var iso=Y+'-'+String(M+1).padStart(2,'0')+'-'+String(dayNum).padStart(2,'0'); chips+='<span class="gfx-cal-more" onclick="gfxCalDay(\''+iso+'\')">+'+(list.length-cap)+' เพิ่มเติม</span>'; }
       }
       grid+='<div class="'+cls+'"><span class="gfx-cal-dnum">'+dispNum+'</span>'+chips+'</div>';
@@ -13021,9 +13037,9 @@ header{ background:#7BA7E6 !important; }
   window.gfxCalDay=function(iso){
     ensureGraphicView(); var d=new Date(iso+'T00:00:00'); if(isNaN(d)) return;
     var Y=d.getFullYear(),M=d.getMonth(),day=d.getDate();
-    var list=(gfxCalCards(Y,M)[day]||[]);
+    var list=(gfxCalCards(Y,M)[day]||[]).filter(function(x){ return gfxCalPerson===''||x.person===gfxCalPerson; });
     var MN=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-    var rows=list.map(function(x){ var col=gfxColDef(x.person,x.col)||{title:x.col}; return '<div onclick="document.getElementById(\'gfx-calday-overlay\').classList.remove(\'open\');openCardModal(\''+AJ(x.id)+'\')" style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--line,#eef1f7);cursor:pointer;"><span class="gfx-cal-dot" style="background:'+gfxPersonColor(x.person)+'"></span><div style="flex:1;"><div style="font-weight:600;font-size:13px;">'+E(x.title||'(ไม่มีชื่อ)')+'</div><div style="font-size:11px;color:var(--ink-soft);">🎨 '+E(x.person)+' · '+E(col.title||'')+'</div></div></div>'; }).join('')||'<div style="font-size:12.5px;color:#9aa4b5;padding:8px 0;">— ไม่มีงาน —</div>';
+    var rows=list.map(function(x){ var sub; if(x.src==='content'){ sub='✨ งาน Content · '+E(x.person); } else { var col=gfxColDef(x.person,x.col)||{title:x.col}; sub='🎨 '+E(x.person)+' · '+E(col.title||''); } return '<div onclick="document.getElementById(\'gfx-calday-overlay\').classList.remove(\'open\');openCardModal(\''+AJ(x.id)+'\')" style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--line,#eef1f7);cursor:pointer;"><span class="gfx-cal-dot" style="background:'+gfxPersonColor(x.person)+'"></span><div style="flex:1;"><div style="font-weight:600;font-size:13px;">'+(x.src==='content'?'✨ ':'')+E(x.title||'(ไม่มีชื่อ)')+'</div><div style="font-size:11px;color:var(--ink-soft);">'+sub+'</div></div></div>'; }).join('')||'<div style="font-size:12.5px;color:#9aa4b5;padding:8px 0;">— ไม่มีงาน —</div>';
     document.getElementById('gfx-calday-body').innerHTML=
       '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px 10px;border-bottom:1px solid var(--line,#E7ECF5);"><div style="font-weight:700;font-family:\'Anuphan\',\'Prompt\',sans-serif;">📅 '+day+' '+MN[M]+' '+(Y+543)+' · '+list.length+' งาน</div><span onclick="document.getElementById(\'gfx-calday-overlay\').classList.remove(\'open\')" style="cursor:pointer;font-size:20px;color:#9aa4b5;">✕</span></div>'
       +'<div style="padding:8px 16px 16px;max-height:60vh;overflow:auto;">'+rows+'</div>';
@@ -13076,7 +13092,7 @@ header{ background:#7BA7E6 !important; }
       return '<div class="cc-pl-col" data-status="'+E(c.key)+'"'+(canEd?' ondragover="gfxDragOver(event)" ondragleave="gfxDragLeave(event)" ondrop="gfxDrop(event,\''+AJ(c.key)+'\')"':'')+'>'
         +'<div class="cc-pl-colhead"><span class="cc-pl-dot" style="background:'+(c.color||'#8b7ef8')+'"></span><span class="cc-pl-colname">'+E(c.title)+'</span><span class="cc-pl-colcount">'+listc.length+'</span></div>'
         +tools+'<div class="cc-pl-cards">'+cardsHtml+'</div>'+addC+'</div>';
-    }).join('')+(canEd?'<div class="cc-pl-col" style="background:transparent;border:none;box-shadow:none;min-width:150px;"><button class="cc-pl-add" style="border-style:dashed;height:44px;" onclick="gfxAddCol()">➕ เพิ่มคอลัมน์</button></div>':'')+'</div>';
+    }).join('')+gfxLinkedColHtml(p)+(canEd?'<div class="cc-pl-col" style="background:transparent;border:none;box-shadow:none;min-width:150px;"><button class="cc-pl-add" style="border-style:dashed;height:44px;" onclick="gfxAddCol()">➕ เพิ่มคอลัมน์</button></div>':'')+'</div>';
     main.innerHTML=filterBar+board;
   }
   function gfxCard(x,c){
@@ -13092,14 +13108,57 @@ header{ background:#7BA7E6 !important; }
     var cn=gfxDcnt(x.id); var cmn=cn?'<span class="cc-pl-badge">💬 '+cn+'</span>':'';
     var tags=(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+gfxTagColor(t)+'">'+E(t)+'</span>';}).join(''):'');
     var moveOpts=gfxColsFor(x.person).map(function(k){return '<option value="'+E(k.key)+'"'+(k.key===c.key?' selected':'')+'>'+E(k.title)+'</option>';}).join('');
+    var srcBadge=x.srcContent?'<span title="มาจากงาน Content — คลิกดูต้นทาง" onclick="event.stopPropagation();openCardModal(\''+AJ(x.srcContent)+'\')" style="background:#efeafe;color:#6b46c1;border-radius:5px;padding:0 6px;font-size:9.5px;font-weight:700;cursor:pointer;">✨ Content ↗</span>':'';
     var actions=canEd?('<div class="cc-pl-actions"><button class="cc-pl-send" onclick="event.stopPropagation();gfxEdit(\''+AJ(x.id)+'\')">✏️ แก้</button><button class="cc-pl-send" title="Copy สร้างการ์ดใหม่" onclick="event.stopPropagation();gfxCopy(\''+AJ(x.id)+'\')">📋 Copy</button><select class="cc-pl-move" title="ย้ายคอลัมน์" onclick="event.stopPropagation();" onchange="gfxMove(\''+AJ(x.id)+'\',this.value)">'+moveOpts+'</select><button class="cc-pl-no" onclick="event.stopPropagation();gfxDel(\''+AJ(x.id)+'\')" title="ลบ">🗑️</button></div>'):'';
     return '<div class="cc-pl-card" style="--s:'+(c.color||'#8b7ef8')+'"'+(canEd?' draggable="true" ondragstart="gfxDragStart(event,\''+AJ(x.id)+'\')" ondragend="gfxDragEnd(event)"':'')+'>'
       +'<div class="cc-pl-ct" style="cursor:pointer;" onclick="openCardModal(\''+AJ(x.id)+'\')">'+E(x.title||'(ไม่มีชื่อ)')+'</div>'
       +(tags?'<div class="cc-pl-tags">'+tags+'</div>':'')
-      +((brand||who||flw)?'<div class="cc-pl-meta">'+brand+who+flw+'</div>':'')
+      +((srcBadge||brand||who||flw)?'<div class="cc-pl-meta">'+srcBadge+brand+who+flw+'</div>':'')
       +((dateStr||chkStr||revStr||imgStr||cmn)?'<div class="cc-pl-meta">'+dateStr+chkStr+revStr+imgStr+cmn+'</div>':'')
       +actions+'</div>';
   }
+  // งานจากหน้า Content ที่ PIC = ชื่อกราฟฟิกคนนี้ (ยังไม่โพสต์/ติดตามผล = ยังไม่เสร็จ) → ลิงก์มาโชว์ในบอร์ด+ปฏิทินกราฟฟิก
+  function gfxLinkedContent(person){
+    if(!person) return [];
+    var out=[]; var cal=(window.CONTENT_CAL||[]);
+    cal.forEach(function(x){ if(!x||x.status==='posted'||x.status==='track') return; if(String(x.owner||'').split(/[,\/、]/).map(function(s){return s.trim();}).indexOf(person)<0) return; out.push(x); });
+    out.sort(function(a,b){ return String(a.date||'').localeCompare(String(b.date||'')); });
+    return out;
+  }
+  // การ์ดกราฟฟิกใบที่รับงาน Content id นี้มาแล้ว (ของคนนี้) — ใช้กันรับซ้ำ + ปุ่มลิงก์ไปการ์ด
+  function gfxAdoptedCardId(person,cid){ if(!cid) return ''; var f=GFX.find(function(x){return x.person===person && x.srcContent===cid;}); return f?f.id:''; }
+  // deadline ที่ใกล้ที่สุดของงาน Content (draft รอบแรก หรือ Final) → ใช้เป็นวันส่งงานของการ์ดกราฟฟิก
+  function gfxContentDeadline(post){ var arr=[]; var dr=post.drafts; if(typeof dr==='string'){ try{ dr=JSON.parse(dr); }catch(e){ dr=String(dr).split(';'); } } if(Array.isArray(dr)) dr.forEach(function(d){ d=String(d||'').trim(); if(d) arr.push(d); }); if(post.due) arr.push(post.due); arr=arr.filter(Boolean).sort(); return arr[0]||post.due||post.date||''; }
+  function gfxLinkedCard(x,person){
+    var d=x.date?gfxFmtDDMM(x.date):''; var dl=gfxContentDeadline(x); var dlf=dl?gfxFmtDDMM(dl):'';
+    var brand=x.brand?'<span>'+E(gfxBrandLabel(x.brand))+'</span>':'';
+    var adoptedId=gfxAdoptedCardId(person, x.id); var canEd=gfxCanEdit();
+    var act = adoptedId
+      ? '<div class="cc-pl-meta" style="margin-top:5px;"><span style="color:#1f9d6b;font-weight:700;font-size:11px;">✅ รับเข้าบอร์ดแล้ว</span><button class="cc-pl-send" style="padding:2px 8px;margin-left:auto;" onclick="event.stopPropagation();openCardModal(\''+AJ(adoptedId)+'\')">ไปที่การ์ด →</button></div>'
+      : (canEd?'<div style="margin-top:6px;"><button class="cc-pl-send" style="width:100%;justify-content:center;background:#efeafe;color:#6b46c1;font-weight:700;" onclick="event.stopPropagation();gfxAdoptContent(\''+AJ(x.id)+'\')">📥 รับเข้าบอร์ด</button></div>':'');
+    return '<div class="cc-pl-card" style="--s:#a78bfa;'+(adoptedId?'opacity:.7;':'')+'cursor:pointer;" onclick="openCardModal(\''+AJ(x.id)+'\')">'
+      +'<div class="cc-pl-ct">'+E(x.title||'(ไม่มีชื่อ)')+'</div>'
+      +'<div class="cc-pl-meta"><span style="background:#efeafe;color:#6b46c1;border-radius:5px;padding:0 6px;font-size:10px;font-weight:700;">✨ Content</span>'+brand+'</div>'
+      +((d||dlf)?'<div class="cc-pl-meta">'+(d?'<span title="วันลงโพสต์">📮 '+E(d)+'</span>':'')+(dlf?'<span title="กำหนดส่ง (Draft/Final)">🎯 '+E(dlf)+'</span>':'')+'</div>':'')
+      +act+'</div>';
+  }
+  function gfxLinkedColHtml(person){
+    var linked=gfxLinkedContent(person); if(!linked.length) return '';
+    var adopted=linked.filter(function(x){return gfxAdoptedCardId(person,x.id);}).length;
+    return '<div class="cc-pl-col" style="background:#faf8ff;">'
+      +'<div class="cc-pl-colhead"><span class="cc-pl-dot" style="background:#a78bfa"></span><span class="cc-pl-colname">✨ จาก Content</span><span class="cc-pl-colcount">'+linked.length+'</span></div>'
+      +'<div style="font-size:10.5px;color:var(--ink-soft);margin:1px 0 6px;">งานที่ถูกมอบให้ · กด 📥 เพื่อรับมาทำในบอร์ด'+(adopted?(' · รับแล้ว '+adopted+'/'+linked.length):'')+'</div>'
+      +'<div class="cc-pl-cards">'+linked.map(function(x){return gfxLinkedCard(x,person);}).join('')+'</div></div>';
+  }
+  window.gfxAdoptContent=function(cid){
+    if(!gfxCanEdit()){ TOAST('เข้าสู่ระบบก่อน','info'); return; }
+    var p=gfxPerson; if(!p) return;
+    if(gfxAdoptedCardId(p,cid)){ TOAST('รับงานนี้เข้าบอร์ดแล้ว','info'); return; }
+    var post=(window.CONTENT_CAL||[]).find(function(x){return x.id===cid;}); if(!post){ TOAST('ไม่พบงาน Content','err'); return; }
+    var col=(gfxColsFor(p)[0]||{}).key||'todo';
+    var card={ id:gfxUid('g'), person:p, col:col, title:post.title||'', brand:(typeof normalizeBrand==='function'?normalizeBrand(post.brand):(post.brand||'').trim().toLowerCase()), owner:p, graphic:'', followers:'', submitDate:gfxContentDeadline(post), submitTime:'', tags:post.tags||'', note:post.note||'', checklist:[], revisions:[], images:[], srcContent:cid, doneAt:(gfxIsDoneCol(p,col)?TS():''), updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') };
+    gfxUpsertLocal(card); gfxReRender(); TOAST('รับงานเข้าบอร์ดแล้ว 📥 (อยู่คอลัมน์แรก)','ok'); gfxSyncCard(card);
+  };
   function gfxReRender(){
     var main=document.getElementById('gfx-main'); var winY=window.pageYOffset||document.documentElement.scrollTop||0; var sc={};
     if(main){ [].forEach.call(main.querySelectorAll('.cc-pl-col'),function(col){ var s=col.getAttribute('data-status'); var cd=col.querySelector('.cc-pl-cards'); if(s&&cd) sc[s]=cd.scrollTop; }); }
@@ -13141,7 +13200,7 @@ header{ background:#7BA7E6 !important; }
   window.gfxEdit=function(id){ var c=GFX.find(function(x){return x.id===id;}); if(!c) return; if(!gfxCanEdit()){ TOAST('ดูอย่างเดียว — เข้าสู่ระบบเพื่อแก้','info'); return; } gfxEditId=id; openGfxEditor(c); };
   window.gfxMove=function(id,nk){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||c.col===nk) return; var def=gfxColDef(c.person,nk); if(!def) return; c.col=nk; if(def.done){ if(!c.doneAt) c.doneAt=TS(); } else { c.doneAt=''; } c.updatedAt=TS(); gfxUpsertLocal(c); gfxReRender(); TOAST('ย้ายไป “'+def.title+'” แล้ว','ok'); gfxSyncCard(c); };
   window.gfxDel=function(id){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!confirm('ลบการ์ด “'+((c&&c.title)||'')+'” ?')) return; GFX=GFX.filter(function(x){return x.id!==id;}); gfxSaveCardsLocal(); gfxReRender(); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(cfg.url){ try{ postToSheet({target:'graphiccards',action:'delete',keyValue:id}); }catch(e){} } TOAST('ลบแล้ว','ok'); };
-  window.gfxCopy=function(id){ if(!gfxCanEdit()){ TOAST('เข้าสู่ระบบก่อน','info'); return; } var src=GFX.find(function(x){return x.id===id;}); if(!src) return; var nid=gfxUid('g'); var card=Object.assign({},src,{id:nid,title:(src.title||'')+' (copy)',checklist:(Array.isArray(src.checklist)?src.checklist.map(function(it){return {text:it.text,done:it.done};}):[]),revisions:[],images:(Array.isArray(src.images)?src.images.slice():[]),doneAt:(gfxIsDoneCol(src.person,src.col)?TS():''),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}); gfxUpsertLocal(card); gfxReRender(); TOAST('คัดลอกการ์ดแล้ว 📋','ok'); gfxSyncCard(card); };
+  window.gfxCopy=function(id){ if(!gfxCanEdit()){ TOAST('เข้าสู่ระบบก่อน','info'); return; } var src=GFX.find(function(x){return x.id===id;}); if(!src) return; var nid=gfxUid('g'); var card=Object.assign({},src,{id:nid,title:(src.title||'')+' (copy)',checklist:(Array.isArray(src.checklist)?src.checklist.map(function(it){return {text:it.text,done:it.done};}):[]),revisions:[],images:(Array.isArray(src.images)?src.images.slice():[]),srcContent:'',doneAt:(gfxIsDoneCol(src.person,src.col)?TS():''),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}); gfxUpsertLocal(card); gfxReRender(); TOAST('คัดลอกการ์ดแล้ว 📋','ok'); gfxSyncCard(card); };
 
   function openGfxEditor(c){
     ensureGraphicView();
