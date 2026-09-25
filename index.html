@@ -1504,7 +1504,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   .cc-pl-colcount{font-size:11px;font-weight:700;color:var(--ink-soft);background:#fff;border-radius:999px;padding:1px 8px;}
   .cc-pl-add{border:1px dashed var(--line);background:transparent;border-radius:9px;padding:6px;font-size:12px;color:var(--ink-soft);cursor:pointer;font-weight:600;}
   .cc-pl-add:hover{background:#fff;color:var(--accent-deep);border-color:var(--accent);}
-  .cc-pl-card{background:#fff;border:1px solid var(--line);border-left:4px solid var(--s);border-radius:11px;padding:10px 11px;display:flex;flex-direction:column;gap:6px;box-shadow:0 2px 8px -5px rgba(80,100,150,.5);cursor:grab;}
+  .cc-pl-card{background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 11px;display:flex;flex-direction:column;gap:6px;box-shadow:0 2px 8px -5px rgba(80,100,150,.5);cursor:grab;}
   .cc-pl-card:active{cursor:grabbing;}
   .cc-pl-card.dragging{opacity:.45;}
   .cc-pl-ct{font-family:'Anuphan','Prompt',sans-serif;font-weight:600;font-size:13px;color:var(--ink);line-height:1.35;}
@@ -12935,6 +12935,10 @@ header{ background:#7BA7E6 !important; }
         +'.gfx-navitem.on{background:linear-gradient(120deg,#8b7ef8,#a78bfa);color:#fff;border-color:transparent;}'
         +'.gfx-tbtn{border:1px solid var(--line,#E7ECF5);background:#fff;border-radius:7px;padding:2px 7px;font-size:12px;cursor:pointer;line-height:1.4;}'
         +'.gfx-tbtn:hover{border-color:#b9a9f0;}'
+        +'.gfx-adopt-btn{width:100%;border:none;border-radius:9px;padding:8px 10px;background:linear-gradient(120deg,#8b7ef8,#a78bfa);color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s;font-family:inherit;}'
+        +'.gfx-adopt-btn:hover{filter:brightness(1.05);box-shadow:0 4px 12px -4px rgba(139,126,248,.65);}'
+        +'.gfx-goto-btn{margin-left:auto;border:1px solid #d9d1f7;background:#fff;color:#6b46c1;border-radius:8px;padding:4px 10px;font-size:11.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit;}'
+        +'.gfx-goto-btn:hover{background:#f4f1fe;border-color:#b9a9f0;}'
         +'.gfx-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}'
         +'.gfx-cal-dow{text-align:center;font-size:11px;font-weight:700;color:var(--ink-soft);padding:2px 0;}'
         +'.gfx-cal-cell{min-height:80px;border:1px solid var(--line,#E7ECF5);border-radius:10px;background:#fff;padding:4px 5px;display:flex;flex-direction:column;gap:3px;overflow:hidden;}'
@@ -13156,8 +13160,8 @@ header{ background:#7BA7E6 !important; }
     var brand=x.brand?'<span>'+E(gfxBrandLabel(x.brand))+'</span>':'';
     var adoptedId=gfxAdoptedCardId(person, x.id); var canEd=gfxCanEdit();
     var act = adoptedId
-      ? '<div class="cc-pl-meta" style="margin-top:5px;"><span style="color:#1f9d6b;font-weight:700;font-size:11px;">✅ รับเข้าบอร์ดแล้ว</span><button class="cc-pl-send" style="padding:2px 8px;margin-left:auto;" onclick="event.stopPropagation();openCardModal(\''+AJ(adoptedId)+'\')">ไปที่การ์ด →</button></div>'
-      : (canEd?'<div style="margin-top:6px;"><button class="cc-pl-send" style="width:100%;justify-content:center;background:#efeafe;color:#6b46c1;font-weight:700;" onclick="event.stopPropagation();gfxAdoptContent(\''+AJ(x.id)+'\')">📥 รับเข้าบอร์ด</button></div>':'');
+      ? '<div style="display:flex;align-items:center;gap:8px;margin-top:7px;"><span style="display:inline-flex;align-items:center;gap:4px;color:#1f9d6b;font-weight:700;font-size:11.5px;">✅ รับแล้ว</span><button class="gfx-goto-btn" onclick="event.stopPropagation();openCardModal(\''+AJ(adoptedId)+'\')">ไปที่การ์ด →</button></div>'
+      : (canEd?'<button class="gfx-adopt-btn" style="margin-top:7px;" onclick="event.stopPropagation();gfxAdoptContent(\''+AJ(x.id)+'\')">📥 รับเข้าบอร์ด</button>':'');
     return '<div class="cc-pl-card" style="--s:#a78bfa;'+(adoptedId?'opacity:.7;':'')+'cursor:pointer;" onclick="openCardModal(\''+AJ(x.id)+'\')">'
       +'<div class="cc-pl-ct">'+E(x.title||'(ไม่มีชื่อ)')+'</div>'
       +'<div class="cc-pl-meta"><span style="background:#efeafe;color:#6b46c1;border-radius:5px;padding:0 6px;font-size:10px;font-weight:700;">✨ Content</span>'+brand+'</div>'
