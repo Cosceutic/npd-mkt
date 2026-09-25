@@ -9862,6 +9862,12 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   // รายชื่อทีมทั้งหมด (ใช้เป็นตัวเลือก dropdown PIC ของ Event/Task)
   window.ofcAllNames=function(){ try{ return OFC_ROOMS.reduce(function(a,r){ (r.members||[]).forEach(function(m){ if(m.n) a.push(m.n); }); return a; },[]); }catch(e){ return []; } };
   function ofcTasks(person){
+    // ทีมกราฟฟิก: นับ "งานค้าง" จากบอร์ด Pipeline ของกราฟฟิกเท่านั้น (ไม่รวมงาน Content/อื่นๆ)
+    if(person && person.role==='Graphic'){
+      var g=[]; if(typeof window.gfxBoardTasksFor==='function'){ try{ g=window.gfxBoardTasksFor(person.n)||[]; }catch(e){} }
+      g.sort(function(a,b){ if(a.days==null&&b.days==null) return 0; if(a.days==null) return 1; if(b.days==null) return -1; return a.days-b.days; });
+      return g;
+    }
     const done=/เรียบร้อย|เสร็จ|ได้ของ|ชำระเงินแล้ว|ยกเลิก|ปิดงาน|จบงาน|ส่งมอบ/;
     const logs=(typeof UPDATE_LOGS!=='undefined'&&UPDATE_LOGS)||[];
     // Use the LATEST update per SKU across ALL logs = the item's CURRENT state.
@@ -12843,6 +12849,22 @@ header{ background:#7BA7E6 !important; }
     });
     return out;
   };
+  // งานค้างในบอร์ด Pipeline ของกราฟฟิกคนนี้ (การ์ดที่ person = คนนี้ และยังไม่อยู่คอลัมน์เสร็จแล้ว) → ใช้เป็นจำนวนงานในหน้าออฟฟิศ
+  window.gfxBoardTasksFor=function(nick){
+    if(!nick) return [];
+    var GFX_OFFICE_ALIAS={'ไอซ์GP':'ไอซ์'};
+    var person=GFX_OFFICE_ALIAS[nick]||nick;
+    // โหลดข้อมูลกราฟฟิกเงียบๆ ถ้ายังไม่โหลด แล้วรีเฟรชหน้าออฟฟิศ
+    if(!window.__gfxLoaded){ window.__gfxLoaded=true; loadGfx().then(function(){ var v=document.getElementById('view-office'); if(v&&v.classList.contains('active')&&typeof renderOffice==='function') renderOffice(); }).catch(function(){}); }
+    var out=[]; var today=new Date(); today.setHours(0,0,0,0);
+    gfxCardsOf(person).forEach(function(x){
+      if(gfxIsDoneCol(x.person,x.col)) return;
+      var col=gfxColDef(x.person,x.col)||{title:x.col};
+      var days=null,due=''; if(x.submitDate){ var d=new Date(String(x.submitDate).slice(0,10)+'T00:00:00'); if(!isNaN(d)){ days=Math.round((d-today)/86400000); due=gfxFmtDDMM(x.submitDate); } }
+      out.push({ p:x.title||'(ไม่มีชื่อ)', sku:'', s:'🎨 '+E(col.title||''), due:due, days:days, nd:'' });
+    });
+    return out;
+  };
 
   /* ---------- pill picker (ดรอปดาวแบบกดง่าย) ---------- */
   function gfxPillsInner(fid, baseOpts, valueCsv, multi){
@@ -13077,7 +13099,7 @@ header{ background:#7BA7E6 !important; }
       +(canEd?'<button class="btn-edit primary" onclick="gfxAddIn(\''+AJ(cols[0]?cols[0].key:'')+'\')" style="margin-left:auto;flex:0 0 auto;">➕ เพิ่มการ์ด</button>':'')
       +'</div>';
     var TB='class="gfx-tbtn"';
-    var board='<div class="cc-pl-board">'+cols.map(function(c,idx){
+    var board='<div class="cc-pl-board">'+gfxLinkedColHtml(p)+cols.map(function(c,idx){
       var listc=byCol[c.key]||[];
       var cardsHtml=listc.map(function(x){return gfxCard(x,c);}).join('')||'<div class="cc-pl-empty">— ว่าง —</div>';
       var tools=canEd?('<div style="display:flex;gap:3px;flex-wrap:wrap;margin:1px 0 7px;">'
@@ -13092,7 +13114,7 @@ header{ background:#7BA7E6 !important; }
       return '<div class="cc-pl-col" data-status="'+E(c.key)+'"'+(canEd?' ondragover="gfxDragOver(event)" ondragleave="gfxDragLeave(event)" ondrop="gfxDrop(event,\''+AJ(c.key)+'\')"':'')+'>'
         +'<div class="cc-pl-colhead"><span class="cc-pl-dot" style="background:'+(c.color||'#8b7ef8')+'"></span><span class="cc-pl-colname">'+E(c.title)+'</span><span class="cc-pl-colcount">'+listc.length+'</span></div>'
         +tools+'<div class="cc-pl-cards">'+cardsHtml+'</div>'+addC+'</div>';
-    }).join('')+gfxLinkedColHtml(p)+(canEd?'<div class="cc-pl-col" style="background:transparent;border:none;box-shadow:none;min-width:150px;"><button class="cc-pl-add" style="border-style:dashed;height:44px;" onclick="gfxAddCol()">➕ เพิ่มคอลัมน์</button></div>':'')+'</div>';
+    }).join('')+(canEd?'<div class="cc-pl-col" style="background:transparent;border:none;box-shadow:none;min-width:150px;"><button class="cc-pl-add" style="border-style:dashed;height:44px;" onclick="gfxAddCol()">➕ เพิ่มคอลัมน์</button></div>':'')+'</div>';
     main.innerHTML=filterBar+board;
   }
   function gfxCard(x,c){
