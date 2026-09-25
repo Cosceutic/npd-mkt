@@ -1242,6 +1242,18 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   #view-office .ofc-ed-h{font-family:"Mitr";font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;}
   #view-office .ofc-ed-h span{font-family:"Sarabun";font-weight:600;font-size:10.5px;color:#fff;background:var(--ofc-mint);padding:2px 8px;border-radius:999px;}
   #view-office .ofc-lock{margin-top:8px;font-size:12.5px;color:var(--ofc-ink2);background:#f7f9fc;border:1px solid var(--ofc-line);border-radius:12px;padding:10px 12px;}
+  /* 🚦 สถานะการคุย (ไฟเขียว/เหลือง/แดง) */
+  #view-office .ofc-avpick{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 2px;}
+  #view-office .ofc-avbtn{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--ofc-line);background:#fff;border-radius:12px;padding:7px 12px;font-family:"Sarabun";font-size:13px;font-weight:600;color:var(--ofc-ink);cursor:pointer;transition:.12s;}
+  #view-office .ofc-avbtn:hover{border-color:#c9d2e0;}
+  #view-office .ofc-avbtn.av-green.on{border-color:#2fae66;background:#eafaf0;box-shadow:0 0 0 3px rgba(47,174,102,.16);}
+  #view-office .ofc-avbtn.av-yellow.on{border-color:#e0a41c;background:#fff8e6;box-shadow:0 0 0 3px rgba(224,164,28,.18);}
+  #view-office .ofc-avbtn.av-red.on{border-color:#e0483a;background:#fdeceb;box-shadow:0 0 0 3px rgba(224,72,58,.16);}
+  .ofc-avdot{display:inline-block;width:12px;height:12px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 0 2px #fff, 0 1px 2px rgba(0,0,0,.2);}
+  .ofc-av-green{background:#28c76f;}
+  .ofc-av-yellow{background:#f4b429;}
+  .ofc-av-red{background:#ef4444;}
+  #view-office .ofc-plate .ofc-avdot{position:absolute;top:calc(-5px*var(--sc,1));left:calc(-5px*var(--sc,1));width:calc(13px*var(--sc,1));height:calc(13px*var(--sc,1));z-index:2;}
   #view-office .ofc-emopick{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
   #view-office .ofc-emobtn{width:38px;height:38px;border:1.5px solid var(--ofc-line);background:#fff;border-radius:12px;font-size:19px;cursor:pointer;transition:.12s;display:grid;place-items:center;padding:0;}
   #view-office .ofc-emobtn:hover{border-color:var(--ofc-pink);}
@@ -1797,6 +1809,8 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   .qt-personbar{display:flex;gap:5px;flex-wrap:wrap;padding:0 13px 8px;max-height:74px;overflow:auto;}
   .qt-pchip{font-size:11px;font-weight:600;color:#556;background:#fff;border:1px solid #dde3ea;border-radius:999px;padding:3px 10px;cursor:pointer;white-space:nowrap;}
   .qt-pchip.on{background:#5B8FF9;border-color:#5B8FF9;color:#fff;}
+  .qt-mesel{font-size:11px;font-weight:600;color:#556;background:#fff;border:1px solid #dde3ea;border-radius:999px;padding:3px 8px;cursor:pointer;max-width:120px;font-family:inherit;}
+  .qt-pchip.qt-mine.on{background:#2fae66;border-color:#2fae66;}
   .qt-listwrap{flex:1;overflow:auto;padding:2px 13px 18px;}
   .qt-empty{text-align:center;color:#98a2b0;font-size:12.5px;padding:26px 8px;}
   .qt-item{background:#fff;border:1px solid #e6eaf0;border-radius:11px;padding:9px 11px;margin-bottom:8px;display:flex;gap:9px;align-items:flex-start;box-shadow:0 2px 8px -6px rgba(40,60,100,.4);}
@@ -9783,7 +9797,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     ]},
     {key:'graphic', label:'🎨 Graphic', bg:'Office/graphic.jpg', ar:'1672 / 941', members:[
       {n:'เมษา',  role:'Graphic', av:'Office/av-mesa.jpg',        x:20,y:42, px:20,py:59},
-      {n:'ไอซ์',  role:'Graphic', av:'Office/av-ice-graphic.jpg', x:42,y:52, px:42,py:70},
+      {n:'ไอซ์GP', label:'ไอซ์ GP', role:'Graphic', av:'Office/av-ice-graphic.jpg', x:42,y:52, px:42,py:70},
       {n:'น้ำฝน', role:'Graphic', av:'Office/av-namfon.jpg',      x:53,y:38, px:55,py:55},
       {n:'เหมียว',role:'Graphic', av:'Office/av-meaw.jpg',        x:80,y:44, px:79,py:61}
     ]},
@@ -9797,7 +9811,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     ]},
     {key:'supply', label:'🚚 Supply Chain', bg:'Office/supply.jpg', ar:'1672 / 941', members:[
       {n:'ข้าวหอม', role:'Data Support', av:'Office/av-khaohom.jpg', x:27,y:44, px:27,py:27},
-      {n:'ไอซ์',    role:'Supply Chain', av:'Office/av-ice.jpg',     x:71,y:45, px:71,py:28}
+      {n:'ไอซ์SC', label:'ไอซ์ SC', role:'Supply Chain', av:'Office/av-ice.jpg',     x:71,y:45, px:71,py:28}
     ]},
     {key:'exec', label:'👔 Executive', bg:'Office/exec.jpg', ar:'1672 / 941', members:[
       {n:'คุณกอล์ฟ', role:'Executive', av:'Office/av-golf.jpg', x:42,y:30, px:42,py:15},
@@ -9812,7 +9826,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   const THMON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
   const OFFICE_CSV_URL="https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=OfficeStatus";
-  const OFFICE_HEADERS=['name','emoji','message','updatedBy','updatedAt'];
+  const OFFICE_HEADERS=['name','emoji','message','avail','updatedBy','updatedAt'];
   const OFFICE_LOCAL_KEY='npd_office_status_v1';
   let SHEET_OFFICE={};
   function ofcLocal(){try{return JSON.parse(localStorage.getItem(OFFICE_LOCAL_KEY))||{};}catch(e){return {};}}
@@ -9824,18 +9838,19 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       SHEET_OFFICE={};
       (await sbSelect('office')).forEach(function(r){
         const nm=(r.name||r.Name||'').trim(); if(!nm) return;
-        SHEET_OFFICE[nm]={emoji:(r.emoji||r.Emoji||'').trim(),message:(r.message||r.Message||'').trim(),updatedAt:(r.updatedAt||r.UpdatedAt||'').trim()};
+        SHEET_OFFICE[nm]={emoji:(r.emoji||r.Emoji||'').trim(),message:(r.message||r.Message||'').trim(),avail:(r.avail||r.Avail||'').trim(),updatedAt:(r.updatedAt||r.UpdatedAt||'').trim()};
       });
     }catch(e){}
     const l=ofcLocal(); let ch=false;
-    Object.keys(l).forEach(function(nm){const s=SHEET_OFFICE[nm]; if(s && (s.emoji||'')===(l[nm].emoji||'') && (s.message||'')===(l[nm].message||'')){delete l[nm];ch=true;}});
+    Object.keys(l).forEach(function(nm){const s=SHEET_OFFICE[nm]; if(s && (s.emoji||'')===(l[nm].emoji||'') && (s.message||'')===(l[nm].message||'') && (s.avail||'')===(l[nm].avail||'')){delete l[nm];ch=true;}});
     if(ch) ofcSaveLocal(l);
   };
-  async function ofcSaveStatus(name,emoji,message){
-    const l=ofcLocal(); l[name]={emoji:emoji,message:message,updatedAt:Date.now()}; ofcSaveLocal(l);
+  async function ofcSaveStatus(name,emoji,message,avail){
+    const prev=ofcCustom(name)||{}; if(avail===undefined) avail=prev.avail||'';
+    const l=ofcLocal(); l[name]={emoji:emoji,message:message,avail:avail||'',updatedAt:Date.now()}; ofcSaveLocal(l);
     const cfg=(typeof getWriteConfig==='function')?getWriteConfig():{};
     if(cfg && cfg.url && typeof postToSheet==='function'){
-      try{ await postToSheet({target:'officestatus',sheetName:'OfficeStatus',key:'name',create:OFFICE_HEADERS,action:'upsert',keyValue:name,row:{name:name,emoji:emoji,message:message,updatedBy:name,updatedAt:(typeof todayStr==='function'?todayStr():'')}}); }catch(e){}
+      try{ await postToSheet({target:'officestatus',sheetName:'OfficeStatus',key:'name',create:OFFICE_HEADERS,action:'upsert',keyValue:name,row:{name:name,emoji:emoji,message:message,avail:avail||'',updatedBy:name,updatedAt:(typeof todayStr==='function'?todayStr():'')}}); }catch(e){}
       setTimeout(function(){ loadOfficeStatusFromSheet().then(function(){renderOffice();}); },6000);
       return true;
     }
@@ -9954,8 +9969,10 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
         plate.type='button'; plate.className='ofc-plate '+key; plate.style.left=plateX+'%'; plate.style.top=person.py+'%';
         var cc = tasks.length ? '<span class="ofc-cc '+key+'">'+tasks.length+'</span>' : '<span class="ofc-free">ว่าง</span>';
         var side = plateX>70?'l':'r';
-        var av = face ? '<img class="ofc-pav" src="'+face+'" alt="">' : '<span class="ofc-pav ofc-pav-txt">'+person.n.slice(0,1)+'</span>';
-        plate.innerHTML=av+'<span>'+person.n+'</span>'+cc+'<span class="ofc-fmo '+side+'" style="animation-delay:'+(gi*0.4).toFixed(2)+'s">'+emoji+'</span>';
+        var dispName=person.label||person.n;
+        var av = face ? '<img class="ofc-pav" src="'+face+'" alt="">' : '<span class="ofc-pav ofc-pav-txt">'+dispName.slice(0,1)+'</span>';
+        var availC=(c.avail==='green'||c.avail==='yellow'||c.avail==='red')?('<span class="ofc-avdot ofc-av-'+c.avail+'" title="สถานะการคุย"></span>'):'';
+        plate.innerHTML=av+'<span>'+dispName+'</span>'+availC+cc+'<span class="ofc-fmo '+side+'" style="animation-delay:'+(gi*0.4).toFixed(2)+'s">'+emoji+'</span>';
         // ข้อความสถานะวางฝั่งตรงข้ามกับตัวคน (พ้นหน้า): ป้ายอยู่เหนือหัว→ข้อความขึ้นบน, ป้ายอยู่ใต้คน→ข้อความลงล่าง
         var mDir=(person.py>person.y)?1:-1;
         var mTop=Math.max(5,Math.min(94, person.py + mDir*12));
@@ -10017,9 +10034,11 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var S=ofcState[i]; if(!S) return;
     var p=S.person, st=S.st, tasks=S.tasks, key=S.key, c=ofcCustom(p.n);
     var body=document.getElementById('ofc-sheet-body'); if(!body) return;
-    var headAv=(OFC.faces[p.n])?'<img class="ofc-av" src="'+OFC.faces[p.n]+'" alt="">':'<span class="ofc-av ofc-pav-txt" style="font-size:20px;">'+p.n.slice(0,1)+'</span>';
+    var dispName=p.label||p.n;
+    var pFace=p.av||OFC.faces[p.n];
+    var headAv=pFace?'<img class="ofc-av" src="'+pFace+'" alt="">':'<span class="ofc-av ofc-pav-txt" style="font-size:20px;">'+dispName.slice(0,1)+'</span>';
     var h='<div class="ofc-sh-head '+key+'">'+headAv
-      +'<div><h2>'+p.n+'</h2><div class="ofc-st-txt"><span class="ofc-dot ofc-d-'+key+'"></span>'+st.t+'</div></div>'
+      +'<div><h2>'+dispName+'</h2><div class="ofc-st-txt"><span class="ofc-dot ofc-d-'+key+'"></span>'+st.t+'</div></div>'
       +'<div class="ofc-cnt"><b>'+tasks.length+'</b><span>งานค้าง</span></div></div>';
     if(!tasks.length){
       h+='<div class="ofc-empty"><div class="ofc-em">🎉</div><div style="font-family:Mitr;font-weight:600;margin-top:6px">ไม่มีงานค้างเลย!</div><div style="font-size:12px;margin-top:2px">เคลียร์งานหมดแล้ว เก่งมาก 💖</div></div>';
@@ -10029,7 +10048,13 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var unlocked=true;   // หน้าออฟฟิศแก้ได้เลย ไม่ต้องใส่รหัส
     var curE=c.emoji||st.mood;
     if(unlocked){
-      h+='<div class="ofc-edit"><div class="ofc-ed-h">✏️ ตั้งสถานะ <span>ทุกคนในทีมเห็น</span></div>'
+      h+='<div class="ofc-edit"><div class="ofc-ed-h">🚦 สถานะการคุย <span>บอกเพื่อนว่าคุยได้ไหม</span></div>'
+        +'<div class="ofc-avpick">'
+          +'<button type="button" class="ofc-avbtn av-green'+(c.avail==='green'?' on':'')+'" data-av="green"><span class="ofc-avdot ofc-av-green"></span> คุยได้สบาย</button>'
+          +'<button type="button" class="ofc-avbtn av-yellow'+(c.avail==='yellow'?' on':'')+'" data-av="yellow"><span class="ofc-avdot ofc-av-yellow"></span> พอคุยได้</button>'
+          +'<button type="button" class="ofc-avbtn av-red'+(c.avail==='red'?' on':'')+'" data-av="red"><span class="ofc-avdot ofc-av-red"></span> ไม่ว่างคุย</button>'
+        +'</div>'
+        +'<div class="ofc-ed-h" style="margin-top:9px;">✏️ ตั้งสถานะ <span>ทุกคนในทีมเห็น</span></div>'
         +'<div class="ofc-emopick">'+EMOS.map(function(e){return '<button type="button" class="ofc-emobtn'+(e===curE?' on':'')+'" data-e="'+e+'">'+e+'</button>';}).join('')+'</div>'
         +'<input class="ofc-msgin" id="ofc-msgin" maxlength="40" placeholder="ข้อความสั้นๆ เช่น กำลังลุยงาน! / ไปประชุมนะ" value="'+ofcE(c.message||'')+'">'
         +'<div class="ofc-ed-row"><button type="button" class="ofc-savebtn" id="ofc-savebtn">💾 บันทึก</button><button type="button" class="ofc-clrbtn" id="ofc-clrbtn">ล้าง</button></div></div>';
@@ -10042,17 +10067,19 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     ofcState.forEach(function(q,j){q.pin.classList.toggle('sel',j===i);q.plate.classList.toggle('sel',j===i);});
     if(unlocked){
       var selE=curE;
+      var selAvail=c.avail||'';
       body.querySelectorAll('.ofc-emobtn').forEach(function(b){b.addEventListener('click',function(){selE=b.dataset.e; body.querySelectorAll('.ofc-emobtn').forEach(function(x){x.classList.toggle('on',x===b);});});});
+      body.querySelectorAll('.ofc-avbtn').forEach(function(b){b.addEventListener('click',function(){ selAvail=(selAvail===b.dataset.av)?'':b.dataset.av; body.querySelectorAll('.ofc-avbtn').forEach(function(x){x.classList.toggle('on',x.dataset.av===selAvail);}); });});
       body.querySelector('#ofc-savebtn').addEventListener('click',async function(){
         var m=body.querySelector('#ofc-msgin').value.trim();
-        var shared=await ofcSaveStatus(p.n,selE,m);
+        var shared=await ofcSaveStatus(p.n,selE,m,selAvail);
         closeOfficeSheet();
         ofcReRender();
         ofcToast(shared?'บันทึกแล้ว · ทั้งทีมเห็นเมื่อรีเฟรช 💖':'บันทึกในเครื่องแล้ว · (เข้าสู่ระบบเพื่อแชร์ทีม)');
       });
       body.querySelector('#ofc-clrbtn').addEventListener('click',async function(){
         var l=ofcLocal(); delete l[p.n]; ofcSaveLocal(l);
-        await ofcSaveStatus(p.n,'','');
+        await ofcSaveStatus(p.n,'','','');
         closeOfficeSheet(); ofcReRender(); ofcToast('ล้างสถานะแล้ว');
       });
     }
@@ -11553,6 +11580,9 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   var HEADERS=['id','title','assignee','priority','tags','due','dueTime','product','note','done','createdBy','createdAt','updatedAt'];
   var DEF_TAGS=['ด่วน','ตามงาน','ประชุม','ออกแบบ','ถ่าย','ตัดต่อ','คอนเทนต์','อื่นๆ'];
   var SHEET=[], TASKS=[], qtOpenState=false, qtPerson='all', qtHideDone=false, qtEditId=null;
+  var QT_ME_KEY='npd_qt_me';
+  var qtMe=(function(){ try{ return localStorage.getItem(QT_ME_KEY)||''; }catch(e){ return ''; } })();
+  var qtMineOnly=!!qtMe;   // ถ้าเคยตั้ง “ฉันคือ” ไว้ → เปิดโหมดเฉพาะงานของฉันให้เลย
   var TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   function e2(s){var d=document.createElement('div');d.textContent=(s==null?'':s);return d.innerHTML;}
   function aj(s){ return (typeof attrJs==='function')?attrJs(s):String(s==null?'':s).replace(/'/g,"\\'"); }
@@ -11589,19 +11619,28 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   window.setQtPerson=function(p){ qtPerson=p||'all'; renderQuickTasks(); };
   window.qtToggleHideDone=function(){ qtHideDone=!qtHideDone; renderQuickTasks(); };
 
+  function qtIsMine(t){ return !!qtMe && (t.assignee===qtMe || (t.createdBy||'')===qtMe); }
+  window.qtSetMe=function(v){ qtMe=(v||'').trim(); try{ if(qtMe) localStorage.setItem(QT_ME_KEY,qtMe); else localStorage.removeItem(QT_ME_KEY); }catch(e){} qtMineOnly=!!qtMe; renderQuickTasks(); };
+  window.qtToggleMine=function(){ if(!qtMe){ if(typeof toast==='function') toast('เลือก “ฉันคือ…” ก่อน แล้วจึงกรองงานของฉันได้','info'); return; } qtMineOnly=!qtMineOnly; renderQuickTasks(); };
   window.renderQuickTasks=function(){
-    var pending=TASKS.filter(function(t){return !t.done;}).length;
+    var mineOn=qtMineOnly&&!!qtMe;
+    var pending=TASKS.filter(function(t){return !t.done && (!mineOn||qtIsMine(t));}).length;
     var cb=document.getElementById('qt-count'); if(cb) cb.textContent=pending?String(pending):'';
     if(onOfficeView() && typeof renderOffice==='function'){ try{ renderOffice(); }catch(e){} }   // อัปเดตสถานะในเกมส์ตามงานที่มอบหมาย
     var addBtn=document.getElementById('qt-addbtn'); if(addBtn) addBtn.style.display=canEdit()?'':'none';
     var hint=document.getElementById('qt-lockhint'); if(hint) hint.textContent=canEdit()?'':'🔒 ปลดล็อกทีม/Content เพื่อเพิ่ม-แก้งาน';
     var people=[]; var seen={}; TASKS.forEach(function(t){ if(t.assignee&&!seen[t.assignee]){seen[t.assignee]=1;people.push(t.assignee);} });
     var pb=document.getElementById('qt-personbar');
-    if(pb){ var h='<button class="qt-pchip'+(qtPerson==='all'?' on':'')+'" onclick="setQtPerson(\'all\')">ทั้งหมด</button>';
+    if(pb){
+      var meNames=[]; var seenMe={}; (typeof PIC_NAMES!=='undefined'?PIC_NAMES:[]).concat(people).concat(qtMe?[qtMe]:[]).forEach(function(n){ n=(n||'').trim(); if(n&&!seenMe[n]){seenMe[n]=1;meNames.push(n);} });
+      var meOpts='<option value="">🙋 ฉันคือ…</option>'+meNames.map(function(n){return '<option value="'+e2(n)+'"'+(qtMe===n?' selected':'')+'>'+e2(n)+'</option>';}).join('');
+      var h='<select class="qt-mesel" onchange="qtSetMe(this.value)" title="เลือกว่าคุณคือใคร เพื่อดูเฉพาะงานของคุณ">'+meOpts+'</select>';
+      if(qtMe) h+='<button class="qt-pchip qt-mine'+(qtMineOnly?' on':'')+'" onclick="qtToggleMine()" title="งานที่มอบให้ฉัน + งานที่ฉันสั่ง">🙋 งานของฉัน</button>';
+      h+='<button class="qt-pchip'+(qtPerson==='all'?' on':'')+'" onclick="setQtPerson(\'all\')">ทั้งหมด</button>';
       h+='<button class="qt-pchip'+(qtHideDone?' on':'')+'" onclick="qtToggleHideDone()">'+(qtHideDone?'☑ ซ่อนเสร็จ':'ซ่อนที่เสร็จ')+'</button>';
       people.forEach(function(p){ h+='<button class="qt-pchip'+(qtPerson===p?' on':'')+'" onclick="setQtPerson(\''+aj(p)+'\')">👤 '+e2(p)+'</button>'; });
       pb.innerHTML=h; }
-    var items=TASKS.filter(function(t){ if(qtPerson!=='all'&&t.assignee!==qtPerson) return false; if(qtHideDone&&t.done) return false; return true; });
+    var items=TASKS.filter(function(t){ if(mineOn&&!qtIsMine(t)) return false; if(qtPerson!=='all'&&t.assignee!==qtPerson) return false; if(qtHideDone&&t.done) return false; return true; });
     items.sort(function(a,b){ if(!!a.done!==!!b.done) return a.done?1:-1; var la=qtIsLate(a),lb=qtIsLate(b); if(la!==lb) return la?-1:1; if((b.priority||0)!==(a.priority||0)) return (b.priority||0)-(a.priority||0); return (a.due||'9999').localeCompare(b.due||'9999'); });
     var host=document.getElementById('qt-list'); if(!host) return;
     if(!items.length){ host.innerHTML='<div class="qt-empty">ยังไม่มีงาน'+(canEdit()?' — กด “➕ เพิ่มงานใหม่”':' · กด 🔓 ปลดล็อกเพื่อเพิ่ม')+'</div>'; return; }
@@ -11652,7 +11691,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var t={ id: qtEditId || ('qt'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
       title:title, assignee:g('qt-f-assignee'), priority:parseInt(g('qt-f-priority')||'2',10)||2, tags:g('qt-f-tags'),
       due:g('qt-f-due'), dueTime:g('qt-f-duetime'), product:g('qt-f-product'), note:g('qt-f-note'),
-      done:prev?prev.done:'', createdBy:'', createdAt:(prev&&prev.createdAt)||(typeof todayStr==='function'?todayStr():''), updatedAt:(typeof todayStr==='function'?todayStr():'') };
+      done:prev?prev.done:'', createdBy:((prev&&prev.createdBy)||qtMe||''), createdAt:(prev&&prev.createdAt)||(typeof todayStr==='function'?todayStr():''), updatedAt:(typeof todayStr==='function'?todayStr():'') };
     var loc=qLocal(); var i=loc.findIndex(function(z){return z.id===t.id;}); if(i>-1) loc[i]=t; else loc.push(t); qSave(loc);
     rebuild(); renderQuickTasks(); closeQtEditor(); if(typeof toast==='function') toast(qtEditId?'แก้ไขงานแล้ว':'เพิ่มงานแล้ว','ok'); qSync(t,'upsert');
   };
@@ -12758,8 +12797,11 @@ header{ background:#7BA7E6 !important; }
   // งานกราฟฟิกของคนชื่อ nick (เป็น PIC หรือ ผู้ติดตาม) ที่ยังไม่อยู่คอลัมน์ "เสร็จแล้ว" → ป้อนให้หน้าออฟฟิศ (ofcTasks)
   window.gfxOfficeTasks=function(nick){
     if(!nick) return [];
+    // ห้องออฟฟิศ 🎨 Graphic ใช้ชื่อ "ไอซ์GP" (กันซ้ำกับไอซ์ SC) แต่บอร์ดกราฟฟิกเก็บชื่อว่า "ไอซ์" → เทียบให้ตรงกัน
+    var GFX_OFFICE_ALIAS={'ไอซ์GP':'ไอซ์'};
+    var match=GFX_OFFICE_ALIAS[nick]||nick;
     var out=[]; var today=new Date(); today.setHours(0,0,0,0);
-    var has=function(csv){ return String(csv||'').split(/[,\/、]/).map(function(s){return s.trim();}).indexOf(nick)>=0; };
+    var has=function(csv){ return String(csv||'').split(/[,\/、]/).map(function(s){return s.trim();}).indexOf(match)>=0; };
     GFX.forEach(function(x){
       if(gfxIsDoneCol(x.person,x.col)) return;
       var isOwner=has(x.owner), isFlw=has(x.followers);
