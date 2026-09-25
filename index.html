@@ -831,6 +831,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
       <div class="tab" data-view="office">🏢 ออฟฟิศ</div>
       <div class="tab" data-view="content">✨ Content Creator</div>
       <div class="tab" data-view="ecom">🛒 E-Commerce Content</div>
+      <div class="tab" data-view="graphic">🎨 Graphic Team</div>
     </nav>
     <div class="updated-badge" id="updated-badge"></div>
   </div>
@@ -1633,7 +1634,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   #view-content .cc-card{border-radius:16px;transition:box-shadow .18s,transform .18s;}
   #view-content .cc-card:hover{box-shadow:0 14px 30px -18px rgba(80,100,150,.75);transform:translateY(-2px);}
   /* ===== tags · followers · pick-chips · bigger images · card preview ===== */
-  #view-content .cc-tag,#cc-card-body .cc-tag,#view-ecom .cc-tag{font-size:10.5px;font-weight:700;color:#fff;background:var(--tg);border-radius:6px;padding:1px 9px;white-space:nowrap;}
+  #view-content .cc-tag,#cc-card-body .cc-tag,#view-ecom .cc-tag,#view-graphic .cc-tag{font-size:10.5px;font-weight:700;color:#fff;background:var(--tg);border-radius:6px;padding:1px 9px;white-space:nowrap;}
   #view-content .cc-flw,#cc-card-body .cc-flw{font-size:11px;font-weight:600;color:#2456B0;background:#EAF1FF;border-radius:999px;padding:2px 9px;white-space:nowrap;margin-right:4px;display:inline-block;}
   #cc-editor-body .cc-pick{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;}
   #cc-editor-body .cc-pick-chip{font-size:11px;font-weight:700;color:#fff;background:var(--tg,#888);border:none;border-radius:999px;padding:3px 10px;cursor:pointer;opacity:.9;transition:opacity .12s,transform .1s;}
@@ -2775,6 +2776,7 @@ document.querySelectorAll('#nav .tab').forEach(t=>{
     if(t.dataset.view==='office'){ if(typeof renderOffice==='function') renderOffice(); }
     if(t.dataset.view==='content'){ if(typeof switchContentSub==='function') switchContentSub(); else if(typeof renderContentCreator==='function') renderContentCreator(); }
     if(t.dataset.view==='ecom'){ if(typeof renderEcomBoard==='function') renderEcomBoard(); }
+    if(t.dataset.view==='graphic'){ if(typeof renderGraphicTeam==='function') renderGraphicTeam(); }
     if(typeof qtSyncVisibility==='function') qtSyncVisibility();   // To-Do โชว์เฉพาะหน้าออฟฟิศ
   });
 });
@@ -8428,8 +8430,8 @@ function deleteProduct(sku){
 async function postToSheet(payload){
   await sbInit();
   if(!sbLoggedIn()) return { ok:false, error:'ยังไม่ได้เข้าสู่ระบบ (กดปุ่มเข้าสู่ระบบ มุมขวาล่าง)' };
-  const TBL = { products:'products', updates:'updates', task:'tasks', notice:'notice', officestatus:'office', events:'events', banners:'banners', briefs:'briefs', contentideas:'content_ideas', contentcal:'content_calendar', contentcomments:'content_comments', contentmusthave:'content_musthave', brandidentity:'brand_identity', hashtags:'hashtags', quicktasks:'quick_tasks', productstage:'product_stage', roadmapyear:'roadmap_year', ecom:'ecom_content' };
-  const KEY = { products:'sku', notice:'Message', task:'รายละเอียดงาน', officestatus:(payload.key||'name'), events:'id', banners:'id', briefs:'nprNo', contentideas:'id', contentcal:'id', contentcomments:'id', contentmusthave:'id', brandidentity:'id', hashtags:'id', quicktasks:'id', productstage:'sku', roadmapyear:'id', ecom:'id' };
+  const TBL = { products:'products', updates:'updates', task:'tasks', notice:'notice', officestatus:'office', events:'events', banners:'banners', briefs:'briefs', contentideas:'content_ideas', contentcal:'content_calendar', contentcomments:'content_comments', contentmusthave:'content_musthave', brandidentity:'brand_identity', hashtags:'hashtags', quicktasks:'quick_tasks', productstage:'product_stage', roadmapyear:'roadmap_year', ecom:'ecom_content', graphiccards:'graphic_cards', graphicconfig:'graphic_config' };
+  const KEY = { products:'sku', notice:'Message', task:'รายละเอียดงาน', officestatus:(payload.key||'name'), events:'id', banners:'id', briefs:'nprNo', contentideas:'id', contentcal:'id', contentcomments:'id', contentmusthave:'id', brandidentity:'id', hashtags:'id', quicktasks:'id', productstage:'sku', roadmapyear:'id', ecom:'id', graphiccards:'id', graphicconfig:'k' };
   const table = TBL[payload.target];
   if(!table) return { ok:false, error:'unknown target: '+payload.target };
   const key = KEY[payload.target];
@@ -10931,7 +10933,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   window.renderCardModal=function(){
     var id=cmModalCard; if(!id) return;
     var x=(window.CONTENT_CAL||[]).find(function(c){return c.id===id;});
-    if(!x){ if(typeof window.ecomGetCard==='function' && window.ecomGetCard(id)){ ecomRenderCardModal(id); return; } closeCardModal(); return; }
+    if(!x){ if(typeof window.ecomGetCard==='function' && window.ecomGetCard(id)){ ecomRenderCardModal(id); return; } if(typeof window.gfxGetCard==='function' && window.gfxGetCard(id)){ gfxRenderCardModal(id); return; } closeCardModal(); return; }
     var st=CAL_STATUS[x.status]||CAL_STATUS.brief;
     var d=x.date?new Date(x.date+'T00:00:00'):null;
     var dstr=(d&&!isNaN(d))?(TH_WDF[d.getDay()]+' '+d.getDate()+' '+TH_MF[d.getMonth()]+' '+d.getFullYear()+(x.time?' · '+e2(x.time):'')):'';
@@ -10995,6 +10997,16 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function ecomRenderCardModal(id){
     var titleEl=document.getElementById('cc-card-title'); if(titleEl) titleEl.textContent=(typeof window.ecomCardTitle==='function'?window.ecomCardTitle(id):'การ์ด');
     var detail=(typeof window.ecomCardDetailHtml==='function')?window.ecomCardDetailHtml(id):'';
+    document.getElementById('cc-card-body').innerHTML =
+      '<div class="cc-card-2col">'
+      +'<div class="cc-card-left"><div class="cc-col-h">📋 รายละเอียดงาน</div>'+detail+'</div>'
+      +'<div class="cc-card-right">'+cmCommentPaneHtml()+'</div>'
+      +'</div>';
+  }
+  // การ์ด Graphic Team: ใช้ modal เดียวกัน (ซ้าย = รายละเอียดจากโมดูล graphic, ขวา = คอมเมนต์ร่วม)
+  function gfxRenderCardModal(id){
+    var titleEl=document.getElementById('cc-card-title'); if(titleEl) titleEl.textContent=(typeof window.gfxCardTitle==='function'?window.gfxCardTitle(id):'การ์ด');
+    var detail=(typeof window.gfxCardDetailHtml==='function')?window.gfxCardDetailHtml(id):'';
     document.getElementById('cc-card-body').innerHTML =
       '<div class="cc-card-2col">'
       +'<div class="cc-card-left"><div class="cc-col-h">📋 รายละเอียดงาน</div>'+detail+'</div>'
@@ -12643,6 +12655,406 @@ header{ background:#5C86D6 !important; }
   ensureEcomView();
   // ย้าย modal การ์ด (cc-card-overlay) ออกมาไว้ที่ body — เดิมอยู่ใน #view-content ซึ่งถูกซ่อน (display:none) ตอนดูบอร์ด ecom → modal เลยขนาด 0 ไม่โผล่
   try{ var _cov=document.getElementById('cc-card-overlay'); if(_cov && _cov.parentElement && _cov.parentElement.id==='view-content'){ document.body.appendChild(_cov); } }catch(e){}
+})();
+</script>
+<script>
+/* ============================================================
+   🎨 Graphic Team — บอร์ด Kanban แยกรายคน + คอลัมน์ปรับเอง + แดชบอร์ด
+   ข้อมูลแยก: ตาราง graphic_cards (การ์ด) + graphic_config (รายชื่อคน + คอลัมน์ของแต่ละคน)
+   ทุกคนที่ล็อกอินแก้ไขได้ · การ์ดมี เช็คลิสต์/รอบแก้ไข/คอมเมนต์ (ใช้ระบบเดียวกับ Content)
+   ============================================================ */
+(function(){
+  var E=(typeof esc==='function')?esc:function(s){var d=document.createElement('div');d.textContent=(s==null?'':s);return d.innerHTML;};
+  var AJ=(typeof attrJs==='function')?attrJs:function(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/\n/g,' ');};
+  var TS=function(){ return (typeof todayStr==='function')?todayStr():new Date().toISOString().slice(0,10); };
+  var TOAST=function(m,k){ if(typeof toast==='function') toast(m,k); };
+  var GFX_PEOPLE_DEFAULT=['ไอซ์','เมษา','น้ำฝน','เหมียว'];
+  var GFX_GRAPHIC_PRESET=['ไอซ์','เมษา','น้ำฝน','เหมียว'];
+  var GFX_PIC_PRESET=['เลิฟ','สเปียร์','เอ','หรา'];
+  var GFX_BRANDS=[['all','ทั้งหมด'],['godmami','Godmami'],['glimmer','Glimmer Sisters']];
+  var COL_PALETTE=['#8b7ef8','#ffb454','#a78bfa','#26a69a','#5B8FF9','#EB5FA0','#F2994A','#3CA5A5','#7C5CFC','#E9557F'];
+  var GFX_TAGS_KEY='npd_gfx_tags';
+  var CARD_LKEY='npd_gfx_cards_v1', PPL_LKEY='npd_gfx_people_v1', COLS_LKEY='npd_gfx_cols_v1';
+  var GFX=[], GFX_PEOPLE=null, GFX_COLS={};
+  var gfxPerson=null, gfxSub='board';
+  var gfxFilterBrand='all', gfxFilterGraphic='', gfxFilterTag='';
+  var gfxEditId=null, gfxDragId=null, gfxPresetCol=null;
+
+  function gfxCanEdit(){ return (typeof sbLoggedIn==='function' && sbLoggedIn()); }
+  function gfxDefaultCols(){ return [
+    {key:'todo',title:'📋 To Do',color:'#8b7ef8',done:false},
+    {key:'doing',title:'🎬 กำลังทำ',color:'#ffb454',done:false},
+    {key:'review',title:'👀 รอตรวจ',color:'#a78bfa',done:false},
+    {key:'done',title:'✅ เสร็จแล้ว',color:'#26a69a',done:true}
+  ]; }
+  function gfxUid(p){ return (p||'c')+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
+  function lget(k,def){ try{ var v=JSON.parse(localStorage.getItem(k)); return (v==null?def:v); }catch(e){ return def; } }
+  function lset(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  function gfxSaveCardsLocal(){ lset(CARD_LKEY, GFX); }
+
+  function gfxParseArr(s,mapper){ if(Array.isArray(s)) return s.map(mapper).filter(Boolean); try{ var a=JSON.parse(s||'[]'); return Array.isArray(a)?a.map(mapper).filter(Boolean):[]; }catch(e){ return []; } }
+  function gfxParseChecklist(s){ return gfxParseArr(s,function(it){ var t=String(it&&it.text||'').trim(); return t?{text:t,done:!!(it&&it.done)}:null; }); }
+  function gfxParseRevisions(s){ return gfxParseArr(s,function(it){ if(!it) return null; if(typeof it==='string'){ var r0=it.trim(); return r0?{ts:'',reason:r0,by:''}:null; } var r=String(it.reason||'').trim(); return r?{ts:it.ts||'',reason:r,by:it.by||''}:null; }); }
+  function normGfx(r){ return {
+    id:(r.id||'').trim(), person:(r.person||'').trim(), col:(r.col||'').trim(),
+    title:r.title||'', brand:(typeof normalizeBrand==='function'?normalizeBrand(r.brand):(r.brand||'').trim().toLowerCase()),
+    owner:(r.owner||'').trim(), graphic:(r.graphic||'').trim(),
+    submitDate:r.submitDate||'', submitTime:r.submitTime||'', tags:r.tags||'', note:r.note||'',
+    checklist:gfxParseChecklist(r.checklist), revisions:gfxParseRevisions(r.revisions),
+    doneAt:r.doneAt||'', updatedAt:r.updatedAt||'', updatedBy:r.updatedBy||'' }; }
+
+  function gfxPeople(){ return (GFX_PEOPLE && GFX_PEOPLE.length)?GFX_PEOPLE:GFX_PEOPLE_DEFAULT.slice(); }
+  function gfxColsFor(p){ var c=GFX_COLS[p]; if(c && c.length) return c; return gfxDefaultCols(); }
+  function gfxEnsureCols(p){ if(!GFX_COLS[p]||!GFX_COLS[p].length) GFX_COLS[p]=gfxDefaultCols(); return GFX_COLS[p]; }
+  function gfxColDef(p,key){ return gfxColsFor(p).find(function(c){return c.key===key;})||null; }
+  function gfxIsDoneCol(p,key){ var d=gfxColDef(p,key); return !!(d&&d.done); }
+  function gfxCardsOf(p){ return GFX.filter(function(x){return x.person===p;}); }
+
+  async function loadGfx(){
+    var cache=lget(CARD_LKEY,[]);
+    try{
+      var rows=(await sbSelect('graphic_cards')).map(normGfx).filter(function(r){return r.id;});
+      var byId={}; rows.forEach(function(r){byId[r.id]=r;});
+      cache.forEach(function(c){ if(c.id && !byId[c.id]) rows.push(normGfx(c)); });
+      GFX=rows; gfxSaveCardsLocal();
+    }catch(e){ GFX=cache.map(normGfx); }
+    try{
+      var cfg=await sbSelect('graphic_config'); var ppl=null, cols={};
+      cfg.forEach(function(row){ var k=row.k||''; if(k==='people'){ try{ ppl=JSON.parse(row.v||'[]'); }catch(e){} } else if(k.indexOf('cols::')===0){ try{ cols[k.slice(6)]=JSON.parse(row.v||'[]'); }catch(e){} } });
+      if(ppl && ppl.length){ GFX_PEOPLE=ppl; lset(PPL_LKEY,ppl); } else if(!GFX_PEOPLE){ GFX_PEOPLE=lget(PPL_LKEY,null); }
+      GFX_COLS=cols; lset(COLS_LKEY,cols);
+    }catch(e){ if(!GFX_PEOPLE) GFX_PEOPLE=lget(PPL_LKEY,null); GFX_COLS=lget(COLS_LKEY,{})||{}; }
+    return GFX;
+  }
+  async function gfxSyncCard(card){
+    var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
+    try{ await postToSheet({target:'graphiccards',action:'upsert',keyValue:card.id,row:{
+      id:card.id, person:card.person, col:card.col, title:card.title, brand:card.brand, owner:card.owner||'', graphic:card.graphic||'',
+      submitDate:card.submitDate||'', submitTime:card.submitTime||'', tags:card.tags||'', note:card.note||'',
+      checklist:JSON.stringify(card.checklist||[]), revisions:JSON.stringify(card.revisions||[]),
+      doneAt:card.doneAt||'', updatedAt:card.updatedAt||TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') }}); }catch(e){}
+  }
+  async function gfxSavePeople(){ lset(PPL_LKEY, gfxPeople()); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'people',row:{k:'people',v:JSON.stringify(gfxPeople()),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
+  async function gfxSaveCols(p){ lset(COLS_LKEY, GFX_COLS); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'cols::'+p,row:{k:'cols::'+p,v:JSON.stringify(GFX_COLS[p]||[]),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
+  function gfxUpsertLocal(card){ var i=GFX.findIndex(function(x){return x.id===card.id;}); if(i>-1) GFX[i]=card; else GFX.push(card); gfxSaveCardsLocal(); }
+
+  function gfxTagColor(t){ t=(t||'').toLowerCase().trim(); if(/ด่วน|urgent|เร่ง|รีบ/.test(t)) return '#EF5350'; var pal=['#5B8FF9','#9B7EF8','#3CA5A5','#F2994A','#2D9CDB','#EB5FA0','#26A69A','#7C5CFC','#E9557F','#8E7CC3']; var h=0; for(var i=0;i<t.length;i++) h=(h*31+t.charCodeAt(i))>>>0; return pal[h%pal.length]; }
+  function gfxBrandLabel(k){ var f=GFX_BRANDS.find(function(b){return b[0]===k;}); if(f) return f[1]; return (typeof brandDisplayLabel==='function')?brandDisplayLabel(k):k; }
+  function gfxDcnt(id){ try{ return (typeof commentCount==='function')?commentCount(id):0; }catch(e){ return 0; } }
+  function gfxFmtDDMM(iso){ if(!iso) return ''; var d=new Date(String(iso).slice(0,10)+'T00:00:00'); if(isNaN(d)) return iso; var M=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']; return d.getDate()+' '+M[d.getMonth()]; }
+  function gfxDaysSince(iso){ if(!iso) return 0; var d=new Date(String(iso).slice(0,10)+'T00:00:00'); if(isNaN(d)) return 0; var now=new Date(); now.setHours(0,0,0,0); return Math.floor((now-d)/86400000); }
+  function gfxIsOverdue(x){ if(!x.submitDate) return false; if(gfxIsDoneCol(x.person,x.col)) return false; return gfxDaysSince(x.submitDate)>0; }
+  function gfxOwnerNames(){ var s={}; GFX_PIC_PRESET.forEach(function(n){s[n]=1;}); GFX.forEach(function(x){ String(x.owner||'').split(/[,\/、]/).forEach(function(p){p=p.trim(); if(p) s[p]=1;}); }); return Object.keys(s); }
+  function gfxGraphicNames(){ var s={}; GFX_GRAPHIC_PRESET.forEach(function(n){s[n]=1;}); gfxPeople().forEach(function(n){s[n]=1;}); GFX.forEach(function(x){ String(x.graphic||'').split(/[,\/、]/).forEach(function(p){p=p.trim(); if(p) s[p]=1;}); }); return Object.keys(s); }
+  function gfxTagList(){ var s={}; GFX.forEach(function(x){ String(x.tags||'').split(',').forEach(function(t){t=t.trim(); if(t) s[t]=1;}); }); try{ (JSON.parse(localStorage.getItem(GFX_TAGS_KEY))||[]).forEach(function(t){ if(t) s[t]=1; }); }catch(e){} return Object.keys(s); }
+  function gfxRememberTags(str){ if(!str) return; var arr=[]; try{ arr=JSON.parse(localStorage.getItem(GFX_TAGS_KEY))||[]; }catch(e){} String(str).split(',').forEach(function(t){t=t.trim(); if(t&&arr.indexOf(t)<0) arr.push(t);}); try{ localStorage.setItem(GFX_TAGS_KEY,JSON.stringify(arr)); }catch(e){} }
+
+  window.gfxGetCard=function(id){ return GFX.find(function(x){return x.id===id;})||null; };
+  window.gfxCardTitle=function(id){ var c=window.gfxGetCard(id); return c?(c.title||'การ์ด'):'การ์ด'; };
+
+  /* ---------- view scaffolding ---------- */
+  function ensureGraphicView(){
+    if(!document.getElementById('gfx-css')){
+      var st=document.createElement('style'); st.id='gfx-css';
+      st.textContent=''
+        +'.gfx-people-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-top:14px;}'
+        +'.gfx-person{background:#fff;border:1px solid var(--line,#E7ECF5);border-radius:16px;padding:16px;cursor:pointer;transition:.15s;box-shadow:var(--shadow-xs,0 1px 2px rgba(0,0,0,.04));text-align:left;font-family:inherit;}'
+        +'.gfx-person:hover{box-shadow:var(--shadow-md,0 6px 18px rgba(0,0,0,.08));transform:translateY(-2px);border-color:#d9c6f0;}'
+        +'.gfx-person-add{display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--ink-soft);border-style:dashed;background:#faf8ff;font-size:15px;min-height:132px;}'
+        +'.gfx-wrap{display:flex;gap:16px;align-items:flex-start;margin-top:10px;}'
+        +'.gfx-side{width:186px;flex:0 0 186px;display:flex;flex-direction:column;gap:6px;}'
+        +'.gfx-navitem{text-align:left;border:1px solid var(--line,#E7ECF5);background:#fff;border-radius:10px;padding:9px 12px;font-weight:600;color:var(--ink-soft);cursor:pointer;font-family:"Anuphan","Prompt",sans-serif;font-size:13.5px;}'
+        +'.gfx-navitem.on{background:linear-gradient(120deg,#8b7ef8,#a78bfa);color:#fff;border-color:transparent;}'
+        +'.gfx-tbtn{border:1px solid var(--line,#E7ECF5);background:#fff;border-radius:7px;padding:2px 7px;font-size:12px;cursor:pointer;line-height:1.4;}'
+        +'.gfx-tbtn:hover{border-color:#b9a9f0;}'
+        +'@media(max-width:760px){ .gfx-wrap{flex-direction:column;} .gfx-side{width:100%;flex:0 0 auto;flex-direction:row;flex-wrap:wrap;} }';
+      document.head.appendChild(st);
+    }
+    var v=document.getElementById('view-graphic');
+    if(!v){ var host=document.getElementById('view-ecom')||document.getElementById('view-content'); v=document.createElement('div'); v.className='view'; v.id='view-graphic'; if(host&&host.parentNode) host.parentNode.insertBefore(v, host.nextSibling); else document.body.appendChild(v); }
+    if(!v.dataset.built){ v.dataset.built='1'; v.innerHTML='<div id="gfx-root"></div>';
+      var ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='gfx-editor-overlay'; ov.style.zIndex='80';
+      ov.addEventListener('click',function(e){ if(e.target===ov) ov.classList.remove('open'); });
+      ov.innerHTML='<div class="modal-box" style="max-width:520px;width:94vw;"><div id="gfx-editor-body"></div></div>';
+      document.body.appendChild(ov);
+    }
+  }
+  window.renderGraphicTeam=function(){
+    ensureGraphicView();
+    if(!window.__gfxLoaded){ window.__gfxLoaded=true; loadGfx().then(function(){ renderGraphicTeam(); }).catch(function(){}); }
+    var root=document.getElementById('gfx-root'); if(!root) return;
+    if(!gfxPerson){ root.innerHTML=gfxLandingHtml(); return; }
+    root.innerHTML=gfxWorkspaceHtml();
+    gfxRefreshView();
+  };
+  function gfxRefreshView(){ if(!gfxPerson) return; if(gfxSub==='dashboard'){ renderGfxDashboard(); } else { renderGfxBoard(); } }
+
+  function gfxLandingHtml(){
+    var canEd=gfxCanEdit();
+    var cards=gfxPeople().map(function(name){
+      var list=gfxCardsOf(name); var total=list.length;
+      var doneN=list.filter(function(x){return gfxIsDoneCol(x.person,x.col);}).length;
+      var overdue=list.filter(gfxIsOverdue).length;
+      var pct=total?Math.round(doneN/total*100):0;
+      var del=canEd?'<button title="ลบคนนี้" onclick="event.stopPropagation();gfxDelPerson(\''+AJ(name)+'\')" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:13px;color:#c4485f;">🗑️</button>':'';
+      return '<div class="gfx-person" onclick="gfxOpenPerson(\''+AJ(name)+'\')">'
+        +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;"><span style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#8b7ef8,#a78bfa);display:inline-flex;align-items:center;justify-content:center;font-size:18px;">🎨</span><span style="font-weight:700;font-size:16px;font-family:\'Anuphan\',\'Prompt\',sans-serif;">'+E(name)+'</span>'+del+'</div>'
+        +'<div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-soft);margin-bottom:5px;"><span>🗂️ '+total+' งาน</span>'+(overdue?'<span style="color:#e53935;font-weight:700;">⚠️ ล่าช้า '+overdue+'</span>':'<span style="color:#26a69a;">✓ ตรงเวลา</span>')+'</div>'
+        +'<div style="height:9px;background:#eef1f7;border-radius:6px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#8b7ef8,#26a69a);"></div></div>'
+        +'<div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">เสร็จแล้ว '+pct+'% ('+doneN+'/'+total+')</div>'
+        +'</div>';
+    }).join('');
+    var addBtn=canEd?'<button class="gfx-person gfx-person-add" onclick="gfxAddPerson()">➕ เพิ่มคน</button>':'';
+    return '<h2 style="font-family:\'Anuphan\',\'Prompt\',sans-serif;font-weight:700;font-size:22px;margin:0 0 4px;color:var(--ink);">🎨 Graphic Team</h2>'
+      +'<p class="section-sub" style="margin-top:0;">เลือกกราฟฟิกเพื่อเข้าดูบอร์ดงานของแต่ละคน — แต่ละคนมีคอลัมน์และการ์ดแยกกัน</p>'
+      +'<div class="gfx-people-grid">'+cards+addBtn+'</div>';
+  }
+  function gfxWorkspaceHtml(){
+    var p=gfxPerson;
+    var item=function(k,l){ return '<button class="gfx-navitem'+(gfxSub===k?' on':'')+'" onclick="gfxSetSub(\''+k+'\')">'+l+'</button>'; };
+    var side='<div class="gfx-side">'
+      +'<button class="gfx-navitem" style="background:#f4f2fb;font-weight:700;" onclick="gfxBackHome()">← ทีมกราฟฟิก</button>'
+      +'<div style="padding:6px 4px 2px;font-weight:800;font-size:15px;font-family:\'Anuphan\',\'Prompt\',sans-serif;">🎨 '+E(p)+'</div>'
+      +item('board','📋 บอร์ดงาน')+item('dashboard','📊 แดชบอร์ด')
+      +'</div>';
+    return '<div class="gfx-wrap">'+side+'<div id="gfx-main" style="flex:1;min-width:0;"></div></div>';
+  }
+
+  /* ---------- board ---------- */
+  function renderGfxBoard(){
+    var main=document.getElementById('gfx-main'); if(!main) return;
+    var p=gfxPerson, canEd=gfxCanEdit(); var cols=gfxColsFor(p);
+    var list=gfxCardsOf(p).filter(function(x){
+      if(gfxFilterBrand!=='all' && (x.brand||'other')!==gfxFilterBrand) return false;
+      if(gfxFilterGraphic && String(x.graphic||'').split(/[,\/、]/).map(function(s){return s.trim();}).indexOf(gfxFilterGraphic)<0) return false;
+      if(gfxFilterTag && String(x.tags||'').split(',').map(function(t){return t.trim();}).indexOf(gfxFilterTag)<0) return false;
+      return true;
+    });
+    var byCol={}; cols.forEach(function(c){byCol[c.key]=[];}); var orphan=[];
+    list.forEach(function(x){ if(byCol[x.col]) byCol[x.col].push(x); else orphan.push(x); });
+    if(orphan.length && cols[0]) byCol[cols[0].key]=byCol[cols[0].key].concat(orphan);
+    var brandPills=GFX_BRANDS.map(function(b){ return '<button class="brand-filter-btn'+(gfxFilterBrand===b[0]?' active':'')+'" onclick="gfxSetBrand(\''+b[0]+'\')">'+E(b[1])+'</button>'; }).join('');
+    var grOpts='<option value="">🎨 กราฟฟิกทั้งหมด</option>'+gfxGraphicNames().map(function(n){return '<option value="'+E(n)+'"'+(gfxFilterGraphic===n?' selected':'')+'>'+E(n)+'</option>';}).join('');
+    var tagOpts='<option value="">🏷️ แท็กทั้งหมด</option>'+gfxTagList().map(function(t){return '<option value="'+E(t)+'"'+(gfxFilterTag===t?' selected':'')+'>'+E(t)+'</option>';}).join('');
+    var SEL='style="padding:7px 10px;border:1px solid var(--line,#E7ECF5);border-radius:9px;font-family:inherit;"';
+    var filterBar='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">'
+      +'<span style="display:inline-flex;gap:6px;flex-wrap:wrap;">'+brandPills+'</span>'
+      +'<select onchange="gfxSetGraphic(this.value)" '+SEL+'>'+grOpts+'</select>'
+      +'<select onchange="gfxSetTag(this.value)" '+SEL+'>'+tagOpts+'</select>'
+      +(canEd?'<button class="btn-edit primary" onclick="gfxAddIn(\''+AJ(cols[0]?cols[0].key:'')+'\')" style="margin-left:auto;flex:0 0 auto;">➕ เพิ่มการ์ด</button>':'')
+      +'</div>';
+    var TB='class="gfx-tbtn"';
+    var board='<div class="cc-pl-board">'+cols.map(function(c,idx){
+      var listc=byCol[c.key]||[];
+      var cardsHtml=listc.map(function(x){return gfxCard(x,c);}).join('')||'<div class="cc-pl-empty">— ว่าง —</div>';
+      var tools=canEd?('<div style="display:flex;gap:3px;flex-wrap:wrap;margin:1px 0 7px;">'
+        +'<button '+TB+' title="แก้ชื่อ" onclick="gfxRenameCol(\''+AJ(c.key)+'\')">✏️</button>'
+        +'<button '+TB+' title="เปลี่ยนสี" onclick="gfxColorCol(\''+AJ(c.key)+'\')">🎨</button>'
+        +'<button '+TB+' title="ตั้ง/ยกเลิก เป็นคอลัมน์เสร็จแล้ว" onclick="gfxToggleDoneCol(\''+AJ(c.key)+'\')">'+(c.done?'✅ เสร็จ':'○ ตั้งเสร็จ')+'</button>'
+        +'<button '+TB+' title="เลื่อนซ้าย" onclick="gfxMoveCol(\''+AJ(c.key)+'\',-1)">◀</button>'
+        +'<button '+TB+' title="เลื่อนขวา" onclick="gfxMoveCol(\''+AJ(c.key)+'\',1)">▶</button>'
+        +'<button '+TB+' title="ลบคอลัมน์" style="color:#d33;" onclick="gfxDelCol(\''+AJ(c.key)+'\')">🗑️</button>'
+        +'</div>'):'';
+      var addC=canEd?'<button class="cc-pl-add" onclick="gfxAddIn(\''+AJ(c.key)+'\')">➕ เพิ่มการ์ด</button>':'';
+      return '<div class="cc-pl-col" data-status="'+E(c.key)+'"'+(canEd?' ondragover="gfxDragOver(event)" ondragleave="gfxDragLeave(event)" ondrop="gfxDrop(event,\''+AJ(c.key)+'\')"':'')+'>'
+        +'<div class="cc-pl-colhead"><span class="cc-pl-dot" style="background:'+(c.color||'#8b7ef8')+'"></span><span class="cc-pl-colname">'+E(c.title)+'</span><span class="cc-pl-colcount">'+listc.length+'</span></div>'
+        +tools+'<div class="cc-pl-cards">'+cardsHtml+'</div>'+addC+'</div>';
+    }).join('')+(canEd?'<div class="cc-pl-col" style="background:transparent;border:none;box-shadow:none;min-width:150px;"><button class="cc-pl-add" style="border-style:dashed;height:44px;" onclick="gfxAddCol()">➕ เพิ่มคอลัมน์</button></div>':'')+'</div>';
+    main.innerHTML=filterBar+board;
+  }
+  function gfxCard(x,c){
+    var canEd=gfxCanEdit();
+    var brand=x.brand?'<span>'+E(gfxBrandLabel(x.brand))+'</span>':'';
+    var who=x.owner?'<span class="cc-pl-who"><span class="cc-pl-pic" title="ผู้รับผิดชอบ">👤 '+E(x.owner)+'</span></span>':'';
+    var gr=x.graphic?'<span class="cc-pl-who"><span class="cc-pl-pic" title="กราฟฟิก">🎨 '+E(x.graphic)+'</span></span>':'';
+    var dd=x.submitDate?gfxFmtDDMM(x.submitDate):''; var over=gfxIsOverdue(x);
+    var dateStr=dd?('<span'+(over?' style="color:#e53935;font-weight:700;"':'')+'>📅 '+E(dd)+(x.submitTime?' '+E(x.submitTime):'')+(over?' ⚠️':'')+'</span>'):'';
+    var chkStr=(x.checklist&&x.checklist.length)?'<span title="เช็คลิสต์">☑️ '+x.checklist.filter(function(it){return it.done;}).length+'/'+x.checklist.length+'</span>':'';
+    var revStr=(x.revisions&&x.revisions.length)?'<span title="รอบแก้ไข" style="color:#d98324;">🔧 '+x.revisions.length+'</span>':'';
+    var cn=gfxDcnt(x.id); var cmn=cn?'<span class="cc-pl-badge">💬 '+cn+'</span>':'';
+    var tags=(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+gfxTagColor(t)+'">'+E(t)+'</span>';}).join(''):'');
+    var moveOpts=gfxColsFor(x.person).map(function(k){return '<option value="'+E(k.key)+'"'+(k.key===c.key?' selected':'')+'>'+E(k.title)+'</option>';}).join('');
+    var actions=canEd?('<div class="cc-pl-actions"><button class="cc-pl-send" onclick="event.stopPropagation();gfxEdit(\''+AJ(x.id)+'\')">✏️ แก้</button><button class="cc-pl-send" title="Copy สร้างการ์ดใหม่" onclick="event.stopPropagation();gfxCopy(\''+AJ(x.id)+'\')">📋 Copy</button><select class="cc-pl-move" title="ย้ายคอลัมน์" onclick="event.stopPropagation();" onchange="gfxMove(\''+AJ(x.id)+'\',this.value)">'+moveOpts+'</select><button class="cc-pl-no" onclick="event.stopPropagation();gfxDel(\''+AJ(x.id)+'\')" title="ลบ">🗑️</button></div>'):'';
+    return '<div class="cc-pl-card" style="--s:'+(c.color||'#8b7ef8')+'"'+(canEd?' draggable="true" ondragstart="gfxDragStart(event,\''+AJ(x.id)+'\')" ondragend="gfxDragEnd(event)"':'')+'>'
+      +'<div class="cc-pl-ct" style="cursor:pointer;" onclick="openCardModal(\''+AJ(x.id)+'\')">'+E(x.title||'(ไม่มีชื่อ)')+'</div>'
+      +(tags?'<div class="cc-pl-tags">'+tags+'</div>':'')
+      +((brand||who||gr)?'<div class="cc-pl-meta">'+brand+who+gr+'</div>':'')
+      +((dateStr||chkStr||revStr||cmn)?'<div class="cc-pl-meta">'+dateStr+chkStr+revStr+cmn+'</div>':'')
+      +actions+'</div>';
+  }
+  function gfxReRender(){
+    var main=document.getElementById('gfx-main'); var winY=window.pageYOffset||document.documentElement.scrollTop||0; var sc={};
+    if(main){ [].forEach.call(main.querySelectorAll('.cc-pl-col'),function(col){ var s=col.getAttribute('data-status'); var cd=col.querySelector('.cc-pl-cards'); if(s&&cd) sc[s]=cd.scrollTop; }); }
+    renderGfxBoard();
+    if(main){ [].forEach.call(main.querySelectorAll('.cc-pl-col'),function(col){ var s=col.getAttribute('data-status'); var cd=col.querySelector('.cc-pl-cards'); if(s&&cd&&sc[s]!=null) cd.scrollTop=sc[s]; }); }
+    try{ window.scrollTo(0,winY); }catch(e){}
+  }
+
+  /* ---------- filters / nav ---------- */
+  window.gfxOpenPerson=function(name){ gfxPerson=name; gfxSub='board'; renderGraphicTeam(); };
+  window.gfxBackHome=function(){ gfxPerson=null; renderGraphicTeam(); };
+  window.gfxSetSub=function(k){ gfxSub=k; renderGraphicTeam(); };
+  window.gfxSetBrand=function(b){ gfxFilterBrand=b||'all'; gfxReRender(); };
+  window.gfxSetGraphic=function(n){ gfxFilterGraphic=n||''; gfxReRender(); };
+  window.gfxSetTag=function(t){ gfxFilterTag=t||''; gfxReRender(); };
+
+  /* ---------- people ---------- */
+  window.gfxAddPerson=function(){ if(!gfxCanEdit()){ TOAST('เข้าสู่ระบบก่อน','info'); return; } var n=prompt('ชื่อกราฟฟิกคนใหม่:',''); if(n==null) return; n=String(n).trim(); if(!n) return; var ppl=gfxPeople(); if(ppl.indexOf(n)>=0){ TOAST('มีชื่อนี้แล้ว','info'); return; } GFX_PEOPLE=ppl.slice(); GFX_PEOPLE.push(n); GFX_COLS[n]=gfxDefaultCols(); gfxSavePeople(); gfxSaveCols(n); renderGraphicTeam(); TOAST('เพิ่ม “'+n+'” แล้ว','ok'); };
+  window.gfxDelPerson=function(name){ if(!gfxCanEdit()){ TOAST('เข้าสู่ระบบก่อน','info'); return; } var cards=gfxCardsOf(name); if(!confirm('ลบกราฟฟิก “'+name+'”'+(cards.length?(' และการ์ด '+cards.length+' ใบทั้งหมด'):'')+' ? (ย้อนกลับไม่ได้)')) return;
+    var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''};
+    cards.forEach(function(x){ if(cfg.url){ try{ postToSheet({target:'graphiccards',action:'delete',keyValue:x.id}); }catch(e){} } });
+    GFX=GFX.filter(function(x){return x.person!==name;}); gfxSaveCardsLocal();
+    GFX_PEOPLE=gfxPeople().slice().filter(function(x){return x!==name;}); delete GFX_COLS[name]; gfxSavePeople(); lset(COLS_LKEY,GFX_COLS);
+    if(cfg.url){ try{ postToSheet({target:'graphicconfig',action:'delete',keyValue:'cols::'+name}); }catch(e){} }
+    if(gfxPerson===name) gfxPerson=null; renderGraphicTeam(); TOAST('ลบแล้ว','ok'); };
+
+  /* ---------- columns ---------- */
+  window.gfxAddCol=function(){ if(!gfxCanEdit()) return; var t=prompt('ชื่อคอลัมน์ใหม่:',''); if(t==null) return; t=String(t).trim(); if(!t) return; var cols=gfxEnsureCols(gfxPerson); cols.push({key:gfxUid('col'),title:t,color:COL_PALETTE[cols.length%COL_PALETTE.length],done:false}); gfxSaveCols(gfxPerson); gfxReRender(); };
+  window.gfxRenameCol=function(key){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); var c=cols.find(function(x){return x.key===key;}); if(!c) return; var t=prompt('แก้ชื่อคอลัมน์:',c.title||''); if(t==null) return; t=String(t).trim(); if(!t) return; c.title=t; gfxSaveCols(gfxPerson); gfxReRender(); };
+  window.gfxColorCol=function(key){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); var c=cols.find(function(x){return x.key===key;}); if(!c) return; var idx=COL_PALETTE.indexOf(c.color); c.color=COL_PALETTE[(idx+1)%COL_PALETTE.length]; gfxSaveCols(gfxPerson); gfxReRender(); };
+  window.gfxToggleDoneCol=function(key){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); var c=cols.find(function(x){return x.key===key;}); if(!c) return; c.done=!c.done; gfxSaveCols(gfxPerson);
+    gfxCardsOf(gfxPerson).forEach(function(x){ if(x.col===key){ if(c.done){ if(!x.doneAt){ x.doneAt=TS(); gfxUpsertLocal(x); gfxSyncCard(x); } } else if(x.doneAt){ x.doneAt=''; gfxUpsertLocal(x); gfxSyncCard(x); } } });
+    gfxReRender(); TOAST(c.done?('“'+c.title+'” = คอลัมน์เสร็จแล้ว'):('ยกเลิกสถานะเสร็จของ “'+c.title+'”'),'ok'); };
+  window.gfxMoveCol=function(key,dir){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); var i=cols.findIndex(function(x){return x.key===key;}); var j=i+dir; if(i<0||j<0||j>=cols.length) return; var tmp=cols[i]; cols[i]=cols[j]; cols[j]=tmp; gfxSaveCols(gfxPerson); gfxReRender(); };
+  window.gfxDelCol=function(key){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); if(cols.length<=1){ TOAST('ต้องมีอย่างน้อย 1 คอลัมน์','info'); return; } var c=cols.find(function(x){return x.key===key;}); var inCol=gfxCardsOf(gfxPerson).filter(function(x){return x.col===key;}); if(!confirm('ลบคอลัมน์ “'+((c&&c.title)||'')+'”?'+(inCol.length?(' การ์ด '+inCol.length+' ใบจะย้ายไปคอลัมน์แรก'):''))) return; var newCols=cols.filter(function(x){return x.key!==key;}); GFX_COLS[gfxPerson]=newCols; var firstKey=newCols[0].key; inCol.forEach(function(x){ x.col=firstKey; if(gfxIsDoneCol(gfxPerson,firstKey)){ if(!x.doneAt) x.doneAt=TS(); } else { x.doneAt=''; } x.updatedAt=TS(); gfxUpsertLocal(x); gfxSyncCard(x); }); gfxSaveCols(gfxPerson); gfxReRender(); };
+
+  /* ---------- cards ---------- */
+  window.gfxAddIn=function(k){ if(!gfxCanEdit()){ TOAST('เข้าสู่ระบบ (สิทธิ์ทีม) ก่อนจึงจะเพิ่มได้','info'); return; } gfxPresetCol=k||((gfxColsFor(gfxPerson)[0]||{}).key); gfxEditId=null; openGfxEditor(null); };
+  window.gfxEdit=function(id){ var c=GFX.find(function(x){return x.id===id;}); if(!c) return; if(!gfxCanEdit()){ TOAST('ดูอย่างเดียว — เข้าสู่ระบบเพื่อแก้','info'); return; } gfxEditId=id; openGfxEditor(c); };
+  window.gfxMove=function(id,nk){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||c.col===nk) return; var def=gfxColDef(c.person,nk); if(!def) return; c.col=nk; if(def.done){ if(!c.doneAt) c.doneAt=TS(); } else { c.doneAt=''; } c.updatedAt=TS(); gfxUpsertLocal(c); gfxReRender(); TOAST('ย้ายไป “'+def.title+'” แล้ว','ok'); gfxSyncCard(c); };
+  window.gfxDel=function(id){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!confirm('ลบการ์ด “'+((c&&c.title)||'')+'” ?')) return; GFX=GFX.filter(function(x){return x.id!==id;}); gfxSaveCardsLocal(); gfxReRender(); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(cfg.url){ try{ postToSheet({target:'graphiccards',action:'delete',keyValue:id}); }catch(e){} } TOAST('ลบแล้ว','ok'); };
+  window.gfxCopy=function(id){ if(!gfxCanEdit()){ TOAST('เข้าสู่ระบบก่อน','info'); return; } var src=GFX.find(function(x){return x.id===id;}); if(!src) return; var nid=gfxUid('g'); var card=Object.assign({},src,{id:nid,title:(src.title||'')+' (copy)',checklist:(Array.isArray(src.checklist)?src.checklist.map(function(it){return {text:it.text,done:it.done};}):[]),revisions:[],doneAt:(gfxIsDoneCol(src.person,src.col)?TS():''),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}); gfxUpsertLocal(card); gfxReRender(); TOAST('คัดลอกการ์ดแล้ว 📋','ok'); gfxSyncCard(card); };
+
+  function openGfxEditor(c){
+    ensureGraphicView();
+    c=c||{title:'',brand:(gfxFilterBrand!=='all'?gfxFilterBrand:'godmami'),owner:'',graphic:(gfxPerson||''),submitDate:'',submitTime:'',tags:'',note:'',col:gfxPresetCol};
+    var LB=function(t){ return '<label style="font-size:12px;font-weight:600;color:var(--ink-soft);">'+t+'</label>'; };
+    var INP='style="width:100%;padding:8px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;font-family:inherit;"';
+    var brandOpts=GFX_BRANDS.filter(function(b){return b[0]!=='all';}).map(function(b){return '<option value="'+b[0]+'"'+((c.brand||'godmami')===b[0]?' selected':'')+'>'+E(b[1])+'</option>';}).join('');
+    var cols=gfxColsFor(gfxPerson); var curCol=c.col||gfxPresetCol||(cols[0]||{}).key;
+    var colOpts=cols.map(function(k){return '<option value="'+E(k.key)+'"'+(curCol===k.key?' selected':'')+'>'+E(k.title)+'</option>';}).join('');
+    var picOpts=gfxOwnerNames().map(function(n){return '<option value="'+E(n)+'"></option>';}).join('');
+    var grOpts=gfxGraphicNames().map(function(n){return '<option value="'+E(n)+'"></option>';}).join('');
+    var tagOpts=gfxTagList().map(function(t){return '<option value="'+E(t)+'"></option>';}).join('');
+    document.getElementById('gfx-editor-body').innerHTML=
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:16px 18px 11px;border-bottom:1px solid var(--line,#E7ECF5);"><div style="font-family:\'Anuphan\',\'Prompt\',sans-serif;font-weight:700;font-size:16px;">'+(gfxEditId?'✏️ แก้ไขการ์ด':'➕ เพิ่มการ์ด')+' · 🎨 '+E(gfxPerson||'')+'</div><span onclick="document.getElementById(\'gfx-editor-overlay\').classList.remove(\'open\')" style="cursor:pointer;font-size:20px;color:#9aa4b5;">✕</span></div>'
+      +'<div style="padding:14px 18px;display:flex;flex-direction:column;gap:11px;max-height:70vh;overflow:auto;">'
+        +'<div>'+LB('หัวข้องาน *')+'<input type="text" id="gfx-f-title" value="'+E(c.title)+'" placeholder="เช่น ออกแบบภาพโปรโมชัน Shopee" '+INP+'></div>'
+        +'<div style="display:flex;gap:10px;flex-wrap:wrap;">'
+          +'<div style="flex:1;min-width:150px;">'+LB('แบรนด์')+'<select id="gfx-f-brand" '+INP+'>'+brandOpts+'</select></div>'
+          +'<div style="flex:1;min-width:150px;">'+LB('คอลัมน์')+'<select id="gfx-f-col" '+INP+'>'+colOpts+'</select></div>'
+        +'</div>'
+        +'<div style="display:flex;gap:10px;flex-wrap:wrap;">'
+          +'<div style="flex:1;min-width:150px;">'+LB('ผู้รับผิดชอบ (PIC)')+'<input type="text" id="gfx-f-owner" list="gfx-pic-list" value="'+E(c.owner)+'" placeholder="เลือก/พิมพ์ (หลายคนคั่น ,)" '+INP+'><datalist id="gfx-pic-list">'+picOpts+'</datalist></div>'
+          +'<div style="flex:1;min-width:150px;">'+LB('ชื่อกราฟฟิก')+'<input type="text" id="gfx-f-graphic" list="gfx-gr-list" value="'+E(c.graphic)+'" placeholder="ไอซ์ / เมษา / น้ำฝน / เหมียว" '+INP+'><datalist id="gfx-gr-list">'+grOpts+'</datalist></div>'
+        +'</div>'
+        +'<div style="display:flex;gap:10px;flex-wrap:wrap;">'
+          +'<div style="flex:2;min-width:150px;">'+LB('วันที่ส่งงาน')+'<input type="date" id="gfx-f-submitDate" value="'+E(c.submitDate)+'" '+INP+'></div>'
+          +'<div style="flex:1;min-width:110px;">'+LB('เวลา')+'<input type="time" id="gfx-f-submitTime" value="'+E(c.submitTime)+'" '+INP+'></div>'
+        +'</div>'
+        +'<div>'+LB('แท็ก (คั่นด้วย , — เพิ่มเองได้ ระบบจำไว้)')+'<input type="text" id="gfx-f-tags" list="gfx-tag-list" value="'+E(c.tags)+'" placeholder="เช่น ด่วน, โปรโมชัน" '+INP+'><datalist id="gfx-tag-list">'+tagOpts+'</datalist></div>'
+        +'<div>'+LB('หมายเหตุ')+'<textarea id="gfx-f-note" rows="2" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" '+INP+'>'+E(c.note)+'</textarea></div>'
+      +'</div>'
+      +'<div style="display:flex;justify-content:flex-end;gap:8px;padding:11px 18px 16px;border-top:1px solid var(--line,#E7ECF5);">'
+        +(gfxEditId?'<button onclick="gfxDel(\''+AJ(gfxEditId)+'\');document.getElementById(\'gfx-editor-overlay\').classList.remove(\'open\')" style="background:#fff;border:1px solid #f3c6c6;color:#d33;border-radius:9px;padding:8px 14px;font-weight:600;cursor:pointer;margin-right:auto;">🗑️ ลบ</button>':'')
+        +'<button onclick="document.getElementById(\'gfx-editor-overlay\').classList.remove(\'open\')" style="background:#fff;border:1px solid #dfe4ee;color:#5b6472;border-radius:9px;padding:8px 16px;font-weight:600;cursor:pointer;">ยกเลิก</button>'
+        +'<button onclick="gfxSaveEditor()" style="background:#ffafdf;color:#5b6472;border:none;border-radius:9px;padding:8px 18px;font-weight:700;cursor:pointer;">💾 บันทึก</button>'
+      +'</div>';
+    document.getElementById('gfx-editor-overlay').classList.add('open');
+  }
+  window.gfxSaveEditor=function(){
+    var g=function(id){ var el=document.getElementById(id); return el?String(el.value||'').trim():''; };
+    var title=g('gfx-f-title'); if(!title){ TOAST('กรอกหัวข้องานก่อน','err'); return; }
+    var id=gfxEditId||gfxUid('g'); var tags=g('gfx-f-tags'); gfxRememberTags(tags);
+    var prev=GFX.find(function(x){return x.id===id;})||{};
+    var col=g('gfx-f-col')||(gfxColsFor(gfxPerson)[0]||{}).key||'todo';
+    var card={ id:id, person:gfxPerson, col:col, title:title, brand:g('gfx-f-brand')||'godmami', owner:g('gfx-f-owner'), graphic:g('gfx-f-graphic'), submitDate:g('gfx-f-submitDate'), submitTime:g('gfx-f-submitTime'), tags:tags, note:g('gfx-f-note'), checklist:(Array.isArray(prev.checklist)?prev.checklist:[]), revisions:(Array.isArray(prev.revisions)?prev.revisions:[]), doneAt:prev.doneAt||'', updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') };
+    if(gfxIsDoneCol(gfxPerson,col)){ if(!card.doneAt) card.doneAt=TS(); } else { card.doneAt=''; }
+    gfxUpsertLocal(card);
+    document.getElementById('gfx-editor-overlay').classList.remove('open');
+    gfxReRender();
+    var cov=document.getElementById('cc-card-overlay'); if(cov && cov.classList.contains('open') && typeof renderCardModal==='function') renderCardModal();
+    TOAST(gfxEditId?'บันทึกแล้ว':'เพิ่มการ์ดแล้ว','ok');
+    gfxSyncCard(card); gfxEditId=null;
+  };
+
+  /* ---------- card detail modal (ซ้ายของ modal ที่ใช้ร่วมกับ Content) ---------- */
+  window.gfxCardDetailHtml=function(id){
+    var x=window.gfxGetCard(id); if(!x) return '';
+    var canEd=gfxCanEdit();
+    var col=gfxColDef(x.person,x.col)||{title:x.col,color:'#8b7ef8'};
+    var row=function(lb,val){ return val?'<div class="cc-cd-row"><b>'+lb+'</b><span>'+val+'</span></div>':''; };
+    var tags=(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+gfxTagColor(t)+'">'+E(t)+'</span>';}).join(''):'');
+    var over=gfxIsOverdue(x);
+    var rows='';
+    rows+=row('กราฟฟิก (บอร์ด)', x.person?('🎨 '+E(x.person)):'');
+    rows+=row('แบรนด์', x.brand?E(gfxBrandLabel(x.brand)):'');
+    rows+=row('วันที่ส่งงาน', x.submitDate?('<span'+(over?' style="color:#e53935;font-weight:700;"':'')+'>📅 '+E(gfxFmtDDMM(x.submitDate))+(x.submitTime?' '+E(x.submitTime):'')+(over?' ⚠️ ล่าช้า '+gfxDaysSince(x.submitDate)+' วัน':'')+'</span>'):'');
+    rows+=row('ผู้รับผิดชอบ', x.owner?('👤 '+E(x.owner)):'');
+    rows+=row('ชื่อกราฟฟิกผู้ทำ', x.graphic?('🎨 '+E(x.graphic)):'');
+    rows+=row('แท็ก', tags);
+    rows+=row('หมายเหตุ', x.note?E(x.note):'');
+    // checklist
+    var chk=Array.isArray(x.checklist)?x.checklist:[]; var doneN=chk.filter(function(it){return it.done;}).length;
+    var chkItems=chk.map(function(it,i){
+      return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line,#eef1f7);">'
+        +'<label style="display:flex;align-items:center;gap:8px;flex:1;margin:0;cursor:'+(canEd?'pointer':'default')+';">'
+          +'<input type="checkbox" '+(it.done?'checked':'')+(canEd?'':' disabled')+' onchange="gfxChkToggle(\''+AJ(id)+'\','+i+')" style="width:16px;height:16px;flex:0 0 auto;">'
+          +'<span style="font-size:13px;'+(it.done?'text-decoration:line-through;color:#9aa4b5;':'')+'">'+E(it.text)+'</span>'
+        +'</label>'
+        +(canEd?'<button onclick="gfxChkEdit(\''+AJ(id)+'\','+i+')" title="แก้ไข" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;">✏️</button><button onclick="gfxChkDel(\''+AJ(id)+'\','+i+')" title="ลบ" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;">🗑️</button>':'')
+      +'</div>';
+    }).join('');
+    var chkSection='<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line,#E7ECF5);">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><b style="font-size:13px;">✅ รายการที่ต้องทำ</b>'+(chk.length?'<span style="font-size:12px;color:var(--ink-soft);background:#f2f4f8;border-radius:20px;padding:1px 9px;">'+doneN+'/'+chk.length+'</span>':'')+(canEd?'<button onclick="gfxChkAdd(\''+AJ(id)+'\')" style="margin-left:auto;border:1px dashed var(--line,#E7ECF5);background:#fff;border-radius:8px;padding:4px 11px;font-size:12px;font-weight:600;color:var(--ink-soft);cursor:pointer;">➕ เพิ่มรายการ</button>':'')+'</div>'
+      +(chk.length?'<div>'+chkItems+'</div>':'<div style="font-size:12px;color:#9aa4b5;padding:2px 0;">— ยังไม่มีรายการ —</div>')+'</div>';
+    // revisions
+    var revs=Array.isArray(x.revisions)?x.revisions:[];
+    var revItems=revs.map(function(rv,i){ var dt=rv.ts?gfxFmtDDMM(rv.ts):''; return '<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--line,#eef1f7);"><span style="color:#d98324;flex:0 0 auto;">🔧</span><div style="flex:1;font-size:13px;"><div>'+E(rv.reason)+'</div>'+((dt||rv.by)?'<div style="font-size:11px;color:#9aa4b5;">'+(dt?E(dt):'')+(rv.by?' · '+E(rv.by):'')+'</div>':'')+'</div>'+(canEd?'<button onclick="gfxRevDel(\''+AJ(id)+'\','+i+')" title="ลบ" style="background:none;border:none;cursor:pointer;font-size:13px;">🗑️</button>':'')+'</div>'; }).join('');
+    var revSection='<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line,#E7ECF5);">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><b style="font-size:13px;">🔧 การแก้ไขงาน</b>'+(revs.length?'<span style="font-size:12px;color:#d98324;background:#fff3e6;border-radius:20px;padding:1px 9px;">'+revs.length+' ครั้ง</span>':'')+(canEd?'<button onclick="gfxRevAdd(\''+AJ(id)+'\')" style="margin-left:auto;border:1px dashed var(--line,#E7ECF5);background:#fff;border-radius:8px;padding:4px 11px;font-size:12px;font-weight:600;color:var(--ink-soft);cursor:pointer;">➕ บันทึกรอบแก้ไข</button>':'')+'</div>'
+      +(revs.length?'<div>'+revItems+'</div>':'<div style="font-size:12px;color:#9aa4b5;padding:2px 0;">— ยังไม่มีการแก้ไข —</div>')+'</div>';
+    var editBtn=canEd?('<div class="cc-cd-edit"><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="gfxEdit(\''+AJ(id)+'\')">✏️ แก้ไขรายละเอียด</button><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="closeCardModal();gfxCopy(\''+AJ(id)+'\')">📋 Copy สร้างใหม่</button><button class="btn-sm warn-ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="closeCardModal();gfxDel(\''+AJ(id)+'\')">🗑️ ลบการ์ด</button></div>'):'';
+    return '<div class="cc-cd-info"><div class="cc-cd-badges"><span class="cc-cd-s" style="background:'+(col.color||'#8b7ef8')+'">'+E(col.title||'')+'</span>'+(x.brand?'<span class="cc-brand" style="--b:'+((typeof BRAND_TINT!=='undefined'?BRAND_TINT:{})[x.brand]||'#6B7280')+'">'+E(gfxBrandLabel(x.brand))+'</span>':'')+tags+'</div><div class="cc-cd-rows">'+rows+'</div>'+chkSection+revSection+editBtn+'</div>';
+  };
+  function gfxAfterChange(c){ c.updatedAt=TS(); gfxUpsertLocal(c); gfxSyncCard(c); try{ gfxRefreshView(); }catch(e){} var cov=document.getElementById('cc-card-overlay'); if(cov && cov.classList.contains('open') && typeof renderCardModal==='function') renderCardModal(); }
+  window.gfxChkAdd=function(id){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c) return; var t=prompt('รายการที่ต้องทำ:',''); if(t==null) return; t=String(t).trim(); if(!t) return; if(!Array.isArray(c.checklist)) c.checklist=[]; c.checklist.push({text:t,done:false}); gfxAfterChange(c); };
+  window.gfxChkToggle=function(id,i){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.checklist)||!c.checklist[i]) return; c.checklist[i].done=!c.checklist[i].done; gfxAfterChange(c); };
+  window.gfxChkEdit=function(id,i){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.checklist)||!c.checklist[i]) return; var t=prompt('แก้ไขรายการ:',c.checklist[i].text||''); if(t==null) return; t=String(t).trim(); if(!t) return; c.checklist[i].text=t; gfxAfterChange(c); };
+  window.gfxChkDel=function(id,i){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.checklist)||!c.checklist[i]) return; if(!confirm('ลบรายการ “'+(c.checklist[i].text||'')+'” ?')) return; c.checklist.splice(i,1); gfxAfterChange(c); };
+  window.gfxRevAdd=function(id){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c) return; var r=prompt('สาเหตุ/รายละเอียดการแก้ไข:',''); if(r==null) return; r=String(r).trim(); if(!r) return; if(!Array.isArray(c.revisions)) c.revisions=[]; c.revisions.push({ts:TS(),reason:r,by:(typeof sbEmail==='function'?sbEmail():'')}); gfxAfterChange(c); };
+  window.gfxRevDel=function(id,i){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.revisions)||!c.revisions[i]) return; if(!confirm('ลบรอบแก้ไขนี้?')) return; c.revisions.splice(i,1); gfxAfterChange(c); };
+
+  /* ---------- dashboard ---------- */
+  function renderGfxDashboard(){
+    var main=document.getElementById('gfx-main'); if(!main) return;
+    var p=gfxPerson; var list=gfxCardsOf(p); var cols=gfxColsFor(p);
+    var total=list.length;
+    var doneN=list.filter(function(x){return gfxIsDoneCol(x.person,x.col);}).length;
+    var overdue=list.filter(gfxIsOverdue).slice().sort(function(a,b){return gfxDaysSince(b.submitDate)-gfxDaysSince(a.submitDate);});
+    var pct=total?Math.round(doneN/total*100):0;
+    var revTotal=list.reduce(function(a,x){return a+((x.revisions&&x.revisions.length)||0);},0);
+    var chkTotal=0,chkDone=0; list.forEach(function(x){ (x.checklist||[]).forEach(function(it){ chkTotal++; if(it.done) chkDone++; }); });
+    var tile=function(lb,val,color){ return '<div style="flex:1;min-width:120px;background:#fff;border:1px solid var(--line,#E7ECF5);border-radius:14px;padding:14px 16px;"><div style="font-size:26px;font-weight:800;color:'+(color||'var(--ink)')+';">'+val+'</div><div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">'+lb+'</div></div>'; };
+    var tiles='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">'+tile('งานทั้งหมด',total,'#5B6FB8')+tile('เสร็จแล้ว',doneN,'#26a69a')+tile('กำลังดำเนินการ',total-doneN,'#e6952b')+tile('⚠️ ล่าช้า',overdue.length,overdue.length?'#e53935':'#26a69a')+tile('🔧 รอบแก้ไขรวม',revTotal,'#d98324')+'</div>';
+    var prog='<div style="background:#fff;border:1px solid var(--line,#E7ECF5);border-radius:14px;padding:14px 16px;margin-bottom:14px;"><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:6px;"><span>ความคืบหน้ารวม (ตามคอลัมน์เสร็จแล้ว)</span><span>'+pct+'%</span></div><div style="height:12px;background:#eef1f7;border-radius:8px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#8b7ef8,#26a69a);"></div></div>'+(chkTotal?'<div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">เช็คลิสต์ย่อยรวม: '+chkDone+'/'+chkTotal+' รายการ</div>':'')+'</div>';
+    var counts=cols.map(function(c){ return {c:c, n:list.filter(function(x){return x.col===c.key;}).length}; });
+    var maxN=Math.max(1, counts.reduce(function(m,o){return Math.max(m,o.n);},0));
+    var colBars='<div style="background:#fff;border:1px solid var(--line,#E7ECF5);border-radius:14px;padding:14px 16px;margin-bottom:14px;"><div style="font-size:13px;font-weight:700;margin-bottom:10px;">📊 งานแต่ละคอลัมน์</div>'+counts.map(function(o){ var w=Math.round(o.n/maxN*100); return '<div style="margin-bottom:9px;"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:3px;"><span>'+E(o.c.title)+(o.c.done?' <span style="color:#26a69a;">✓</span>':'')+'</span><span style="font-weight:700;">'+o.n+'</span></div><div style="height:9px;background:#eef1f7;border-radius:6px;overflow:hidden;"><div style="height:100%;width:'+w+'%;background:'+(o.c.color||'#8b7ef8')+';"></div></div></div>'; }).join('')+'</div>';
+    var overHtml='<div style="background:#fff;border:1px solid var(--line,#E7ECF5);border-radius:14px;padding:14px 16px;margin-bottom:14px;"><div style="font-size:13px;font-weight:700;margin-bottom:8px;color:'+(overdue.length?'#e53935':'var(--ink)')+';">⚠️ งานล่าช้า ('+overdue.length+')</div>'+(overdue.length?overdue.map(function(x){ var days=gfxDaysSince(x.submitDate); var cd=gfxColDef(x.person,x.col); return '<div onclick="openCardModal(\''+AJ(x.id)+'\')" style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #f2f4f8;cursor:pointer;"><span style="flex:1;">'+E(x.title||'(ไม่มีชื่อ)')+' <span style="font-size:11px;color:#9aa4b5;">· '+E(cd?cd.title:'')+'</span></span><span style="color:#e53935;font-weight:700;font-size:12.5px;white-space:nowrap;">เกิน '+days+' วัน</span></div>'; }).join(''):'<div style="font-size:12.5px;color:#26a69a;">🎉 ไม่มีงานล่าช้า</div>')+'</div>';
+    var revCards=list.filter(function(x){return x.revisions&&x.revisions.length;}).slice().sort(function(a,b){return b.revisions.length-a.revisions.length;});
+    var revHtml='<div style="background:#fff;border:1px solid var(--line,#E7ECF5);border-radius:14px;padding:14px 16px;"><div style="font-size:13px;font-weight:700;margin-bottom:8px;color:#d98324;">🔧 การแก้ไขงาน (รวม '+revTotal+' ครั้ง)</div>'+(revCards.length?revCards.map(function(x){ var reasons=x.revisions.map(function(rv){return '<li style="font-size:12px;color:var(--ink-soft);margin-bottom:2px;">'+E(rv.reason)+(rv.ts?' <span style="color:#b8c0cc;">('+E(gfxFmtDDMM(rv.ts))+')</span>':'')+'</li>';}).join(''); return '<div style="padding:7px 0;border-bottom:1px solid #f2f4f8;"><div onclick="openCardModal(\''+AJ(x.id)+'\')" style="display:flex;justify-content:space-between;cursor:pointer;gap:8px;"><span style="font-weight:600;font-size:13px;">'+E(x.title||'(ไม่มีชื่อ)')+'</span><span style="color:#d98324;font-weight:700;font-size:12.5px;white-space:nowrap;">'+x.revisions.length+' ครั้ง</span></div><ul style="margin:4px 0 0;padding-left:18px;">'+reasons+'</ul></div>'; }).join(''):'<div style="font-size:12.5px;color:#9aa4b5;">— ยังไม่มีการแก้ไข —</div>')+'</div>';
+    main.innerHTML=tiles+prog+colBars+overHtml+revHtml;
+  }
+
+  /* ---------- drag ---------- */
+  window.gfxDragStart=function(ev,id){ gfxDragId=id; try{ ev.dataTransfer.setData('text/plain',id); ev.dataTransfer.effectAllowed='move'; }catch(e){} var c=ev.currentTarget; if(c) c.classList.add('dragging'); };
+  window.gfxDragEnd=function(ev){ var c=ev.currentTarget; if(c) c.classList.remove('dragging'); gfxDragId=null; [].forEach.call(document.querySelectorAll('#gfx-main .cc-pl-col.dragover'),function(el){el.classList.remove('dragover');}); };
+  window.gfxDragOver=function(ev){ ev.preventDefault(); try{ ev.dataTransfer.dropEffect='move'; }catch(e){} ev.currentTarget.classList.add('dragover'); };
+  window.gfxDragLeave=function(ev){ if(!ev.currentTarget.contains(ev.relatedTarget)) ev.currentTarget.classList.remove('dragover'); };
+  window.gfxDrop=function(ev,k){ ev.preventDefault(); ev.currentTarget.classList.remove('dragover'); var id=gfxDragId; try{ var dt=ev.dataTransfer.getData('text/plain'); if(dt) id=dt; }catch(e){} if(id) gfxMove(id,k); };
+
+  ensureGraphicView();
 })();
 </script>
 </body>
