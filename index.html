@@ -12913,6 +12913,19 @@ header{ background:#7BA7E6 !important; }
         +'.gfx-navitem.on{background:linear-gradient(120deg,#8b7ef8,#a78bfa);color:#fff;border-color:transparent;}'
         +'.gfx-tbtn{border:1px solid var(--line,#E7ECF5);background:#fff;border-radius:7px;padding:2px 7px;font-size:12px;cursor:pointer;line-height:1.4;}'
         +'.gfx-tbtn:hover{border-color:#b9a9f0;}'
+        +'.gfx-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}'
+        +'.gfx-cal-dow{text-align:center;font-size:11px;font-weight:700;color:var(--ink-soft);padding:2px 0;}'
+        +'.gfx-cal-cell{min-height:80px;border:1px solid var(--line,#E7ECF5);border-radius:10px;background:#fff;padding:4px 5px;display:flex;flex-direction:column;gap:3px;overflow:hidden;}'
+        +'.gfx-cal-cell.other{background:#f7f8fb;}'
+        +'.gfx-cal-cell.today{border-color:#8b7ef8;box-shadow:0 0 0 2px rgba(139,126,248,.22);}'
+        +'.gfx-cal-dnum{font-size:11px;font-weight:700;color:var(--ink-soft);}'
+        +'.gfx-cal-cell.other .gfx-cal-dnum{opacity:.5;}'
+        +'.gfx-cal-chip{font-size:10.5px;font-weight:600;color:#fff;border-radius:5px;padding:1px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;max-width:100%;}'
+        +'.gfx-cal-more{font-size:10.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;padding-left:2px;}'
+        +'.gfx-cal-legend{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;}'
+        +'.gfx-cal-leg{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink);}'
+        +'.gfx-cal-dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;}'
+        +'@media(max-width:640px){ .gfx-cal-cell{min-height:58px;} .gfx-cal-grid{gap:3px;} }'
         +'@media(max-width:760px){ .gfx-wrap{flex-direction:column;} .gfx-side{width:100%;flex:0 0 auto;flex-direction:row;flex-wrap:wrap;} }';
       document.head.appendChild(st);
     }
@@ -12923,13 +12936,17 @@ header{ background:#7BA7E6 !important; }
       ov.addEventListener('click',function(e){ if(e.target===ov) ov.classList.remove('open'); });
       ov.innerHTML='<div class="modal-box" style="max-width:520px;width:94vw;"><div id="gfx-editor-body"></div></div>';
       document.body.appendChild(ov);
+      var dov=document.createElement('div'); dov.className='modal-overlay'; dov.id='gfx-calday-overlay'; dov.style.zIndex='80';
+      dov.addEventListener('click',function(e){ if(e.target===dov) dov.classList.remove('open'); });
+      dov.innerHTML='<div class="modal-box" style="max-width:440px;width:92vw;"><div id="gfx-calday-body"></div></div>';
+      document.body.appendChild(dov);
     }
   }
   window.renderGraphicTeam=function(){
     ensureGraphicView();
     if(!window.__gfxLoaded){ window.__gfxLoaded=true; loadGfx().then(function(){ renderGraphicTeam(); }).catch(function(){}); }
     var root=document.getElementById('gfx-root'); if(!root) return;
-    if(!gfxPerson){ root.innerHTML=gfxLandingHtml(); return; }
+    if(!gfxPerson){ root.innerHTML=gfxLandingHtml(); renderGfxCal(); return; }
     root.innerHTML=gfxWorkspaceHtml();
     gfxRefreshView();
   };
@@ -12953,8 +12970,65 @@ header{ background:#7BA7E6 !important; }
     var addBtn=canEd?'<button class="gfx-person gfx-person-add" onclick="gfxAddPerson()">➕ เพิ่มคน</button>':'';
     return '<h2 style="font-family:\'Anuphan\',\'Prompt\',sans-serif;font-weight:700;font-size:22px;margin:0 0 4px;color:var(--ink);">🎨 Graphic Team</h2>'
       +'<p class="section-sub" style="margin-top:0;">เลือกกราฟฟิกเพื่อเข้าดูบอร์ดงานของแต่ละคน — แต่ละคนมีคอลัมน์และการ์ดแยกกัน</p>'
-      +'<div class="gfx-people-grid">'+cards+addBtn+'</div>';
+      +'<div class="gfx-people-grid">'+cards+addBtn+'</div>'
+      +'<div id="gfx-cal-host" style="margin-top:24px;"></div>';
   }
+  // ---------- ปฏิทินงานทีม (พล็อตตามวันส่งงาน · สีตามคน) ----------
+  var gfxCalY=null, gfxCalM=null;
+  function gfxCalInit(){ if(gfxCalY==null){ var d=new Date(); gfxCalY=d.getFullYear(); gfxCalM=d.getMonth(); } }
+  function gfxPersonColor(name){ var pal=['#8b7ef8','#ffb454','#26a69a','#EB5FA0','#5B8FF9','#F2994A','#7C5CFC','#3CA5A5','#E9557F','#2D9CDB']; name=String(name||''); var idx=gfxPeople().indexOf(name); if(idx>=0) return pal[idx%pal.length]; var h=0; for(var i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))>>>0; return pal[h%pal.length]; }
+  window.gfxCalMove=function(delta){ gfxCalInit(); var m=gfxCalM+delta, y=gfxCalY; while(m<0){m+=12;y--;} while(m>11){m-=12;y++;} gfxCalY=y; gfxCalM=m; renderGfxCal(); };
+  window.gfxCalToday=function(){ var d=new Date(); gfxCalY=d.getFullYear(); gfxCalM=d.getMonth(); renderGfxCal(); };
+  function gfxCalCards(Y,M){ var out={}; GFX.forEach(function(x){ if(!x.submitDate) return; var d=new Date(String(x.submitDate).slice(0,10)+'T00:00:00'); if(isNaN(d)||d.getFullYear()!==Y||d.getMonth()!==M) return; var k=d.getDate(); (out[k]=out[k]||[]).push(x); }); return out; }
+  function renderGfxCal(){
+    var host=document.getElementById('gfx-cal-host'); if(!host) return;
+    gfxCalInit(); var Y=gfxCalY, M=gfxCalM;
+    var MN=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+    var DOW=['อา','จ','อ','พ','พฤ','ศ','ส'];
+    var byDay=gfxCalCards(Y,M);
+    var monthCount={}; var totalMonth=0;
+    Object.keys(byDay).forEach(function(k){ byDay[k].forEach(function(x){ monthCount[x.person]=(monthCount[x.person]||0)+1; totalMonth++; }); });
+    var legend=gfxPeople().map(function(p){ var n=monthCount[p]||0; var pctp=totalMonth?Math.round(n/totalMonth*100):0; return '<span class="gfx-cal-leg"><span class="gfx-cal-dot" style="background:'+gfxPersonColor(p)+';opacity:'+(n?1:.35)+'"></span>'+E(p)+' <b>'+n+'</b>'+(n?' <span style="color:var(--ink-soft);font-size:11px;">('+pctp+'%)</span>':'')+'</span>'; }).join('');
+    var header='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">'
+      +'<div style="font-weight:700;font-size:17px;font-family:\'Anuphan\',\'Prompt\',sans-serif;">📅 ปฏิทินงานทีม</div>'
+      +'<div style="display:inline-flex;gap:5px;align-items:center;">'
+        +'<button class="gfx-tbtn" style="padding:4px 11px;font-size:15px;" onclick="gfxCalMove(-1)">‹</button>'
+        +'<span style="font-weight:700;min-width:130px;text-align:center;">'+MN[M]+' '+(Y+543)+'</span>'
+        +'<button class="gfx-tbtn" style="padding:4px 11px;font-size:15px;" onclick="gfxCalMove(1)">›</button>'
+        +'<button class="gfx-tbtn" style="padding:4px 11px;" onclick="gfxCalToday()">วันนี้</button>'
+      +'</div>'
+      +'<div class="gfx-cal-legend" style="margin-left:auto;">'+(totalMonth?legend:'<span style="color:var(--ink-soft);font-size:12.5px;">— ยังไม่มีงานที่มีวันส่งในเดือนนี้ —</span>')+'</div>'
+    +'</div>';
+    var first=new Date(Y,M,1); var startDow=first.getDay(); var daysIn=new Date(Y,M+1,0).getDate(); var prevDays=new Date(Y,M,0).getDate();
+    var today=new Date(); var isThisMonth=(today.getFullYear()===Y&&today.getMonth()===M); var td=today.getDate();
+    var grid='<div class="gfx-cal-grid">'+DOW.map(function(d){return '<div class="gfx-cal-dow">'+d+'</div>';}).join('');
+    var cellN=Math.ceil((startDow+daysIn)/7)*7;
+    for(var i=0;i<cellN;i++){
+      var dayNum=i-startDow+1; var inMonth=(dayNum>=1&&dayNum<=daysIn);
+      var cls='gfx-cal-cell'+(inMonth?'':' other')+((inMonth&&isThisMonth&&dayNum===td)?' today':'');
+      var dispNum=inMonth?dayNum:(dayNum<1?prevDays+dayNum:dayNum-daysIn);
+      var chips='';
+      if(inMonth){
+        var list=byDay[dayNum]||[]; var cap=3;
+        chips=list.slice(0,cap).map(function(x){ return '<span class="gfx-cal-chip" style="background:'+gfxPersonColor(x.person)+'" onclick="openCardModal(\''+AJ(x.id)+'\')" title="'+E(x.person)+' · '+E(x.title||'')+'">'+E(x.person)+': '+E(x.title||'(ไม่มีชื่อ)')+'</span>'; }).join('');
+        if(list.length>cap){ var iso=Y+'-'+String(M+1).padStart(2,'0')+'-'+String(dayNum).padStart(2,'0'); chips+='<span class="gfx-cal-more" onclick="gfxCalDay(\''+iso+'\')">+'+(list.length-cap)+' เพิ่มเติม</span>'; }
+      }
+      grid+='<div class="'+cls+'"><span class="gfx-cal-dnum">'+dispNum+'</span>'+chips+'</div>';
+    }
+    grid+='</div>';
+    host.innerHTML=header+grid;
+  }
+  window.gfxCalDay=function(iso){
+    ensureGraphicView(); var d=new Date(iso+'T00:00:00'); if(isNaN(d)) return;
+    var Y=d.getFullYear(),M=d.getMonth(),day=d.getDate();
+    var list=(gfxCalCards(Y,M)[day]||[]);
+    var MN=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    var rows=list.map(function(x){ var col=gfxColDef(x.person,x.col)||{title:x.col}; return '<div onclick="document.getElementById(\'gfx-calday-overlay\').classList.remove(\'open\');openCardModal(\''+AJ(x.id)+'\')" style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--line,#eef1f7);cursor:pointer;"><span class="gfx-cal-dot" style="background:'+gfxPersonColor(x.person)+'"></span><div style="flex:1;"><div style="font-weight:600;font-size:13px;">'+E(x.title||'(ไม่มีชื่อ)')+'</div><div style="font-size:11px;color:var(--ink-soft);">🎨 '+E(x.person)+' · '+E(col.title||'')+'</div></div></div>'; }).join('')||'<div style="font-size:12.5px;color:#9aa4b5;padding:8px 0;">— ไม่มีงาน —</div>';
+    document.getElementById('gfx-calday-body').innerHTML=
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px 10px;border-bottom:1px solid var(--line,#E7ECF5);"><div style="font-weight:700;font-family:\'Anuphan\',\'Prompt\',sans-serif;">📅 '+day+' '+MN[M]+' '+(Y+543)+' · '+list.length+' งาน</div><span onclick="document.getElementById(\'gfx-calday-overlay\').classList.remove(\'open\')" style="cursor:pointer;font-size:20px;color:#9aa4b5;">✕</span></div>'
+      +'<div style="padding:8px 16px 16px;max-height:60vh;overflow:auto;">'+rows+'</div>';
+    document.getElementById('gfx-calday-overlay').classList.add('open');
+  };
   function gfxWorkspaceHtml(){
     var p=gfxPerson;
     var item=function(k,l){ return '<button class="gfx-navitem'+(gfxSub===k?' on':'')+'" onclick="gfxSetSub(\''+k+'\')">'+l+'</button>'; };
