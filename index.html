@@ -12388,6 +12388,8 @@ header{ background:#5C86D6 !important; }
   function ecomStat(s){ if(ECOM_STATUS[s]) return s; if(ECOM_STATUS_MIGRATE[s]) return ECOM_STATUS_MIGRATE[s]; return 'checklist'; }
   function ecomParseDrafts(s){ if(Array.isArray(s)) return s.filter(function(x){return typeof x==='string'&&x;}); try{ var a=JSON.parse(s||'[]'); return Array.isArray(a)?a.filter(function(x){return typeof x==='string'&&x;}):[]; }catch(e){ return String(s||'').split(';').map(function(t){return t.trim();}).filter(Boolean); } }
   function ecomOrd(n){ return n+(['','st','nd','rd'][n]||'th'); }
+  // สีแท็ก (มีสีหลากหลาย) — ต้องนิยามในโมดูลนี้เอง เพราะ tagColor() ของหน้า Content อยู่คนละ IIFE เข้าถึงไม่ได้ → ก่อนหน้านี้ตกไปใช้สีเทา default
+  function ecomTagColor(t){ t=(t||'').toLowerCase().trim(); if(/ด่วน|urgent|เร่ง|รีบ/.test(t)) return '#EF5350'; var pal=['#5B8FF9','#9B7EF8','#3CA5A5','#F2994A','#2D9CDB','#EB5FA0','#26A69A','#7C5CFC','#E9557F','#8E7CC3']; var h=0; for(var i=0;i<t.length;i++) h=(h*31+t.charCodeAt(i))>>>0; return pal[h%pal.length]; }
   function ecomParseChecklist(s){ if(Array.isArray(s)) return s.map(function(it){return {text:String(it&&it.text||''),done:!!(it&&it.done)};}).filter(function(it){return it.text;}); try{ var a=JSON.parse(s||'[]'); return Array.isArray(a)?a.map(function(it){return {text:String(it&&it.text||''),done:!!(it&&it.done)};}).filter(function(it){return it.text;}):[]; }catch(e){ return []; } }
   function normEcom(r){ var drafts=ecomParseDrafts(r.drafts); if(!drafts.length && r.draftDate) drafts=[r.draftDate]; return {id:(r.id||'').trim(), title:r.title||'', brand:(typeof normalizeBrand==='function'?normalizeBrand(r.brand):(r.brand||'').trim().toLowerCase()), owner:(r.owner||'').trim(), graphic:(r.graphic||'').trim(), status:ecomStat(r.status), submitDate:r.submitDate||'', submitTime:r.submitTime||'', drafts:drafts, finalDate:r.finalDate||'', tags:r.tags||'', note:r.note||'', checklist:ecomParseChecklist(r.checklist), doneAt:r.doneAt||'', updatedAt:r.updatedAt||'', updatedBy:r.updatedBy||''}; }
   var ecomDraftsWork=[];
@@ -12513,7 +12515,7 @@ header{ background:#5C86D6 !important; }
     var draftStr=(x.drafts&&x.drafts.length)?'<span title="รอบส่งตรวจ">📝 '+x.drafts.length+' รอบ</span>':'';
     var cn=ecomDcnt(x.id); var cmn=cn?'<span class="cc-pl-badge">💬 '+cn+'</span>':'';
     var chkStr=(x.checklist&&x.checklist.length)?'<span title="รายการที่ต้องทำ">☑️ '+x.checklist.filter(function(it){return it.done;}).length+'/'+x.checklist.length+'</span>':'';
-    var tags=(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+((typeof tagColor==='function')?tagColor(t):'#8A94A6')+'">'+E(t)+'</span>';}).join(''):'');
+    var tags=(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+ecomTagColor(t)+'">'+E(t)+'</span>';}).join(''):'');
     var moveOpts=ECOM_STATUS_ORDER.map(function(k){return '<option value="'+k+'"'+(k===s?' selected':'')+'>'+E(ECOM_STATUS[k].t)+'</option>';}).join('');
     var actions=canEd?('<div class="cc-pl-actions"><button class="cc-pl-send" onclick="event.stopPropagation();ecomEdit(\''+AJ(x.id)+'\')">✏️ แก้</button><button class="cc-pl-send" title="Copy สร้างการ์ดใหม่" onclick="event.stopPropagation();ecomCopy(\''+AJ(x.id)+'\')">📋 Copy</button><select class="cc-pl-move" title="ย้ายคอลัมน์" onclick="event.stopPropagation();" onchange="ecomMove(\''+AJ(x.id)+'\',this.value)">'+moveOpts+'</select><button class="cc-pl-no" onclick="event.stopPropagation();ecomDel(\''+AJ(x.id)+'\')" title="ลบ">🗑️</button></div>'):'';
     return '<div class="cc-pl-card" style="--s:'+st.c+'"'+(canEd?' draggable="true" ondragstart="ecomDragStart(event,\''+AJ(x.id)+'\')" ondragend="ecomDragEnd(event)"':'')+'>'
@@ -12590,7 +12592,7 @@ header{ background:#5C86D6 !important; }
     var st=ECOM_STATUS[x.status]||ECOM_STATUS.checklist;
     var row=function(lb,val){ return val?'<div class="cc-cd-row"><b>'+lb+'</b><span>'+val+'</span></div>':''; };
     var dfmt=function(iso){ return iso?ecomFmtDDMM(iso):''; };
-    var tags=(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+((typeof tagColor==='function')?tagColor(t):'#8A94A6')+'">'+E(t)+'</span>';}).join(''):'');
+    var tags=(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+ecomTagColor(t)+'">'+E(t)+'</span>';}).join(''):'');
     var rows='';
     rows+=row('แบรนด์', x.brand?E(ecomBrandLabel(x.brand)):'');
     rows+=row('วันที่ส่งงาน', x.submitDate?('📅 '+E(dfmt(x.submitDate))+(x.submitTime?' '+E(x.submitTime):'')):'');
