@@ -844,20 +844,18 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
 .team-subnav .btn-sm:focus{ outline:none; }
 .team-subnav .btn-sm.subnav-active{ background:linear-gradient(135deg,#7AA0DE,#5C86D6) !important; color:#fff !important; border-color:transparent !important; box-shadow:0 5px 14px -5px rgba(60,100,190,.6); }
 /* NPD Process — left side-nav (like Graphic Team): 5 buttons, active #9B7EF8 / inactive white */
-.npd-shell{ display:flex; gap:16px; align-items:flex-start; }
-.npd-sidenav{ flex:0 0 210px; display:flex; flex-direction:column; gap:8px; position:sticky; top:12px; }
-.npd-content{ flex:1; min-width:0; }
-.npd-navitem{ display:flex; align-items:center; gap:9px; width:100%; text-align:left; background:#fff; color:var(--ink,#1F2A36); border:1px solid var(--line,#E7ECF5); border-radius:12px; padding:11px 14px; font-size:14px; font-weight:600; cursor:pointer; font-family:'Sarabun',sans-serif; box-shadow:var(--shadow-xs); transition:background .14s var(--ease), color .14s var(--ease), border-color .14s var(--ease), box-shadow .14s var(--ease); }
+/* NPD Process nav = a horizontal top bar (full-width content below) */
+.npd-shell{ display:block; }
+.npd-sidenav{ display:flex; flex-direction:row; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.npd-content{ width:100%; min-width:0; }
+.npd-navitem{ display:inline-flex; align-items:center; gap:9px; text-align:left; background:#fff; color:var(--ink,#1F2A36); border:1px solid var(--line,#E7ECF5); border-radius:12px; padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer; font-family:'Sarabun',sans-serif; box-shadow:var(--shadow-xs); transition:background .14s var(--ease), color .14s var(--ease), border-color .14s var(--ease), box-shadow .14s var(--ease); }
 .npd-navitem span{ font-size:16px; line-height:1; }
 .npd-navitem:hover{ border-color:#9B7EF8; color:#6D4FD0; }
 .npd-navitem:focus{ outline:none; }
 .npd-navitem.active{ background:#9B7EF8; border-color:#9B7EF8; color:#fff; box-shadow:0 6px 15px -6px rgba(155,126,248,.7); }
-.npd-navitem-brief{ margin-top:8px; }
-@media(max-width:760px){
-  .npd-shell{ flex-direction:column; }
-  .npd-sidenav{ flex:none; width:100%; position:static; flex-direction:row; flex-wrap:wrap; }
-  .npd-navitem{ width:auto; flex:1 1 140px; justify-content:center; }
-  .npd-navitem-brief{ margin-top:0; }
+@media(max-width:640px){
+  .npd-sidenav{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px; }
+  .npd-navitem{ flex:0 0 auto; }
 }
 
 /* Calendar month grid: rounder cells + gentle hover */
@@ -12656,6 +12654,10 @@ header{ background:#7BA7E6 !important; }
 #view-team #team-status-tbody td{ white-space:nowrap; }
 #view-team .cs-pill:hover{ filter:brightness(.97); }
 #view-team .pill{ color:#443025; }
+#view-team #team-status-tbody td{ vertical-align:middle; }
+#view-team .table-scroll table{ width:max-content; min-width:100%; }
+#view-team #team-status-tbody td:nth-child(2){ min-width:170px; max-width:260px; white-space:normal; }
+#view-team #team-status-tbody td:nth-child(2) .link-btn{ white-space:normal; display:inline; }
 #view-team .npd-navitem-lib{ margin-top:2px; }
 /* Product Stage (roadmap board) → palette */
 #view-team #team-roadmap .rm-count{ background:var(--np-breeze) !important; color:var(--np-ink) !important; }
