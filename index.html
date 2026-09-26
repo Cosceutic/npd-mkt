@@ -1061,40 +1061,6 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
       <button class="btn-sm ghost" onclick="lockTeam()">🔒 ล็อกหน้านี้</button>
     </div>
 
-    <div id="team-roadmap" style="margin-bottom:22px;"></div>
-
-    <p class="section-title" style="margin-top:0;">Library</p>
-    <p class="section-sub">เอกสารและโฟลเดอร์ที่ใช้บ่อย</p>
-    <div class="panel" style="padding:16px 20px;">
-      <div class="lib-grid">
-        <a class="lib-btn" href="#" onclick="openWorkflow();return false;" style="cursor:pointer;">
-          <span class="lib-icon">🧭</span>
-          <span class="lib-text"><strong>NPD Work Flow</strong><small>แผนผังขั้นตอนการทำงาน End-to-End</small></span>
-          <span class="lib-arrow">→</span>
-        </a>
-        <a class="lib-btn" href="https://docs.google.com/document/d/1Pq0LNvoqs5m08CAPj8f97nA5gq7iYnaCHkagridPeHM/edit?usp=sharing" target="_blank" rel="noopener">
-          <span class="lib-icon">📄</span>
-          <span class="lib-text"><strong>Godmami Project Information</strong><small>Google Doc</small></span>
-          <span class="lib-arrow">↗</span>
-        </a>
-        <a class="lib-btn" href="https://drive.google.com/drive/folders/159zDyi4SAQJ5Ny1j-hbRdVYaU1fAlqsI?usp=sharing" target="_blank" rel="noopener">
-          <span class="lib-icon">💰</span>
-          <span class="lib-text"><strong>Cost</strong><small>โฟลเดอร์ต้นทุน</small></span>
-          <span class="lib-arrow">↗</span>
-        </a>
-        <a class="lib-btn" href="https://drive.google.com/drive/folders/1-yNi4IF95YHSq8eIT61UiS56dLfSmwbw?usp=drive_link" target="_blank" rel="noopener">
-          <span class="lib-icon">📋</span>
-          <span class="lib-text"><strong>FDA</strong><small>โฟลเดอร์เอกสาร อย.</small></span>
-          <span class="lib-arrow">↗</span>
-        </a>
-        <a class="lib-btn" href="https://cosceutic.github.io/npd-Sales-Report/" target="_blank" rel="noopener">
-          <span class="lib-icon">📈</span>
-          <span class="lib-text"><strong>NPD Sales Report</strong><small>ยอดขายสินค้าใหม่</small></span>
-          <span class="lib-arrow">↗</span>
-        </a>
-      </div>
-    </div>
-
     <div class="npd-kpi-row" id="npd-kpi-row"></div>
 
     <div class="brand-filter-bar" id="team-brand-bar"></div>
@@ -1105,7 +1071,9 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
       <button class="npd-navitem" id="subnav-tracking" onclick="switchTeamSubview('tracking')"><span>📅</span> Tracking (ปฏิทิน)</button>
       <button class="npd-navitem" id="subnav-nprsummary" onclick="switchTeamSubview('nprsummary')"><span>📊</span> NPR Summary</button>
       <button class="npd-navitem" id="subnav-yearmap" onclick="switchTeamSubview('yearmap')"><span>🗺️</span> Roadmap รายปี</button>
+      <button class="npd-navitem" id="subnav-productstage" onclick="switchTeamSubview('productstage')"><span>🚦</span> Product Stage</button>
       <button class="npd-navitem npd-navitem-brief" id="subnav-brief" onclick="switchTeamSubview('brief')"><span>📋</span> NPD Brief Form</button>
+      <button class="npd-navitem npd-navitem-lib" id="subnav-library" onclick="switchTeamSubview('library')"><span>📚</span> Library</button>
     </div>
     <div class="npd-content">
 
@@ -1202,9 +1170,49 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
       <button class="btn-sm ok" onclick="saveBriefToCloud()" style="margin-left:8px;">💾 บันทึกบรีฟ (กลาง)</button>
       <button class="btn-sm neutral" onclick="openSavedBriefsModal()" style="margin-left:6px;">📂 บรีฟที่บันทึกไว้</button>
       <button class="btn-sm warn-ghost" onclick="clearBriefForm()" style="margin-left:6px;">🆕 เริ่มบรีฟใหม่</button>
-      <button class="btn-sm" onclick="openSetWizard()" style="margin-left:6px; background:#7cb6e4; border-color:#7cb6e4; color:#fff;">🧩 บรีฟชุดเซต (หลายชิ้น)</button>
+      <button class="btn-sm" onclick="openSetWizard()" style="margin-left:6px; background:#BED1E8; border-color:#BED1E8; color:#443025;">🧩 บรีฟชุดเซต (หลายชิ้น)</button>
       <div id="brief-set-hint" class="brief-set-hint">🧩 <b>สินค้าจัดชุดเซตที่มีหลายชิ้น?</b> กด <b>“🧩 บรีฟชุดเซต (หลายชิ้น)”</b> ด้านบน — ระบบจะช่วยตั้งค่าให้ทีละขั้น แล้วแยกบรีฟแต่ละชิ้นเป็นแท็บ พร้อมพิมพ์รวมเป็นเอกสารเดียว</div>
       <div id="brief-form-container" style="display:none; margin-top:16px;"></div>
+    </div>
+    </div>
+
+    <div id="team-subview-productstage" style="display:none;">
+    <p class="section-title" style="margin-top:0;">🚦 Product Stage</p>
+    <p class="section-sub">ขั้นหลักของแต่ละสินค้า — ลากการ์ดเพื่อเปลี่ยนสเตจได้ (เฉพาะทีม NPD)</p>
+    <div id="team-roadmap"></div>
+    </div>
+
+    <div id="team-subview-library" style="display:none;">
+    <p class="section-title" style="margin-top:0;">📚 Library</p>
+    <p class="section-sub">เอกสารและโฟลเดอร์ที่ใช้บ่อย</p>
+    <div class="panel" style="padding:16px 20px;">
+      <div class="lib-grid">
+        <a class="lib-btn" href="#" onclick="openWorkflow();return false;" style="cursor:pointer;">
+          <span class="lib-icon">🧭</span>
+          <span class="lib-text"><strong>NPD Work Flow</strong><small>แผนผังขั้นตอนการทำงาน End-to-End</small></span>
+          <span class="lib-arrow">→</span>
+        </a>
+        <a class="lib-btn" href="https://docs.google.com/document/d/1Pq0LNvoqs5m08CAPj8f97nA5gq7iYnaCHkagridPeHM/edit?usp=sharing" target="_blank" rel="noopener">
+          <span class="lib-icon">📄</span>
+          <span class="lib-text"><strong>Godmami Project Information</strong><small>Google Doc</small></span>
+          <span class="lib-arrow">↗</span>
+        </a>
+        <a class="lib-btn" href="https://drive.google.com/drive/folders/159zDyi4SAQJ5Ny1j-hbRdVYaU1fAlqsI?usp=sharing" target="_blank" rel="noopener">
+          <span class="lib-icon">💰</span>
+          <span class="lib-text"><strong>Cost</strong><small>โฟลเดอร์ต้นทุน</small></span>
+          <span class="lib-arrow">↗</span>
+        </a>
+        <a class="lib-btn" href="https://drive.google.com/drive/folders/1-yNi4IF95YHSq8eIT61UiS56dLfSmwbw?usp=drive_link" target="_blank" rel="noopener">
+          <span class="lib-icon">📋</span>
+          <span class="lib-text"><strong>FDA</strong><small>โฟลเดอร์เอกสาร อย.</small></span>
+          <span class="lib-arrow">↗</span>
+        </a>
+        <a class="lib-btn" href="https://cosceutic.github.io/npd-Sales-Report/" target="_blank" rel="noopener">
+          <span class="lib-icon">📈</span>
+          <span class="lib-text"><strong>NPD Sales Report</strong><small>ยอดขายสินค้าใหม่</small></span>
+          <span class="lib-arrow">↗</span>
+        </a>
+      </div>
     </div>
     </div>
 
@@ -2796,8 +2804,8 @@ function deptBadge(p){
 function riskBadge(r){
   r = (r||'').trim();
   if(!r) return '<span class="dash">-</span>';
-  const color = /high/i.test(r) ? 'var(--danger)' : /med/i.test(r) ? 'var(--warn)' : 'var(--ok)';
-  return `<span class="pill" style="background:${color}">${esc(r)}</span>`;
+  const color = /high/i.test(r) ? '#FF91C0' : /med/i.test(r) ? '#FFB7CF' : '#BED1E8';
+  return `<span class="pill" style="background:${color}; color:#443025;">${esc(r)}</span>`;
 }
 
 function daysBetween(a,b){ return Math.round((b-a)/(1000*60*60*24)); }
@@ -4808,14 +4816,26 @@ function logsFor(sku, track){
   return UPDATE_LOGS.filter(l=> l.track===track && (l.sku===sku || l.sku===grp))
                      .sort((a,b)=> b.date.localeCompare(a.date));
 }
+/* pastel status pill (NPD Process modern theme) — color by stage keyword */
+function npStageColor(stage){
+  var s=(stage==null?'':String(stage));
+  if(/เรียบร้อย|เสร็จ|สำเร็จ|รับทราบ|ชำระ|อนุมัติ|ผ่าน|done|complete|approv|confirm|เข้าครบ|รับแล้ว|สั่งแล้ว/i.test(s)) return '#BED1E8';
+  if(/รอ|pending|wait|ค้าง|ตรวจ|review/i.test(s)) return '#FFB7CF';
+  if(/ดำเนินการ|กำลัง|เปิดใบงาน|แจ้ง|progress|wip|เริ่ม|ผลิต/i.test(s)) return '#FFF8B2';
+  return '#EFE9E2';
+}
+function npStatusPill(shortText, stage, onclickAttr, titleFull){
+  return '<button class="cs-pill" style="background:'+npStageColor(stage)+';" onclick="'+onclickAttr+'" title="'+esc(titleFull||shortText)+'">'+esc(shortText)+'</button>';
+}
 function trackCellSummary(sku, track){
   const entries = logsFor(sku, track);
   if(!entries.length) return '<span class="dash">-</span>';
   const latest = entries[0];
-  const label = [latest.subCategory, latest.stage, latest.detail].filter(Boolean).join(' — ') || latest.note || '(update logged)';
+  const full = [latest.subCategory, latest.stage, latest.detail].filter(Boolean).join(' — ') || latest.note || '(update logged)';
+  const short = (latest.stage || latest.subCategory || 'อัปเดต').toString();
   const shared = latest.sku && latest.sku!==sku && isGroupCode(latest.sku);
   const tag = shared ? ` <span class="grp-tag" title="อัปเดตระดับกลุ่ม — ใช้ร่วมทุก SKU ในกลุ่ม">กลุ่ม</span>` : '';
-  return `<button class="link-btn" style="font-size:12.5px; text-align:left;" onclick="openTrackLog('${esc(sku)}','${track}')">${esc(label)}</button>${tag}`;
+  return npStatusPill(short, latest.stage, "event.stopPropagation();openTrackLog('"+attrJs(sku)+"','"+attrJs(track)+"')", full)+tag;
 }
 /* Group-level cell: newest status across the whole group (group-scoped + every member's own).
    Shows a "+N เฉด" tag when some shades have their own (differing) status. */
@@ -4828,9 +4848,10 @@ function groupTrackCellSummary(group, members, track){
   if(!entries.length) return '<span class="dash">-</span>';
   const latest = entries[0];
   const label = [latest.subCategory, latest.stage, latest.detail].filter(Boolean).join(' — ') || latest.note || '(update logged)';
+  const short = (latest.stage || latest.subCategory || 'อัปเดต').toString();
   const specific = new Set(entries.filter(e=>e.sku!==group).map(e=>e.sku));
   const tag = specific.size ? ` <span class="grp-tag" title="บางเฉดมีสถานะเฉพาะตัว — คลิกดูรายเฉด">+${specific.size} เฉด</span>` : '';
-  return `<button class="link-btn" style="font-size:12.5px; text-align:left;" onclick="openTrackLog('${esc(group)}','${track}')">${esc(label)}</button>${tag}`;
+  return npStatusPill(short, latest.stage, "event.stopPropagation();openTrackLog('"+attrJs(group)+"','"+attrJs(track)+"')", label)+tag;
 }
 function groupRisk(group, members){
   const rank={High:3,Medium:2,Low:1,'':0}; let best='';
@@ -4917,7 +4938,7 @@ function openProcessSummary(sku){
         const rows = bySub[s].slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
         const trs = rows.map(l=>{
           const dt = l.date ? formatDate(new Date(l.date+'T00:00:00')) : '<span class="dash">-</span>';
-          const stage = l.stage ? `<span class="psum-stage">${esc(l.stage)}</span>` : '<span class="dash">-</span>';
+          const stage = l.stage ? `<span class="psum-stage" style="background:${npStageColor(l.stage)};color:#443025;">${esc(l.stage)}</span>` : '<span class="dash">-</span>';
           const detail = esc([l.detail, l.note].filter(Boolean).join(' · ')) || '<span class="dash">-</span>';
           const imgs = attachmentTiles(l.imagesRaw, 'sm') || '<span class="dash">-</span>';
           const scopeTag = (l.sku!==sku && isGroupCode(l.sku)) ? ' <span class="grp-tag" title="อัปเดตระดับกลุ่ม">กลุ่ม</span>' : (l.sku!==sku && !isGroupCode(sku) ? ` <span class="grp-tag">${esc(l.sku)}</span>` : '');
@@ -4947,13 +4968,14 @@ function nextDueForSku(sku){
 }
 
 function switchTeamSubview(key){
-  var views={ status:'team-subview-status', nprsummary:'team-subview-nprsummary', tracking:'team-subview-tracking', yearmap:'team-subview-yearmap', brief:'team-subview-brief' };
+  var views={ status:'team-subview-status', nprsummary:'team-subview-nprsummary', tracking:'team-subview-tracking', yearmap:'team-subview-yearmap', productstage:'team-subview-productstage', brief:'team-subview-brief', library:'team-subview-library' };
   Object.keys(views).forEach(function(k){ var el=document.getElementById(views[k]); if(el) el.style.display = (k===key)?'block':'none'; });
-  var navs={ status:'subnav-status', nprsummary:'subnav-nprsummary', tracking:'subnav-tracking', yearmap:'subnav-yearmap', brief:'subnav-brief' };
+  var navs={ status:'subnav-status', nprsummary:'subnav-nprsummary', tracking:'subnav-tracking', yearmap:'subnav-yearmap', productstage:'subnav-productstage', brief:'subnav-brief', library:'subnav-library' };
   Object.keys(navs).forEach(function(k){ var el=document.getElementById(navs[k]); if(el){ el.classList.toggle('active', k===key); el.classList.toggle('subnav-active', k===key); } });
   if(key==='nprsummary') renderNPRSummary();
   if(key==='tracking'){ renderTrackingCalendar(); renderTrackingUpcoming(); }
   if(key==='yearmap' && typeof renderYearRoadmapView==='function') renderYearRoadmapView();
+  if(key==='productstage' && typeof renderRoadmap==='function') renderRoadmap();
   if(typeof renderNpdKpis==='function') renderNpdKpis();
 }
 
@@ -12625,7 +12647,29 @@ header{ background:#7BA7E6 !important; }
 #view-team .brand-filter-btn.active{ background:var(--np-breeze) !important; border-color:var(--np-breeze) !important; color:var(--np-ink) !important; }
 #view-team .btn-sm.primary, #view-team .btn-edit.primary{ background:var(--np-breeze) !important; border-color:var(--np-breeze) !important; color:var(--np-ink) !important; }
 #view-team .link-btn{ color:var(--np-ink); font-weight:600; }
-#view-team .lib-btn{ border-radius:14px; }
+#view-team .lib-btn{ border-radius:14px; background:#fff !important; border-color:var(--np-line) !important; }
+#view-team .lib-btn:hover{ background:var(--np-breeze-t) !important; border-color:var(--np-breeze) !important; }
+#view-team .lib-btn strong{ color:var(--np-ink); }
+/* compact pastel status pills in the status table */
+#view-team .cs-pill{ border:none; border-radius:999px; padding:5px 12px; font-size:12px; font-weight:600; color:#443025; cursor:pointer; font-family:inherit; white-space:nowrap; line-height:1.45; }
+#view-team .table-scroll{ overflow-x:auto; }
+#view-team #team-status-tbody td{ white-space:nowrap; }
+#view-team .cs-pill:hover{ filter:brightness(.97); }
+#view-team .pill{ color:#443025; }
+#view-team .npd-navitem-lib{ margin-top:2px; }
+/* Product Stage (roadmap board) → palette */
+#view-team #team-roadmap .rm-count{ background:var(--np-breeze) !important; color:var(--np-ink) !important; }
+#view-team #team-roadmap .rm-caret{ color:var(--np-ink2) !important; }
+#view-team #team-roadmap .rm-toggle{ background:var(--np-breeze-t) !important; border-color:var(--np-line) !important; }
+#view-team #team-roadmap .rm-toggle-title{ color:var(--np-ink) !important; }
+#view-team #team-roadmap .rm-col-head{ color:var(--np-ink) !important; border-bottom-color:var(--np-breeze) !important; }
+/* detail card modal (#psum-overlay) → brown ink + breeze accents */
+#psum-overlay .mh-name{ color:#443025 !important; }
+#psum-overlay .psum-track-h{ color:#443025 !important; border-bottom-color:#EAF1F8 !important; }
+#psum-overlay .psum-sub-h{ color:#443025 !important; }
+#psum-overlay .psum-count{ background:#EAF1F8 !important; color:#443025 !important; }
+#psum-overlay .psum-table thead th{ background:#EAF1F8 !important; color:#6E5F54 !important; }
+#psum-overlay .psum-stage{ border-radius:999px !important; color:#443025 !important; }
 </style>
 
 <script>
@@ -12654,7 +12698,7 @@ header{ background:#7BA7E6 !important; }
   /* ---- stage storage (separate table so the whole NPD team can edit) ---- */
   var STAGE_MAP = {};
   var stagesLoaded = false, stagesLoading = false;
-  var roadmapOpen = false;   // Roadmap ยุบไว้ก่อน — กดปุ่ม "Product Stage" เพื่อกาง
+  var roadmapOpen = true;   // Product Stage เป็นหน้าเมนูของตัวเองแล้ว → กางไว้เลย (กดหัวเพื่อยุบได้)
   var ARCHIVED_MAP = {};
   window.loadStages = async function(){
     try{ var rows = await sbSelect('product_stage'); STAGE_MAP={}; ARCHIVED_MAP={}; rows.forEach(function(r){ if(r.sku){ STAGE_MAP[r.sku]=r.stage||''; ARCHIVED_MAP[r.sku]=(r.archived==='1'||r.archived==='true')?'1':''; } }); }catch(e){}
