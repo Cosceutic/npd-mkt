@@ -1095,6 +1095,8 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
       </div>
     </div>
 
+    <div class="npd-kpi-row" id="npd-kpi-row"></div>
+
     <div class="brand-filter-bar" id="team-brand-bar"></div>
 
     <div class="npd-shell">
@@ -4952,6 +4954,7 @@ function switchTeamSubview(key){
   if(key==='nprsummary') renderNPRSummary();
   if(key==='tracking'){ renderTrackingCalendar(); renderTrackingUpcoming(); }
   if(key==='yearmap' && typeof renderYearRoadmapView==='function') renderYearRoadmapView();
+  if(typeof renderNpdKpis==='function') renderNpdKpis();
 }
 
 /* ===== Tracking calendar — plots every dated Current-Status update + Next-Due on a month grid ===== */
@@ -5198,7 +5201,25 @@ function setTeamBrandFilter(b){
   const tv=document.getElementById('team-subview-tracking');
   if(tv && tv.style.display!=='none'){ if(typeof renderTrackingCalendar==='function') renderTrackingCalendar(); if(typeof renderTrackingUpcoming==='function') renderTrackingUpcoming(); }
 }
+function renderNpdKpis(){
+  var host=document.getElementById('npd-kpi-row');
+  if(!host) return;
+  if(typeof PRODUCTS==='undefined'){ host.innerHTML=''; return; }
+  var sof=(typeof window.stageOf==='function')?window.stageOf:function(){return '';};
+  var arch=(typeof window.isArchived==='function')?window.isArchived:function(){return false;};
+  var list=PRODUCTS.filter(function(p){ return p && p.sku && !arch(p.sku); });
+  var total=list.length, dev=0, near=0, launched=0;
+  list.forEach(function(p){
+    var s=sof(p.sku);
+    if(s==='launch') launched++;
+    else if(s==='instock'||s==='prelaunch') near++;
+    else if(s==='concept'||s==='cost'||s==='dev'||s==='massprod') dev++;
+  });
+  function card(n,l,c){ return '<div class="npd-kpi"><span class="d" style="background:'+c+';"></span><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
+  host.innerHTML = card(total,'สินค้าทั้งหมด','#BED1E8')+card(dev,'กำลังพัฒนา','#FFF8B2')+card(near,'ใกล้วางขาย','#FFB7CF')+card(launched,'วางขายแล้ว','#FF91C0');
+}
 function renderTeamUpdates(){
+  renderNpdKpis();
   renderTeamBrandBar();
   // Current Status table — one column per track that has updates (R&D + Packaging always shown)
   const tbody = document.getElementById('team-status-tbody');
@@ -5220,13 +5241,13 @@ function renderTeamUpdates(){
       : (archCount ? '<button class="btn-sm ghost" onclick="toggleArchiveView()">🗄️ ดูสินค้าที่จัดเก็บ ('+archCount+')</button>' : '');
   })();
   const canArch = (typeof canEditArea==='function') && canEditArea('npd_process');
-  const archBtn = (skuCsv)=> canArch ? ' <button class="cs-arch-btn" title="'+(showArch?'นำกลับ':'จัดเก็บ (ซ่อนจากตาราง)')+'" onclick="archiveGroup(\''+skuCsv+'\','+(showArch?'false':'true')+')">'+(showArch?'↩️':'🗄️')+'</button>' : '';
+  const archBtn = (skuCsv)=> canArch ? ' <button class="cs-arch-btn" title="'+(showArch?'นำกลับ':'จัดเก็บ (ซ่อนจากตาราง)')+'" onclick="event.stopPropagation();archiveGroup(\''+skuCsv+'\','+(showArch?'false':'true')+')">'+(showArch?'↩️':'🗄️')+'</button>' : '';
 
   const otherTracks = [...new Set(UPDATE_LOGS.map(l=>l.track).filter(Boolean))].filter(t=>t!=='rd'&&t!=='pkg').sort();
   const trackCols = ['rd','pkg', ...otherTracks];
   if(headRow) headRow.innerHTML = `<th style="width:8%;">Image</th><th style="min-width:130px;">Product</th>${trackCols.map(t=>`<th style="min-width:150px;">${esc(trackLabelOf(t))}</th>`).join('')}<th style="width:6%;">Risk</th>`;
 
-  const rowFor = (sku, imgCell, nameCell, extraTr='') => `<tr${extraTr}>
+  const rowFor = (sku, imgCell, nameCell, extraTr='') => `<tr${extraTr} onclick="openProcessSummary('${attrJs(sku)}')">
     <td>${imgCell}</td><td>${nameCell}</td>
     ${trackCols.map(t=>`<td>${trackCellSummary(sku,t)}</td>`).join('')}
     <td>${riskBadge(riskForSku(sku))}</td></tr>`;
@@ -5237,7 +5258,7 @@ function renderTeamUpdates(){
   } else {
     document.getElementById('team-status-empty').style.display = 'none';
     const imgOf = p => p.image
-      ? `<img src="${esc(p.image)}" alt="" style="width:36px; height:36px; border-radius:8px; object-fit:cover; cursor:pointer;" onclick="openLightbox('${esc(p.image)}',event)">`
+      ? `<img src="${esc(p.image)}" alt="" style="width:36px; height:36px; border-radius:8px; object-fit:cover; cursor:pointer;" onclick="event.stopPropagation();openLightbox('${esc(p.image)}',event)">`
       : '<span class="dash">-</span>';
     // group the relevant products, preserving order — one row per product (all SKUs together)
     const order=[], grpMap={};
@@ -5252,7 +5273,7 @@ function renderTeamUpdates(){
       const gname = groupDisplayName(key);
       const nameCell = `<div style="font-weight:600;"><button class="link-btn" style="font-weight:600;" onclick="openProcessSummary('${attrJs(key)}')">${esc(gname)}</button> <span class="grp-tag">${members.length} SKU</span>${archBtn(members.map(m=>m.sku).join(','))}</div>
         <span class="sku" style="display:inline;">กลุ่ม ${esc(key)}</span>`;
-      return `<tr>
+      return `<tr onclick="openProcessSummary('${attrJs(key)}')">
         <td>${imgOf(rep)}</td><td>${nameCell}</td>
         ${trackCols.map(t=>`<td>${groupTrackCellSummary(key, members, t)}</td>`).join('')}
         <td>${riskBadge(groupRisk(key, members))}</td></tr>`;
@@ -12569,6 +12590,42 @@ header{ background:#7BA7E6 !important; }
 #view-ecom .ecom-pic-pill.on,
 #view-ecom .btn-edit.primary, #view-ecom .btn-sm.primary{ background:#F9C4DA !important; color:#5b6472 !important; border-color:#F9C4DA !important; }
 #team-roadmap .rm-count{ background:#F9C4DA !important; color:#5b6472 !important; }
+</style>
+<style id="npd-modern-2026">
+/* ===== NPD Process — modern pastel redesign (palette: brown #443025 ink · BREEZE #BED1E8 primary · CANDY/FLAMINGO/SUNSHINE accents) ===== */
+#view-team{
+  --np-ink:#443025; --np-ink2:#8A7B6F; --np-card:#fff; --np-line:#ECE6DF;
+  --np-breeze:#BED1E8; --np-breeze-t:#EAF1F8; --np-candy:#FFB7CF; --np-flamingo:#FF91C0; --np-sun:#FFF8B2;
+  color:var(--np-ink);
+}
+#view-team .section-title{ color:var(--np-ink) !important; font-weight:700; letter-spacing:-.2px; }
+#view-team .section-sub{ color:var(--np-ink2); }
+#view-team .panel{ background:var(--np-card); border:1px solid var(--np-line) !important; border-radius:18px !important; box-shadow:0 1px 4px rgba(68,48,37,.05) !important; }
+/* KPI row */
+#view-team .npd-kpi-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:2px 0 18px; }
+#view-team .npd-kpi{ background:var(--np-card); border:1px solid var(--np-line); border-radius:16px; padding:15px 16px; }
+#view-team .npd-kpi .d{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+#view-team .npd-kpi .n{ font-size:30px; font-weight:700; line-height:1; letter-spacing:-1px; color:var(--np-ink); margin-top:10px; }
+#view-team .npd-kpi .l{ font-size:12.5px; color:var(--np-ink2); margin-top:7px; }
+@media(max-width:760px){ #view-team .npd-kpi-row{ grid-template-columns:repeat(2,1fr); } }
+/* side-nav → BREEZE primary */
+#view-team .npd-navitem{ border-radius:14px; }
+#view-team .npd-navitem:hover{ border-color:var(--np-breeze); color:var(--np-ink); background:var(--np-breeze-t); }
+#view-team .npd-navitem.active{ background:var(--np-breeze) !important; border-color:var(--np-breeze) !important; color:var(--np-ink) !important; box-shadow:0 6px 16px -7px rgba(110,150,190,.7) !important; }
+/* modern table */
+#view-team .table-scroll{ border-radius:14px; }
+#view-team table{ border-collapse:separate; border-spacing:0; }
+#view-team thead th{ background:var(--np-breeze-t) !important; color:#6E5F54 !important; font-weight:600; border:none !important; padding:12px 13px; }
+#view-team tbody td{ border-bottom:1px solid var(--np-line) !important; padding:12px 13px; vertical-align:middle; }
+#view-team #team-status-tbody tr{ transition:background .12s; }
+#view-team #team-status-tbody tr:hover{ background:var(--np-breeze-t); cursor:pointer; }
+#view-team tbody tr:last-child td{ border-bottom:none !important; }
+/* pill filters + primary buttons → BREEZE */
+#view-team .brand-filter-btn{ border-radius:999px; }
+#view-team .brand-filter-btn.active{ background:var(--np-breeze) !important; border-color:var(--np-breeze) !important; color:var(--np-ink) !important; }
+#view-team .btn-sm.primary, #view-team .btn-edit.primary{ background:var(--np-breeze) !important; border-color:var(--np-breeze) !important; color:var(--np-ink) !important; }
+#view-team .link-btn{ color:var(--np-ink); font-weight:600; }
+#view-team .lib-btn{ border-radius:14px; }
 </style>
 
 <script>
