@@ -12836,8 +12836,10 @@ header{ background:#7BA7E6 !important; }
   var GFX_BRANDS=[['all','ทั้งหมด'],['godmami','Godmami'],['glimmer','Glimmer Sisters']];
   var COL_PALETTE=['#8b7ef8','#ffb454','#a78bfa','#26a69a','#5B8FF9','#EB5FA0','#F2994A','#3CA5A5','#7C5CFC','#E9557F'];
   var GFX_TAGS_KEY='npd_gfx_tags';
-  var CARD_LKEY='npd_gfx_cards_v1', PPL_LKEY='npd_gfx_people_v1', COLS_LKEY='npd_gfx_cols_v1';
-  var GFX=[], GFX_PEOPLE=null, GFX_COLS={};
+  var CARD_LKEY='npd_gfx_cards_v1', PPL_LKEY='npd_gfx_people_v1', COLS_LKEY='npd_gfx_cols_v1', AVA_LKEY='npd_gfx_avatars_v1';
+  var GFX=[], GFX_PEOPLE=null, GFX_COLS={}, GFX_AVATARS={};
+  var GFX_AV_EMOJIS=['🎨','🖌️','✏️','✨','🌸','🐰','⭐','🎬','📸','💜','🍰','🌈','🧁','🦄','🐥','🌟'];
+  var GFX_AV_COLORS=['linear-gradient(135deg,#8b7ef8,#a78bfa)','#8b7ef8','#EB5FA0','#ffb454','#26a69a','#5B8FF9','#F2994A','#7C5CFC','#E9557F','#3CA5A5','#f4b429','#5b6472'];
   var gfxPerson=null, gfxSub='board';
   var gfxFilterBrand='all', gfxFilterGraphic='', gfxFilterTag='';
   var gfxEditId=null, gfxDragId=null, gfxPresetCol=null;
@@ -12890,11 +12892,12 @@ header{ background:#7BA7E6 !important; }
       GFX=rows; gfxSaveCardsLocal();
     }catch(e){ GFX=cache.map(normGfx); }
     try{
-      var cfg=await sbSelect('graphic_config'); var ppl=null, cols={};
-      cfg.forEach(function(row){ var k=row.k||''; if(k==='people'){ try{ ppl=JSON.parse(row.v||'[]'); }catch(e){} } else if(k.indexOf('cols::')===0){ try{ cols[k.slice(6)]=JSON.parse(row.v||'[]'); }catch(e){} } });
+      var cfg=await sbSelect('graphic_config'); var ppl=null, cols={}, avas={};
+      cfg.forEach(function(row){ var k=row.k||''; if(k==='people'){ try{ ppl=JSON.parse(row.v||'[]'); }catch(e){} } else if(k.indexOf('cols::')===0){ try{ cols[k.slice(6)]=JSON.parse(row.v||'[]'); }catch(e){} } else if(k.indexOf('avatar::')===0){ try{ avas[k.slice(8)]=JSON.parse(row.v||'{}'); }catch(e){} } });
       if(ppl && ppl.length){ GFX_PEOPLE=ppl; lset(PPL_LKEY,ppl); } else if(!GFX_PEOPLE){ GFX_PEOPLE=lget(PPL_LKEY,null); }
       GFX_COLS=cols; lset(COLS_LKEY,cols);
-    }catch(e){ if(!GFX_PEOPLE) GFX_PEOPLE=lget(PPL_LKEY,null); GFX_COLS=lget(COLS_LKEY,{})||{}; }
+      GFX_AVATARS=avas; lset(AVA_LKEY,avas);
+    }catch(e){ if(!GFX_PEOPLE) GFX_PEOPLE=lget(PPL_LKEY,null); GFX_COLS=lget(COLS_LKEY,{})||{}; GFX_AVATARS=lget(AVA_LKEY,{})||{}; }
     return GFX;
   }
   async function gfxSyncCard(card){
@@ -12907,6 +12910,8 @@ header{ background:#7BA7E6 !important; }
   }
   async function gfxSavePeople(){ lset(PPL_LKEY, gfxPeople()); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'people',row:{k:'people',v:JSON.stringify(gfxPeople()),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
   async function gfxSaveCols(p){ lset(COLS_LKEY, GFX_COLS); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'cols::'+p,row:{k:'cols::'+p,v:JSON.stringify(GFX_COLS[p]||[]),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
+  async function gfxSaveAvatar(p){ lset(AVA_LKEY, GFX_AVATARS); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'avatar::'+p,row:{k:'avatar::'+p,v:JSON.stringify(GFX_AVATARS[p]||{}),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
+  function gfxAvatarHtml(name,size){ var a=GFX_AVATARS[name]||{}; size=size||36; var st='width:'+size+'px;height:'+size+'px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:'+Math.round(size*0.5)+'px;flex:0 0 auto;overflow:hidden;'; if(a.img){ return '<span style="'+st+'"><img src="'+E(a.img)+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.innerHTML=\'🎨\'"></span>'; } return '<span style="'+st+'background:'+(a.color||'linear-gradient(135deg,#8b7ef8,#a78bfa)')+';">'+E(a.emoji||'🎨')+'</span>'; }
   function gfxUpsertLocal(card){ var i=GFX.findIndex(function(x){return x.id===card.id;}); if(i>-1) GFX[i]=card; else GFX.push(card); gfxSaveCardsLocal(); }
 
   function gfxTagColor(t){ t=(t||'').toLowerCase().trim(); if(/ด่วน|urgent|เร่ง|รีบ/.test(t)) return '#EF5350'; var pal=['#5B8FF9','#9B7EF8','#3CA5A5','#F2994A','#2D9CDB','#EB5FA0','#26A69A','#7C5CFC','#E9557F','#8E7CC3']; var h=0; for(var i=0;i<t.length;i++) h=(h*31+t.charCodeAt(i))>>>0; return pal[h%pal.length]; }
@@ -13072,6 +13077,10 @@ header{ background:#7BA7E6 !important; }
       rov.addEventListener('click',function(e){ if(e.target===rov) rov.classList.remove('open'); });
       rov.innerHTML='<div class="modal-box" style="max-width:420px;width:92vw;"><div id="gfx-rev-body"></div></div>';
       document.body.appendChild(rov);
+      var aov=document.createElement('div'); aov.className='modal-overlay'; aov.id='gfx-avatar-overlay'; aov.style.zIndex='85';
+      aov.addEventListener('click',function(e){ if(e.target===aov) aov.classList.remove('open'); });
+      aov.innerHTML='<div class="modal-box" style="max-width:420px;width:92vw;"><div id="gfx-avatar-body"></div></div>';
+      document.body.appendChild(aov);
     }
   }
   window.renderGraphicTeam=function(){
@@ -13094,7 +13103,7 @@ header{ background:#7BA7E6 !important; }
       var pct=total?Math.round(doneN/total*100):0;
       var del=canEd?'<button title="ลบคนนี้" onclick="event.stopPropagation();gfxDelPerson(\''+AJ(name)+'\')" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:13px;color:#c4485f;">🗑️</button>':'';
       return '<div class="gfx-person" onclick="gfxOpenPerson(\''+AJ(name)+'\')">'
-        +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;"><span style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#8b7ef8,#a78bfa);display:inline-flex;align-items:center;justify-content:center;font-size:18px;">🎨</span><span style="font-weight:700;font-size:16px;font-family:\'Anuphan\',\'Prompt\',sans-serif;">'+E(name)+'</span>'+del+'</div>'
+        +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">'+(canEd?'<span onclick="event.stopPropagation();gfxAvatarOpen(\''+AJ(name)+'\')" style="cursor:pointer;position:relative;" title="เปลี่ยนรูป/สี/อิโมจิ">'+gfxAvatarHtml(name,36)+'<span style="position:absolute;right:-3px;bottom:-3px;background:#fff;border-radius:50%;font-size:10px;line-height:1;padding:2px;box-shadow:0 1px 3px rgba(0,0,0,.25);">✏️</span></span>':gfxAvatarHtml(name,36))+'<span style="font-weight:700;font-size:16px;font-family:\'Anuphan\',\'Prompt\',sans-serif;">'+E(name)+'</span>'+del+'</div>'
         +'<div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-soft);margin-bottom:5px;"><span>🗂️ '+total+' งาน</span>'+(overdue?'<span style="color:#e53935;font-weight:700;">⚠️ ล่าช้า '+overdue+'</span>':'<span style="color:#26a69a;">✓ ตรงเวลา</span>')+'</div>'
         +'<div style="height:9px;background:#eef1f7;border-radius:6px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#8b7ef8,#26a69a);"></div></div>'
         +'<div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">เสร็จแล้ว '+pct+'% ('+doneN+'/'+total+')</div>'
@@ -13310,6 +13319,37 @@ header{ background:#7BA7E6 !important; }
 
   /* ---------- people ---------- */
   window.gfxAddPerson=function(){ if(!gfxCanEdit()){ TOAST('เข้าสู่ระบบก่อน','info'); return; } var n=prompt('ชื่อกราฟฟิกคนใหม่:',''); if(n==null) return; n=String(n).trim(); if(!n) return; var ppl=gfxPeople(); if(ppl.indexOf(n)>=0){ TOAST('มีชื่อนี้แล้ว','info'); return; } GFX_PEOPLE=ppl.slice(); GFX_PEOPLE.push(n); GFX_COLS[n]=gfxDefaultCols(); gfxSavePeople(); gfxSaveCols(n); renderGraphicTeam(); TOAST('เพิ่ม “'+n+'” แล้ว','ok'); };
+  var gfxAvWork=null;   // {name,emoji,color,img} ระหว่างแก้รูป
+  function gfxAvatarRenderBody(){
+    var w=gfxAvWork; if(!w) return;
+    var preview='<span style="width:64px;height:64px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden;'+(w.img?'':'background:'+(w.color||'linear-gradient(135deg,#8b7ef8,#a78bfa)')+';')+'">'+(w.img?'<img src="'+E(w.img)+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.innerHTML=\'🎨\'">':E(w.emoji||'🎨'))+'</span>';
+    var emojis=GFX_AV_EMOJIS.map(function(e){ return '<button type="button" onclick="gfxAvPickEmoji(\''+e+'\')" style="width:40px;height:40px;border:1.5px solid '+((!w.img&&w.emoji===e)?'#8b7ef8':'var(--line,#E7ECF5)')+';background:'+((!w.img&&w.emoji===e)?'#f4f2fb':'#fff')+';border-radius:10px;font-size:20px;cursor:pointer;">'+e+'</button>'; }).join('');
+    var colors=GFX_AV_COLORS.map(function(c){ var on=(!w.img&&(w.color||'linear-gradient(135deg,#8b7ef8,#a78bfa)')===c); return '<button type="button" onclick="gfxAvPickColor(\''+AJ(c)+'\')" title="'+(c.indexOf('gradient')>=0?'ค่าเริ่มต้น':c)+'" style="width:32px;height:32px;border-radius:50%;background:'+c+';border:3px solid '+(on?'#1F2A36':'#fff')+';box-shadow:0 0 0 1px var(--line,#E7ECF5);cursor:pointer;"></button>'; }).join('');
+    document.getElementById('gfx-avatar-body').innerHTML=
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:15px 17px 11px;border-bottom:1px solid var(--line,#E7ECF5);"><div style="font-weight:700;font-size:16px;font-family:\'Anuphan\',\'Prompt\',sans-serif;">🎨 รูปของ '+E(w.name)+'</div><span onclick="document.getElementById(\'gfx-avatar-overlay\').classList.remove(\'open\')" style="cursor:pointer;font-size:20px;color:#9aa4b5;">✕</span></div>'
+      +'<div style="padding:15px 17px;">'
+        +'<div style="display:flex;justify-content:center;margin-bottom:14px;">'+preview+'</div>'
+        +'<div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">อิโมจิ</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;">'+emojis+'</div>'
+        +'<div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">สีพื้นหลัง</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">'+colors+'</div>'
+        +'<div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">หรือใส่ลิงก์รูป (ถ้ามี จะใช้รูปแทนอิโมจิ)</div>'
+        +'<div style="display:flex;gap:7px;"><input type="text" id="gfx-av-img" value="'+E(w.img||'')+'" placeholder="วางลิงก์รูป https://…" style="flex:1;padding:8px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;font-family:inherit;box-sizing:border-box;"><button type="button" onclick="gfxAvSetImg()" style="border:1px solid var(--line,#E7ECF5);background:#fff;border-radius:9px;padding:0 12px;font-weight:600;cursor:pointer;">ใช้รูป</button></div>'
+        +(w.img?'<button type="button" onclick="gfxAvClearImg()" style="margin-top:7px;border:none;background:none;color:#c4485f;font-size:12px;font-weight:600;cursor:pointer;">✕ เอารูปออก (กลับไปใช้อิโมจิ)</button>':'')
+      +'</div>'
+      +'<div style="display:flex;justify-content:flex-end;gap:8px;padding:0 17px 16px;">'
+        +'<button onclick="gfxAvReset()" style="background:#fff;border:1px solid #dfe4ee;color:#5b6472;border-radius:9px;padding:8px 14px;font-weight:600;cursor:pointer;margin-right:auto;">รีเซ็ตค่าเริ่มต้น</button>'
+        +'<button onclick="document.getElementById(\'gfx-avatar-overlay\').classList.remove(\'open\')" style="background:#fff;border:1px solid #dfe4ee;color:#5b6472;border-radius:9px;padding:8px 16px;font-weight:600;cursor:pointer;">ยกเลิก</button>'
+        +'<button onclick="gfxAvSave()" style="background:linear-gradient(120deg,#8b7ef8,#a78bfa);color:#fff;border:none;border-radius:9px;padding:8px 18px;font-weight:700;cursor:pointer;">💾 บันทึก</button>'
+      +'</div>';
+  }
+  window.gfxAvatarOpen=function(name){ if(!gfxCanEdit()) return; ensureGraphicView(); var a=GFX_AVATARS[name]||{}; gfxAvWork={name:name, emoji:a.emoji||'🎨', color:a.color||'linear-gradient(135deg,#8b7ef8,#a78bfa)', img:a.img||''}; gfxAvatarRenderBody(); document.getElementById('gfx-avatar-overlay').classList.add('open'); };
+  window.gfxAvPickEmoji=function(e){ if(!gfxAvWork) return; gfxAvWork.emoji=e; gfxAvWork.img=''; gfxAvatarRenderBody(); };
+  window.gfxAvPickColor=function(c){ if(!gfxAvWork) return; gfxAvWork.color=c; gfxAvWork.img=''; gfxAvatarRenderBody(); };
+  window.gfxAvSetImg=function(){ if(!gfxAvWork) return; var v=String((document.getElementById('gfx-av-img')||{}).value||'').trim(); gfxAvWork.img=v; gfxAvatarRenderBody(); };
+  window.gfxAvClearImg=function(){ if(!gfxAvWork) return; gfxAvWork.img=''; gfxAvatarRenderBody(); };
+  window.gfxAvReset=function(){ if(!gfxAvWork) return; var n=gfxAvWork.name; delete GFX_AVATARS[n]; gfxSaveAvatar(n); document.getElementById('gfx-avatar-overlay').classList.remove('open'); renderGraphicTeam(); TOAST('รีเซ็ตรูปแล้ว','ok'); };
+  window.gfxAvSave=function(){ if(!gfxAvWork) return; var n=gfxAvWork.name; var img=String((document.getElementById('gfx-av-img')||{}).value||'').trim(); GFX_AVATARS[n]={emoji:gfxAvWork.emoji||'🎨', color:gfxAvWork.color||'', img:img||gfxAvWork.img||''}; gfxSaveAvatar(n); document.getElementById('gfx-avatar-overlay').classList.remove('open'); renderGraphicTeam(); TOAST('บันทึกรูปแล้ว 🎨','ok'); };
   window.gfxDelPerson=function(name){ if(!gfxCanEdit()){ TOAST('เข้าสู่ระบบก่อน','info'); return; } var cards=gfxCardsOf(name); if(!confirm('ลบกราฟฟิก “'+name+'”'+(cards.length?(' และการ์ด '+cards.length+' ใบทั้งหมด'):'')+' ? (ย้อนกลับไม่ได้)')) return;
     var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''};
     cards.forEach(function(x){ if(cfg.url){ try{ postToSheet({target:'graphiccards',action:'delete',keyValue:x.id}); }catch(e){} } });
