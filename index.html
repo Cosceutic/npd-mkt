@@ -1671,9 +1671,10 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   #cc-card-body .cc-cm-draftlink .rm{position:absolute;top:2px;right:3px;background:none;border:none;color:#C0392B;cursor:pointer;font-size:13px;}
   #cc-card-body .cc-cm-toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:9px;}
   #cc-card-body .cc-cm-tool{font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;color:var(--ink);}
-  #cc-card-body .cc-cm-tool:hover{border-color:var(--accent);color:var(--accent-deep);}
+  #cc-card-body .cc-cm-tool:hover{border-color:#BED1E8;color:#2F6DA8;}
   #cc-card-body .cc-cm-author{border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:12.5px;max-width:150px;}
-  #cc-card-body .cc-cm-send{margin-left:auto;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:7px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Anuphan','Prompt',sans-serif;}
+  #cc-card-body .cc-cm-send{margin-left:auto;background:#BED1E8;color:#443025;border:none;border-radius:9px;padding:7px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Anuphan','Prompt',sans-serif;}
+  #cc-card-body .cc-cm-send:hover{background:#A9C6E4;}
   #cc-card-body .cc-cm-send:disabled{opacity:.5;cursor:not-allowed;}
   #cc-card-body .cc-cm-status{font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
   .cc-pl-badge,#view-content .ccal-cmn{font-size:11px;color:var(--ink-soft);font-weight:600;}
@@ -1814,7 +1815,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
             <button class="btn-sm" id="ccal-mode-grid" onclick="setCalMode('grid')">🗓️ เดือน</button>
             <button class="btn-sm" id="ccal-mode-list" onclick="setCalMode('list')">📋 รายการ</button>
           </span>
-          <span class="ccal-add-wrap"><button class="btn-edit" id="ccal-add-event" onclick="openEventEditor()" style="display:none;background:#8B5CF6;color:#fff;margin-right:8px;">📌 Event/Task/วันหยุด</button><button class="btn-edit primary" id="ccal-add" onclick="openContentCalEditor()" style="display:none;">➕ เพิ่มโพสต์</button></span>
+          <span class="ccal-add-wrap"><button class="btn-edit" id="ccal-add-event" onclick="openEventEditor()" style="display:none;background:#FFF8B2;color:#7A6A12;margin-right:8px;">📌 Event/Task/วันหยุด</button><button class="btn-edit primary" id="ccal-add" onclick="openContentCalEditor()" style="display:none;">➕ เพิ่มโพสต์</button></span>
         </div>
         <div id="ccal-host"></div>
       </div>
@@ -3773,11 +3774,11 @@ function renderMilestoneTimeline(containerId, fieldKey, emptyLabel){
   for(let m=0;m<12;m++){
     const x0 = monthStartX[m];
     const x1 = (m<11 ? monthStartX[m+1] : xEnd);
-    if(m%2===1) monthBands += `<rect x="${x0.toFixed(1)}" y="0" width="${(x1-x0).toFixed(1)}" height="${H}" fill="var(--blue-pale)" opacity="0.5"/>`;
-    monthGrid += `<line x1="${x0.toFixed(1)}" y1="0" x2="${x0.toFixed(1)}" y2="${H}" stroke="var(--line)" stroke-width="1"/>`;
+    if(m%2===1) monthBands += `<rect x="${x0.toFixed(1)}" y="0" width="${(x1-x0).toFixed(1)}" height="${H}" fill="#EAF1F8" opacity="0.6"/>`;
+    monthGrid += `<line x1="${x0.toFixed(1)}" y1="0" x2="${x0.toFixed(1)}" y2="${H}" stroke="#ECE6DF" stroke-width="1"/>`;
     const xc = (x0+x1)/2;
-    monthTicks += `<g><rect x="${(xc-20).toFixed(1)}" y="${(lineY+5).toFixed(1)}" width="40" height="18" rx="6" fill="#ffffff" opacity="0.92"/>`
-      + `<text x="${xc.toFixed(1)}" y="${(lineY+17.5).toFixed(1)}" font-size="12.5" font-weight="700" letter-spacing="0.8" fill="var(--ink)" text-anchor="middle" font-family="Anuphan,Prompt,sans-serif">${MONTH_NAMES[m].slice(0,3).toUpperCase()}</text></g>`;
+    monthTicks += `<g><rect x="${(xc-20).toFixed(1)}" y="${(lineY+5).toFixed(1)}" width="40" height="18" rx="9" fill="#ffffff" opacity="0.95"/>`
+      + `<text x="${xc.toFixed(1)}" y="${(lineY+17.5).toFixed(1)}" font-size="12.5" font-weight="700" letter-spacing="0.8" fill="#443025" text-anchor="middle" font-family="Anuphan,Prompt,sans-serif">${MONTH_NAMES[m].slice(0,3).toUpperCase()}</text></g>`;
   }
 
   let markers = '';
@@ -3816,7 +3817,7 @@ function renderMilestoneTimeline(containerId, fieldKey, emptyLabel){
   container.innerHTML = `<div class="tl-scroll"><svg class="tl-svg" viewBox="0 0 ${W} ${H}">
     ${monthBands}
     ${monthGrid}
-    <line x1="${xStart}" y1="${lineY}" x2="${xEnd}" y2="${lineY}" stroke="var(--blue-deep)" stroke-width="2.5"/>
+    <line x1="${xStart}" y1="${lineY}" x2="${xEnd}" y2="${lineY}" stroke="#9DBFDD" stroke-width="2.5"/>
     ${monthTicks}
     ${markers}
   </svg></div>`;
@@ -3981,7 +3982,7 @@ function eventChipHtml(e, iso){
   const isStart = iso===e.start, isEnd = iso===e.end;
   const cls = multi ? ('ev-chip ev-span'+(isStart?' ev-start':'')+(isEnd?' ev-end':'')) : 'ev-chip';
   const tip = `${def.emoji} ${def.label}: ${e.title}`+(e.pic?` · 👤 ${e.pic}`:'')+(multi?` (${e.start} → ${e.end})`:'')+(e.note?` · ${e.note}`:'');
-  const label = (multi && !isStart) ? '' : `${def.emoji} ${esc(e.title)}`+(e.pic?` <span style="opacity:.85;">👤${esc(e.pic)}</span>`:'');
+  const label = `${def.emoji} ${esc(e.title)}`+((e.pic&&isStart)?` <span style="opacity:.85;">👤${esc(e.pic)}</span>`:'');
   return `<div class="${cls}" style="--ev:${def.color}; --evbg:${def.bg};" title="${esc(tip)}" onclick="event.stopPropagation(); openEventDetail('${attrJs(e.id)}')">${label||'&nbsp;'}</div>`;
 }
 
@@ -4020,7 +4021,7 @@ function openEventDetail(id){
   if(ev.note) rows+='<div class="evd-row"><span class="evd-k">หมายเหตุ</span><span class="evd-v">'+esc(ev.note)+'</span></div>';
   var canEdit=(typeof isTeamUnlocked==='function'&&isTeamUnlocked());
   var closeJs="document.getElementById('ev-detail-overlay').classList.remove('open')";
-  var editBtn=canEdit?'<button onclick="evDetailEdit(\''+attrJs(ev.id)+'\')" style="background:#5C86D6;color:#fff;border:none;border-radius:9px;padding:8px 16px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;">✏️ แก้ไข</button>':'';
+  var editBtn=canEdit?'<button onclick="evDetailEdit(\''+attrJs(ev.id)+'\')" style="background:#BED1E8;color:#443025;border:none;border-radius:9px;padding:8px 16px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;">✏️ แก้ไข</button>':'';
   document.getElementById('ev-detail-body').innerHTML=
     '<div class="evd-head"><div class="evd-title">'+def.emoji+' '+esc(ev.title)+'</div>'
       +'<span onclick="'+closeJs+'" style="cursor:pointer;font-size:20px;color:#9aa4b5;line-height:1;">✕</span></div>'
@@ -5783,6 +5784,10 @@ function closeLightbox(){
 }
 
 function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+/* date+time stamp for "done" completion (e.g. 2026-09-27 14:30) */
+function nowStamp(){ const d=new Date(), p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+/* pretty display of a done stamp: "27 ก.ย. 14:30" */
+function fmtDoneStamp(s){ if(!s) return ''; s=String(s); const M=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']; const m=s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/); if(!m) return s; const day=parseInt(m[3],10), mon=M[parseInt(m[2],10)-1]||''; return day+' '+mon+(m[4]?(' '+m[4]+':'+m[5]):''); }
 function esc(s){ const d=document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
 
 /* ================= NPD Brief Form (Part A–E) =================
@@ -10786,7 +10791,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   var TH_WDF=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
   var CAL_CSV='https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=ContentCalendar';
   var CAL_LKEY='npd_content_cal_v1';
-  var CAL_HEADERS=['id','date','due','title','brand','product','pillar','format','workType','channel','status','goal','time','owner','reviewer','followers','note','tags','reviseCount','extendCount','log','drafts','pos'];
+  var CAL_HEADERS=['id','date','due','title','brand','product','pillar','format','workType','channel','status','goal','time','owner','reviewer','followers','note','tags','reviseCount','extendCount','log','drafts','pos','doneAt'];
   // ประเภทงานหลัก (สำหรับแดชบอร์ดวัดผล) — VDO / AW / Activities / Post / อื่นๆ
   var WORK_TYPES=[{k:'vdo',t:'🎬 VDO',c:'#9B7EF8'},{k:'aw',t:'🎨 AW (กราฟิก)',c:'#EF5350'},{k:'activities',t:'🎉 Activities',c:'#F2994A'},{k:'post',t:'📝 Post',c:'#5B8FF9'},{k:'other',t:'📦 อื่นๆ',c:'#8A94A6'}];
   var calWorkFilter = new Set();   // filter ประเภทงานในปฏิทิน Content (ว่าง = ทุกประเภท)
@@ -10836,8 +10841,9 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     followers:(r.followers||r.Followers||'').trim(), tags:(r.tags||r.Tags||'').trim(), note:(r.note||r.Note||'').trim(),
     reviseCount:parseInt(r.reviseCount||r.ReviseCount||'0',10)||0, extendCount:parseInt(r.extendCount||r.ExtendCount||'0',10)||0, log:(r.log||r.Log||'').trim(),
     drafts:(function(d){ return Array.isArray(d)?JSON.stringify(d):String(d==null?'':d).trim(); })(r.drafts!=null?r.drafts:r.Drafts),
-    pos:(r.pos!=null&&r.pos!==''?(parseInt(r.pos,10)||0):null) }; }
-  function calSig(b){ return [b.date,b.due,b.title,b.brand,b.product,b.pillar,b.format,b.workType,b.channel,b.status,b.goal,b.time,b.owner,b.reviewer,b.followers,b.tags,b.note,b.reviseCount,b.extendCount,b.log,b.drafts,b.pos].join('|'); }
+    pos:(r.pos!=null&&r.pos!==''?(parseInt(r.pos,10)||0):null),
+    doneAt:(r.doneAt||r.DoneAt||'').trim() }; }
+  function calSig(b){ return [b.date,b.due,b.title,b.brand,b.product,b.pillar,b.format,b.workType,b.channel,b.status,b.goal,b.time,b.owner,b.reviewer,b.followers,b.tags,b.note,b.reviseCount,b.extendCount,b.log,b.drafts,b.pos,b.doneAt].join('|'); }
   function rebuildCAL(){
     var byId={}, order=[];
     SHEET_ROWS_CAL.forEach(function(b){ if(!(b.id in byId)) order.push(b.id); byId[b.id]=b; });
@@ -10858,7 +10864,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     if(!cfg||!cfg.url){ if(typeof toast==='function') toast('บันทึกในเครื่องแล้ว · ยังไม่ได้เข้าสู่ระบบ (ทีมยังไม่เห็น)','info'); return; }
     var isDel=(action==='delete');
     var payload={target:'contentcal', sheetName:'ContentCalendar', key:'id', create:CAL_HEADERS, action:isDel?'delete':'upsert', keyValue:item.id,
-      row: isDel?undefined:{id:item.id,date:item.date||'',due:item.due||'',title:item.title||'',brand:item.brand||'',product:item.product||'',pillar:item.pillar||'',format:item.format||'',workType:item.workType||'',channel:item.channel||'',status:item.status||'brief',goal:item.goal||'',time:item.time||'',owner:item.owner||'',reviewer:item.reviewer||'',followers:item.followers||'',tags:item.tags||'',note:item.note||'',reviseCount:item.reviseCount||0,extendCount:item.extendCount||0,log:item.log||'',drafts:item.drafts||'',pos:(item.pos!=null?String(item.pos):'')} };
+      row: isDel?undefined:{id:item.id,date:item.date||'',due:item.due||'',title:item.title||'',brand:item.brand||'',product:item.product||'',pillar:item.pillar||'',format:item.format||'',workType:item.workType||'',channel:item.channel||'',status:item.status||'brief',goal:item.goal||'',time:item.time||'',owner:item.owner||'',reviewer:item.reviewer||'',followers:item.followers||'',tags:item.tags||'',note:item.note||'',reviseCount:item.reviseCount||0,extendCount:item.extendCount||0,log:item.log||'',drafts:item.drafts||'',pos:(item.pos!=null?String(item.pos):''),doneAt:item.doneAt||''} };
     try{ await postToSheet(payload); }catch(e){}
     setTimeout(function(){ if(typeof loadContentCalFromSheet==='function') loadContentCalFromSheet().then(function(){ if(ciSub==='calendar'||ciSub==='pipeline') renderCalActive(); }); }, 6000);
   }
@@ -11284,6 +11290,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var who=(x.owner?'<span class="cc-pl-pic" title="เจ้าของงาน (PIC)">👤 '+e2(x.owner)+'</span>':'')+(x.reviewer?'<span class="cc-pl-rev" title="ผู้ตรวจ">🔍 '+e2(x.reviewer)+'</span>':'')+(x.followers?'<span class="cc-pl-rev" title="ผู้มอบหมายงาน">📌 '+e2(x.followers)+'</span>':'');
     var cn=(typeof commentCount==='function')?commentCount(x.id):0;
     var cmn=cn?'<span class="cc-pl-badge" title="คอมเมนต์">💬 '+cn+'</span>':'';
+    var doneStr=x.doneAt?'<span title="เสร็จเมื่อ" style="color:#1E7A54;font-weight:700;">✅ '+e2(fmtDoneStamp(x.doneAt))+'</span>':'';
     var badges=dueBadge(x)+reviseBadge(x)+extendBadge(x);
     var ctags=tagChips(x.tags);
     var img=cardPreviewImage(x.id);
@@ -11296,7 +11303,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +(tags?'<div class="cc-pl-tags">'+tags+'</div>':'')
       +imgHtml
       +(badges?'<div class="cc-pl-badges">'+badges+'</div>':'')
-      +((dd||who||cmn)?'<div class="cc-pl-meta">'+(dd?'<span>📅 '+e2(dd)+(x.time?' '+e2(x.time):'')+'</span>':'')+cmn+(who?'<span class="cc-pl-who">'+who+'</span>':'')+'</div>':'')
+      +((dd||who||cmn||doneStr)?'<div class="cc-pl-meta">'+(dd?'<span>📅 '+e2(dd)+(x.time?' '+e2(x.time):'')+'</span>':'')+cmn+doneStr+(who?'<span class="cc-pl-who">'+who+'</span>':'')+'</div>':'')
       +(canEdit?plActions(x,s):'')+'</div>';
   }
   function plActions(x,s){
@@ -11323,6 +11330,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     if(i>-1){ base=normCAL(local[i]); } else { var found=(window.CONTENT_CAL||[]).find(function(z){return z.id===id;}); base=found?Object.assign({},found):null; }
     if(!base || base.status===newStatus) return;
     base.status=newStatus; base.updatedAt=(typeof todayStr==='function'?todayStr():'');
+    if(newStatus==='posted'||newStatus==='track'){ if(!base.doneAt) base.doneAt=nowStamp(); } else { base.doneAt=''; }
     // ตีกลับให้แก้ → นับจำนวนครั้ง + ลงประวัติ (ถามเหตุผลสั้นๆ ไม่ใส่ก็ได้)
     if(newStatus==='revise'){ base.reviseCount=(base.reviseCount||0)+1;
       var reason=(typeof window.prompt==='function')?(window.prompt('ตีกลับให้แก้ ครั้งที่ '+base.reviseCount+'\nเหตุผล/สิ่งที่ต้องแก้ (ไม่ใส่ก็ได้):','')||''):'';
@@ -11343,6 +11351,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     if(allowedCurrent && allowedCurrent.indexOf(base.status)<0) return false;
     if(base.status===status) return false;
     base.status=status; base.updatedAt=(typeof todayStr==='function'?todayStr():'');
+    if(status==='posted'||status==='track'){ if(!base.doneAt) base.doneAt=nowStamp(); } else { base.doneAt=''; }
     if(i>-1) local[i]=base; else local.push(base); calSaveLocal(local);
     rebuildCAL();
     try{ if(typeof renderPipeline==='function') renderPipeline(); }catch(e){}
@@ -12704,6 +12713,28 @@ header{ background:#7BA7E6 !important; }
 #view-content .section-title, #view-ecom .section-title, #view-graphic .section-title{ color:#443025 !important; }
 #view-content .panel, #view-ecom .panel, #view-graphic .panel{ border-radius:16px !important; box-shadow:0 2px 8px -3px rgba(68,48,37,.10) !important; border-color:#ECE6DF !important; }
 </style>
+<style id="godmami-theme-fix-2026">
+/* ===== Final sweep: remaining blue/off-palette structural bits → BREEZE (brown text) ===== */
+/* app-wide default primary buttons (view-scoped pink/etc keep higher specificity) */
+.btn-sm.primary, .btn-edit.primary{ background:#BED1E8 !important; color:#443025 !important; border-color:#BED1E8 !important; box-shadow:0 5px 14px -7px rgba(120,160,200,.6) !important; }
+.btn-sm.primary:hover, .btn-edit.primary:hover{ background:#A9C6E4 !important; }
+/* content/ecom keep their pink primary */
+#view-content .btn-sm.primary, #view-content .btn-edit.primary, #view-ecom .btn-sm.primary, #view-ecom .btn-edit.primary{ background:#F9C4DA !important; color:#8A3E60 !important; border-color:#F9C4DA !important; }
+/* year tabs (all) + timeline sub-tabs → BREEZE */
+.year-tab.active{ background:#BED1E8 !important; color:#443025 !important; }
+#tlbtn-stock.subnav-active, #tlbtn-basket.subnav-active, #tlbtn-pr.subnav-active{ background:#BED1E8 !important; color:#443025 !important; border-color:#BED1E8 !important; box-shadow:0 5px 14px -6px rgba(120,160,200,.5) !important; }
+/* detail modal (psum) — timeline date + primary button on-theme */
+#psum-overlay .tl-entry-date, #psum-overlay .mh-name{ color:#443025 !important; }
+#psum-overlay .btn-sm.primary, #psum-overlay .btn-edit.primary{ background:#BED1E8 !important; color:#443025 !important; border-color:#BED1E8 !important; }
+/* track-log modal — retheme its pink accent tokens to the palette in one shot */
+#tracklog-overlay{ --accent:#9DBFDD !important; --accent-deep:#443025 !important; --accent-pale:#EAF1F8 !important; }
+#tracklog-overlay .tl-entry{ border-left-color:#BED1E8 !important; }
+#tracklog-overlay .btn-sm.primary, #tracklog-overlay .btn-edit.primary{ background:#BED1E8 !important; color:#443025 !important; border-color:#BED1E8 !important; }
+/* misc blue surfaces → breeze: Final sheet button, group-shade info, calendar legend "all", To-Do panel */
+.fs-actions .fs-primary, .gs-btn.gs-info{ background:#BED1E8 !important; color:#443025 !important; border-color:#BED1E8 !important; }
+.cal-legend-all.active{ background:#BED1E8 !important; color:#443025 !important; border-color:#BED1E8 !important; }
+#qt-toggle, .qt-top, .qt-addbtn{ background:#BED1E8 !important; color:#443025 !important; }
+</style>
 
 <script>
 /* ============================================================
@@ -13235,6 +13266,7 @@ header{ background:#7BA7E6 !important; }
     var draftStr=(x.drafts&&x.drafts.length)?'<span title="รอบส่งตรวจ">📝 '+x.drafts.length+' รอบ</span>':'';
     var cn=ecomDcnt(x.id); var cmn=cn?'<span class="cc-pl-badge">💬 '+cn+'</span>':'';
     var chkStr=(x.checklist&&x.checklist.length)?'<span title="รายการที่ต้องทำ">☑️ '+x.checklist.filter(function(it){return it.done;}).length+'/'+x.checklist.length+'</span>':'';
+    var doneStr=x.doneAt?'<span title="เสร็จเมื่อ" style="color:#1E7A54;font-weight:700;">✅ '+E(fmtDoneStamp(x.doneAt))+'</span>':'';
     var tags=(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+ecomTagColor(t)+'">'+E(t)+'</span>';}).join(''):'');
     var moveOpts=ECOM_STATUS_ORDER.map(function(k){return '<option value="'+k+'"'+(k===s?' selected':'')+'>'+E(ECOM_STATUS[k].t)+'</option>';}).join('');
     var actions=canEd?('<div class="cc-pl-actions"><button class="cc-pl-send" onclick="event.stopPropagation();ecomEdit(\''+AJ(x.id)+'\')">✏️ แก้</button><button class="cc-pl-send" title="Copy สร้างการ์ดใหม่" onclick="event.stopPropagation();ecomCopy(\''+AJ(x.id)+'\')">📋 Copy</button><select class="cc-pl-move" title="ย้ายคอลัมน์" onclick="event.stopPropagation();" onchange="ecomMove(\''+AJ(x.id)+'\',this.value)">'+moveOpts+'</select><button class="cc-pl-no" onclick="event.stopPropagation();ecomDel(\''+AJ(x.id)+'\')" title="ลบ">🗑️</button></div>'):'';
@@ -13242,12 +13274,12 @@ header{ background:#7BA7E6 !important; }
       +'<div class="cc-pl-ct" style="cursor:pointer;" onclick="openCardModal(\''+AJ(x.id)+'\')">'+E(x.title||'(ไม่มีชื่อ)')+'</div>'
       +(tags?'<div class="cc-pl-tags">'+tags+'</div>':'')
       +((brand||who||gr)?'<div class="cc-pl-meta">'+brand+who+gr+'</div>':'')
-      +((dateStr||draftStr||cmn||chkStr)?'<div class="cc-pl-meta">'+dateStr+draftStr+chkStr+cmn+'</div>':'')
+      +((dateStr||draftStr||cmn||chkStr||doneStr)?'<div class="cc-pl-meta">'+dateStr+draftStr+chkStr+cmn+doneStr+'</div>':'')
       +actions+'</div>';
   }
-  window.ecomMove=function(id,ns){ if(!ecomCanEdit()||!ECOM_STATUS[ns]) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||c.status===ns) return; c.status=ns; if(ns==='done'){ if(!c.doneAt) c.doneAt=TS(); } else { c.doneAt=''; } c.updatedAt=TS(); ecomUpsertLocal(c); ecomReRender(); if(typeof toast==='function') toast('ย้ายไป “'+ECOM_STATUS[ns].t+'” แล้ว','ok'); ecomSync(c); };
+  window.ecomMove=function(id,ns){ if(!ecomCanEdit()||!ECOM_STATUS[ns]) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||c.status===ns) return; c.status=ns; if(ns==='done'){ if(!c.doneAt) c.doneAt=nowStamp(); } else { c.doneAt=''; } c.updatedAt=TS(); ecomUpsertLocal(c); ecomReRender(); if(typeof toast==='function') toast('ย้ายไป “'+ECOM_STATUS[ns].t+'” แล้ว','ok'); ecomSync(c); };
   window.ecomDel=function(id){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;}); if(!confirm('ลบการ์ด “'+((c&&c.title)||'')+'” ?')) return; ECOM=ECOM.filter(function(x){return x.id!==id;}); ecomSaveLocal(ECOM); ecomReRender(); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(cfg.url){ try{ postToSheet({target:'ecom',action:'delete',keyValue:id}); }catch(e){} } if(typeof toast==='function') toast('ลบแล้ว','ok'); };
-  window.ecomCopy=function(id){ if(!ecomCanEdit()){ if(typeof toast==='function') toast('เข้าสู่ระบบ (สิทธิ์ Content) ก่อน','info'); return; } var src=ECOM.find(function(x){return x.id===id;}); if(!src) return; var nid='ec'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); var card=Object.assign({}, src, {id:nid, title:(src.title||'')+' (copy)', doneAt:(src.status==='done'?TS():''), pos:null, checklist:(Array.isArray(src.checklist)?src.checklist.map(function(it){return {text:it.text,done:it.done};}):[]), updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'')}); ecomUpsertLocal(card); ecomReRender(); if(typeof toast==='function') toast('คัดลอกการ์ดแล้ว 📋','ok'); ecomSync(card); };
+  window.ecomCopy=function(id){ if(!ecomCanEdit()){ if(typeof toast==='function') toast('เข้าสู่ระบบ (สิทธิ์ Content) ก่อน','info'); return; } var src=ECOM.find(function(x){return x.id===id;}); if(!src) return; var nid='ec'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); var card=Object.assign({}, src, {id:nid, title:(src.title||'')+' (copy)', doneAt:(src.status==='done'?nowStamp():''), pos:null, checklist:(Array.isArray(src.checklist)?src.checklist.map(function(it){return {text:it.text,done:it.done};}):[]), updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'')}); ecomUpsertLocal(card); ecomReRender(); if(typeof toast==='function') toast('คัดลอกการ์ดแล้ว 📋','ok'); ecomSync(card); };
   window.ecomAddIn=function(s){ if(!ecomCanEdit()){ if(typeof toast==='function') toast('เข้าสู่ระบบ (สิทธิ์ Content) ก่อนจึงจะเพิ่มได้','info'); return; } ecomPreset=s||'checklist'; ecomEditId=null; openEcomEditor(null); };
   window.ecomEdit=function(id){ var c=ECOM.find(function(x){return x.id===id;}); if(!c) return; if(!ecomCanEdit()){ if(typeof toast==='function') toast('ดูอย่างเดียว — เข้าสู่ระบบเพื่อแก้','info'); return; } ecomEditId=id; openEcomEditor(c); };
 
@@ -13297,7 +13329,7 @@ header{ background:#7BA7E6 !important; }
     var tags=g('ecom-f-tags'); ecomRememberTags(tags);
     var prev=ECOM.find(function(x){return x.id===id;})||{};
     var card={id:id, title:title, brand:g('ecom-f-brand')||'godmami', owner:g('ecom-f-owner'), graphic:g('ecom-f-graphic'), status:g('ecom-f-status')||'checklist', submitDate:g('ecom-f-submitDate'), submitTime:g('ecom-f-submitTime'), drafts:ecomDraftsWork.filter(function(d){return d;}), finalDate:g('ecom-f-finalDate'), tags:tags, note:g('ecom-f-note'), checklist:(Array.isArray(prev.checklist)?prev.checklist:[]), doneAt:prev.doneAt||'', updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'')};
-    if(card.status==='done'){ if(!card.doneAt) card.doneAt=TS(); } else { card.doneAt=''; }
+    if(card.status==='done'){ if(!card.doneAt) card.doneAt=nowStamp(); } else { card.doneAt=''; }
     ecomUpsertLocal(card);
     document.getElementById('ecom-editor-overlay').classList.remove('open');
     ecomReRender();
@@ -13366,7 +13398,7 @@ header{ background:#7BA7E6 !important; }
     var dragged=ECOM.find(function(x){return x.id===draggedId;}); var target=ECOM.find(function(x){return x.id===targetId;});
     if(!dragged||!target) return;
     var changed=[];
-    if(dragged.status!==target.status){ dragged.status=target.status; if(ECOM_STATUS[dragged.status]&&ECOM_STATUS[dragged.status].done!==undefined){} if(dragged.status==='done'){ if(!dragged.doneAt) dragged.doneAt=TS(); } else { dragged.doneAt=''; } changed.push(dragged); }
+    if(dragged.status!==target.status){ dragged.status=target.status; if(ECOM_STATUS[dragged.status]&&ECOM_STATUS[dragged.status].done!==undefined){} if(dragged.status==='done'){ if(!dragged.doneAt) dragged.doneAt=nowStamp(); } else { dragged.doneAt=''; } changed.push(dragged); }
     var colCards=ECOM.filter(function(x){return x.status===target.status && x.id!==draggedId;});
     colCards.sort(function(a,b){ var pa=(a.pos==null?1e9:a.pos), pb=(b.pos==null?1e9:b.pos); return pa-pb; });
     var ti=colCards.findIndex(function(x){return x.id===targetId;}); if(ti<0) ti=colCards.length; else if(after) ti=ti+1;
@@ -13808,6 +13840,7 @@ header{ background:#7BA7E6 !important; }
     var chkStr=(x.checklist&&x.checklist.length)?'<span title="เช็คลิสต์">☑️ '+x.checklist.filter(function(it){return it.done;}).length+'/'+x.checklist.length+'</span>':'';
     var revStr=(x.revisions&&x.revisions.length)?'<span title="รอบแก้ไข" style="color:#d98324;">🔧 '+x.revisions.length+'</span>':'';
     var imgStr=(x.images&&x.images.length)?'<span title="ไฟล์แนบ">🖼️ '+x.images.length+'</span>':'';
+    var doneStr=x.doneAt?'<span title="เสร็จเมื่อ" style="color:#1E7A54;font-weight:700;">✅ '+E(fmtDoneStamp(x.doneAt))+'</span>':'';
     var cn=gfxDcnt(x.id); var cmn=cn?'<span class="cc-pl-badge">💬 '+cn+'</span>':'';
     var tags=(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+gfxTagColor(t)+'">'+E(t)+'</span>';}).join(''):'');
     var moveOpts=gfxColsFor(x.person).map(function(k){return '<option value="'+E(k.key)+'"'+(k.key===c.key?' selected':'')+'>'+E(k.title)+'</option>';}).join('');
@@ -13817,7 +13850,7 @@ header{ background:#7BA7E6 !important; }
       +'<div class="cc-pl-ct" style="cursor:pointer;" onclick="openCardModal(\''+AJ(x.id)+'\')">'+E(x.title||'(ไม่มีชื่อ)')+'</div>'
       +(tags?'<div class="cc-pl-tags">'+tags+'</div>':'')
       +((srcBadge||brand||who||flw)?'<div class="cc-pl-meta">'+srcBadge+brand+who+flw+'</div>':'')
-      +((dateStr||chkStr||revStr||imgStr||cmn)?'<div class="cc-pl-meta">'+dateStr+chkStr+revStr+imgStr+cmn+'</div>':'')
+      +((dateStr||chkStr||revStr||imgStr||cmn||doneStr)?'<div class="cc-pl-meta">'+dateStr+chkStr+revStr+imgStr+cmn+doneStr+'</div>':'')
       +actions+'</div>';
   }
   // งานจากหน้า Content ที่ PIC = ชื่อกราฟฟิกคนนี้ (ยังไม่โพสต์/ติดตามผล = ยังไม่เสร็จ) → ลิงก์มาโชว์ในบอร์ด+ปฏิทินกราฟฟิก
@@ -13859,7 +13892,7 @@ header{ background:#7BA7E6 !important; }
     if(gfxAdoptedCardId(p,cid)){ TOAST('รับงานนี้เข้าบอร์ดแล้ว','info'); return; }
     var post=(window.CONTENT_CAL||[]).find(function(x){return x.id===cid;}); if(!post){ TOAST('ไม่พบงาน Content','err'); return; }
     var col=gfxFirstActiveColKey(p)||'todo';
-    var card={ id:gfxUid('g'), person:p, col:col, title:post.title||'', brand:(typeof normalizeBrand==='function'?normalizeBrand(post.brand):(post.brand||'').trim().toLowerCase()), owner:p, graphic:'', followers:'', submitDate:gfxContentDeadline(post), submitTime:'', tags:post.tags||'', note:post.note||'', checklist:[], revisions:[], images:[], srcContent:cid, doneAt:(gfxIsDoneCol(p,col)?TS():''), updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') };
+    var card={ id:gfxUid('g'), person:p, col:col, title:post.title||'', brand:(typeof normalizeBrand==='function'?normalizeBrand(post.brand):(post.brand||'').trim().toLowerCase()), owner:p, graphic:'', followers:'', submitDate:gfxContentDeadline(post), submitTime:'', tags:post.tags||'', note:post.note||'', checklist:[], revisions:[], images:[], srcContent:cid, doneAt:(gfxIsDoneCol(p,col)?nowStamp():''), updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') };
     gfxUpsertLocal(card); gfxReRender(); TOAST('รับงานเข้าบอร์ดแล้ว 📥 (อยู่คอลัมน์แรก)','ok'); gfxSyncCard(card);
     // เชื่อม Content Pipeline: รับงาน → การ์ด Content เลื่อนไป 🎬 กำลังผลิต อัตโนมัติ (เฉพาะถ้ายังอยู่ 📝 บรีฟ)
     try{ if(typeof window.plSetStatus==='function') window.plSetStatus(cid,'production',['brief']); }catch(e){}
@@ -13935,7 +13968,7 @@ header{ background:#7BA7E6 !important; }
   /* ---------- cards ---------- */
   window.gfxAddIn=function(k){ if(!gfxCanEdit()){ TOAST('เข้าสู่ระบบ (สิทธิ์ทีม) ก่อนจึงจะเพิ่มได้','info'); return; } gfxPresetCol=k||gfxFirstActiveColKey(gfxPerson); gfxEditId=null; openGfxEditor(null); };
   window.gfxEdit=function(id){ var c=GFX.find(function(x){return x.id===id;}); if(!c) return; if(!gfxCanEdit()){ TOAST('ดูอย่างเดียว — เข้าสู่ระบบเพื่อแก้','info'); return; } gfxEditId=id; openGfxEditor(c); };
-  window.gfxMove=function(id,nk){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||c.col===nk) return; var def=gfxColDef(c.person,nk); if(!def) return; c.col=nk; if(def.done){ if(!c.doneAt) c.doneAt=TS(); } else { c.doneAt=''; } c.updatedAt=TS(); gfxUpsertLocal(c); gfxReRender(); TOAST('ย้ายไป “'+def.title+'” แล้ว','ok'); gfxSyncCard(c);
+  window.gfxMove=function(id,nk){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||c.col===nk) return; var def=gfxColDef(c.person,nk); if(!def) return; c.col=nk; if(def.done){ if(!c.doneAt) c.doneAt=nowStamp(); } else { c.doneAt=''; } c.updatedAt=TS(); gfxUpsertLocal(c); gfxReRender(); TOAST('ย้ายไป “'+def.title+'” แล้ว','ok'); gfxSyncCard(c);
     // เชื่อม Content Pipeline: การ์ดที่รับมาจาก Content เข้าคอลัมน์ "เสร็จแล้ว" → Content เลื่อนไป ✅ อนุมัติ · ย้ายออก → กลับ 🎬 กำลังผลิต
     if(c.srcContent && typeof window.plSetStatus==='function'){ try{ if(def.done) window.plSetStatus(c.srcContent,'approved',['brief','production','review','revise']); else window.plSetStatus(c.srcContent,'production',['approved']); }catch(e){} }
   };
@@ -14119,7 +14152,7 @@ header{ background:#7BA7E6 !important; }
     var dragged=GFX.find(function(x){return x.id===draggedId;}); var target=GFX.find(function(x){return x.id===targetId;});
     if(!dragged||!target) return; var p=dragged.person; if(target.person!==p) return;
     var changed=[];
-    if(dragged.col!==target.col){ dragged.col=target.col; if(gfxIsDoneCol(p,dragged.col)){ if(!dragged.doneAt) dragged.doneAt=TS(); } else { dragged.doneAt=''; } changed.push(dragged);
+    if(dragged.col!==target.col){ dragged.col=target.col; if(gfxIsDoneCol(p,dragged.col)){ if(!dragged.doneAt) dragged.doneAt=nowStamp(); } else { dragged.doneAt=''; } changed.push(dragged);
       if(dragged.srcContent && typeof window.plSetStatus==='function'){ try{ if(gfxIsDoneCol(p,dragged.col)) window.plSetStatus(dragged.srcContent,'approved',['brief','production','review','revise']); else window.plSetStatus(dragged.srcContent,'production',['approved']); }catch(e){} }
     }
     var colCards=gfxCardsOf(p).filter(function(x){return x.col===target.col && x.id!==draggedId;});
