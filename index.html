@@ -435,6 +435,22 @@
     --bA:#6E7FC4; --bAD:#4C5A96; --bAP:#EEF0FB; --bLine:#E7EAF3;
     --bHead:#F6F7FC; --bInk:#2E3652; --bMuted:#828BA0; --bField:#FCFCFE;
   }
+  /* ===== SET / Bundle brief — tab bar (per-component A–G briefs in one document) ===== */
+  .sbtabs{ background:linear-gradient(180deg,#F7F5FF,#F0ECFF); border:1px solid #D9D2FA; border-radius:16px; padding:12px 14px; margin-bottom:16px; box-shadow:0 2px 8px rgba(90,70,200,.08); }
+  .sbtabs-head{ font-size:13px; color:#5A4F9E; font-weight:700; margin-bottom:10px; }
+  .sbtabs-head b{ color:#4A3FA0; }
+  .sbtabs-count{ display:inline-block; background:#8b7ef8; color:#fff; font-size:11px; font-weight:700; border-radius:999px; padding:1px 9px; margin-left:6px; }
+  .sbtabs-row{ display:flex; flex-wrap:wrap; gap:7px; }
+  .sbtabs-actions{ margin-top:10px; padding-top:10px; border-top:1px dashed #D2C9F5; }
+  .sbtab{ background:#fff; border:1px solid #D9D2FA; color:#4C4780; border-radius:10px; padding:7px 13px; font-size:12.5px; cursor:pointer; font-family:'Sarabun',sans-serif; font-weight:600; transition:all .12s; }
+  .sbtab:hover{ background:#F3F0FF; border-color:#B7A9F5; }
+  .sbtab.on{ background:#8b7ef8; border-color:#8b7ef8; color:#fff; box-shadow:0 2px 6px rgba(139,126,248,.35); }
+  .sbtab-save{ background:#EAF7EF; border-color:#B6E3C7; color:#1F8F5F; }
+  .sbtab-save:hover{ background:#DDF2E6; }
+  .sbtab-print{ background:#EAF1FB; border-color:#BBD3F1; color:#2C5FA6; }
+  .sbtab-print:hover{ background:#DCE9F8; }
+  .sbtab-x{ background:#FBECEC; border-color:#F1C4C4; color:#B4453F; margin-left:auto; }
+  .sbtab-x:hover{ background:#F7DDDD; }
   .brief-part{border:1px solid var(--bLine); border-left:6px solid var(--bA); border-radius:16px; margin-bottom:14px; overflow:hidden; background:#fff; box-shadow:0 1px 3px rgba(40,54,110,.05);}
   /* ===== Per-part bright color coding (A–F) so each form is easy to tell apart ===== */
   /* Pastel palette — soft spine/pill (--bA), deeper readable text (--bAD), very light tints */
@@ -6102,8 +6118,19 @@ const A2_DESIGN_OBJ = ['ต้องการให้ดู Premium ขึ้�
 const A2_MOOD = ['Cute','Clean','Premium','Playful','Magical','Minimal','Fashion','Kawaii','อื่นๆ (โปรดระบุ)'];
 const A2_KEY_FEELING = ['Fun','Magical','Giftable','Collectible'];
 const A2_PKG_FORM = ['Tube','Bottle','Jar','Compact'];
+function briefSetBannerHtml(){
+  var role=(bfGet('a_setRole')||'').trim(); var parent=(bfGet('a_parentSet')||'').trim(); var setSku=(bfGet('a_setSku')||'').trim();
+  var comps=[]; try{ comps=JSON.parse(bfGet('a_setComponents')||'[]'); }catch(e){}
+  comps=comps.filter(function(c){return c&&(c.name||c.code);});
+  if(role!=='member' && role!=='set' && !parent && !comps.length) return '';
+  var base=parent||setSku;
+  var list=comps.map(function(c,i){ var code=(c.code||'').trim()||(base+'_S'+String(i+1).padStart(2,'0')); return '<li>'+esc((c.kind||'')+' · '+(c.name||code)+' ('+code+')'+(c.qty?(' ×'+c.qty):''))+'</li>'; }).join('');
+  var head=(role==='member'||(parent&&role!=='set')) ? ('🧩 <b>สินค้านี้เป็น 1 ชิ้นในเซต '+esc(base||'—')+'</b>') : ('📦 <b>นี่คือบรีฟเซต '+esc(setSku||base||'—')+'</b>');
+  return '<div class="brief-note-box" style="border-left:4px solid #8b7ef8;background:#f6f3ff;margin-bottom:12px;">'+head+(comps.length?('<div style="margin-top:5px;font-size:12px;color:var(--ink,#1F2A36);">ในเซตนี้มี '+comps.length+' ชิ้น:<ul style="margin:4px 0 0;padding-left:20px;">'+list+'</ul></div>'):'')+'</div>';
+}
 function renderBriefPartA(){
   return `
+    ${briefSetBannerHtml()}
     <div class="brief-section-h">A1 · Project Control</div>
     <div class="brief-field-grid">
       ${bfField('a_nprNo','NPR No.','text')}
@@ -6165,6 +6192,7 @@ function renderBriefPartA(){
     <div class="no-print" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
       <input type="text" id="a_setSku" value="${esc(bfGet('a_setSku'))}" onchange="bfOnChange('a_setSku')" placeholder="SKU ของเซต เช่น MS065" style="max-width:200px;">
       <button type="button" class="brief-print-btn" onclick="briefPullSetComponents()">⬇️ ดึงส่วนประกอบจากสินค้าเซตนี้</button>
+      <button type="button" class="brief-print-btn" onclick="openSetBrief()" style="background:#8b7ef8;color:#fff;border-color:#8b7ef8;">🧩 เปิดบรีฟเซต (แท็บรายชิ้น)</button>
     </div>
     ${bfGridField('a_setComponents','', [
       {key:'kind',label:'ประเภท',type:'select',options:['ของขายเดี่ยว','ผลิตใหม่เฉพาะเซต']},
@@ -7196,6 +7224,212 @@ function rerenderBriefParts(){
     if(body && BRIEF_RENDERERS[key]){ body.innerHTML = BRIEF_RENDERERS[key](); body.dataset.rendered='1'; autoGrowIn(body); if(key==='c') afterCRender(); }
   });
 }
+/* ============================================================
+   SET / Bundle Brief — one document, per-component tabs (each a full A–G brief)
+   SET_BRIEF = { setNpr, setSku, name, brand, comps:[{code,name,kind,qty}],
+                 active:''|<code>, cache:{ key -> {brief_* snapshot} }, cloud:[list], inherit:{} }
+   active '' = the set-level (overview) brief · <code> = one component brief
+   ============================================================ */
+var SET_BRIEF = null;
+
+function briefSnapshotKeys(){
+  var o={}; for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k&&k.indexOf('brief_')===0){ var v=localStorage.getItem(k); if(v!=null) o[k]=v; } } return o;
+}
+function briefClearKeys(){
+  var del=[]; for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k&&k.indexOf('brief_')===0) del.push(k); }
+  del.forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+}
+function briefRestoreKeys(obj){
+  briefClearKeys();
+  Object.keys(obj||{}).forEach(function(k){ try{ localStorage.setItem(k, obj[k]); }catch(e){} });
+}
+/* read + normalize the set-components grid from the current a_setComponents */
+function setBriefReadComps(){
+  var grid=[]; try{ grid=JSON.parse(bfGet('a_setComponents')||'[]'); }catch(e){ grid=[]; }
+  var base=(bfGet('a_setSku')||bfGet('a_nprNo')||'SET').trim();
+  return (grid||[]).filter(function(c){ return c && (c.name||c.code); }).map(function(c,i){
+    var code=(c.code||'').trim()||(base+'_S'+String(i+1).padStart(2,'0'));
+    return { code:code, name:(c.name||'').trim()||code, kind:(c.kind||'').trim(), qty:(c.qty!=null?String(c.qty):'').trim() };
+  });
+}
+async function openSetBrief(){
+  var setNpr=(bfGet('a_nprNo')||'').trim();
+  var setSku=(bfGet('a_setSku')||'').trim()||setNpr;
+  if(!setSku){ toast('กรอก NPR No. หรือ SKU ของเซต ใน Part A ก่อน','err'); return; }
+  var comps=setBriefReadComps();
+  if(!comps.length){ toast('ยังไม่มีรายการชิ้นในเซต — เพิ่มใน 🧩 ส่วนประกอบของเซต ก่อน','err'); return; }
+  setNpr=setNpr||setSku;
+  bfSet('a_setRole','set'); bfSet('a_setSku',setSku); if(!(bfGet('a_nprNo')||'').trim()) bfSet('a_nprNo',setSku);
+  var inherit={};
+  ['a_brand','a_owner','a_channel','a_briefDate','a_targetReceive','a_fgLaunch','a_objective'].forEach(function(k){ inherit[k]=bfGet(k); });
+  var cloud=[]; try{ cloud=await fetchSavedBriefs(); }catch(e){ cloud=[]; }
+  SET_BRIEF={ setNpr:setNpr, setSku:setSku, name:(bfGet('a_projectName')||'').trim(), brand:bfGet('a_brand'), comps:comps, active:'', cache:{}, cloud:cloud, inherit:inherit };
+  SET_BRIEF.cache['']=briefSnapshotKeys();            // overview snapshot = current form
+  var container=document.getElementById('brief-form-container');
+  if(container && container.style.display==='none') toggleBriefForm();
+  renderSetBriefTabs();
+  rerenderBriefParts();
+  toast('เข้าโหมดบรีฟเซต — สลับแท็บเพื่อบรีฟแต่ละชิ้น แล้วกด 💾 บันทึกทั้งเซต เมื่อพร้อม','ok');
+}
+/* brief_* object for a component: memory cache → cloud → fresh prefill (inherits set defaults) */
+function setBriefTabDataFor(code){
+  if(SET_BRIEF.cache[code]) return SET_BRIEF.cache[code];
+  var b=(SET_BRIEF.cloud||[]).find(function(x){return (x.nprNo||'').trim()===code;});
+  if(b){ var data={}; try{ data=JSON.parse(b.data||'{}'); }catch(e){ data={}; } return data; }
+  var comp=(SET_BRIEF.comps||[]).find(function(c){return c.code===code;})||{code:code,name:code};
+  var o={};
+  Object.keys(SET_BRIEF.inherit||{}).forEach(function(k){ if(SET_BRIEF.inherit[k]) o['brief_'+k]=SET_BRIEF.inherit[k]; });
+  o['brief_a_nprNo']=code;
+  o['brief_a_projectName']=(SET_BRIEF.name?SET_BRIEF.name+' — ':'')+(comp.name||code);
+  o['brief_a_setRole']='member';
+  o['brief_a_parentSet']=SET_BRIEF.setSku;
+  o['brief_a_setSku']='';
+  o['brief_a_setComponents']='[]';
+  return o;
+}
+async function setBriefTab(target){
+  if(!SET_BRIEF) return;
+  if(target===SET_BRIEF.active) return;
+  SET_BRIEF.cache[SET_BRIEF.active]=briefSnapshotKeys();        // keep current tab
+  if(SET_BRIEF.active==='') SET_BRIEF.comps=setBriefReadComps();
+  if(target==='') briefRestoreKeys(SET_BRIEF.cache['']||{});
+  else briefRestoreKeys(setBriefTabDataFor(target));
+  SET_BRIEF.active=target;
+  renderSetBriefTabs();
+  rerenderBriefParts();
+  var container=document.getElementById('brief-form-container');
+  if(container){ try{ container.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} }
+}
+function renderSetBriefTabs(){
+  var container=document.getElementById('brief-form-container');
+  if(!container) return;
+  var bar=document.getElementById('set-brief-tabs');
+  if(!SET_BRIEF){ if(bar&&bar.parentNode) bar.parentNode.removeChild(bar); return; }
+  if(!bar){ bar=document.createElement('div'); bar.id='set-brief-tabs'; bar.className='sbtabs no-print'; container.insertBefore(bar, container.firstChild); }
+  var comps=(SET_BRIEF.active==='')?setBriefReadComps():SET_BRIEF.comps;
+  if(comps&&comps.length) SET_BRIEF.comps=comps; else comps=SET_BRIEF.comps||[];
+  var tabs='<button type="button" class="sbtab'+(SET_BRIEF.active===''?' on':'')+'" onclick="setBriefTab(\'\')">📦 ภาพรวมเซต</button>';
+  comps.forEach(function(c,i){
+    var isNew=(c.kind==='ผลิตใหม่เฉพาะเซต');
+    tabs+='<button type="button" class="sbtab'+(SET_BRIEF.active===c.code?' on':'')+'" onclick="setBriefTab(\''+attrJs(c.code)+'\')" title="'+esc(c.code)+'">'+(isNew?'🆕 ':'📎 ')+'ชิ้น '+(i+1)+' · '+esc(c.name||c.code)+'</button>';
+  });
+  var actions='<button type="button" class="sbtab sbtab-save" onclick="saveSetBriefAll()">💾 บันทึกทั้งเซตขึ้นคลาวด์</button>'
+    +'<button type="button" class="sbtab sbtab-print" onclick="printSetSummary()">🖨️ Print Summary ทั้งเซต</button>'
+    +'<button type="button" class="sbtab sbtab-x" onclick="closeSetBrief()">✕ ออกโหมดเซต</button>';
+  bar.innerHTML='<div class="sbtabs-head">🧩 บรีฟเซต <b>'+esc(SET_BRIEF.setSku)+'</b>'+(SET_BRIEF.name?(' · '+esc(SET_BRIEF.name)):'')+' <span class="sbtabs-count">'+comps.length+' ชิ้น</span></div>'
+    +'<div class="sbtabs-row">'+tabs+'</div>'
+    +'<div class="sbtabs-row sbtabs-actions">'+actions+'</div>';
+}
+async function saveSetBriefAll(){
+  if(!SET_BRIEF) return;
+  var cfg=getWriteConfig();
+  if(!cfg.url){ toast('ต้องเข้าสู่ระบบก่อนบันทึกขึ้นคลาวด์','info'); if(typeof sbShowLoginModal==='function') sbShowLoginModal(); return; }
+  SET_BRIEF.cache[SET_BRIEF.active]=briefSnapshotKeys();
+  if(SET_BRIEF.active==='') SET_BRIEF.comps=setBriefReadComps();
+  var current=briefSnapshotKeys();
+  var keys=[''].concat((SET_BRIEF.comps||[]).map(function(c){return c.code;}));
+  var ok=0, fail=0;
+  toast('กำลังบันทึกทั้งเซต ('+keys.length+' บรีฟ)…','info');
+  for(var i=0;i<keys.length;i++){
+    var data=SET_BRIEF.cache[keys[i]]; if(!data) data=(keys[i]===''?current:setBriefTabDataFor(keys[i]));
+    briefRestoreKeys(data);
+    try{ await saveBriefToCloud(); ok++; }catch(e){ fail++; }
+    SET_BRIEF.cache[keys[i]]=briefSnapshotKeys();     // capture any Drive image-link rewrites
+  }
+  briefRestoreKeys(current);
+  rerenderBriefParts();
+  try{ SET_BRIEF.cloud=await fetchSavedBriefs(); }catch(e){}
+  toast('บันทึกทั้งเซตแล้ว ✓ ('+ok+' บรีฟ'+(fail?(' · ⚠️ '+fail+' ไม่สำเร็จ'):'')+')', fail?'err':'ok');
+}
+function closeSetBrief(){
+  if(!SET_BRIEF) return;
+  if(!confirm('ออกจากโหมดบรีฟเซต?\n(บรีฟที่ยังไม่กด "บันทึกทั้งเซตขึ้นคลาวด์" จะไม่ถูกบันทึกขึ้นคลาวด์)')) return;
+  SET_BRIEF=null;
+  renderSetBriefTabs();
+  toast('ออกจากโหมดบรีฟเซตแล้ว','ok');
+}
+/* --- combined print: cover + every component's full A & G summary in ONE document --- */
+function briefDocStyle(html){ var a=html.indexOf('<style>'); var b=html.indexOf('</style>'); return (a>=0&&b>a)?html.slice(a+7,b):''; }
+function briefDocBody(html){ var a=html.indexOf('<body>'); var b=html.indexOf('</body>'); return (a>=0&&b>a)?html.slice(a+6,b):''; }
+/* scope a stylesheet under `scope` so two brief-summary stylesheets can coexist in one doc */
+function scopeCss(css, scope){
+  var out='', i=0, n=css.length;
+  while(i<n){
+    while(i<n && /\s/.test(css[i])) i++;
+    if(i>=n) break;
+    if(css[i]==='@'){
+      var brace=css.indexOf('{',i), semi=css.indexOf(';',i);
+      if(semi!==-1 && (brace===-1||semi<brace)){ i=semi+1; continue; }   // @import etc → drop
+      var prelude=css.slice(i,brace).trim(), depth=0, j=brace;
+      for(; j<n; j++){ if(css[j]==='{')depth++; else if(css[j]==='}'){depth--; if(depth===0)break;} }
+      var inner=css.slice(brace+1,j);
+      if(/^@page/i.test(prelude)){}                                       // drop @page when scoped
+      else if(/^@media/i.test(prelude)) out+=prelude+'{'+scopeCss(inner,scope)+'}';
+      else out+=prelude+'{'+inner+'}';                                    // @font-face etc → keep
+      i=j+1; continue;
+    }
+    var b=css.indexOf('{',i); if(b===-1) break;
+    var sel=css.slice(i,b).trim(), d=0, k=b;
+    for(; k<n; k++){ if(css[k]==='{')d++; else if(css[k]==='}'){d--; if(d===0)break;} }
+    var body=css.slice(b+1,k);
+    var scoped=sel.split(',').map(function(s){ s=s.trim(); if(!s) return ''; if(s==='body'||s==='html') return scope; if(s==='*') return scope+' *'; return scope+' '+s; }).filter(Boolean).join(',');
+    out+=scoped+'{'+body+'}';
+    i=k+1;
+  }
+  return out;
+}
+function printSetSummary(){
+  if(!SET_BRIEF){ toast('เปิดโหมดบรีฟเซตก่อน','err'); return; }
+  SET_BRIEF.cache[SET_BRIEF.active]=briefSnapshotKeys();
+  if(SET_BRIEF.active==='') SET_BRIEF.comps=setBriefReadComps();
+  var current=briefSnapshotKeys();
+  var comps=SET_BRIEF.comps||[];
+  var win=window.open('','_blank');
+  if(!win){ toast('เบราว์เซอร์บล็อกป๊อปอัป — อนุญาต popup แล้วลองใหม่','err'); return; }
+  var styleA='', styleG='', sections=[];
+  // cover (from the set-level snapshot)
+  briefRestoreKeys(SET_BRIEF.cache['']||current);
+  var setName=esc(bfGet('a_projectName')||SET_BRIEF.name||'');
+  var setBrand=esc((typeof brandToLabel==='function'?brandToLabel(bfGet('a_brand')):bfGet('a_brand'))||'');
+  var compRows=comps.map(function(c,i){ return '<tr><td>'+String(i+1).padStart(2,'0')+'</td><td>'+esc(c.kind||'—')+'</td><td>'+esc(c.code)+'</td><td>'+esc(c.name||'—')+'</td><td>'+esc(c.qty||'—')+'</td></tr>'; }).join('');
+  var cover='<div class="set-scope-a"><div class="doc">'
+    +'<div class="doc-title" style="border-color:#8b7ef8;color:#4A3FA0;">SET BRIEF · บรีฟชุดเซต</div>'
+    +'<section><h2>Set Information</h2><hr class="rule">'
+    +'<div class="kv-row"><span class="kv-k">Set SKU</span><span class="kv-c">:</span><span class="kv-v">'+esc(SET_BRIEF.setSku)+'</span></div>'
+    +'<div class="kv-row"><span class="kv-k">Set Name</span><span class="kv-c">:</span><span class="kv-v">'+(setName||'—')+'</span></div>'
+    +'<div class="kv-row"><span class="kv-k">Brand</span><span class="kv-c">:</span><span class="kv-v">'+(setBrand||'—')+'</span></div>'
+    +'<div class="kv-row"><span class="kv-k">จำนวนชิ้น</span><span class="kv-c">:</span><span class="kv-v">'+comps.length+' ชิ้น</span></div>'
+    +'</section>'
+    +'<section><h2>Components · ชิ้นในเซต</h2><hr class="rule">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr>'
+    +['#','ประเภท','รหัส/SKU','ชื่อชิ้น','จำนวน/เซต'].map(function(h){return '<th style="text-align:left;border-bottom:1px solid #C9CFD8;padding:4px 6px;color:#4B5563;">'+h+'</th>';}).join('')
+    +'</tr></thead><tbody>'+compRows+'</tbody></table></section></div></div>';
+  // per component: full A + full G summaries
+  comps.forEach(function(c,i){
+    briefRestoreKeys(setBriefTabDataFor(c.code));
+    var aHtml=buildBriefSummaryADoc(); if(!styleA) styleA=briefDocStyle(aHtml);
+    var gHtml=buildBriefSummaryGDoc(); if(!styleG) styleG=briefDocStyle(gHtml);
+    sections.push('<div class="set-piece">'
+      +'<div class="set-piece-head">🧩 ชิ้นที่ '+(i+1)+' / '+comps.length+' · '+esc(c.name||c.code)+' <span style="opacity:.85;">('+esc(c.code)+')</span></div>'
+      +'<div class="set-scope-a">'+briefDocBody(aHtml)+'</div>'
+      +'<div class="set-pagebreak"></div>'
+      +'<div class="set-scope-g">'+briefDocBody(gHtml)+'</div>'
+      +'</div>');
+  });
+  briefRestoreKeys(current);
+  rerenderBriefParts();
+  var doc='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Set Brief — '+setName+'</title>'
+    +'<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">'
+    +'<style>@page{margin:14mm 13mm;}*{box-sizing:border-box;}body{margin:0;background:#fff;font-family:\'Sarabun\',\'Tahoma\',Arial,sans-serif;}'
+    +scopeCss(styleA,'.set-scope-a')+'\n'+scopeCss(styleG,'.set-scope-g')+'\n'
+    +'.set-piece-head{font-family:\'Prompt\',sans-serif;font-weight:700;font-size:15px;color:#fff;background:#8b7ef8;border-radius:8px;padding:9px 14px;margin:0 0 14px;}'
+    +'.set-piece{page-break-before:always;}.set-pagebreak{page-break-before:always;}'
+    +'@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.set-piece-head{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}'
+    +'</style></head><body>'+cover+sections.join('')+'</body></html>';
+  win.document.write(doc); win.document.close();
+  setTimeout(function(){ try{ win.focus(); }catch(e){} win.print(); }, 700);
+}
+
 /* Clear the whole brief form to start a fresh brief */
 function clearBriefForm(){
   if(!confirm('ล้างข้อมูลในฟอร์มทั้งหมด เพื่อเริ่มบรีฟใหม่?\n(ถ้ายังไม่ได้กด "บันทึกบรีฟ (กลาง)" ข้อมูลจะหาย)')) return;
@@ -7269,7 +7503,7 @@ function briefSummaryLaunch(v){
   if(isNaN(d)) return v;
   return d.toLocaleDateString('en-US',{month:'short',year:'numeric'});
 }
-function printBriefSummaryA(){
+function buildBriefSummaryADoc(){
   // make sure Part A is rendered so localStorage-backed bfGet values are current
   const bodyA=document.getElementById('brief-part-body-a');
   if(bodyA && !bodyA.dataset.rendered){ bodyA.innerHTML=BRIEF_RENDERERS['a'](); bodyA.dataset.rendered='1'; }
@@ -7433,6 +7667,10 @@ function printBriefSummaryA(){
   </div>
   </body></html>`;
 
+  return html;
+}
+function printBriefSummaryA(){
+  const html = buildBriefSummaryADoc();
   const win = window.open('', '_blank');
   if(!win){ if(typeof toast==='function') toast('เบราว์เซอร์บล็อกป๊อปอัป — อนุญาต popup แล้วลองใหม่','err'); return; }
   win.document.write(html);
@@ -7441,7 +7679,7 @@ function printBriefSummaryA(){
 }
 
 /* ===== G. Supply Chain — Summary Print (โทนเทา/ขาว/ฟ้าอ่อน, one-page layout) ===== */
-function printBriefSummaryG(){
+function buildBriefSummaryGDoc(){
   const bodyF=document.getElementById('brief-part-body-f');
   if(bodyF && !bodyF.dataset.rendered){ bodyF.innerHTML=BRIEF_RENDERERS['f'](); bodyF.dataset.rendered='1'; }
   const g=id=>String(bfGet(id)||'').trim();
@@ -7585,6 +7823,10 @@ function printBriefSummaryG(){
     <div class="foot"><span>${esc(String(brand).toUpperCase())} &nbsp;|&nbsp; G. SUPPLY CHAIN</span><span>SMALL DETAILS MAKE A BIG DIFFERENCE</span></div>
   </div></body></html>`;
 
+  return html;
+}
+function printBriefSummaryG(){
+  const html = buildBriefSummaryGDoc();
   const win=window.open('','_blank');
   if(!win){ if(typeof toast==='function') toast('เบราว์เซอร์บล็อกป๊อปอัป — อนุญาต popup แล้วลองใหม่','err'); return; }
   win.document.write(html); win.document.close();
