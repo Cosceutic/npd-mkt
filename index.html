@@ -1229,6 +1229,10 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   #view-office .ofc-cnt span{font-size:10.5px;color:var(--ofc-ink2);}
   #view-office .ofc-tasks{margin-top:14px;display:flex;flex-direction:column;gap:9px;}
   #view-office .ofc-task{border:1px solid var(--ofc-line);border-radius:15px;padding:11px 13px;display:flex;align-items:center;gap:11px;background:linear-gradient(180deg,#fff,#fbfcff);}
+  #view-office .ofc-task-open{transition:.13s;}
+  #view-office .ofc-task-open:hover{border-color:var(--ofc-pink,#ff9ec2);background:#fff7fb;box-shadow:0 3px 12px -6px rgba(236,95,151,.5);}
+  #view-office .ofc-task-edit{font-size:10.5px;font-weight:700;color:#b06;background:#ffeaf3;border-radius:6px;padding:0 6px;margin-left:4px;white-space:nowrap;opacity:0;transition:.13s;}
+  #view-office .ofc-task-open:hover .ofc-task-edit{opacity:1;}
   #view-office .ofc-pn{font-weight:600;font-size:13.5px;margin:0;}
   #view-office .ofc-stg{font-size:11.5px;color:var(--ofc-ink2);margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
   #view-office .ofc-sku{display:inline-block;background:#eef1f7;color:#5a6478;font-weight:700;font-size:10.5px;padding:1px 6px;border-radius:6px;font-family:"Sarabun";}
@@ -9888,7 +9892,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       var days=null,due='';
       var d=ofcParseDate(l.nextDue);
       if(d){ days=Math.round((d-today)/86400000); due=d.getDate()+' '+THMON[d.getMonth()]; }
-      out.push({p:l.productName||l.sku, sku:l.sku, s:[l.subCategory,l.stage].filter(Boolean).join(' · ')||l.stage||l.note||'อัปเดตงาน', due:due, days:days, nd:l.nextDueDetail||''});
+      out.push({p:l.productName||l.sku, sku:l.sku, s:[l.subCategory,l.stage].filter(Boolean).join(' · ')||l.stage||l.note||'อัปเดตงาน', due:due, days:days, nd:l.nextDueDetail||'', _open:{k:'sku',sku:l.sku}});
     });
     // งานจาก To-Do (มอบหมายให้คนนี้) — เชื่อมเข้าเกมส์ออฟฟิศด้วย
     if(typeof window.qtOfficeTasks==='function'){ try{ (window.qtOfficeTasks(person.n)||[]).forEach(function(q){ out.push(q); }); }catch(e){} }
@@ -10050,7 +10054,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     if(!tasks.length){
       h+='<div class="ofc-empty"><div class="ofc-em">🎉</div><div style="font-family:Mitr;font-weight:600;margin-top:6px">ไม่มีงานค้างเลย!</div><div style="font-size:12px;margin-top:2px">เคลียร์งานหมดแล้ว เก่งมาก 💖</div></div>';
     } else {
-      h+='<div class="ofc-tasks">'+tasks.map(function(t){var x=ofcDl(t.days); return '<div class="ofc-task"><div><p class="ofc-pn">'+ofcE(t.p)+'</p><div class="ofc-stg">'+(t.sku?'<span class="ofc-sku">'+ofcE(t.sku)+'</span> ':'')+'📋 '+ofcE(t.s)+'</div>'+(t.nd?'<div class="ofc-stg" style="color:#c9821f;font-weight:600;margin-top:2px">⏰ ถัดไป: '+ofcE(t.nd)+'</div>':'')+'</div><div class="ofc-chip">'+(t.due?'<div class="ofc-due">กำหนด '+t.due+'</div>':'')+'<div class="ofc-dl '+x.c+'">'+x.t+'</div></div></div>';}).join('')+'</div>';
+      h+='<div class="ofc-tasks">'+tasks.map(function(t,ti){var x=ofcDl(t.days); var canOpen=!!t._open; return '<div class="ofc-task'+(canOpen?' ofc-task-open':'')+'"'+(canOpen?' onclick="ofcOpenTask('+i+','+ti+')" title="กดเพื่อเปิด/แก้ไขงานนี้" style="cursor:pointer;"':'')+'><div><p class="ofc-pn">'+ofcE(t.p)+(canOpen?' <span class="ofc-task-edit">✏️ แก้ไข</span>':'')+'</p><div class="ofc-stg">'+(t.sku?'<span class="ofc-sku">'+ofcE(t.sku)+'</span> ':'')+'📋 '+ofcE(t.s)+'</div>'+(t.nd?'<div class="ofc-stg" style="color:#c9821f;font-weight:600;margin-top:2px">⏰ ถัดไป: '+ofcE(t.nd)+'</div>':'')+'</div><div class="ofc-chip">'+(t.due?'<div class="ofc-due">กำหนด '+t.due+'</div>':'')+'<div class="ofc-dl '+x.c+'">'+x.t+'</div></div></div>';}).join('')+'</div>';
     }
     var unlocked=true;   // หน้าออฟฟิศแก้ได้เลย ไม่ต้องใส่รหัส
     var curE=c.emoji||st.mood;
@@ -10096,6 +10100,20 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var sc=document.getElementById('ofc-scrim'), sh=document.getElementById('ofc-sheet');
     if(sc) sc.classList.remove('on'); if(sh) sh.classList.remove('on');
     ofcState.forEach(function(q){q.pin.classList.remove('sel');q.plate.classList.remove('sel');});
+  };
+  // กดงานในป็อปอัปออฟฟิศ → เด้งไปเปิด/แก้ไขงานนั้นตามแหล่งที่มา
+  window.ofcOpenTask=function(i,ti){
+    var S=ofcState[i]; if(!S) return; var t=(S.tasks||[])[ti]; if(!t||!t._open) return; var o=t._open;
+    closeOfficeSheet();
+    var clickTab=function(v){ var el=document.querySelector('#nav .tab[data-view="'+v+'"]'); if(el) el.click(); };
+    setTimeout(function(){
+      try{
+        if(o.k==='content'){ clickTab('content'); setTimeout(function(){ if(typeof openCardModal==='function') openCardModal(o.id); },300); }
+        else if(o.k==='gfx'){ clickTab('graphic'); setTimeout(function(){ if(typeof openCardModal==='function') openCardModal(o.id); },450); }
+        else if(o.k==='qt'){ if(typeof qtToggle==='function'){ var p=document.getElementById('qt-panel'); if(p && !p.classList.contains('open')) qtToggle(); } setTimeout(function(){ if(typeof openQtEditor==='function') openQtEditor(o.id); },250); }
+        else if(o.k==='sku'){ clickTab('team'); setTimeout(function(){ if(typeof openProcessSummary==='function') openProcessSummary(o.sku); },300); }
+      }catch(e){}
+    },60);
   };
   document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ var sc=document.getElementById('ofc-scrim'); if(sc&&sc.classList.contains('on')) closeOfficeSheet(); } });
 
@@ -11617,7 +11635,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       var stt=(CAL_STATUS[x.status]||CAL_STATUS.brief).t;
       var d=dueDiff(x);
       var dd=''; if(x.due){ var dt=new Date(x.due+'T00:00:00'); if(!isNaN(dt)) dd=dt.getDate()+' '+TH_M[dt.getMonth()]; }
-      out.push({ p:x.title||'(ไม่มีชื่อ)', s:role+' '+(wt?wt+' \u00b7 ':'')+stt, sku:x.product||'', due:dd, days:(d===null?null:d), _cc:true });
+      out.push({ p:x.title||'(ไม่มีชื่อ)', s:role+' '+(wt?wt+' \u00b7 ':'')+stt, sku:x.product||'', due:dd, days:(d===null?null:d), _cc:true, _open:{k:'content',id:x.id} });
     });
     return out;
   };
@@ -11795,7 +11813,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     return (TASKS||[]).filter(function(t){ return !t.done && (t.assignee||'').indexOf(nick)>=0; }).map(function(t){
       var days=null, due='';
       if(t.due){ var d=new Date(t.due+'T00:00:00'); if(!isNaN(d)){ days=Math.round((d-today)/86400000); due=d.getDate()+' '+TH[d.getMonth()]+(t.dueTime?(' '+t.dueTime):''); } }
-      return { p:t.title, sku:'', s:'📋 '+((t.tags||'').split(',').map(function(x){return x.trim();}).filter(Boolean).join(' · ')||'งานที่มอบหมาย'), due:due, days:days, nd:'', _qt:true };
+      return { p:t.title, sku:'', s:'📋 '+((t.tags||'').split(',').map(function(x){return x.trim();}).filter(Boolean).join(' · ')||'งานที่มอบหมาย'), due:due, days:days, nd:'', _qt:true, _open:{k:'qt',id:t.id} };
     });
   };
   document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ var ov=document.getElementById('qt-editor-overlay'); if(ov&&ov.classList.contains('open')){ closeQtEditor(); return; } if(qtOpenState){ qtToggle(); } } });
@@ -12921,7 +12939,7 @@ header{ background:#7BA7E6 !important; }
       if(!isOwner && !isFlw) return;
       var col=gfxColDef(x.person,x.col)||{title:x.col};
       var days=null,due=''; if(x.submitDate){ var d=new Date(String(x.submitDate).slice(0,10)+'T00:00:00'); if(!isNaN(d)){ days=Math.round((d-today)/86400000); due=gfxFmtDDMM(x.submitDate); } }
-      out.push({ p:x.title||'(ไม่มีชื่อ)', sku:'', s:(isOwner?'🎨':'👀')+' Graphic · '+E(x.person||'')+' · '+E(col.title||''), due:due, days:days, nd:'' });
+      out.push({ p:x.title||'(ไม่มีชื่อ)', sku:'', s:(isOwner?'🎨':'👀')+' Graphic · '+E(x.person||'')+' · '+E(col.title||''), due:due, days:days, nd:'', _open:{k:'gfx',id:x.id} });
     });
     return out;
   };
@@ -12937,7 +12955,7 @@ header{ background:#7BA7E6 !important; }
       if(gfxIsDoneCol(x.person,x.col) || gfxIsNoCountCol(x.person,x.col)) return;
       var col=gfxColDef(x.person,x.col)||{title:x.col};
       var days=null,due=''; if(x.submitDate){ var d=new Date(String(x.submitDate).slice(0,10)+'T00:00:00'); if(!isNaN(d)){ days=Math.round((d-today)/86400000); due=gfxFmtDDMM(x.submitDate); } }
-      out.push({ p:x.title||'(ไม่มีชื่อ)', sku:'', s:'🎨 '+E(col.title||''), due:due, days:days, nd:'' });
+      out.push({ p:x.title||'(ไม่มีชื่อ)', sku:'', s:'🎨 '+E(col.title||''), due:due, days:days, nd:'', _open:{k:'gfx',id:x.id} });
     });
     return out;
   };
