@@ -11703,7 +11703,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   window.renderQuickTasks=function(){
     qtMe=qtResolveMe();
     if(qtMe && !qtMineTouched) qtMineOnly=true;
-    var mineOn=qtMineOnly&&!!qtMe;
+    var mineOn=!!qtMe;   // รู้ว่าเราคือใคร → โชว์เฉพาะงานของเรา (มอบให้เรา + เราสั่งคนอื่น) เสมอ
     var pending=TASKS.filter(function(t){return !t.done && (!mineOn||qtIsMine(t));}).length;
     var cb=document.getElementById('qt-count'); if(cb) cb.textContent=pending?String(pending):'';
     if(onOfficeView() && typeof renderOffice==='function'){ try{ renderOffice(); }catch(e){} }   // อัปเดตสถานะในเกมส์ตามงานที่มอบหมาย
@@ -11712,22 +11712,19 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var people=[]; var seen={}; TASKS.forEach(function(t){ if(t.assignee&&!seen[t.assignee]){seen[t.assignee]=1;people.push(t.assignee);} });
     var pb=document.getElementById('qt-personbar');
     if(pb){
+      // โชว์เฉพาะงานของเรา ไม่ต้องมีปุ่มกรองคนอื่น
       var h='';
       if(qtMe){
-        // รู้อัตโนมัติจากบัญชีที่ล็อกอิน — ไม่ต้องเลือกเอง
-        h+='<span class="qt-mechip" title="ระบบรู้จากบัญชีที่ล็อกอิน">🙋 '+e2(qtMe)+'</span>';
-        h+='<button class="qt-pchip qt-mine'+(qtMineOnly?' on':'')+'" onclick="qtToggleMine()" title="งานที่มอบให้ฉัน + งานที่ฉันสั่ง">🙋 เฉพาะงานของฉัน</button>';
+        h+='<span class="qt-mechip" title="งานที่มอบให้คุณ + งานที่คุณสั่งคนอื่น">🙋 งานของ '+e2(qtMe)+'</span>';
       } else {
         // ไม่ทราบว่าเป็นใคร (ยังไม่ล็อกอิน/อีเมลไม่อยู่ในรายชื่อ) → ให้เลือกเองเป็นตัวสำรอง
         var meNames=[]; var seenMe={}; (typeof PIC_NAMES!=='undefined'?PIC_NAMES:[]).concat(people).forEach(function(n){ n=(n||'').trim(); if(n&&!seenMe[n]){seenMe[n]=1;meNames.push(n);} });
         var meOpts='<option value="">🙋 ฉันคือ…</option>'+meNames.map(function(n){return '<option value="'+e2(n)+'">'+e2(n)+'</option>';}).join('');
         h+='<select class="qt-mesel" onchange="qtSetMe(this.value)" title="เลือกว่าคุณคือใคร เพื่อดูเฉพาะงานของคุณ">'+meOpts+'</select>';
       }
-      h+='<button class="qt-pchip'+(qtPerson==='all'?' on':'')+'" onclick="setQtPerson(\'all\')">ทั้งหมด</button>';
       h+='<button class="qt-pchip'+(qtHideDone?' on':'')+'" onclick="qtToggleHideDone()">'+(qtHideDone?'☑ ซ่อนเสร็จ':'ซ่อนที่เสร็จ')+'</button>';
-      people.forEach(function(p){ h+='<button class="qt-pchip'+(qtPerson===p?' on':'')+'" onclick="setQtPerson(\''+aj(p)+'\')">👤 '+e2(p)+'</button>'; });
       pb.innerHTML=h; }
-    var items=TASKS.filter(function(t){ if(mineOn&&!qtIsMine(t)) return false; if(qtPerson!=='all'&&t.assignee!==qtPerson) return false; if(qtHideDone&&t.done) return false; return true; });
+    var items=TASKS.filter(function(t){ if(mineOn&&!qtIsMine(t)) return false; if(qtHideDone&&t.done) return false; return true; });
     items.sort(function(a,b){ if(!!a.done!==!!b.done) return a.done?1:-1; var la=qtIsLate(a),lb=qtIsLate(b); if(la!==lb) return la?-1:1; if((b.priority||0)!==(a.priority||0)) return (b.priority||0)-(a.priority||0); return (a.due||'9999').localeCompare(b.due||'9999'); });
     var host=document.getElementById('qt-list'); if(!host) return;
     if(!items.length){ host.innerHTML='<div class="qt-empty">ยังไม่มีงาน'+(canEdit()?' — กด “➕ เพิ่มงานใหม่”':' · กด 🔓 ปลดล็อกเพื่อเพิ่ม')+'</div>'; return; }
