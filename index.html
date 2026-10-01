@@ -11040,6 +11040,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   var calProdOpen = false, calProdQuery = '', calProdOpts = [];   // สถานะกล่องดรอปดาวน์สินค้า
   var ccOwnerSel = new Set();      // filter ตามผู้รับมอบหมาย (PIC) — เลือกได้หลายคน · ใช้ร่วมกันทั้งปฏิทินและบอร์ด (ว่าง = ทุกคน)
   var calPillarSel = new Set();    // filter ตามเสาหลักคอนเทนต์ (เลือกได้หลายอัน · ว่าง = ทุกเสาหลัก)
+  var calShowEcomB = true;         // โชว์การ์ดกราฟฟิกจากคอลัมน์ Brief AW E-commerce ในปฏิทิน
   var calDateMode = 'post';        // ปฏิทินแสดงตาม: 'post'=วันลงโพสต์ · 'due'=กำหนดส่งงาน (Final+Draft)
   var WORK_TYPE_MAP={}; WORK_TYPES.forEach(function(w){ WORK_TYPE_MAP[w.k]=w; });
   function inferWorkType(x){ if(/^\s*gif\s*$/i.test(x.format||'')) return 'motion';   // รูปแบบ GIF → ประเภทงาน Motion
@@ -11166,7 +11167,24 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function cfColor(n){ var h=0,t=String(n||''); for(var i=0;i<t.length;i++) h=(h*31+t.charCodeAt(i))>>>0; return CF_PALETTE[h%CF_PALETTE.length]; }
   function ccOwnersOf(x){ return String(x.owner||'').split(/[,\/、]/).map(function(t){return t.trim();}).filter(Boolean); }
   function ccOwnerMatch(x){ return !ccOwnerSel.size || ccOwnersOf(x).some(function(o){ return ccOwnerSel.has(o); }); }
-  function calInMonth(x){ var m=calY+'-'+String(calM+1).padStart(2,'0');
+  // ---- การ์ดจากคอลัมน์ Brief AW E-commerce ของบอร์ดกราฟฟิก → ปฏิทิน Content (แยกสีตามผู้มอบหมายงาน) ----
+  function calExtRaw(){ try{ return (typeof window.gfxEcomBriefCards==='function')?window.gfxEcomBriefCards():[]; }catch(e){ return []; } }
+  function calExtVirt(c){ return {id:c.id,title:c.title,date:c.submitDate,time:c.submitTime,owner:c.followers,brand:c.brand,status:'production',workType:'aw',_ecomBrief:true,_pic:c.owner,_person:c.person,_colTitle:c.colTitle,_done:!!c.done}; }
+  function calExtItems(skip){
+    if(!calShowEcomB) return [];
+    if(calProdSel.size || calPillarSel.size) return [];   // ฟิลเตอร์สินค้า/เสาหลักใช้กับการ์ด Content เท่านั้น
+    if(skip!=='work' && calWorkFilter.size && !calWorkFilter.has('aw')) return [];
+    var base=calExtRaw().filter(function(c){ return c.submitDate; }).map(calExtVirt);
+    base=base.filter(function(x){ return ciBrand==='all' || (x.brand||'other')===ciBrand; });
+    if(skip!=='owner' && ccOwnerSel.size) base=base.filter(ccOwnerMatch);
+    return base;
+  }
+  function calExtColor(x){ return cfColor(ccOwnersOf(x)[0]||x._person||'?'); }
+  function calExtStat(x){ return {t:'🎨 ทำโดย '+x._person+((x._pic&&x._pic!==x._person)?(' ('+x._pic+')'):'')+' · ตอนนี้: '+(x._colTitle||'-')+(x._done?' ✅':''), c:calExtColor(x)}; }
+  function ecomBriefListRow(x){ var c=calExtColor(x); var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); if(x.brand) meta.push('🏷️ '+e2(bLbl(x.brand))); meta.push('👤 ผู้มอบหมาย '+e2(x.owner||'ไม่ระบุ')); meta.push('🎨 ทำโดย '+e2(x._person)); meta.push('📍 ตอนนี้: '+e2(x._colTitle||'-')+(x._done?' ✅':''));
+    return '<div class="ccal-post"'+(x._done?' style="opacity:.7"':'')+'><span class="ccal-post-s" style="--s:'+c+'">🛒 งาน E-commerce</span><div class="ccal-post-main"><div class="ccal-post-title" style="cursor:pointer;" onclick="openCardModal(\''+aj(x.id)+'\')">'+e2(x.title)+'</div><div class="ccal-post-meta">'+meta.join(' · ')+'</div></div></div>'; }
+  window.calToggleEcomB=function(){ calShowEcomB=!calShowEcomB; if(typeof renderCalActive==='function') renderCalActive(); };
+  function calInMonth(x){ var m=calY+'-'+String(calM+1).padStart(2,'0'); if(x._ecomBrief) return String(x.date||'').slice(0,7)===m;
     if(calDateMode==='post') return String(x.date||'').slice(0,7)===m;
     if(String(x.due||'').slice(0,7)===m) return true;
     return ccParseDrafts(x.drafts).some(function(d){ return String(d||'').slice(0,7)===m; }); }
@@ -11195,22 +11213,27 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     return rows || '<div class="cf-empty">'+(calProdOpts.length?('ไม่พบสินค้า “'+e2(calProdQuery)+'”'):'ยังไม่มีสินค้าในการ์ด')+'</div>'; }
   function calLegend(){
     var el=document.getElementById('ccal-legend'); if(!el) return;
-    var names=plOwnerNames();
+    var names=plOwnerNames().slice();
+    calExtRaw().forEach(function(c){ String(c.followers||'').split(/[,\/、]/).forEach(function(n){ n=n.trim(); if(n && !ccIsGfxName(n) && names.indexOf(n)<0) names.push(n); }); });   // ผู้มอบหมายงานของการ์ด Brief AW E-commerce ก็เป็นตัวเลือกกรอง
     ccOwnerSel.forEach(function(o){ if(names.indexOf(o)<0) ccOwnerSel.delete(o); });   // คนถูกลบไปแล้ว → เอาออกจากตัวกรอง
+    if(typeof window.gfxEnsureLoaded==='function' && !window.__calExtAsked){ window.__calExtAsked=true; window.gfxEnsureLoaded(function(){ try{ renderCalActive(); }catch(e){} }); }   // โหลดข้อมูลกราฟฟิกแล้ววาดปฏิทินอีกรอบ
     var monthCtx=function(skip){ return calFilterItems(skip).filter(calInMonth); };
     // มุมมอง
     var dm='<div class="cf-row"><span class="cf-lead">มุมมอง:</span>'
       +cfPill('📮 วันลงโพสต์', calDateMode==='post', "calSetDateMode('post')")
       +cfPill('🎯 กำหนดส่งงาน (Final+Draft)', calDateMode==='due', "calSetDateMode('due')")
       +'<span class="cf-hint">'+(calDateMode==='post'?'ดูว่าวันไหนต้องลงโพสต์อะไร':'ดูว่าวันไหนต้องส่งงานอะไร (🎯 Final · 📝 draft)')+' · ตัวเลขบนปุ่ม = จำนวนงานของเดือนนี้</span></div>';
+    // งานจากบอร์ดกราฟฟิก (คอลัมน์ Brief AW E-commerce)
+    var extAll=calExtRaw().filter(function(c){ return c.submitDate; }); var extMonth=extAll.map(calExtVirt).filter(calInMonth).length;
+    var rowExt='<div class="cf-row"><span class="cf-lead">แสดงเพิ่ม:</span>'+cfPill('🛒 งาน E-commerce', calShowEcomB, 'calToggleEcomB()', {color:'#26A69A', onBg:'#26A69A', n:extMonth})+'<span class="cf-hint">การ์ดกราฟฟิกที่สร้าง/ย้ายมาจากคอลัมน์ Brief AW E-commerce (ติดตัวแม้ย้ายคอลัมน์หรือเสร็จแล้ว) · แยกสีตามผู้มอบหมายงาน</span></div>';
     // ประเภทงาน
     var wBase=monthCtx('work'), wCnt={}; wBase.forEach(function(x){ var k=workTypeOf(x); wCnt[k]=(wCnt[k]||0)+1; });
     var rowType='<div class="cf-row"><span class="cf-lead">ประเภทงาน:</span>'+cfPill('ทั้งหมด', !calWorkFilter.size, 'calWorkAll()', {n:wBase.length})
       +WORK_TYPES.map(function(w){ return cfPill(e2(w.t), calWorkFilter.has(w.k), "toggleCalWork('"+w.k+"')", {color:w.c, onBg:w.c, n:wCnt[w.k]||0}); }).join('')+'</div>';
     // ผู้รับมอบหมาย (PIC) — เลือกได้หลายคน
-    var oBase=monthCtx('owner'), oTot=oBase.length;
+    var oBase=monthCtx('owner'), oExt=calExtItems('owner').filter(calInMonth), oTot=oBase.length+oExt.length;
     var rowOwner='<div class="cf-row"><span class="cf-lead">ผู้รับมอบหมาย (PIC):</span>'+cfPill('👥 ทั้งทีม', !ccOwnerSel.size, 'ccOwnerClear()', {n:oTot})
-      +names.map(function(n){ var c=oBase.filter(function(x){ return ccOwnersOf(x).indexOf(n)>=0; }).length; var col=cfColor(n);
+      +names.map(function(n){ var c=oBase.concat(oExt).filter(function(x){ return ccOwnersOf(x).indexOf(n)>=0; }).length; var col=cfColor(n);
         return cfPill(e2(n), ccOwnerSel.has(n), "ccOwnerToggle('"+aj(n)+"')", {color:col, onBg:col, n:c, pct:(c&&oTot)?Math.round(c/oTot*100):0}); }).join('')
       +(ccOwnerSel.size>1?'<span class="cf-hint">เลือกอยู่ '+ccOwnerSel.size+' คน</span>':'')+'</div>';
     // เสาหลัก
@@ -11229,7 +11252,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +selArr.map(function(pr,i){ return '<span class="cf-chip">'+e2(pr)+'<i title="เอาออก" onclick="calProdRemoveAt('+i+')">✕</i></span>'; }).join('')+'</div>';
     // legend สถานะ
     var lg='<div class="ccal-statuslegend">'+CAL_STATUS_ORDER.map(function(st){return '<span class="lg"><span class="dot" style="background:'+CAL_STATUS[st].c+'"></span>'+e2(CAL_STATUS[st].t)+'</span>';}).join('')+'</div>';
-    el.innerHTML=dm+rowType+rowOwner+rowPillar+rowProd+lg;
+    el.innerHTML=dm+rowExt+rowType+rowOwner+rowPillar+rowProd+lg;
     if(calProdOpen){ var si=document.getElementById('cf-prod-search'); if(si && document.activeElement!==si){ si.focus(); try{ si.setSelectionRange(si.value.length,si.value.length); }catch(e){} } }
   }
   function calRerenderView(){ var host=document.getElementById('ccal-host'); if(!host) return; if(calMode==='grid') renderCalGrid(host); else renderCalList(host); }
@@ -11251,7 +11274,9 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function calPlot(){ var out=[]; calVisibleItems().forEach(function(x){
     if(calDateMode==='post'){ if(x.date) out.push({x:x, iso:x.date, kind:'post'}); }
     else { if(x.due) out.push({x:x, iso:x.due, kind:'final'}); ccParseDrafts(x.drafts).forEach(function(d,i){ if(d) out.push({x:x, iso:d, kind:'draft', n:i+1}); }); }
-  }); return out; }
+  });
+  calExtItems('').forEach(function(x){ if(x.date) out.push({x:x, iso:x.date, kind:'ecombrief'}); });   // วันส่งงานของการ์ด Brief AW E-commerce (ทั้งโหมดลงโพสต์/กำหนดส่ง)
+  return out; }
   window.toggleCalWork=function(k){ if(calWorkFilter.has(k)) calWorkFilter.delete(k); else calWorkFilter.add(k); if(typeof renderCalActive==='function') renderCalActive(); };
   window.calWorkAll=function(){ calWorkFilter.clear(); if(typeof renderCalActive==='function') renderCalActive(); };
   // Monthly performance snapshot (mirrors KINN's Dashboard) — respects month + brand filter
@@ -11309,9 +11334,10 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
         var wc, pre='', kindTxt;
         if(e.kind==='final'){ wc=st.c; pre='🎯 '; kindTxt='ส่ง Final'; }
         else if(e.kind==='draft'){ wc=st.c; pre='📝 draft'+e.n+': '; kindTxt='ส่ง draft '+e.n; }
+        else if(e.kind==='ecombrief'){ st=calExtStat(x); wc=st.c; pre=(x._done?'✅ ':'')+'🛒 '; kindTxt='ส่งงาน E-commerce'; }
         else { wc=wt.c||st.c; kindTxt='ลงโพสต์'; }
-        var tip=(x.time?x.time+' ':'')+kindTxt+': '+x.title+(wt.t?' · '+wt.t:'')+(x.owner?' · 👤'+x.owner:'')+(x.brand?' · '+bLbl(x.brand):'')+' · '+st.t;
-        return '<div class="ccal-chip" style="--s:'+wc+'" title="'+e2(tip)+'" onclick="event.stopPropagation();calChipClick(\''+aj(x.id)+'\')">'+((e.kind==='post'&&x.time)?'<span class="ci">'+e2(x.time)+'</span> ':'')+e2(pre+x.title)+((e.kind==='post'&&x.owner)?' <span class="ccal-chip-owner">👤'+e2(x.owner)+'</span>':'')+'</div>';
+        var tip=(x.time?x.time+' ':'')+kindTxt+': '+x.title+(wt.t?' · '+wt.t:'')+(x.owner?' · 👤'+(e.kind==='ecombrief'?'ผู้มอบหมาย ':'')+x.owner:'')+(x.brand?' · '+bLbl(x.brand):'')+' · '+st.t;
+        return '<div class="ccal-chip" style="--s:'+wc+(x._done?';opacity:.6':'')+'" title="'+e2(tip)+'" onclick="event.stopPropagation();calChipClick(\''+aj(x.id)+'\')">'+(((e.kind==='post'||e.kind==='ecombrief')&&x.time)?'<span class="ci">'+e2(x.time)+'</span> ':'')+e2(pre+x.title)+(((e.kind==='post'||e.kind==='ecombrief')&&x.owner)?' <span class="ccal-chip-owner">👤'+e2(x.owner)+'</span>':'')+'</div>';
       }).join('');
       if(list.length>shown.length) chips+='<div class="ccal-more" onclick="event.stopPropagation();openCalDay(\''+iso+'\')">+'+(list.length-shown.length)+' เพิ่มเติม</div>';
       // Event/Task/วันหยุด (นอกเหนือจาก Pipeline) แสดงบนสุดของช่อง
@@ -11332,7 +11358,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     return '<div class="ccal-post"><span class="ccal-post-s" style="--s:'+def.color+'">'+def.emoji+' '+e2(def.label)+'</span><div class="ccal-post-main"><div class="ccal-post-title">'+e2(ev.title)+e2(span)+'</div>'+(meta.length?'<div class="ccal-post-meta">'+meta.join(' · ')+'</div>':'')+'</div>'+act+'</div>';
   }
   function renderCalList(host){
-    var items=calVisibleItems().slice().sort(function(a,b){ return (a.date+ (a.time||'')).localeCompare(b.date+(b.time||'')); });
+    var items=calVisibleItems().concat(calExtItems('')).slice().sort(function(a,b){ return (a.date+ (a.time||'')).localeCompare(b.date+(b.time||'')); });
     var evByDate={}; if(typeof ALL_EVENTS!=='undefined'&&ALL_EVENTS){ ALL_EVENTS.forEach(function(ev){ if(ev&&ev.start){ (evByDate[ev.start]=evByDate[ev.start]||[]).push(ev); } }); }
     if(!items.length && !Object.keys(evByDate).length){ host.innerHTML='<div class="ccal-empty">ยังไม่มีโพสต์ในปฏิทิน'+(unlocked()?' — กด “➕ เพิ่มโพสต์” / “📌 Event/Task/วันหยุด” หรือกดวันในมุมมองเดือน':' · กด 🔓 ปลดล็อกทีมเพื่อเพิ่ม')+'</div>'; return; }
     var today=new Date(); today.setHours(0,0,0,0);
@@ -11347,6 +11373,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       var head='<div class="ccal-day-head">'+TH_WDF[d.getDay()]+' '+d.getDate()+' '+TH_MF[d.getMonth()]+' '+d.getFullYear()+'<span class="cnt">'+cntTxt+'</span></div>';
       var evRows=evs.map(evListRow).join('');
       var rows=evRows+byDate[dt].slice().sort(function(a,b){return (a.time||'').localeCompare(b.time||'');}).map(function(x){
+        if(x._ecomBrief) return ecomBriefListRow(x);
         var st=CAL_STATUS[x.status]||CAL_STATUS.brief;
         var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); if(x.brand) meta.push('🏷️ '+e2(bLbl(x.brand))); if(x.product) meta.push('📦 '+e2(x.product)); if(x.goal) meta.push('🎯 '+e2(x.goal)); if(x.owner) meta.push('👤 '+e2(x.owner)); if(x.reviewer) meta.push('🔍 '+e2(x.reviewer));
         var tags=tagChips(x.tags)+pillarTag(x.pillar)+fmtTag(x.format)+dueBadge(x)+reviseBadge(x)+extendBadge(x);
@@ -11383,8 +11410,9 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       var wc,pre='',kindTxt;
       if(e.kind==='final'){ wc=st.c; pre='🎯 '; kindTxt='ส่ง Final'; }
       else if(e.kind==='draft'){ wc=st.c; pre='📝 draft'+e.n+': '; kindTxt='ส่ง draft '+e.n; }
+      else if(e.kind==='ecombrief'){ st=calExtStat(x); wc=st.c; pre=(x._done?'✅ ':'')+'🛒 '; kindTxt='ส่งงาน E-commerce'; }
       else { wc=wt.c||st.c; kindTxt='ลงโพสต์'; }
-      var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); meta.push(kindTxt); if(wt.t) meta.push(e2(wt.t)); if(x.owner) meta.push('👤 '+e2(x.owner)); if(x.brand) meta.push(e2(bLbl(x.brand))); meta.push(e2(st.t));
+      var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); meta.push(kindTxt); if(wt.t) meta.push(e2(wt.t)); if(x.owner) meta.push('👤 '+(e.kind==='ecombrief'?'ผู้มอบหมาย ':'')+e2(x.owner)); if(x.brand) meta.push(e2(bLbl(x.brand))); meta.push(e2(st.t));
       rows+='<div class="cc-day-row" style="--s:'+wc+'" onclick="calDayGo(\''+aj(x.id)+'\')"><div class="cc-day-main"><div class="cc-day-t">'+e2(pre+x.title)+'</div><div class="cc-day-m">'+meta.join(' · ')+'</div></div></div>';
     });
     var total=evs.length+entries.length;
@@ -14032,7 +14060,8 @@ details.fm-more[open]{padding-bottom:6px;}
     owner:(r.owner||'').trim(), graphic:(r.graphic||'').trim(), followers:(r.followers||'').trim(), images:gfxParseImages(r.images),
     submitDate:r.submitDate||'', submitTime:r.submitTime||'', tags:r.tags||'', note:r.note||'',
     checklist:gfxParseChecklist(r.checklist), revisions:gfxParseRevisions(r.revisions),
-    srcContent:(r.srcContent||'').trim(), pos:(r.pos!=null&&r.pos!==''?(parseInt(r.pos,10)||0):null), doneAt:r.doneAt||'', updatedAt:r.updatedAt||'', updatedBy:r.updatedBy||'' }; }
+    srcContent:(r.srcContent||'').trim(), pos:(r.pos!=null&&r.pos!==''?(parseInt(r.pos,10)||0):null), doneAt:r.doneAt||'', updatedAt:r.updatedAt||'', updatedBy:r.updatedBy||'',
+    ecom:(r.ecom===true||r.ecom===1||/^(1|true|y)$/i.test(String(r.ecom==null?'':r.ecom).trim()))?'1':'' }; }   // ecom=1 = นับเป็นงาน E-commerce (สร้างจาก/ถูกย้ายมาคอลัมน์ Brief AW E-commerce) — ติดตัวการ์ดตลอด แม้ย้ายไปคอลัมน์อื่น
 
   function gfxPeople(){ return (GFX_PEOPLE && GFX_PEOPLE.length)?GFX_PEOPLE:GFX_PEOPLE_DEFAULT.slice(); }
   function gfxColsFor(p){ var c=GFX_COLS[p]; if(!c || !c.length) c=gfxDefaultCols(); return gfxWithSource(c); }
@@ -14040,6 +14069,9 @@ details.fm-more[open]{padding-bottom:6px;}
   function gfxColDef(p,key){ return gfxColsFor(p).find(function(c){return c.key===key;})||null; }
   function gfxIsDoneCol(p,key){ var d=gfxColDef(p,key); return !!(d&&d.done); }
   // คอลัมน์ “แก้ไข/แก้ไขงาน” — ตรวจจากชื่อคอลัมน์ (บอร์ดแต่ละคนตั้งชื่อเองได้) หรือธง revise:true · การ์ดที่ย้ายเข้าคอลัมน์นี้ต้องกรอกสาเหตุแก้ไขก่อน
+  // คอลัมน์ “Brief AW E-commerce” (ตั้งชื่อเองต่อคน) — การ์ดในคอลัมน์นี้ไปโชว์ในปฏิทิน Content + ห้องออฟฟิศของผู้มอบหมายงาน
+  function gfxIsEcomBriefCol(p,key){ var d=gfxColDef(p,key); var t=String((d&&d.title)||''); return !!(d && !d.done && /brief/i.test(t) && /e-?\s*commerce|ecom/i.test(t)); }
+  function gfxIsEcomCard(x){ return !!(x && (x.ecom==='1' || gfxIsEcomBriefCol(x.person,x.col))); }
   function gfxIsReviseCol(p,key){ var d=gfxColDef(p,key); return !!(d && !d.done && !d.nocount && (d.revise===true || /แก้ไข|ตีกลับ|revis/i.test(String(d.title||'')))); }
   var gfxRevCtx=null, gfxRevPending=null;   // gfxRevCtx = การย้ายที่รอสาเหตุแก้ไข · gfxRevPending = สาเหตุที่กรอกแล้ว รอบันทึกพร้อมฟอร์มแก้ไขการ์ด
   function gfxIsNoCountCol(p,key){ var d=gfxColDef(p,key); return !!(d&&d.nocount); }
@@ -14071,7 +14103,7 @@ details.fm-more[open]{padding-bottom:6px;}
       id:card.id, person:card.person, col:card.col, title:card.title, brand:card.brand, owner:card.owner||'', graphic:card.graphic||'', followers:card.followers||'',
       submitDate:card.submitDate||'', submitTime:card.submitTime||'', tags:card.tags||'', note:card.note||'',
       checklist:JSON.stringify(card.checklist||[]), revisions:JSON.stringify(card.revisions||[]), images:JSON.stringify(card.images||[]),
-      srcContent:card.srcContent||'', pos:(card.pos!=null?String(card.pos):''), doneAt:card.doneAt||'', updatedAt:card.updatedAt||TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') }}); }catch(e){}
+      srcContent:card.srcContent||'', ecom:card.ecom||'', pos:(card.pos!=null?String(card.pos):''), doneAt:card.doneAt||'', updatedAt:card.updatedAt||TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') }}); }catch(e){}
   }
   async function gfxSavePeople(){ lset(PPL_LKEY, gfxPeople()); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'people',row:{k:'people',v:JSON.stringify(gfxPeople()),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
   async function gfxSaveCols(p){ lset(COLS_LKEY, GFX_COLS); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'cols::'+p,row:{k:'cols::'+p,v:JSON.stringify(GFX_COLS[p]||[]),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
@@ -14092,6 +14124,15 @@ details.fm-more[open]{padding-bottom:6px;}
 
   window.gfxGetCard=function(id){ return GFX.find(function(x){return x.id===id;})||null; };
   // id ของการ์ดกราฟฟิกทั้งหมดที่รับงานมาจากการ์ด Content นี้ (ใช้รวม thread คอมเมนต์เก่าที่เคยโพสต์ที่การ์ดกราฟฟิกเอง)
+  window.gfxEcomBriefCards=function(){
+    return GFX.filter(function(x){ return gfxIsEcomCard(x); }).map(function(x){ var d=gfxColDef(x.person,x.col)||{};
+      return {id:x.id,title:x.title||'',person:x.person||'',owner:x.owner||'',followers:x.followers||'',submitDate:String(x.submitDate||'').slice(0,10),submitTime:x.submitTime||'',brand:x.brand||'',colTitle:d.title||x.col||'',done:!!d.done}; });
+  };
+  // โหลดข้อมูลกราฟฟิกเงียบๆ (ครั้งเดียว) แล้วเรียก cb — ให้ปฏิทิน Content ใช้โชว์การ์ดจากคอลัมน์ Brief AW E-commerce
+  window.gfxEnsureLoaded=function(cb){
+    if(!window.__gfxLoadP){ window.__gfxLoaded=true; window.__gfxLoadP=loadGfx().catch(function(){}); }
+    window.__gfxLoadP.then(function(){ try{ cb&&cb(); }catch(e){} });
+  };
   window.gfxIdsAdoptedFrom=function(contentId){ if(!contentId) return []; return GFX.filter(function(x){return x.srcContent===contentId;}).map(function(x){return x.id;}); };
   window.gfxCardTitle=function(id){ var c=window.gfxGetCard(id); return c?(c.title||'การ์ด'):'การ์ด'; };
   window.gfxPeopleList=function(){ try{ return gfxPeople().slice(); }catch(e){ return []; } };
@@ -14111,7 +14152,9 @@ details.fm-more[open]{padding-bottom:6px;}
       if(!isOwner && !isFlw) return;
       var col=gfxColDef(x.person,x.col)||{title:x.col};
       var days=null,due=''; if(x.submitDate){ var d=new Date(String(x.submitDate).slice(0,10)+'T00:00:00'); if(!isNaN(d)){ days=Math.round((d-today)/86400000); due=gfxFmtDDMM(x.submitDate); } }
-      out.push({ p:x.title||'(ไม่มีชื่อ)', sku:'', s:(isOwner?'🎨':'👀')+' Graphic · '+E(x.person||'')+' · '+E(col.title||''), due:due, days:days, nd:'', _open:{k:'gfx',id:x.id} });
+      var eb=gfxIsEcomCard(x);
+      var lbl=eb?((isFlw&&!isOwner)?('🛒 ผู้มอบหมาย → '+E(x.person||'')+' · '+E(col.title||'')):('🛒 '+E(col.title||'')+(x.followers?(' · ผู้มอบหมาย '+E(x.followers)):''))):((isOwner?'🎨':'👀')+' Graphic · '+E(x.person||'')+' · '+E(col.title||''));
+      out.push({ p:x.title||'(ไม่มีชื่อ)', sku:'', s:lbl, due:due, days:days, nd:'', _open:{k:'gfx',id:x.id} });
     });
     return out;
   };
@@ -14127,7 +14170,7 @@ details.fm-more[open]{padding-bottom:6px;}
       if(gfxIsDoneCol(x.person,x.col) || gfxIsNoCountCol(x.person,x.col)) return;
       var col=gfxColDef(x.person,x.col)||{title:x.col};
       var days=null,due=''; if(x.submitDate){ var d=new Date(String(x.submitDate).slice(0,10)+'T00:00:00'); if(!isNaN(d)){ days=Math.round((d-today)/86400000); due=gfxFmtDDMM(x.submitDate); } }
-      out.push({ p:x.title||'(ไม่มีชื่อ)', sku:'', s:'🎨 '+E(col.title||''), due:due, days:days, nd:'', _open:{k:'gfx',id:x.id} });
+      out.push({ p:x.title||'(ไม่มีชื่อ)', sku:'', s:(gfxIsEcomCard(x)?('🛒 '+E(col.title||'')+(x.followers?(' · ผู้มอบหมาย '+E(x.followers)):'')):('🎨 '+E(col.title||''))), due:due, days:days, nd:'', _open:{k:'gfx',id:x.id} });
     });
     return out;
   };
@@ -14461,7 +14504,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var imgStr=(x.images&&x.images.length)?'<span title="ไฟล์แนบ">🖼️ '+x.images.length+'</span>':'';
     var doneStr=x.doneAt?'<span title="เสร็จเมื่อ" style="color:#1E7A54;font-weight:700;">✅ '+E(fmtDoneStamp(x.doneAt))+'</span>':'';
     var cn=gfxDcnt(x.id); var cmn=cn?'<span class="cc-pl-badge">💬 '+cn+'</span>':'';
-    var tags=(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+gfxTagColor(t)+'">'+E(t)+'</span>';}).join(''):'');
+    var tags=(gfxIsEcomCard(x)?'<span class="cc-tag" style="--tg:#26A69A" title="นับเป็นงาน E-commerce">🛒 E-com</span>':'')+(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+gfxTagColor(t)+'">'+E(t)+'</span>';}).join(''):'');
     var moveOpts=gfxColsFor(x.person).map(function(k){return '<option value="'+E(k.key)+'"'+(k.key===c.key?' selected':'')+'>'+E(k.title)+'</option>';}).join('');
     var srcBadge=x.srcContent?'<span title="มาจากงาน Content — คลิกดูต้นทาง" onclick="event.stopPropagation();openCardModal(\''+AJ(x.srcContent)+'\')" style="background:#EAF3FB;color:#2F6DA8;border-radius:5px;padding:0 6px;font-size:9.5px;font-weight:700;cursor:pointer;">✨ Content ↗</span>':'';
     var actions=canEd?('<div class="cc-pl-actions"><button class="cc-pl-send" onclick="event.stopPropagation();gfxEdit(\''+AJ(x.id)+'\')">✏️ แก้</button><button class="cc-pl-send" title="Copy สร้างการ์ดใหม่" onclick="event.stopPropagation();gfxCopy(\''+AJ(x.id)+'\')">📋 Copy</button><select class="cc-pl-move" title="ย้ายคอลัมน์" onclick="event.stopPropagation();" onchange="gfxMove(\''+AJ(x.id)+'\',this.value)">'+moveOpts+'</select><button class="cc-pl-no" onclick="event.stopPropagation();gfxDel(\''+AJ(x.id)+'\')" title="ลบ">🗑️</button></div>'):'';
@@ -14596,7 +14639,8 @@ details.fm-more[open]{padding-bottom:6px;}
   window.gfxEdit=function(id){ var c=GFX.find(function(x){return x.id===id;}); if(!c) return; if(!gfxCanEdit()){ TOAST('ดูอย่างเดียว — เข้าสู่ระบบเพื่อแก้','info'); return; } gfxEditId=id; openGfxEditor(c); };
   window.gfxMove=function(id,nk,force){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||c.col===nk) return; var def=gfxColDef(c.person,nk); if(!def) return;
     if(!force && gfxIsReviseCol(c.person,nk) && !gfxIsReviseCol(c.person,c.col)){ gfxRevOpen(id,{move:nk}); gfxReRender(); return; }   // ย้ายเข้าคอลัมน์แก้ไข → เด้งให้กรอกสาเหตุก่อน (บังคับ)
-    c.col=nk; if(def.done){ if(!c.doneAt) c.doneAt=nowStamp(); } else { c.doneAt=''; } c.updatedAt=TS(); gfxUpsertLocal(c); gfxReRender(); TOAST('ย้ายไป “'+def.title+'” แล้ว','ok'); gfxSyncCard(c);
+    c.col=nk; if(gfxIsEcomBriefCol(c.person,nk)) c.ecom='1';   // ย้ายเข้าคอลัมน์ Brief AW E-commerce → นับเป็นงาน E-commerce ถาวร
+    if(def.done){ if(!c.doneAt) c.doneAt=nowStamp(); } else { c.doneAt=''; } c.updatedAt=TS(); gfxUpsertLocal(c); gfxReRender(); TOAST('ย้ายไป “'+def.title+'” แล้ว','ok'); gfxSyncCard(c);
     // เชื่อม Content Pipeline: การ์ดที่รับมาจาก Content เข้าคอลัมน์ "เสร็จแล้ว" → Content เลื่อนไป ✅ อนุมัติ · ย้ายออก → กลับ 🎬 กำลังผลิต
     if(c.srcContent && typeof window.plSetStatus==='function'){ try{ if(def.done) window.plSetStatus(c.srcContent,'approved',['brief','production','review','revise']); else window.plSetStatus(c.srcContent,'production',['approved']); }catch(e){} }
     try{ if(typeof ntGfxMoved==='function') ntGfxMoved(c, def.title, !!def.done); }catch(e){}
@@ -14642,7 +14686,8 @@ details.fm-more[open]{padding-bottom:6px;}
         +fmMore('ข้อมูลเสริม',
           fmRow('แบรนด์', fmChips('gfx-f-brand', GFX_BRANDS.filter(function(b){return b[0]!=='all';}).map(function(b){return [b[0],b[1]];}), c.brand||'godmami', {cb:'gfxSaveDraft'}))
           +fmRow('คอลัมน์', fmChips('gfx-f-col', cols.map(function(k){return [k.key,k.title];}), curCol||'', {cb:'gfxSaveDraft'}))
-          +fmRow('🏷️ แท็ก', tgHtml('gfx-f-tags', c.tags||'', gfxTagList(), 'gfxSaveDraft')), !!c.tags)
+          +fmRow('🛒 งาน E-commerce', fmChips('gfx-f-ecom', [['1','นับเป็นงาน E-commerce']], (c.ecom==='1')?'1':'', {empty:1,cb:'gfxSaveDraft'})+'<div class="fm-hint">ติดตัวการ์ดอัตโนมัติเมื่อสร้างหรือย้ายเข้าคอลัมน์ Brief AW E-commerce · การ์ดที่ติดแล้วจะขึ้นปฏิทิน Content แม้ย้ายไปคอลัมน์อื่น/เสร็จแล้ว · ติ๊กเองได้สำหรับการ์ดเก่า</div>')
+          +fmRow('🏷️ แท็ก', tgHtml('gfx-f-tags', c.tags||'', gfxTagList(), 'gfxSaveDraft')), !!(c.tags||c.ecom==='1'))
         +(gfxEditId?'':'<div style="font-size:11px;color:#9aa4b5;">💡 ถ้าเผลอปิด ข้อความและไฟล์ที่แนบจะถูกเก็บไว้ให้อัตโนมัติ — เปิด “➕ เพิ่มการ์ด” อีกครั้งจะกลับมา</div>')
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;padding:11px 18px 16px;border-top:1px solid var(--line,#E7ECF5);">'
@@ -14664,6 +14709,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var col=g('gfx-f-col')||(gfxColsFor(gfxPerson)[0]||{}).key||'todo';
     if(gfxEditId && !gfxRevPending && gfxIsReviseCol(gfxPerson,col) && !gfxIsReviseCol(gfxPerson,prev.col)){ gfxRevOpen(id,{editor:true}); return; }   // เปลี่ยนคอลัมน์เป็น “แก้ไข” ในฟอร์ม → ต้องกรอกสาเหตุก่อนบันทึก
     var card={ id:id, person:gfxPerson, col:col, title:title, brand:g('gfx-f-brand')||'godmami', owner:g('gfx-f-owner'), graphic:'', followers:g('gfx-f-followers'), submitDate:g('gfx-f-submitDate'), submitTime:g('gfx-f-submitTime'), tags:tags, note:g('gfx-f-note'), checklist:(Array.isArray(prev.checklist)?prev.checklist:[]), revisions:(Array.isArray(prev.revisions)?prev.revisions:[]), images:gfxEdAtt.slice(), doneAt:prev.doneAt||'', updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') };
+    card.ecom=(g('gfx-f-ecom')==='1' || gfxIsEcomBriefCol(gfxPerson,col))?'1':'';   // อยู่/สร้างในคอลัมน์ Brief AW E-commerce = งาน E-commerce เสมอ · ที่เหลือเลือกเองได้ในข้อมูลเสริม
     if(gfxRevPending){ card.revisions=(card.revisions||[]).concat([gfxRevPending]); gfxRevPending=null; }
     if(gfxIsDoneCol(gfxPerson,col)){ if(!card.doneAt) card.doneAt=TS(); } else { card.doneAt=''; }
     var wasAdd=!gfxEditId;
@@ -14682,7 +14728,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var canEd=gfxCanEdit();
     var col=gfxColDef(x.person,x.col)||{title:x.col,color:'#7cb6e4'};
     var row=function(lb,val){ return val?'<div class="cc-cd-row"><b>'+lb+'</b><span>'+val+'</span></div>':''; };
-    var tags=(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+gfxTagColor(t)+'">'+E(t)+'</span>';}).join(''):'');
+    var tags=(gfxIsEcomCard(x)?'<span class="cc-tag" style="--tg:#26A69A" title="นับเป็นงาน E-commerce">🛒 E-com</span>':'')+(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+gfxTagColor(t)+'">'+E(t)+'</span>';}).join(''):'');
     var over=gfxIsOverdue(x);
     var rows='';
     rows+=row('กราฟฟิก (บอร์ด)', x.person?('🎨 '+E(x.person)):'');
@@ -14811,7 +14857,7 @@ details.fm-more[open]{padding-bottom:6px;}
     if(!dragged||!target) return; var p=dragged.person; if(target.person!==p) return;
     if(!force && dragged.col!==target.col && gfxIsReviseCol(p,target.col) && !gfxIsReviseCol(p,dragged.col)){ gfxRevOpen(draggedId,{reorder:{target:targetId,after:!!after}}); return; }
     var changed=[];
-    if(dragged.col!==target.col){ dragged.col=target.col; if(gfxIsDoneCol(p,dragged.col)){ if(!dragged.doneAt) dragged.doneAt=nowStamp(); } else { dragged.doneAt=''; } changed.push(dragged);
+    if(dragged.col!==target.col){ dragged.col=target.col; if(gfxIsEcomBriefCol(p,dragged.col)) dragged.ecom='1'; if(gfxIsDoneCol(p,dragged.col)){ if(!dragged.doneAt) dragged.doneAt=nowStamp(); } else { dragged.doneAt=''; } changed.push(dragged);
       if(dragged.srcContent && typeof window.plSetStatus==='function'){ try{ if(gfxIsDoneCol(p,dragged.col)) window.plSetStatus(dragged.srcContent,'approved',['brief','production','review','revise']); else window.plSetStatus(dragged.srcContent,'production',['approved']); }catch(e){} }
       try{ if(typeof ntGfxMoved==='function'){ var gd=gfxColDef(p,dragged.col); ntGfxMoved(dragged, gd?gd.title:'', gfxIsDoneCol(p,dragged.col)); } }catch(e){}
       gfxRefreshContentSoon(dragged);
