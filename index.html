@@ -5827,11 +5827,109 @@ const TEAM_NAMES = [
   'รงค์รุจา โยธินปริทัศน์ (จ๋า)',
   'ธาริณี ชื่นชอบ (แพรว)',
   'ธีรนาท ชื่นชอบ (พลอย)',
-  'ณัฐสุรางค์ โคตรตระกูล (โบนัส)',
+  'ณัฐสุรางค์ โคตรมงคล (โบนัส)',
   'นาวิน ขวัญเมือง (พีท)',
   'กันติชา ศรีวงศ์ราช (มีน)',
   'นริศรา ชูวงศ์'
 ];
+
+/* ===== รายชื่อทีม: เพิ่ม / ลบ / แก้ชื่อ + จดจำ =====
+   TEAM_NAMES เป็นลิสต์กลาง (ใช้ทั้งฟอร์มอัปเดตและฟอร์มบรีฟ) — แก้ใน place แล้วทุกที่เห็นพร้อมกัน
+   เก็บใน localStorage (จำในเครื่อง) + ซิงก์ขึ้น graphic_config (k='team_names') ให้ทั้งทีมเห็นชุดเดียวกัน (ไม่ต้องมี SQL ใหม่) */
+var TN_LKEY = 'npd_team_names_v1';
+function tnFix(s){ return String(s==null?'':s).replace('โคตรตระกูล','โคตรมงคล'); }   // สะกดนามสกุลเดิมผิด → แก้ให้อัตโนมัติ
+function tnApply(arr){
+  var clean=[]; (arr||[]).forEach(function(n){ n=tnFix(n).trim(); if(n && clean.indexOf(n)<0) clean.push(n); });
+  if(!clean.length) return false;
+  TEAM_NAMES.length=0; clean.forEach(function(n){ TEAM_NAMES.push(n); });
+  return true;
+}
+(function(){ try{ var s=JSON.parse(localStorage.getItem(TN_LKEY)||'null'); if(Array.isArray(s)) tnApply(s); }catch(e){} })();
+async function tnLoadCloud(){
+  try{
+    var rows = await sbSelect('graphic_config');
+    var row = (rows||[]).find(function(r){ return (r.k||'')==='team_names'; });
+    if(row){ var arr=JSON.parse(row.v||'[]'); if(Array.isArray(arr) && tnApply(arr)){ try{ localStorage.setItem(TN_LKEY, JSON.stringify(TEAM_NAMES)); }catch(e){} tnRefreshSelect(); } }
+  }catch(e){}
+}
+async function tnSave(){
+  try{ localStorage.setItem(TN_LKEY, JSON.stringify(TEAM_NAMES)); }catch(e){}
+  var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''};
+  if(!cfg.url) return;
+  try{ await postToSheet({target:'graphicconfig', action:'upsert', keyValue:'team_names', row:{k:'team_names', v:JSON.stringify(TEAM_NAMES), updatedAt:(typeof todayStr==='function'?todayStr():''), updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){}
+}
+function tnOptionsHtml(selected){
+  var cur=tnFix(selected||'');
+  var names=TEAM_NAMES.slice(); if(cur && names.indexOf(cur)<0) names.push(cur);   // ชื่อเก่าที่ถูกลบไปแล้ว ยังโชว์ในรายการเดิมได้ ไม่หายตอนแก้
+  return ['<option value="">— ใครอัปเดต —</option>'].concat(names.map(function(x){ return '<option value="'+esc(x)+'"'+(x===cur?' selected':'')+'>'+esc(x)+'</option>'; })).concat(['<option value="__manage__">➕ เพิ่ม / จัดการรายชื่อ…</option>']).join('');
+}
+function tnRefreshSelect(){
+  var sel=document.getElementById('ue-UpdatedBy'); if(!sel) return;
+  var cur=(sel.value==='__manage__')?'':sel.value;
+  sel.innerHTML=tnOptionsHtml(cur);
+}
+function tnOnSelect(sel){
+  if(sel.value==='__manage__'){ sel.value=''; openTeamNames(); }
+}
+function tnNeedLogin(){
+  if(typeof sbLoggedIn==='function' && sbLoggedIn()) return false;
+  if(typeof toast==='function') toast('เข้าสู่ระบบก่อนจึงจะเพิ่ม/ลบรายชื่อได้','info');
+  if(typeof sbShowLoginModal==='function') sbShowLoginModal();
+  return true;
+}
+function ensureTeamNamesModal(){
+  var ov=document.getElementById('tn-overlay'); if(ov) return ov;
+  ov=document.createElement('div'); ov.id='tn-overlay'; ov.className='modal-overlay'; ov.style.zIndex='9500';
+  ov.addEventListener('click',function(e){ if(e.target===ov) closeTeamNames(); });
+  ov.innerHTML='<div class="modal-box" style="max-width:480px;"><div class="modal-header"><div class="mh-name">👥 จัดการรายชื่อทีม</div><button class="modal-close" onclick="closeTeamNames()">×</button></div>'
+    +'<div class="modal-body"><div style="font-size:12px;color:#8A7B6F;margin-bottom:10px;line-height:1.55;">รูปแบบ: <b>ชื่อ นามสกุล (ชื่อเล่น)</b> · ใช้ร่วมกันทั้งฟอร์มอัปเดตและฟอร์มบรีฟ · บันทึกในเครื่องนี้ + ซิงก์ให้ทั้งทีมเห็น</div>'
+    +'<div id="tn-list" style="max-height:46vh;overflow-y:auto;margin-bottom:12px;"></div>'
+    +'<div style="display:flex;gap:8px;"><input type="text" id="tn-new" placeholder="เช่น สมชาย ใจดี (ชาย)" style="flex:1;padding:9px 12px;border:1px solid #ECE6DF;border-radius:10px;font-size:14px;font-family:inherit;" onkeydown="if(event.key===\'Enter\'){event.preventDefault();tnAdd();}">'
+    +'<button type="button" class="btn-sm primary" onclick="tnAdd()" style="flex:0 0 auto;">➕ เพิ่ม</button></div></div></div>';
+  document.body.appendChild(ov);
+  return ov;
+}
+function tnRenderList(){
+  var host=document.getElementById('tn-list'); if(!host) return;
+  host.innerHTML=TEAM_NAMES.map(function(n,i){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #ECE6DF;border-radius:10px;margin-bottom:6px;background:#fff;">'
+      +'<span style="flex:1;font-size:14px;color:#443025;">'+esc(n)+'</span>'
+      +'<button type="button" title="แก้ชื่อ" onclick="tnRename('+i+')" style="border:1px solid #ECE6DF;background:#fff;border-radius:8px;padding:3px 9px;cursor:pointer;">✏️</button>'
+      +'<button type="button" title="ลบ" onclick="tnDelete('+i+')" style="border:1px solid #F1C4C4;background:#FBECEC;border-radius:8px;padding:3px 9px;cursor:pointer;">🗑️</button></div>';
+  }).join('') || '<div class="empty" style="padding:14px 0;">ยังไม่มีรายชื่อ</div>';
+}
+function openTeamNames(){
+  var ov=ensureTeamNamesModal(); tnRenderList(); ov.classList.add('open');
+  try{ tnLoadCloud().then(tnRenderList); }catch(e){}
+  setTimeout(function(){ var i=document.getElementById('tn-new'); if(i) i.focus(); },80);
+}
+function closeTeamNames(){ var ov=document.getElementById('tn-overlay'); if(ov) ov.classList.remove('open'); }
+function tnAdd(){
+  if(tnNeedLogin()) return;
+  var inp=document.getElementById('tn-new'); var name=tnFix(inp?inp.value:'').trim();
+  if(!name){ if(typeof toast==='function') toast('พิมพ์ชื่อก่อน','err'); return; }
+  if(TEAM_NAMES.indexOf(name)>=0){ if(typeof toast==='function') toast('มีชื่อนี้อยู่แล้ว','info'); return; }
+  TEAM_NAMES.push(name); inp.value=''; tnSave(); tnRenderList(); tnRefreshSelect();
+  if(typeof toast==='function') toast('เพิ่ม “'+name+'” แล้ว','ok');
+}
+function tnDelete(i){
+  if(tnNeedLogin()) return;
+  var name=TEAM_NAMES[i]; if(name==null) return;
+  if(TEAM_NAMES.length<=1){ if(typeof toast==='function') toast('ต้องเหลืออย่างน้อย 1 ชื่อ','err'); return; }
+  if(!confirm('ลบ “'+name+'” ออกจากรายชื่อ?\n(บันทึกเก่าที่ใช้ชื่อนี้ยังอยู่ ไม่หาย)')) return;
+  TEAM_NAMES.splice(i,1); tnSave(); tnRenderList(); tnRefreshSelect();
+  if(typeof toast==='function') toast('ลบแล้ว','ok');
+}
+function tnRename(i){
+  if(tnNeedLogin()) return;
+  var old=TEAM_NAMES[i]; if(old==null) return;
+  var nn=window.prompt('แก้ชื่อ (รูปแบบ ชื่อ นามสกุล (ชื่อเล่น))', old); if(nn==null) return;
+  nn=tnFix(nn).trim(); if(!nn || nn===old) return;
+  if(TEAM_NAMES.indexOf(nn)>=0){ if(typeof toast==='function') toast('มีชื่อนี้อยู่แล้ว','info'); return; }
+  TEAM_NAMES[i]=nn; tnSave(); tnRenderList(); tnRefreshSelect();
+  if(typeof toast==='function') toast('แก้ชื่อแล้ว (บันทึกเก่ายังใช้ชื่อเดิม)','ok');
+}
+setTimeout(function(){ try{ tnLoadCloud(); }catch(e){} }, 2500);
 /* Ingredient list สำหรับ dropdown ใน Formula Brief */
 const INGREDIENTS = [
   'Organic Rosehip Oil','Organic Argan Oil','Organic Aloe Vera Extract','Cetellasia Orgianic',
@@ -5839,7 +5937,7 @@ const INGREDIENTS = [
   'Organic Cornflower Water','Organic Peach Kernel Oil','Olive Oil','Organic Cocoa Butter'
 ];
 
-function bfGet(id){ try{ return localStorage.getItem('brief_'+id) || ''; }catch(e){ return ''; } }
+function bfGet(id){ try{ return tnFix(localStorage.getItem('brief_'+id) || ''); }catch(e){ return ''; } }   // tnFix: แก้นามสกุลเดิมที่สะกดผิด (โคตรตระกูล→โคตรมงคล) ในบรีฟเก่าที่ค้างในเครื่อง
 function bfSet(id, val){ try{ localStorage.setItem('brief_'+id, val); }catch(e){} }
 function bfOnChange(id){
   const el = document.getElementById(id);
@@ -9812,7 +9910,7 @@ function renderUpdateForm(){
   const pfSkuProd = PRODUCTS.find(p=>p.sku===pfSku);
   const pfSkuDisplay = pfSkuProd ? skuComboDisplay(pfSkuProd) : '';
   const trackOpts = UPDATE_TRACKS.map(x=>`<option value="${esc(x)}"${x===initTrack?' selected':''}>${esc(x)}</option>`).join('');
-  const byOpts = ['<option value="">— ใครอัปเดต —</option>'].concat(TEAM_NAMES.map(x=>`<option value="${esc(x)}"${x===(pf.UpdatedBy||'')?' selected':''}>${esc(x)}</option>`)).join('');
+  const byOpts = tnOptionsHtml(pf.UpdatedBy||'');
   const picList = PIC_NAMES.map(n=>`<option value="${esc(n)}"></option>`).join('');
   const riskOpts = ['','Low','Medium','High'].map(r=>`<option value="${r}"${r===(pf.Risk||'')?' selected':''}>${r||'— ไม่ระบุ —'}</option>`).join('');
   document.getElementById('ue-form').innerHTML = `
@@ -9860,7 +9958,7 @@ function renderUpdateForm(){
       </div>
     </div>
     <div class="pe-field"><label>PIC (ผู้รับผิดชอบ)</label><input type="text" id="ue-PIC" list="ue-pic-list" value="${esc(pf.PIC||'')}" placeholder="เลือกหรือพิมพ์ชื่อ (อื่นๆพิมพ์เองได้)"><datalist id="ue-pic-list">${picList}</datalist></div>
-    <div class="pe-field"><label>ผู้อัปเดต (UpdatedBy)</label><select id="ue-UpdatedBy">${byOpts}</select></div>
+    <div class="pe-field"><label>ผู้อัปเดต (UpdatedBy) <button type="button" onclick="openTeamNames()" title="เพิ่ม / ลบ / แก้ชื่อในรายการ" style="margin-left:6px;border:1px solid #ECE6DF;background:#fff;border-radius:8px;padding:1px 8px;font-size:11px;cursor:pointer;color:#443025;">✏️ จัดการรายชื่อ</button></label><select id="ue-UpdatedBy" onchange="tnOnSelect(this)">${byOpts}</select></div>
     <div class="pe-field"><label>Risk</label><select id="ue-Risk">${riskOpts}</select></div>
     <div class="pe-field"><label>กำหนดถัดไป (Next Due) <span style="color:var(--ink-soft);font-weight:400;">— ไม่บังคับ</span></label><input type="date" id="ue-NextDue" value="${esc(normalizeDueDate(pf.NextDue))}"><div id="ue-nextdue-hint" style="font-size:11px; color:#B26A00; font-weight:600; margin-top:3px;"></div><div style="font-size:11px; color:var(--muted); margin-top:3px;">ใส่เฉพาะถ้ามีงาน "รอบถัดไป" ต้องตามต่อ — เลือกวันครบกำหนด แล้วบอกว่ารอบหน้าต้องทำอะไรในช่องด้านล่าง (จะไปโผล่เตือนในปฏิทิน ⏰)</div></div>
     <div class="pe-field full"><label>รายละเอียดกำหนดถัดไป (Detail Next Due)</label><input type="text" id="ue-NextDueDetail" value="${esc(pf.NextDueDetail||'')}" placeholder="รอบถัดไปต้องทำอะไร เช่น ตามผล PPS, นัดส่งตัวอย่าง, เช็คสต็อกกล่อง"></div>
