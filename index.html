@@ -11034,7 +11034,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   var CAL_LKEY='npd_content_cal_v1';
   var CAL_HEADERS=['id','date','due','title','brand','product','pillar','format','workType','channel','status','goal','time','owner','reviewer','followers','note','tags','reviseCount','extendCount','log','drafts','pos','doneAt','gfxPic','revisions'];
   // ประเภทงานหลัก (สำหรับแดชบอร์ดวัดผล) — VDO / AW / Activities / Post / อื่นๆ
-  var WORK_TYPES=[{k:'vdo',t:'🎬 VDO',c:'#9B7EF8'},{k:'vdo_flagship',t:'🎬 VDO Flagship',c:'#6C4FD6'},{k:'aw',t:'🎨 AW (กราฟิก)',c:'#EF5350'},{k:'aw_flagship',t:'🎨 AW Flagship',c:'#C62828'},{k:'motion',t:'🎞️ Motion',c:'#3CA5A5'},{k:'activities',t:'🎉 Activities',c:'#F2994A'},{k:'post',t:'📝 Post',c:'#5B8FF9'},{k:'other',t:'📦 อื่นๆ',c:'#8A94A6'}];
+  var WORK_TYPES=[{k:'vdo',t:'🎬 VDO',c:'#9B7EF8'},{k:'vdo_flagship',t:'🎬 VDO Flagship',c:'#C026D3'},{k:'aw',t:'🎨 AW (กราฟิก)',c:'#EF5350'},{k:'aw_flagship',t:'🎨 AW Flagship',c:'#E11D74'},{k:'motion',t:'🎞️ Motion',c:'#22A55A'},{k:'ecom',t:'🛒 E-com',c:'#0891B2'},{k:'activities',t:'🎉 Activities',c:'#F2994A'},{k:'post',t:'📝 Post',c:'#5B8FF9'},{k:'other',t:'📦 อื่นๆ',c:'#8A94A6'}];
   var calWorkFilter = new Set();   // filter ประเภทงานในปฏิทิน Content (ว่าง = ทุกประเภท)
   var calProdSel = new Set();      // filter ตามสินค้า (เลือกได้หลายอัน · ว่าง = ทุกสินค้า)
   var calProdOpen = false, calProdQuery = '', calProdOpts = [];   // สถานะกล่องดรอปดาวน์สินค้า
@@ -11169,17 +11169,17 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function ccOwnerMatch(x){ return !ccOwnerSel.size || ccOwnersOf(x).some(function(o){ return ccOwnerSel.has(o); }); }
   // ---- การ์ดจากคอลัมน์ Brief AW E-commerce ของบอร์ดกราฟฟิก → ปฏิทิน Content (แยกสีตามผู้มอบหมายงาน) ----
   function calExtRaw(){ try{ return (typeof window.gfxEcomBriefCards==='function')?window.gfxEcomBriefCards():[]; }catch(e){ return []; } }
-  function calExtVirt(c){ return {id:c.id,title:c.title,date:c.submitDate,time:c.submitTime,owner:c.followers,brand:c.brand,status:'production',workType:'aw',_ecomBrief:true,_pic:c.owner,_person:c.person,_colTitle:c.colTitle,_done:!!c.done}; }
+  function calExtVirt(c){ return {id:c.id,title:c.title,date:c.submitDate,time:c.submitTime,owner:c.followers,brand:c.brand,status:'production',workType:'ecom',_ecomBrief:true,_pic:c.owner,_person:c.person,_colTitle:c.colTitle,_done:!!c.done}; }
   function calExtItems(skip){
     if(!calShowEcomB) return [];
     if(calProdSel.size || calPillarSel.size) return [];   // ฟิลเตอร์สินค้า/เสาหลักใช้กับการ์ด Content เท่านั้น
-    if(skip!=='work' && calWorkFilter.size && !calWorkFilter.has('aw')) return [];
+    if(skip!=='work' && calWorkFilter.size && !calWorkFilter.has('ecom')) return [];
     var base=calExtRaw().filter(function(c){ return c.submitDate; }).map(calExtVirt);
     base=base.filter(function(x){ return ciBrand==='all' || (x.brand||'other')===ciBrand; });
     if(skip!=='owner' && ccOwnerSel.size) base=base.filter(ccOwnerMatch);
     return base;
   }
-  function calExtColor(x){ return cfColor(ccOwnersOf(x)[0]||x._person||'?'); }
+  function calExtColor(x){ var w=WORK_TYPE_MAP[x.workType||'ecom']; return (w&&w.c)||'#8A94A6'; }   // สีตามประเภทงานเหมือนทุกชิป (การ์ดจาก Brief AW E-commerce = ประเภท E-com)
   function calExtStat(x){ return {t:'🎨 ทำโดย '+x._person+((x._pic&&x._pic!==x._person)?(' ('+x._pic+')'):'')+' · ตอนนี้: '+(x._colTitle||'-')+(x._done?' ✅':''), c:calExtColor(x)}; }
   function ecomBriefListRow(x){ var c=calExtColor(x); var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); if(x.brand) meta.push('🏷️ '+e2(bLbl(x.brand))); meta.push('👤 ผู้มอบหมาย '+e2(x.owner||'ไม่ระบุ')); meta.push('🎨 ทำโดย '+e2(x._person)); meta.push('📍 ตอนนี้: '+e2(x._colTitle||'-')+(x._done?' ✅':''));
     return '<div class="ccal-post"'+(x._done?' style="opacity:.7"':'')+'><span class="ccal-post-s" style="--s:'+c+'">🛒 งาน E-commerce</span><div class="ccal-post-main"><div class="ccal-post-title" style="cursor:pointer;" onclick="openCardModal(\''+aj(x.id)+'\')">'+e2(x.title)+'</div><div class="ccal-post-meta">'+meta.join(' · ')+'</div></div></div>'; }
@@ -11225,16 +11225,17 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +'<span class="cf-hint">'+(calDateMode==='post'?'ดูว่าวันไหนต้องลงโพสต์อะไร':'ดูว่าวันไหนต้องส่งงานอะไร (🎯 Final · 📝 draft)')+' · ตัวเลขบนปุ่ม = จำนวนงานของเดือนนี้</span></div>';
     // งานจากบอร์ดกราฟฟิก (คอลัมน์ Brief AW E-commerce)
     var extAll=calExtRaw().filter(function(c){ return c.submitDate; }); var extMonth=extAll.map(calExtVirt).filter(calInMonth).length;
-    var rowExt='<div class="cf-row"><span class="cf-lead">แสดงเพิ่ม:</span>'+cfPill('🛒 งาน E-commerce', calShowEcomB, 'calToggleEcomB()', {color:'#26A69A', onBg:'#26A69A', n:extMonth})+'<span class="cf-hint">การ์ดกราฟฟิกที่สร้าง/ย้ายมาจากคอลัมน์ Brief AW E-commerce (ติดตัวแม้ย้ายคอลัมน์หรือเสร็จแล้ว) · แยกสีตามผู้มอบหมายงาน</span></div>';
+    var rowExt='<div class="cf-row"><span class="cf-lead">แสดงเพิ่ม:</span>'+cfPill('🛒 งาน E-commerce', calShowEcomB, 'calToggleEcomB()', {color:'#26A69A', onBg:'#26A69A', n:extMonth})+'<span class="cf-hint">การ์ดกราฟฟิกที่สร้าง/ย้ายมาจากคอลัมน์ Brief AW E-commerce (ติดตัวแม้ย้ายคอลัมน์หรือเสร็จแล้ว) · สีตามประเภทงาน (AW) · ดูผู้มอบหมายจากชื่อ 👤 หรือตัวกรองผู้รับมอบหมาย</span></div>';
     // ประเภทงาน
     var wBase=monthCtx('work'), wCnt={}; wBase.forEach(function(x){ var k=workTypeOf(x); wCnt[k]=(wCnt[k]||0)+1; });
-    var rowType='<div class="cf-row"><span class="cf-lead">ประเภทงาน:</span>'+cfPill('ทั้งหมด', !calWorkFilter.size, 'calWorkAll()', {n:wBase.length})
+    var wExt=calExtItems('work').filter(calInMonth); wCnt.ecom=(wCnt.ecom||0)+wExt.length; var wTot=wBase.length+wExt.length;   // การ์ดจากบอร์ดกราฟฟิก (Brief AW E-commerce) นับเป็นประเภท E-com
+    var rowType='<div class="cf-row"><span class="cf-lead">ประเภทงาน:</span>'+cfPill('ทั้งหมด', !calWorkFilter.size, 'calWorkAll()', {n:wTot})
       +WORK_TYPES.map(function(w){ return cfPill(e2(w.t), calWorkFilter.has(w.k), "toggleCalWork('"+w.k+"')", {color:w.c, onBg:w.c, n:wCnt[w.k]||0}); }).join('')+'</div>';
     // ผู้รับมอบหมาย (PIC) — เลือกได้หลายคน
     var oBase=monthCtx('owner'), oExt=calExtItems('owner').filter(calInMonth), oTot=oBase.length+oExt.length;
     var rowOwner='<div class="cf-row"><span class="cf-lead">ผู้รับมอบหมาย (PIC):</span>'+cfPill('👥 ทั้งทีม', !ccOwnerSel.size, 'ccOwnerClear()', {n:oTot})
       +names.map(function(n){ var c=oBase.concat(oExt).filter(function(x){ return ccOwnersOf(x).indexOf(n)>=0; }).length; var col=cfColor(n);
-        return cfPill(e2(n), ccOwnerSel.has(n), "ccOwnerToggle('"+aj(n)+"')", {color:col, onBg:col, n:c, pct:(c&&oTot)?Math.round(c/oTot*100):0}); }).join('')
+        return cfPill(e2(n), ccOwnerSel.has(n), "ccOwnerToggle('"+aj(n)+"')", {n:c, pct:(c&&oTot)?Math.round(c/oTot*100):0}); }).join('')
       +(ccOwnerSel.size>1?'<span class="cf-hint">เลือกอยู่ '+ccOwnerSel.size+' คน</span>':'')+'</div>';
     // เสาหลัก
     var pBase=monthCtx('pillar'), pCnt={}; pBase.forEach(function(x){ var k=x.pillar||''; pCnt[k]=(pCnt[k]||0)+1; });
@@ -11252,7 +11253,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +selArr.map(function(pr,i){ return '<span class="cf-chip">'+e2(pr)+'<i title="เอาออก" onclick="calProdRemoveAt('+i+')">✕</i></span>'; }).join('')+'</div>';
     // legend สถานะ
     var lg='<div class="ccal-statuslegend">'+CAL_STATUS_ORDER.map(function(st){return '<span class="lg"><span class="dot" style="background:'+CAL_STATUS[st].c+'"></span>'+e2(CAL_STATUS[st].t)+'</span>';}).join('')+'</div>';
-    el.innerHTML=dm+rowExt+rowType+rowOwner+rowPillar+rowProd+lg;
+    el.innerHTML=dm+rowType+rowOwner+rowPillar+rowProd+lg;
     if(calProdOpen){ var si=document.getElementById('cf-prod-search'); if(si && document.activeElement!==si){ si.focus(); try{ si.setSelectionRange(si.value.length,si.value.length); }catch(e){} } }
   }
   function calRerenderView(){ var host=document.getElementById('ccal-host'); if(!host) return; if(calMode==='grid') renderCalGrid(host); else renderCalList(host); }
@@ -11334,7 +11335,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
         var wc, pre='', kindTxt;
         if(e.kind==='final'){ wc=st.c; pre='🎯 '; kindTxt='ส่ง Final'; }
         else if(e.kind==='draft'){ wc=st.c; pre='📝 draft'+e.n+': '; kindTxt='ส่ง draft '+e.n; }
-        else if(e.kind==='ecombrief'){ st=calExtStat(x); wc=st.c; pre=(x._done?'✅ ':'')+'🛒 '; kindTxt='ส่งงาน E-commerce'; }
+        else if(e.kind==='ecombrief'){ st=calExtStat(x); wc=calExtColor(x); pre=(x._done?'✅ ':'')+'🛒 '; kindTxt='ส่งงาน E-commerce'; }
         else { wc=wt.c||st.c; kindTxt='ลงโพสต์'; }
         var tip=(x.time?x.time+' ':'')+kindTxt+': '+x.title+(wt.t?' · '+wt.t:'')+(x.owner?' · 👤'+(e.kind==='ecombrief'?'ผู้มอบหมาย ':'')+x.owner:'')+(x.brand?' · '+bLbl(x.brand):'')+' · '+st.t;
         return '<div class="ccal-chip" style="--s:'+wc+(x._done?';opacity:.6':'')+'" title="'+e2(tip)+'" onclick="event.stopPropagation();calChipClick(\''+aj(x.id)+'\')">'+(((e.kind==='post'||e.kind==='ecombrief')&&x.time)?'<span class="ci">'+e2(x.time)+'</span> ':'')+e2(pre+x.title)+(((e.kind==='post'||e.kind==='ecombrief')&&x.owner)?' <span class="ccal-chip-owner">👤'+e2(x.owner)+'</span>':'')+'</div>';
@@ -11410,7 +11411,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       var wc,pre='',kindTxt;
       if(e.kind==='final'){ wc=st.c; pre='🎯 '; kindTxt='ส่ง Final'; }
       else if(e.kind==='draft'){ wc=st.c; pre='📝 draft'+e.n+': '; kindTxt='ส่ง draft '+e.n; }
-      else if(e.kind==='ecombrief'){ st=calExtStat(x); wc=st.c; pre=(x._done?'✅ ':'')+'🛒 '; kindTxt='ส่งงาน E-commerce'; }
+      else if(e.kind==='ecombrief'){ st=calExtStat(x); wc=calExtColor(x); pre=(x._done?'✅ ':'')+'🛒 '; kindTxt='ส่งงาน E-commerce'; }
       else { wc=wt.c||st.c; kindTxt='ลงโพสต์'; }
       var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); meta.push(kindTxt); if(wt.t) meta.push(e2(wt.t)); if(x.owner) meta.push('👤 '+(e.kind==='ecombrief'?'ผู้มอบหมาย ':'')+e2(x.owner)); if(x.brand) meta.push(e2(bLbl(x.brand))); meta.push(e2(st.t));
       rows+='<div class="cc-day-row" style="--s:'+wc+'" onclick="calDayGo(\''+aj(x.id)+'\')"><div class="cc-day-main"><div class="cc-day-t">'+e2(pre+x.title)+'</div><div class="cc-day-m">'+meta.join(' · ')+'</div></div></div>';
@@ -11621,7 +11622,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var base=(window.CONTENT_CAL||[]).filter(function(x){ return ciBrand==='all' || (x.brand||'other')===ciBrand; }); var tot=base.length;
     bar.innerHTML='<span class="cf-lead">👤 ผู้รับมอบหมาย (PIC):</span>'+cfPill('👥 ทั้งทีม', !ccOwnerSel.size, 'ccOwnerClear()', {n:tot})
       +names.map(function(n){ var c=base.filter(function(x){ return ccOwnersOf(x).indexOf(n)>=0; }).length; var col=cfColor(n);
-        return cfPill(e2(n), ccOwnerSel.has(n), "ccOwnerToggle('"+aj(n)+"')", {color:col, onBg:col, n:c, pct:(c&&tot)?Math.round(c/tot*100):0}); }).join('')
+        return cfPill(e2(n), ccOwnerSel.has(n), "ccOwnerToggle('"+aj(n)+"')", {n:c, pct:(c&&tot)?Math.round(c/tot*100):0}); }).join('')
       +(ccOwnerSel.size>1?'<span class="cf-hint">เลือกอยู่ '+ccOwnerSel.size+' คน</span>':'');
   }
   window.renderPipeline=function(){
@@ -11848,6 +11849,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var heavy=items.filter(function(x){return (x.reviseCount||0)>3;});
     var posted=items.filter(function(x){return cardDone(x.status);}).length;
     var byType={}; WORK_TYPES.forEach(function(w){byType[w.k]=0;}); items.forEach(function(x){ byType[workTypeOf(x)]++; });
+    var extD=calExtItems('').filter(function(x){ return dashScope!=='month' || calInMonth(x); }); byType.ecom=(byType.ecom||0)+extD.length; var totalT=total+extD.length;   // E-com รวมการ์ดกราฟฟิกจาก Brief AW E-commerce
     var byPic={}; items.forEach(function(x){ var p=((x.owner||'').trim())||'— ไม่ระบุ —'; if(!byPic[p]) byPic[p]={total:0,late:0,heavy:0}; byPic[p].total++; if(dueState(x)==='overdue') byPic[p].late++; if((x.reviseCount||0)>3) byPic[p].heavy++; });
     var kpi=function(label,val,sub,color){ return '<div class="cc-perf-card"><div class="cc-perf-v"'+(color?' style="color:'+color+'"':'')+'>'+val+'</div><div class="cc-perf-l">'+e2(label)+'</div>'+(sub?'<div class="cc-perf-s">'+e2(sub)+'</div>':'')+'</div>'; };
     var html='<div class="cc-perf-wrap"><div class="cc-perf-title">📊 ภาพรวมการทำงาน'+(dashScope==='month'?(' — '+TH_MF[calM]+' '+calY):' — ทั้งหมด')+'</div>'
@@ -11859,7 +11861,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +'</div></div>';
     var maxType=Math.max.apply(null,WORK_TYPES.map(function(w){return byType[w.k];}).concat([1]));
     html+='<div class="cc-db-card"><div class="cc-db-h">🎯 จำนวนงานหลักแยกตามประเภท</div><div class="cc-db-types">'
-      +WORK_TYPES.map(function(w){ var n=byType[w.k]; return '<div class="cc-db-type"><div class="cc-db-type-v" style="color:'+w.c+'">'+n+'</div><div class="cc-db-type-l">'+e2(w.t)+'</div><div class="cc-db-type-bar"><i style="width:'+Math.round(n/maxType*100)+'%;background:'+w.c+'"></i></div><div class="cc-db-type-p">'+(total?Math.round(n/total*100):0)+'%</div></div>'; }).join('')+'</div></div>';
+      +WORK_TYPES.map(function(w){ var n=byType[w.k]; return '<div class="cc-db-type"><div class="cc-db-type-v" style="color:'+w.c+'">'+n+'</div><div class="cc-db-type-l">'+e2(w.t)+'</div><div class="cc-db-type-bar"><i style="width:'+Math.round(n/maxType*100)+'%;background:'+w.c+'"></i></div><div class="cc-db-type-p">'+(totalT?Math.round(n/totalT*100):0)+'%</div></div>'; }).join('')+'</div></div>';
     if(late.length){ late.sort(function(a,b){return (a.due||'').localeCompare(b.due||'');});
       html+='<div class="cc-db-card"><div class="cc-db-h" style="color:#C0392B;">⏰ งานล่าช้า ('+late.length+')</div><div class="cc-db-list">'
         +late.map(function(x){ var diff=Math.abs(dueDiff(x)); return '<button class="cc-db-row" onclick="openCardModal(\''+aj(x.id)+'\')"><span class="cc-db-row-t">'+e2(x.title)+'</span>'+workTypeTag(x)+'<span class="cc-db-row-m">เลย '+diff+' วัน'+(x.owner?(' · 👤'+e2(x.owner)):'')+'</span></button>'; }).join('')+'</div></div>'; }
@@ -13785,7 +13787,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var pill=window.cfPill, col=window.cfColor;
     bar.innerHTML='<span class="cf-lead">👤 ผู้รับผิดชอบ (PIC):</span>'+pill('👥 ทั้งทีม', !ecomOwnerSel.size, 'ecomOwnerClear()', {n:tot})
       +names.map(function(n){ var c=base.filter(function(x){ return ecomOwnerHas(x.owner,n); }).length; var cl=col(n);
-        return pill(E(n), ecomOwnerSel.has(n), "ecomOwnerToggle('"+AJ(n)+"')", {color:cl, onBg:cl, n:c, pct:(c&&tot)?Math.round(c/tot*100):0}); }).join('')
+        return pill(E(n), ecomOwnerSel.has(n), "ecomOwnerToggle('"+AJ(n)+"')", {n:c, pct:(c&&tot)?Math.round(c/tot*100):0}); }).join('')
       +(ecomOwnerSel.size>1?'<span class="cf-hint">เลือกอยู่ '+ecomOwnerSel.size+' คน</span>':'');
   }
   window.ecomSetBrand=function(b){ ecomBrand=b||'all'; renderEcomBoard(); };
