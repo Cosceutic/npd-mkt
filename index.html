@@ -11034,7 +11034,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   var CAL_LKEY='npd_content_cal_v1';
   var CAL_HEADERS=['id','date','due','title','brand','product','pillar','format','workType','channel','status','goal','time','owner','reviewer','followers','note','tags','reviseCount','extendCount','log','drafts','pos','doneAt','gfxPic'];
   // ประเภทงานหลัก (สำหรับแดชบอร์ดวัดผล) — VDO / AW / Activities / Post / อื่นๆ
-  var WORK_TYPES=[{k:'vdo',t:'🎬 VDO',c:'#9B7EF8'},{k:'vdo_flagship',t:'🎬 VDO Flagship',c:'#6C4FD6'},{k:'aw',t:'🎨 AW (กราฟิก)',c:'#EF5350'},{k:'aw_flagship',t:'🎨 AW Flagship',c:'#C62828'},{k:'activities',t:'🎉 Activities',c:'#F2994A'},{k:'post',t:'📝 Post',c:'#5B8FF9'},{k:'other',t:'📦 อื่นๆ',c:'#8A94A6'}];
+  var WORK_TYPES=[{k:'vdo',t:'🎬 VDO',c:'#9B7EF8'},{k:'vdo_flagship',t:'🎬 VDO Flagship',c:'#6C4FD6'},{k:'aw',t:'🎨 AW (กราฟิก)',c:'#EF5350'},{k:'aw_flagship',t:'🎨 AW Flagship',c:'#C62828'},{k:'motion',t:'🎞️ Motion',c:'#3CA5A5'},{k:'activities',t:'🎉 Activities',c:'#F2994A'},{k:'post',t:'📝 Post',c:'#5B8FF9'},{k:'other',t:'📦 อื่นๆ',c:'#8A94A6'}];
   var calWorkFilter = new Set();   // filter ประเภทงานในปฏิทิน Content (ว่าง = ทุกประเภท)
   var calProdSel = new Set();      // filter ตามสินค้า (เลือกได้หลายอัน · ว่าง = ทุกสินค้า)
   var calProdOpen = false, calProdQuery = '', calProdOpts = [];   // สถานะกล่องดรอปดาวน์สินค้า
@@ -11042,7 +11042,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   var calPillarSel = new Set();    // filter ตามเสาหลักคอนเทนต์ (เลือกได้หลายอัน · ว่าง = ทุกเสาหลัก)
   var calDateMode = 'post';        // ปฏิทินแสดงตาม: 'post'=วันลงโพสต์ · 'due'=กำหนดส่งงาน (Final+Draft)
   var WORK_TYPE_MAP={}; WORK_TYPES.forEach(function(w){ WORK_TYPE_MAP[w.k]=w; });
-  function inferWorkType(x){ var f=((x.format||'')+' '+(x.title||'')).toLowerCase(); if(/vdo|video|reel|short|live|คลิป|วิดีโอ|วีดีโอ/.test(f)) return 'vdo'; if(/post|album|photo|carousel|story|โพส|รูปภาพ|อัลบั้ม/.test(f)) return 'post'; if(/aw|artwork|graphic|กราฟิก|สติกเกอร์|sticker|ออกแบบ|แบนเนอร์|banner/.test(f)) return 'aw'; if(/activit|event|กิจกรรม|แจกของ|มินิเกม|live event|แคมเปญ/.test(f)) return 'activities'; return ''; }
+  function inferWorkType(x){ if(/^\s*gif\s*$/i.test(x.format||'')) return 'motion';   // รูปแบบ GIF → ประเภทงาน Motion
+    var f=((x.format||'')+' '+(x.title||'')).toLowerCase(); if(/vdo|video|reel|short|live|คลิป|วิดีโอ|วีดีโอ/.test(f)) return 'vdo'; if(/post|album|photo|carousel|story|โพส|รูปภาพ|อัลบั้ม/.test(f)) return 'post'; if(/aw|artwork|graphic|กราฟิก|สติกเกอร์|sticker|ออกแบบ|แบนเนอร์|banner/.test(f)) return 'aw'; if(/activit|event|กิจกรรม|แจกของ|มินิเกม|live event|แคมเปญ/.test(f)) return 'activities'; return ''; }
   function workTypeOf(x){ return (x.workType && WORK_TYPE_MAP[x.workType]) ? x.workType : (inferWorkType(x)||'other'); }
   function workTypeTag(x){ var w=WORK_TYPE_MAP[workTypeOf(x)]; return w?'<span class="cc-wt" style="--wt:'+w.c+'">'+e2(w.t)+'</span>':''; }
   // หัวข้อคอนเทนต์แบบเลือกได้ (ดรอปดาวน์ + พิมพ์เอง) และเช็คลิสต์ภาพที่ต้องมีต่อหัวข้อ
@@ -11069,7 +11070,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   // Content Pillars (แกน/เสาหลักคอนเทนต์) — standard marketing pillars
   var PILLARS={awareness:{t:'📣 Awareness',s:'การรับรู้',c:'#5B8FF9'},consideration:{t:'🤔 Consideration',s:'พิจารณา',c:'#9B7EF8'},conversion:{t:'🛒 Conversion',s:'ปิดการขาย',c:'#F0705A'},authority:{t:'🎓 Authority',s:'น่าเชื่อถือ',c:'#3CA5A5'},engagement:{t:'💬 Engagement',s:'มีส่วนร่วม',c:'#F2994A'},education:{t:'📚 Product Education',s:'ให้ความรู้สินค้า',c:'#2D9CDB'},entertainment:{t:'🎉 Entertainment',s:'ความบันเทิง',c:'#EB5FA0'}};
   var PILLAR_ORDER=['awareness','consideration','conversion','authority','engagement','education','entertainment'];
-  var FORMATS=['Post','Story','Reels','Short','Video','Live','Album','Photo','Carousel'];
+  var FORMATS=['Post','Story','Reels','Short','Video','GIF','Live','Album','Photo','Carousel','Artwork'];
   var GOALS=['Reach / Views / Impressions','New Followers','Profile / Page Visit','Click / Link','Add to Cart / Purchase','Save / Share','Comment / Engagement','Watch Time / Completion'];
   var SHEET_ROWS_CAL=[]; window.CONTENT_CAL=[];
   var now0=new Date(); var calY=now0.getFullYear(), calM=now0.getMonth(), calMode='grid', calEditId=null, calLoaded=false;
