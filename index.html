@@ -1944,7 +1944,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   </div>
 </div>
 
-<div class="modal-overlay" id="lightbox-overlay" style="z-index:90;" onclick="if(event.target===this) closeLightbox()">
+<div class="modal-overlay" id="lightbox-overlay" style="z-index:100500;" onclick="if(event.target===this) closeLightbox()">
   <img id="lightbox-img" src="" alt="" style="max-width:92vw; max-height:88vh; border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.4);">
   <button class="modal-close" style="position:fixed; top:22px; right:28px; color:#fff; font-size:28px;" onclick="closeLightbox()">✕</button>
 </div>
@@ -4618,7 +4618,13 @@ function openSetContents(sku){
     var nm=esc(c.name||'')||'(ไม่มีชื่อ)';
     var codeTxt=c.code?('<span style="font-family:monospace;font-size:11.5px;color:var(--ink-soft,#6b7794);">'+esc(c.code)+'</span>'):'';
     var link=(idx>=0)?'<button class="btn-sm ghost" style="flex:0 0 auto;" onclick="document.getElementById(\'setc-overlay\').classList.remove(\'open\');openTimeline('+idx+')">Timeline</button>':'';
-    return '<div style="display:flex;gap:10px;align-items:center;border:1px solid var(--line,#E7ECF5);border-radius:10px;padding:8px 11px;margin-bottom:7px;"><span style="flex:0 0 auto;">'+icon+'</span><div style="flex:1;min-width:0;"><div style="font-weight:600;">'+nm+(c.kind==='setonly'?' <span style="font-size:10px;color:#b26a00;">ผลิตเฉพาะเซต</span>':'')+'</div>'+codeTxt+'</div><span style="flex:0 0 auto;font-weight:700;color:var(--accent-deep,#D14E88);">×'+esc(c.qty||'1')+'</span>'+link+'</div>';
+    // รูปของชิ้นส่วนนี้ (ดึงจากสินค้ารหัสเดียวกัน) — คลิกดูขยาย · ไม่มีรูป/ยังไม่มีสินค้านี้ในระบบ = กรอบว่าง
+    var comp=(idx>=0)?PRODUCTS[idx]:null;
+    var cimg=(comp&&comp.image)?comp.image:'';
+    var thumb=cimg
+      ? '<div title="คลิกดูรูปขยาย" onclick="openLightbox(\''+esc(cimg)+'\',event)" style="flex:0 0 auto;width:52px;height:52px;border-radius:11px;overflow:hidden;background:#EAF1F8;border:1px solid #ECE6DF;cursor:pointer;"><img src="'+esc(cimg)+'" alt="'+esc(c.code||'')+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentNode.style.cursor=\'default\';this.remove();"></div>'
+      : '<div title="ยังไม่มีรูป" style="flex:0 0 auto;width:52px;height:52px;border-radius:11px;background:#EAF1F8;border:1px solid #ECE6DF;display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.8;">'+icon+'</div>';
+    return '<div style="display:flex;gap:10px;align-items:center;border:1px solid var(--line,#E7ECF5);border-radius:10px;padding:8px 11px;margin-bottom:7px;">'+thumb+'<div style="flex:1;min-width:0;"><div style="font-weight:600;">'+(cimg?('<span style="margin-right:4px;">'+icon+'</span>'):'')+nm+(c.kind==='setonly'?' <span style="font-size:10px;color:#b26a00;">ผลิตเฉพาะเซต</span>':'')+'</div>'+codeTxt+'</div><span style="flex:0 0 auto;font-weight:700;color:var(--accent-deep,#D14E88);">×'+esc(c.qty||'1')+'</span>'+link+'</div>';
   }).join('') || '<div style="text-align:center;color:#6b7794;padding:16px;">— ยังไม่มีส่วนประกอบ —</div>';
   document.getElementById('setc-body').innerHTML=
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:16px 18px 11px;border-bottom:1px solid var(--line,#E7ECF5);"><div style="font-family:\'Anuphan\',\'Prompt\',sans-serif;font-weight:700;font-size:16px;">🧩 ส่วนประกอบเซต · '+esc(set.name)+'</div><span onclick="document.getElementById(\'setc-overlay\').classList.remove(\'open\')" style="cursor:pointer;font-size:20px;color:#9aa4b5;">✕</span></div>'
@@ -4660,10 +4666,14 @@ function openGroupShades(key){
     const p=m.p; const short = shadeLabel(p.name, gname) || p.sku;
     const edit = canEd ? `<button class="gs-btn gs-x" title="แก้ไข" onclick="closeGroupShades(); openProductEditor('${attrJs(p.sku)}')">✏️</button><button class="gs-btn gs-x" title="ลบ" onclick="deleteProduct('${attrJs(p.sku)}')">🗑️</button>` : '';
     const canva = p.canva ? `<a class="gs-btn" href="${esc(p.canva)}" target="_blank" rel="noopener">🎞️ Canva</a>` : `<span class="gs-btn gs-dim">🎞️ ยังไม่มี</span>`;
-    return `<div class="gs-row"><div class="gs-head" title="${esc(p.name)}"><span class="gs-name">${esc(short)}</span><span class="gs-sku">${esc(p.sku)}</span></div>`
+    // รูปสินค้าของ SKU นี้ (คลิกเพื่อดูขยาย) — ไม่มีรูปแสดงกรอบว่างแทน
+    const thumb = p.image
+      ? `<div class="gs-thumb" title="คลิกดูรูปขยาย" onclick="openLightbox('${esc(p.image)}',event)"><img src="${esc(p.image)}" alt="${esc(p.sku)}" loading="lazy" onerror="this.parentNode.classList.add('gs-noimg');this.remove();"></div>`
+      : `<div class="gs-thumb gs-noimg" title="ยังไม่มีรูป"></div>`;
+    return `<div class="gs-row gs-withimg">${thumb}<div class="gs-main"><div class="gs-head" title="${esc(p.name)}"><span class="gs-name">${esc(short)}</span><span class="gs-sku">${esc(p.sku)}</span></div>`
       +`<div class="gs-acts"><button class="gs-btn" onclick="closeGroupShades(); openTimeline(${m.idx})">Timeline</button>`
       +`<button class="gs-btn gs-info" onclick="closeGroupShades(); openFinalSheet('${attrJs(p.sku)}')">📋 Info</button>`
-      +`${canva}${edit}</div></div>`;
+      +`${canva}${edit}</div></div></div>`;
   }).join('');
   let ov=document.getElementById('gs-overlay');
   if(!ov){ ov=document.createElement('div'); ov.id='gs-overlay'; ov.className='fs-overlay'; ov.addEventListener('click',e=>{ if(e.target===ov) closeGroupShades(); }); document.body.appendChild(ov); }
@@ -12688,6 +12698,12 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 .fs-actions .fs-primary{background:var(--blue-deep,#2563eb); color:#fff; border:none;}
 .gs-list{padding:6px 14px 4px; max-height:62vh; overflow-y:auto;}
 .gs-row{display:flex; flex-direction:column; gap:6px; padding:10px 6px; border-bottom:1px solid var(--bg,#F2F5FA);}
+.gs-row.gs-withimg{flex-direction:row; align-items:flex-start; gap:12px;}
+.gs-main{flex:1; min-width:0; display:flex; flex-direction:column; gap:6px;}
+.gs-thumb{width:58px; height:58px; flex:none; border-radius:12px; overflow:hidden; background:#EAF1F8; border:1px solid #ECE6DF; display:flex; align-items:center; justify-content:center; cursor:pointer;}
+.gs-thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+.gs-thumb.gs-noimg{cursor:default; color:#9DBFDD; font-size:11px;}
+.gs-thumb.gs-noimg::after{content:'ไม่มีรูป'; color:#9aa7b5; font-size:10.5px;}
 .gs-head{display:flex; align-items:baseline; gap:8px;}
 .gs-name{font-weight:600; font-size:13.5px; flex:1; min-width:0;}
 .gs-sku{font-size:11.5px; color:var(--ink-soft,#6B7684); white-space:nowrap;}
