@@ -13914,6 +13914,7 @@ details.fm-more[open]{padding-bottom:6px;}
     {key:'todo',title:'📋 To Do',color:'#7cb6e4',done:false},
     {key:'doing',title:'🎬 กำลังทำ',color:'#ffb454',done:false},
     {key:'review',title:'👀 รอตรวจ',color:'#5aa0d8',done:false},
+    {key:'revise',title:'🔧 แก้ไขงาน',color:'#d98324',done:false,revise:true},
     {key:'done',title:'✅ เสร็จแล้ว',color:'#26a69a',done:true}
   ]; }
   // ทุกบอร์ดต้องมีคอลัมน์ "ต้นฉบับ" (nocount) — เผื่อบอร์ดเก่าที่บันทึกไว้ก่อนยังไม่มี ให้เติมไว้หน้าสุด
@@ -13940,6 +13941,9 @@ details.fm-more[open]{padding-bottom:6px;}
   function gfxEnsureCols(p){ if(!GFX_COLS[p]||!GFX_COLS[p].length) GFX_COLS[p]=gfxDefaultCols(); GFX_COLS[p]=gfxWithSource(GFX_COLS[p]); return GFX_COLS[p]; }
   function gfxColDef(p,key){ return gfxColsFor(p).find(function(c){return c.key===key;})||null; }
   function gfxIsDoneCol(p,key){ var d=gfxColDef(p,key); return !!(d&&d.done); }
+  // คอลัมน์ “แก้ไข/แก้ไขงาน” — ตรวจจากชื่อคอลัมน์ (บอร์ดแต่ละคนตั้งชื่อเองได้) หรือธง revise:true · การ์ดที่ย้ายเข้าคอลัมน์นี้ต้องกรอกสาเหตุแก้ไขก่อน
+  function gfxIsReviseCol(p,key){ var d=gfxColDef(p,key); return !!(d && !d.done && !d.nocount && (d.revise===true || /แก้ไข|ตีกลับ|revis/i.test(String(d.title||'')))); }
+  var gfxRevCtx=null, gfxRevPending=null;   // gfxRevCtx = การย้ายที่รอสาเหตุแก้ไข · gfxRevPending = สาเหตุที่กรอกแล้ว รอบันทึกพร้อมฟอร์มแก้ไขการ์ด
   function gfxIsNoCountCol(p,key){ var d=gfxColDef(p,key); return !!(d&&d.nocount); }
   function gfxCardsOf(p){ return GFX.filter(function(x){return x.person===p;}); }
   // การ์ดที่ "นับเป็นงาน" = ไม่อยู่ในคอลัมน์ต้นฉบับ (nocount)
@@ -14137,7 +14141,7 @@ details.fm-more[open]{padding-bottom:6px;}
         +'.gfx-adopt-btn:hover{filter:brightness(1.05);box-shadow:0 4px 12px -4px rgba(124,182,228,.65);}'
         +'.gfx-goto-btn{margin-left:auto;border:1px solid #CFE3F2;background:#fff;color:#2F6DA8;border-radius:8px;padding:4px 10px;font-size:11.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit;}'
         +'.gfx-goto-btn:hover{background:#EAF3FB;border-color:#9BC6E8;}'
-        +'.gfx-revsrc{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--line,#E7ECF5);background:#fff;border-radius:10px;padding:10px;font-weight:700;font-size:13px;color:var(--ink-soft);cursor:pointer;transition:.12s;font-family:inherit;}'
+        +'.gfx-revsrc{flex:1 1 90px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--line,#E7ECF5);background:#fff;border-radius:10px;padding:10px;font-weight:700;font-size:13px;color:var(--ink-soft);cursor:pointer;transition:.12s;font-family:inherit;}'
         +'.gfx-revsrc:hover{border-color:#B9D8EF;}'
         +'#gfx-rev-src-content.on{background:#EAF3FB;border-color:#5aa0d8;color:#2F6DA8;}'
         +'#gfx-rev-src-graphic.on{background:#e8f5f0;border-color:#26a69a;color:#1f8a70;}'
@@ -14173,8 +14177,8 @@ details.fm-more[open]{padding-bottom:6px;}
       dov.innerHTML='<div class="modal-box" style="max-width:440px;width:92vw;"><div id="gfx-calday-body"></div></div>';
       document.body.appendChild(dov);
       var rov=document.createElement('div'); rov.className='modal-overlay'; rov.id='gfx-rev-overlay'; rov.style.zIndex='85';
-      rov.addEventListener('click',function(e){ if(e.target===rov) rov.classList.remove('open'); });
-      rov.innerHTML='<div class="modal-box" style="max-width:420px;width:92vw;"><div id="gfx-rev-body"></div></div>';
+      rov.addEventListener('click',function(e){ if(e.target===rov) window.gfxRevCancel(); });
+      rov.innerHTML='<div class="modal-box" style="max-width:470px;width:94vw;"><div id="gfx-rev-body"></div></div>';
       document.body.appendChild(rov);
       var aov=document.createElement('div'); aov.className='modal-overlay'; aov.id='gfx-avatar-overlay'; aov.style.zIndex='85';
       aov.addEventListener('click',function(e){ if(e.target===aov) aov.classList.remove('open'); });
@@ -14351,7 +14355,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var dd=x.submitDate?gfxFmtDDMM(x.submitDate):''; var over=gfxIsOverdue(x);
     var dateStr=dd?('<span'+(over?' style="color:#e53935;font-weight:700;"':'')+'>📅 '+E(dd)+(x.submitTime?' '+E(x.submitTime):'')+(over?' ⚠️':'')+'</span>'):'';
     var chkStr=(x.checklist&&x.checklist.length)?'<span title="เช็คลิสต์">☑️ '+x.checklist.filter(function(it){return it.done;}).length+'/'+x.checklist.length+'</span>':'';
-    var revStr=(x.revisions&&x.revisions.length)?'<span title="รอบแก้ไข" style="color:#d98324;">🔧 '+x.revisions.length+'</span>':'';
+    var revStr=(x.revisions&&x.revisions.length)?'<span title="จำนวนรอบแก้ไข" style="color:#d98324;font-weight:600;">🔧 แก้ '+x.revisions.length+' ครั้ง</span>':'';
     var imgStr=(x.images&&x.images.length)?'<span title="ไฟล์แนบ">🖼️ '+x.images.length+'</span>':'';
     var doneStr=x.doneAt?'<span title="เสร็จเมื่อ" style="color:#1E7A54;font-weight:700;">✅ '+E(fmtDoneStamp(x.doneAt))+'</span>':'';
     var cn=gfxDcnt(x.id); var cmn=cn?'<span class="cc-pl-badge">💬 '+cn+'</span>':'';
@@ -14488,7 +14492,9 @@ details.fm-more[open]{padding-bottom:6px;}
   /* ---------- cards ---------- */
   window.gfxAddIn=function(k){ if(!gfxCanEdit()){ TOAST('เข้าสู่ระบบ (สิทธิ์ทีม) ก่อนจึงจะเพิ่มได้','info'); return; } gfxPresetCol=k||gfxFirstActiveColKey(gfxPerson); gfxEditId=null; openGfxEditor(null); };
   window.gfxEdit=function(id){ var c=GFX.find(function(x){return x.id===id;}); if(!c) return; if(!gfxCanEdit()){ TOAST('ดูอย่างเดียว — เข้าสู่ระบบเพื่อแก้','info'); return; } gfxEditId=id; openGfxEditor(c); };
-  window.gfxMove=function(id,nk){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||c.col===nk) return; var def=gfxColDef(c.person,nk); if(!def) return; c.col=nk; if(def.done){ if(!c.doneAt) c.doneAt=nowStamp(); } else { c.doneAt=''; } c.updatedAt=TS(); gfxUpsertLocal(c); gfxReRender(); TOAST('ย้ายไป “'+def.title+'” แล้ว','ok'); gfxSyncCard(c);
+  window.gfxMove=function(id,nk,force){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||c.col===nk) return; var def=gfxColDef(c.person,nk); if(!def) return;
+    if(!force && gfxIsReviseCol(c.person,nk) && !gfxIsReviseCol(c.person,c.col)){ gfxRevOpen(id,{move:nk}); gfxReRender(); return; }   // ย้ายเข้าคอลัมน์แก้ไข → เด้งให้กรอกสาเหตุก่อน (บังคับ)
+    c.col=nk; if(def.done){ if(!c.doneAt) c.doneAt=nowStamp(); } else { c.doneAt=''; } c.updatedAt=TS(); gfxUpsertLocal(c); gfxReRender(); TOAST('ย้ายไป “'+def.title+'” แล้ว','ok'); gfxSyncCard(c);
     // เชื่อม Content Pipeline: การ์ดที่รับมาจาก Content เข้าคอลัมน์ "เสร็จแล้ว" → Content เลื่อนไป ✅ อนุมัติ · ย้ายออก → กลับ 🎬 กำลังผลิต
     if(c.srcContent && typeof window.plSetStatus==='function'){ try{ if(def.done) window.plSetStatus(c.srcContent,'approved',['brief','production','review','revise']); else window.plSetStatus(c.srcContent,'production',['approved']); }catch(e){} }
     try{ if(typeof ntGfxMoved==='function') ntGfxMoved(c, def.title, !!def.done); }catch(e){}
@@ -14554,7 +14560,9 @@ details.fm-more[open]{padding-bottom:6px;}
     var id=gfxEditId||gfxUid('g'); var tags=g('gfx-f-tags'); gfxRememberTags(tags);
     var prev=GFX.find(function(x){return x.id===id;})||{};
     var col=g('gfx-f-col')||(gfxColsFor(gfxPerson)[0]||{}).key||'todo';
+    if(gfxEditId && !gfxRevPending && gfxIsReviseCol(gfxPerson,col) && !gfxIsReviseCol(gfxPerson,prev.col)){ gfxRevOpen(id,{editor:true}); return; }   // เปลี่ยนคอลัมน์เป็น “แก้ไข” ในฟอร์ม → ต้องกรอกสาเหตุก่อนบันทึก
     var card={ id:id, person:gfxPerson, col:col, title:title, brand:g('gfx-f-brand')||'godmami', owner:g('gfx-f-owner'), graphic:'', followers:g('gfx-f-followers'), submitDate:g('gfx-f-submitDate'), submitTime:g('gfx-f-submitTime'), tags:tags, note:g('gfx-f-note'), checklist:(Array.isArray(prev.checklist)?prev.checklist:[]), revisions:(Array.isArray(prev.revisions)?prev.revisions:[]), images:gfxEdAtt.slice(), doneAt:prev.doneAt||'', updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') };
+    if(gfxRevPending){ card.revisions=(card.revisions||[]).concat([gfxRevPending]); gfxRevPending=null; }
     if(gfxIsDoneCol(gfxPerson,col)){ if(!card.doneAt) card.doneAt=TS(); } else { card.doneAt=''; }
     var wasAdd=!gfxEditId;
     gfxUpsertLocal(card);
@@ -14598,7 +14606,7 @@ details.fm-more[open]{padding-bottom:6px;}
       +(chk.length?'<div>'+chkItems+'</div>':'<div style="font-size:12px;color:#9aa4b5;padding:2px 0;">— ยังไม่มีรายการ —</div>')+'</div>';
     // revisions
     var revs=Array.isArray(x.revisions)?x.revisions:[];
-    var revSrcBadge=function(src){ return src==='content'?'<span style="background:#EAF3FB;color:#2F6DA8;border-radius:5px;padding:0 6px;font-size:9.5px;font-weight:700;">✨ Content</span>':(src==='graphic'?'<span style="background:#e8f5f0;color:#1f8a70;border-radius:5px;padding:0 6px;font-size:9.5px;font-weight:700;">🎨 Graphic</span>':''); };
+    var revSrcBadge=function(src){ return src==='content'?'<span style="background:#EAF3FB;color:#2F6DA8;border-radius:5px;padding:0 6px;font-size:9.5px;font-weight:700;">✨ Content</span>':(src==='graphic'?'<span style="background:#e8f5f0;color:#1f8a70;border-radius:5px;padding:0 6px;font-size:9.5px;font-weight:700;">🎨 Graphic</span>':(src==='branding'?'<span style="background:#F3E8FB;color:#7B3FA8;border-radius:5px;padding:0 6px;font-size:9.5px;font-weight:700;">🏷️ Branding</span>':(src==='npd'?'<span style="background:#E8EAFB;color:#4350B5;border-radius:5px;padding:0 6px;font-size:9.5px;font-weight:700;">🧪 NPD</span>':''))); };
     var revItems=revs.map(function(rv,i){ var dt=rv.ts?gfxFmtDDMM(rv.ts):''; return '<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--line,#eef1f7);"><span style="color:#d98324;flex:0 0 auto;">🔧</span><div style="flex:1;font-size:13px;"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'+revSrcBadge(rv.src)+'<span>'+E(rv.reason)+'</span></div>'+((dt||rv.by)?'<div style="font-size:11px;color:#9aa4b5;">'+(dt?E(dt):'')+(rv.by?' · '+E(rv.by):'')+'</div>':'')+'</div>'+(canEd?'<button onclick="gfxRevDel(\''+AJ(id)+'\','+i+')" title="ลบ" style="background:none;border:none;cursor:pointer;font-size:13px;">🗑️</button>':'')+'</div>'; }).join('');
     var revSection='<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line,#E7ECF5);">'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><b style="font-size:13px;">🔧 การแก้ไขงาน</b>'+(revs.length?'<span style="font-size:12px;color:#d98324;background:#fff3e6;border-radius:20px;padding:1px 9px;">'+revs.length+' ครั้ง</span>':'')+(canEd?'<button onclick="gfxRevOpen(\''+AJ(id)+'\')" style="margin-left:auto;border:1px dashed var(--line,#E7ECF5);background:#fff;border-radius:8px;padding:4px 11px;font-size:12px;font-weight:600;color:var(--ink-soft);cursor:pointer;">➕ บันทึกรอบแก้ไข</button>':'')+'</div>'
@@ -14613,35 +14621,49 @@ details.fm-more[open]{padding-bottom:6px;}
   window.gfxChkEdit=function(id,i){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.checklist)||!c.checklist[i]) return; var t=prompt('แก้ไขรายการ:',c.checklist[i].text||''); if(t==null) return; t=String(t).trim(); if(!t) return; c.checklist[i].text=t; gfxAfterChange(c); };
   window.gfxChkDel=function(id,i){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.checklist)||!c.checklist[i]) return; if(!confirm('ลบรายการ “'+(c.checklist[i].text||'')+'” ?')) return; c.checklist.splice(i,1); gfxAfterChange(c); };
   var gfxRevSrc='';
-  window.gfxRevSetSrc=function(s){ gfxRevSrc=s; ['content','graphic'].forEach(function(k){ var b=document.getElementById('gfx-rev-src-'+k); if(b) b.classList.toggle('on', k===s); }); };
-  window.gfxRevOpen=function(id){
-    if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c) return; ensureGraphicView(); gfxRevSrc='';
+  window.gfxRevSetSrc=function(s){ gfxRevSrc=s; ['content','graphic','branding','npd'].forEach(function(k){ var b=document.getElementById('gfx-rev-src-'+k); if(b) b.classList.toggle('on', k===s); }); };
+  window.gfxRevCancel=function(){
+    var ctx=gfxRevCtx; gfxRevCtx=null; gfxRevPending=null;
+    var ov=document.getElementById('gfx-rev-overlay'); if(ov) ov.classList.remove('open');
+    if(ctx){ TOAST('ยังไม่ได้ย้ายการ์ด — ต้องกรอกสาเหตุแก้ไขก่อนจึงจะย้ายไปคอลัมน์แก้ไขได้','info'); try{ gfxReRender(); }catch(e){} }
+  };
+  window.gfxRevOpen=function(id,ctx){
+    if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c) return; ensureGraphicView(); gfxRevSrc=''; gfxRevCtx=ctx||null;
+    var forced=!!ctx;
     document.getElementById('gfx-rev-body').innerHTML=
-      '<div style="display:flex;justify-content:space-between;align-items:center;padding:15px 17px 11px;border-bottom:1px solid var(--line,#E7ECF5);"><div style="font-weight:700;font-size:16px;font-family:\'Anuphan\',\'Prompt\',sans-serif;">🔧 บันทึกรอบแก้ไข</div><span onclick="document.getElementById(\'gfx-rev-overlay\').classList.remove(\'open\')" style="cursor:pointer;font-size:20px;color:#9aa4b5;">✕</span></div>'
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:15px 17px 11px;border-bottom:1px solid var(--line,#E7ECF5);"><div style="font-weight:700;font-size:16px;font-family:\'Anuphan\',\'Prompt\',sans-serif;">🔧 บันทึกรอบแก้ไข</div><span onclick="gfxRevCancel()" style="cursor:pointer;font-size:20px;color:#9aa4b5;">✕</span></div>'
       +'<div style="padding:15px 17px;">'
-        +'<div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:7px;">สาเหตุแก้ไข *</div>'
-        +'<div style="display:flex;gap:9px;margin-bottom:14px;">'
+        +(forced?'<div style="background:#FFF3E0;border:1px solid #F5D9A8;color:#8a5a00;border-radius:10px;padding:8px 12px;font-size:12.5px;line-height:1.5;margin-bottom:12px;">การ์ด “<b>'+E(c.title||'')+'</b>” กำลังย้ายไปคอลัมน์แก้ไข — กรอกทั้ง 2 ช่องก่อน ระบบจะบันทึกรอบแก้ไข (นับจำนวนครั้งให้อัตโนมัติ) แล้วย้ายการ์ดให้</div>':'')
+        +'<div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:7px;">สาเหตุแก้ไขเกิดจาก *</div>'
+        +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">'
           +'<button type="button" id="gfx-rev-src-content" class="gfx-revsrc" onclick="gfxRevSetSrc(\'content\')">✨ Content</button>'
           +'<button type="button" id="gfx-rev-src-graphic" class="gfx-revsrc" onclick="gfxRevSetSrc(\'graphic\')">🎨 Graphic</button>'
+          +'<button type="button" id="gfx-rev-src-branding" class="gfx-revsrc" onclick="gfxRevSetSrc(\'branding\')">🏷️ Branding</button>'
+          +'<button type="button" id="gfx-rev-src-npd" class="gfx-revsrc" onclick="gfxRevSetSrc(\'npd\')">🧪 NPD</button>'
         +'</div>'
         +'<div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">รายละเอียด/เหตุผล *</div>'
         +'<textarea id="gfx-rev-reason" rows="3" placeholder="เช่น ลูกค้าขอเปลี่ยนสี / แก้ตาม feedback ทีม" style="width:100%;padding:9px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;font-family:inherit;box-sizing:border-box;font-size:13.5px;"></textarea>'
       +'</div>'
       +'<div style="display:flex;justify-content:flex-end;gap:8px;padding:0 17px 16px;">'
-        +'<button onclick="document.getElementById(\'gfx-rev-overlay\').classList.remove(\'open\')" style="background:#fff;border:1px solid #dfe4ee;color:#5b6472;border-radius:9px;padding:8px 16px;font-weight:600;cursor:pointer;">ยกเลิก</button>'
-        +'<button onclick="gfxRevSave(\''+AJ(id)+'\')" style="background:linear-gradient(120deg,#7cb6e4,#5aa0d8);color:#fff;border:none;border-radius:9px;padding:8px 18px;font-weight:700;cursor:pointer;">💾 บันทึก</button>'
+        +'<button onclick="gfxRevCancel()" style="background:#fff;border:1px solid #dfe4ee;color:#5b6472;border-radius:9px;padding:8px 16px;font-weight:600;cursor:pointer;">'+(forced?'ยกเลิก (ไม่ย้าย)':'ยกเลิก')+'</button>'
+        +'<button onclick="gfxRevSave(\''+AJ(id)+'\')" style="background:linear-gradient(120deg,#7cb6e4,#5aa0d8);color:#fff;border:none;border-radius:9px;padding:8px 18px;font-weight:700;cursor:pointer;">'+(forced?'💾 บันทึกและย้าย':'💾 บันทึก')+'</button>'
       +'</div>';
     document.getElementById('gfx-rev-overlay').classList.add('open');
     setTimeout(function(){ var t=document.getElementById('gfx-rev-reason'); if(t) t.focus(); },50);
   };
   window.gfxRevSave=function(id){
     if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c) return;
-    if(!gfxRevSrc){ TOAST('เลือกสาเหตุแก้ไข (Content หรือ Graphic) ก่อน','info'); return; }
+    if(!gfxRevSrc){ TOAST('เลือก “สาเหตุแก้ไขเกิดจาก” (Content / Graphic / Branding / NPD) ก่อน','info'); return; }
     var r=String((document.getElementById('gfx-rev-reason')||{}).value||'').trim();
     if(!r){ TOAST('ใส่รายละเอียด/เหตุผลก่อน','err'); return; }
-    if(!Array.isArray(c.revisions)) c.revisions=[];
-    c.revisions.push({ts:TS(), reason:r, by:(typeof sbEmail==='function'?sbEmail():''), src:gfxRevSrc});
+    var entry={ts:TS(), reason:r, by:(typeof sbEmail==='function'?sbEmail():''), src:gfxRevSrc};
+    var ctx=gfxRevCtx; gfxRevCtx=null;
     document.getElementById('gfx-rev-overlay').classList.remove('open');
+    if(ctx && ctx.editor){ gfxRevPending=entry; window.gfxSaveEditor(); return; }   // บันทึกพร้อมฟอร์มแก้ไขการ์ด (เพิ่มรอบแก้ไข 1 ครั้ง)
+    if(!Array.isArray(c.revisions)) c.revisions=[];
+    c.revisions.push(entry);
+    if(ctx && ctx.move){ window.gfxMove(id,ctx.move,true); TOAST('บันทึกรอบแก้ไขแล้ว 🔧 (แก้ '+c.revisions.length+' ครั้ง)','ok'); return; }
+    if(ctx && ctx.reorder){ gfxReorder(id,ctx.reorder.target,ctx.reorder.after,true); TOAST('บันทึกรอบแก้ไขแล้ว 🔧 (แก้ '+c.revisions.length+' ครั้ง)','ok'); return; }
     gfxAfterChange(c); TOAST('บันทึกรอบแก้ไขแล้ว 🔧','ok');
   };
   window.gfxRevDel=function(id,i){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.revisions)||!c.revisions[i]) return; if(!confirm('ลบรอบแก้ไขนี้?')) return; c.revisions.splice(i,1); gfxAfterChange(c); };
@@ -14655,7 +14677,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var overdue=list.filter(gfxIsOverdue).slice().sort(function(a,b){return gfxDaysSince(b.submitDate)-gfxDaysSince(a.submitDate);});
     var pct=total?Math.round(doneN/total*100):0;
     var revTotal=list.reduce(function(a,x){return a+((x.revisions&&x.revisions.length)||0);},0);
-    var revContent=0, revGraphic=0; list.forEach(function(x){ (x.revisions||[]).forEach(function(rv){ if(rv.src==='content') revContent++; else if(rv.src==='graphic') revGraphic++; }); });
+    var revContent=0, revGraphic=0, revBranding=0, revNpd=0; list.forEach(function(x){ (x.revisions||[]).forEach(function(rv){ if(rv.src==='content') revContent++; else if(rv.src==='graphic') revGraphic++; else if(rv.src==='branding') revBranding++; else if(rv.src==='npd') revNpd++; }); });
     var chkTotal=0,chkDone=0; list.forEach(function(x){ (x.checklist||[]).forEach(function(it){ chkTotal++; if(it.done) chkDone++; }); });
     var tile=function(lb,val,color){ return '<div style="flex:1;min-width:120px;background:#fff;border:1px solid var(--line,#E7ECF5);border-radius:14px;padding:14px 16px;"><div style="font-size:26px;font-weight:800;color:'+(color||'var(--ink)')+';">'+val+'</div><div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">'+lb+'</div></div>'; };
     var tiles='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">'+tile('งานทั้งหมด',total,'#5B6FB8')+tile('เสร็จแล้ว',doneN,'#26a69a')+tile('กำลังดำเนินการ',total-doneN,'#e6952b')+tile('⚠️ ล่าช้า',overdue.length,overdue.length?'#e53935':'#26a69a')+tile('🔧 รอบแก้ไขรวม',revTotal,'#d98324')+'</div>';
@@ -14665,8 +14687,8 @@ details.fm-more[open]{padding-bottom:6px;}
     var colBars='<div style="background:#fff;border:1px solid var(--line,#E7ECF5);border-radius:14px;padding:14px 16px;margin-bottom:14px;"><div style="font-size:13px;font-weight:700;margin-bottom:10px;">📊 งานแต่ละคอลัมน์</div>'+counts.map(function(o){ var w=Math.round(o.n/maxN*100); return '<div style="margin-bottom:9px;"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:3px;"><span>'+E(o.c.title)+(o.c.done?' <span style="color:#26a69a;">✓</span>':'')+'</span><span style="font-weight:700;">'+o.n+'</span></div><div style="height:9px;background:#eef1f7;border-radius:6px;overflow:hidden;"><div style="height:100%;width:'+w+'%;background:'+(o.c.color||'#7cb6e4')+';"></div></div></div>'; }).join('')+'</div>';
     var overHtml='<div style="background:#fff;border:1px solid var(--line,#E7ECF5);border-radius:14px;padding:14px 16px;margin-bottom:14px;"><div style="font-size:13px;font-weight:700;margin-bottom:8px;color:'+(overdue.length?'#e53935':'var(--ink)')+';">⚠️ งานล่าช้า ('+overdue.length+')</div>'+(overdue.length?overdue.map(function(x){ var days=gfxDaysSince(x.submitDate); var cd=gfxColDef(x.person,x.col); return '<div onclick="openCardModal(\''+AJ(x.id)+'\')" style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #f2f4f8;cursor:pointer;"><span style="flex:1;">'+E(x.title||'(ไม่มีชื่อ)')+' <span style="font-size:11px;color:#9aa4b5;">· '+E(cd?cd.title:'')+'</span></span><span style="color:#e53935;font-weight:700;font-size:12.5px;white-space:nowrap;">เกิน '+days+' วัน</span></div>'; }).join(''):'<div style="font-size:12.5px;color:#26a69a;">🎉 ไม่มีงานล่าช้า</div>')+'</div>';
     var revCards=list.filter(function(x){return x.revisions&&x.revisions.length;}).slice().sort(function(a,b){return b.revisions.length-a.revisions.length;});
-    var revBreak=revTotal?(' <span style="font-weight:600;font-size:11.5px;">· <span style="color:#2F6DA8;">✨ Content '+revContent+'</span> · <span style="color:#1f8a70;">🎨 Graphic '+revGraphic+'</span></span>'):'';
-    var revSrcTag=function(src){ return src==='content'?'<span style="color:#2F6DA8;font-weight:700;">[Content]</span> ':(src==='graphic'?'<span style="color:#1f8a70;font-weight:700;">[Graphic]</span> ':''); };
+    var revBreak=revTotal?(' <span style="font-weight:600;font-size:11.5px;">· <span style="color:#2F6DA8;">✨ Content '+revContent+'</span> · <span style="color:#1f8a70;">🎨 Graphic '+revGraphic+'</span> · <span style="color:#7B3FA8;">🏷️ Branding '+revBranding+'</span> · <span style="color:#4350B5;">🧪 NPD '+revNpd+'</span></span>'):'';
+    var revSrcTag=function(src){ return src==='content'?'<span style="color:#2F6DA8;font-weight:700;">[Content]</span> ':(src==='graphic'?'<span style="color:#1f8a70;font-weight:700;">[Graphic]</span> ':(src==='branding'?'<span style="color:#7B3FA8;font-weight:700;">[Branding]</span> ':(src==='npd'?'<span style="color:#4350B5;font-weight:700;">[NPD]</span> ':''))); };
     var revHtml='<div style="background:#fff;border:1px solid var(--line,#E7ECF5);border-radius:14px;padding:14px 16px;"><div style="font-size:13px;font-weight:700;margin-bottom:8px;color:#d98324;">🔧 การแก้ไขงาน (รวม '+revTotal+' ครั้ง)'+revBreak+'</div>'+(revCards.length?revCards.map(function(x){ var reasons=x.revisions.map(function(rv){return '<li style="font-size:12px;color:var(--ink-soft);margin-bottom:2px;">'+revSrcTag(rv.src)+E(rv.reason)+(rv.ts?' <span style="color:#b8c0cc;">('+E(gfxFmtDDMM(rv.ts))+')</span>':'')+'</li>';}).join(''); return '<div style="padding:7px 0;border-bottom:1px solid #f2f4f8;"><div onclick="openCardModal(\''+AJ(x.id)+'\')" style="display:flex;justify-content:space-between;cursor:pointer;gap:8px;"><span style="font-weight:600;font-size:13px;">'+E(x.title||'(ไม่มีชื่อ)')+'</span><span style="color:#d98324;font-weight:700;font-size:12.5px;white-space:nowrap;">'+x.revisions.length+' ครั้ง</span></div><ul style="margin:4px 0 0;padding-left:18px;">'+reasons+'</ul></div>'; }).join(''):'<div style="font-size:12.5px;color:#9aa4b5;">— ยังไม่มีการแก้ไข —</div>')+'</div>';
     main.innerHTML=tiles+prog+colBars+overHtml+revHtml;
   }
@@ -14681,10 +14703,11 @@ details.fm-more[open]{padding-bottom:6px;}
   window.gfxCardDragOver=function(ev){ ev.preventDefault(); try{ ev.dataTransfer.dropEffect='move'; }catch(e){} var c=ev.currentTarget; if(c){ var r=c.getBoundingClientRect(); var below=(ev.clientY-r.top)>r.height/2; c.style.boxShadow=below?'inset 0 -3px 0 #7cb6e4':'inset 0 3px 0 #7cb6e4'; } };
   window.gfxCardDragLeave=function(ev){ var c=ev.currentTarget; if(c) c.style.boxShadow=''; };
   window.gfxCardDrop=function(ev,targetId){ ev.preventDefault(); ev.stopPropagation(); var c=ev.currentTarget; var below=false; if(c){ var r=c.getBoundingClientRect(); below=(ev.clientY-r.top)>r.height/2; c.style.boxShadow=''; } var id=gfxDragId; try{ var dt=ev.dataTransfer.getData('text/plain'); if(dt) id=dt; }catch(e){} if(id&&id!==targetId) gfxReorder(id,targetId,below); };
-  function gfxReorder(draggedId, targetId, after){
+  function gfxReorder(draggedId, targetId, after, force){
     if(!gfxCanEdit()) return;
     var dragged=GFX.find(function(x){return x.id===draggedId;}); var target=GFX.find(function(x){return x.id===targetId;});
     if(!dragged||!target) return; var p=dragged.person; if(target.person!==p) return;
+    if(!force && dragged.col!==target.col && gfxIsReviseCol(p,target.col) && !gfxIsReviseCol(p,dragged.col)){ gfxRevOpen(draggedId,{reorder:{target:targetId,after:!!after}}); return; }
     var changed=[];
     if(dragged.col!==target.col){ dragged.col=target.col; if(gfxIsDoneCol(p,dragged.col)){ if(!dragged.doneAt) dragged.doneAt=nowStamp(); } else { dragged.doneAt=''; } changed.push(dragged);
       if(dragged.srcContent && typeof window.plSetStatus==='function'){ try{ if(gfxIsDoneCol(p,dragged.col)) window.plSetStatus(dragged.srcContent,'approved',['brief','production','review','revise']); else window.plSetStatus(dragged.srcContent,'production',['approved']); }catch(e){} }
