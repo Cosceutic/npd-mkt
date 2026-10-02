@@ -2577,7 +2577,7 @@ const AREA_EDITORS = {
 };
 function sbEmail(){ try{ return String((SB_SESSION && SB_SESSION.user && SB_SESSION.user.email) || '').trim().toLowerCase(); }catch(e){ return ''; } }
 /* บัญชีทีมกราฟฟิก: ไอซ์ GP · น้ำฝน · เมษา — แก้ Content ไม่ได้ (หน้า Content แสดงหน้าล็อก) แต่ยังคอมเมนต์ในการ์ดได้ และทำงานบนบอร์ด Graphic ตามปกติ */
-const GRAPHIC_ACCOUNTS = ['nichakan.cm@gmail.com','graphic.cosmania02@gmail.com','graphic03.cil@gmail.com'];
+const GRAPHIC_ACCOUNTS = ['graphic01.cil@gmail.com','graphic.cosmania02@gmail.com','graphic03.cil@gmail.com'];
 function isGraphicAccount(){ try{ return !!(sbLoggedIn() && GRAPHIC_ACCOUNTS.indexOf(sbEmail())>=0); }catch(e){ return false; } }
 window.isGraphicAccount = isGraphicAccount;
 function canEditArea(area){ const list=AREA_EDITORS[area]; return !!(sbLoggedIn() && list && list.indexOf(sbEmail())>=0); }
@@ -12618,7 +12618,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     'marketing.glimmersisters@gmail.com':'แพรว',
     'marketing1@cosceutic.com':'สมายด์',
     'mkl@cosceutic.com':'แนน',
-    'nichakan.cm@gmail.com':'ไอซ์GP',
+    'graphic01.cil@gmail.com':'ไอซ์GP',
     'npd@cosceutic.com':'พีท',
     'npd1@cosceutic.com':'โบนัส',
     'sm@cosmanialab.com':'จ๋า',
@@ -14930,6 +14930,36 @@ details.fm-more[open]{padding-bottom:6px;}
   window.ntSoundToggle=function(){ try{ localStorage.setItem(SND_KEY, soundOn()?'off':'on'); }catch(e){} if(soundOn()) playRaw('content'); render(); };
   window.ntSoundTest=function(b){ playRaw(b); };
 
+  /* ---------- แจ้งเตือนมุมจอ (การแจ้งเตือนของระบบปฏิบัติการ) — เด้งตอนไม่ได้เปิดหน้านี้อยู่ (ต้องเปิดเว็บนี้ค้างไว้ในเบราว์เซอร์) ---------- */
+  var DESK_KEY='npd_nt_desktop_v1', BASE_TITLE=document.title;
+  function deskSupported(){ try{ return typeof window.Notification!=='undefined'; }catch(e){ return false; } }
+  function deskPerm(){ try{ return deskSupported()?window.Notification.permission:'unsupported'; }catch(e){ return 'unsupported'; } }
+  function deskOn(){ try{ return localStorage.getItem(DESK_KEY)==='on' && deskPerm()==='granted'; }catch(e){ return false; } }
+  function deskShow(title,body,tag,id){
+    try{
+      var ic=(document.querySelector('link[rel~="icon"]')||{}).href||'';
+      var n=new window.Notification(title,{body:String(body||'').slice(0,160),tag:tag,icon:ic||undefined,silent:false});
+      n.onclick=function(){ try{ window.focus(); n.close(); if(id && typeof window.ntOpen==='function') window.ntOpen(id); }catch(e){} };
+    }catch(e){}
+  }
+  window.ntDeskToggle=function(){
+    if(!deskSupported()){ if(typeof toast==='function') toast('เบราว์เซอร์นี้ไม่รองรับแจ้งเตือนมุมจอ','err'); return; }
+    var perm=deskPerm();
+    if(perm==='denied'){ if(typeof toast==='function') toast('เบราว์เซอร์บล็อกการแจ้งเตือนของเว็บนี้ไว้ — กดไอคอนข้างช่อง URL → ตั้งค่าเว็บไซต์ → “การแจ้งเตือน” เป็นอนุญาต แล้วกดปุ่มนี้อีกครั้ง','info'); return; }
+    if(perm==='default'){
+      window.Notification.requestPermission().then(function(r){
+        if(r==='granted'){ try{ localStorage.setItem(DESK_KEY,'on'); }catch(e){} deskShow('🔔 เปิดแจ้งเตือนมุมจอแล้ว','จากนี้ถ้ามีคนแท็ก/คอมเมนต์/ย้ายงานของคุณ จะเด้งที่มุมจอแม้อยู่แท็บอื่น','npd-test',null); if(typeof toast==='function') toast('เปิดแจ้งเตือนมุมจอแล้ว ✅','ok'); }
+        else if(typeof toast==='function') toast('ยังไม่ได้อนุญาตการแจ้งเตือน — เปิดไม่ได้','info');
+        render();
+      });
+      return;
+    }
+    var on=deskOn(); try{ localStorage.setItem(DESK_KEY,on?'off':'on'); }catch(e){}
+    if(!on) deskShow('🔔 เปิดแจ้งเตือนมุมจอแล้ว','ทดสอบ: ข้อความนี้คือหน้าตาแจ้งเตือนที่จะเด้งที่มุมจอ','npd-test',null);
+    render();
+  };
+  function deskLabel(){ var p=deskPerm(); if(p==='unsupported') return ''; if(p==='denied') return '🖥️ มุมจอ: ถูกบล็อก'; if(p==='default') return '🖥️ เปิดแจ้งเตือนมุมจอ'; return deskOn()?'🖥️ มุมจอ: เปิด':'🖥️ มุมจอ: ปิด'; }
+
   /* ---------- สร้างแจ้งเตือน (ฝั่งผู้ทำรายการ → เขียนแถวให้ผู้รับ) ---------- */
   async function insertRow(row){ try{ var r=await postToSheet({target:'notifications',action:'append',row:row}); return !!(r&&r.ok); }catch(e){ return false; } }
   window.ntEmit=function(ev){
@@ -15028,6 +15058,10 @@ details.fm-more[open]{padding-bottom:6px;}
     var boards=[]; fresh.forEach(function(n){ if(boards.indexOf(n.board)<0) boards.push(n.board); });
     boards.slice(0,2).forEach(function(b,i){ setTimeout(function(){ play(b); }, i*650); });
     var f=fresh[0]; var lab=(BOARDS[f.board]||BOARDS.content).t;
+    if(deskOn() && (document.hidden || !document.hasFocus())){
+      fresh.slice(0,3).forEach(function(n){ var bd=BOARDS[n.board]||BOARDS.content; deskShow('🔔 '+bd.t+' · '+(n.fromName||'ระบบ'), (n.title||'')+(n.body?(' — '+n.body):''), 'npd-'+n.id, n.id); });
+      if(fresh.length>3) deskShow('🔔 มีแจ้งเตือนใหม่อีก '+(fresh.length-3)+' รายการ','เปิดเว็บเพื่อดูทั้งหมด','npd-more',null);
+    }
     if(typeof toast==='function') toast('🔔 '+(fresh.length>1?(fresh.length+' แจ้งเตือนใหม่'):((f.fromName?f.fromName+' · ':'')+lab+': '+(f.title||'')+' — '+(f.body||''))).slice(0,140),'info');
   }
   async function markRead(ids){
@@ -15049,6 +15083,7 @@ details.fm-more[open]{padding-bottom:6px;}
   function render(){
     var b=document.getElementById('nt-badge'), c=unread();
     if(b){ b.textContent=c>99?'99+':String(c); b.style.display=c?'flex':'none'; }
+    try{ document.title=(c?('('+(c>99?'99+':c)+') '):'')+BASE_TITLE; }catch(e){}
     var p=document.getElementById('nt-panel'); if(p && p.classList.contains('open')) renderPanel();
   }
   function renderPanel(){
@@ -15066,7 +15101,8 @@ details.fm-more[open]{padding-bottom:6px;}
         +'<b>'+E(n.fromName||'ระบบ')+'</b> · '+E(n.title||'')+'<div class="nt-sub">'+E(n.body||'')+'</div></div>'
         +'<div class="nt-time">'+E(ago(n.createdAt))+'</div>'+(n.readAt?'':'<span class="nt-dot"></span>')+'</div>';
     });
-    html+='</div><div class="nt-pf"><button type="button" onclick="ntMarkAll()">✓ อ่านทั้งหมด</button>'
+    html+='</div>'+((loggedIn()&&deskLabel())?('<div class="nt-dk"><button type="button" onclick="ntDeskToggle()" title="แจ้งเตือนที่มุมจอ ตอนไม่ได้เปิดหน้านี้อยู่">'+deskLabel()+'</button><small>'+(deskPerm()==='granted'&&deskOn()?'เด้งที่มุมจอแม้อยู่แท็บอื่น · ต้องเปิดเว็บนี้ค้างไว้ในเบราว์เซอร์':'เปิดเพื่อให้เด้งที่มุมจอแม้อยู่แท็บอื่น')+'</small></div>'):'')
+      +'<div class="nt-pf"><button type="button" onclick="ntMarkAll()">✓ อ่านทั้งหมด</button>'
       +'<span class="nt-snd"><button type="button" onclick="ntSoundToggle()" title="เปิด/ปิดเสียง">'+(on?'🔊 เสียง: เปิด':'🔇 เสียง: ปิด')+'</button>'
       +'<button type="button" title="ฟังเสียง Content" onclick="ntSoundTest(\'content\')" style="background:#FFB7CF;">C</button>'
       +'<button type="button" title="ฟังเสียง Graphic" onclick="ntSoundTest(\'graphic\')" style="background:#BED1E8;">G</button>'
@@ -15194,13 +15230,14 @@ details.fm-more[open]{padding-bottom:6px;}
    +'.nt-mi.on,.nt-mi:hover{background:#EAF1F8;} .nt-mi.off{color:#9a8f86;}'
    +'.nt-av{width:24px;height:24px;border-radius:50%;background:#BED1E8;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none;}'
    +'.nt-ms{margin-left:auto;font-size:11px;color:#8A7B6F;}'
+   +'.nt-dk{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid #ECE6DF;background:#FBF9F6;}.nt-dk button{border:1px solid #BED1E8;background:#EAF1F8;color:#443025;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}.nt-dk small{font-size:11px;color:#8A7B6F;}'
    +'.cc-mention{background:#BED1E8;color:#443025;border-radius:6px;padding:0 4px;font-weight:600;}';
   document.head.appendChild(st);
 
   /* ---------- เริ่มทำงาน: โหลดครั้งแรก + โพลทุก 45 วินาที (เฉพาะตอนเปิดแท็บอยู่) ---------- */
   render();
   setTimeout(load,3500); setTimeout(load,10000);
-  setInterval(function(){ if(!document.hidden) load(); },45000);
+  setInterval(function(){ load(); },45000);   // โพลต่อแม้แท็บอยู่เบื้องหลัง (เบราว์เซอร์จะหน่วงเหลือ ~1 ครั้ง/นาที) เพื่อให้แจ้งเตือนมุมจอทำงาน
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) load(); });
 })();
 </script>
