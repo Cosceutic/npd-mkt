@@ -14966,13 +14966,20 @@ details.fm-more[open]{padding-bottom:6px;}
     try{
       if(!loggedIn()||!ev) return;
       var me=myEmail(), seen={}, from=emap()[me]||'', stamp=nowStamp();
-      var skip=ev.skipEmails||[];
+      var skip=ev.skipEmails||[], sentJobs=[];
       flat(Array.isArray(ev.names)?ev.names:[ev.names]).forEach(function(n){
         var em=nameToEmail(n); if(!em||em===me||seen[em]||skip.indexOf(em)>=0) return; seen[em]=1;
-        insertRow({ id:'nt'+Date.now().toString(36)+Math.random().toString(36).slice(2,7), toEmail:em, toName:normName(n), fromName:from,
+        var pr=insertRow({ id:'nt'+Date.now().toString(36)+Math.random().toString(36).slice(2,7), toEmail:em, toName:normName(n), fromName:from,
           kind:ev.kind||'comment', board:ev.board||'content', refId:String(ev.refId||''), title:String(ev.title||'').slice(0,160),
           body:String(ev.body||'').slice(0,240), createdAt:stamp, readAt:'' });
+        sentJobs.push(pr.then(function(ok){ return {name:normName(n),ok:ok}; }));
       });
+      // แท็ก/มอบหมาย: บอกผู้ส่งว่าแจ้งเตือนถูกบันทึกถึงใครแล้วบ้าง (เช็กว่าถึงฐานข้อมูลจริง)
+      if(sentJobs.length && (ev.kind==='mention'||ev.kind==='assign') && typeof toast==='function'){
+        Promise.all(sentJobs).then(function(rs){ var ok=rs.filter(function(r){return r.ok;}).map(function(r){return r.name;}), bad=rs.filter(function(r){return !r.ok;}).map(function(r){return r.name;});
+          if(ok.length) toast('📨 ส่งแจ้งเตือนถึง '+ok.join(', ')+' แล้ว','ok');
+          if(bad.length) toast('ส่งแจ้งเตือนถึง '+bad.join(', ')+' ไม่สำเร็จ — ลองใหม่อีกครั้ง','err'); });
+      }
     }catch(e){}
   };
 
@@ -15089,7 +15096,10 @@ details.fm-more[open]{padding-bottom:6px;}
   function renderPanel(){
     var p=document.getElementById('nt-panel'); if(!p) return;
     var c=unread(), on=soundOn(), html='';
-    html+='<div class="nt-ph"><b>แจ้งเตือนของคุณ</b><span>'+(c?('ใหม่ '+c+' รายการ'):'ไม่มีรายการใหม่')+'</span></div><div class="nt-list">';
+    html+='<div class="nt-ph"><b>แจ้งเตือนของคุณ</b><span>'+(c?('ใหม่ '+c+' รายการ'):'ไม่มีรายการใหม่')+'</span></div>';
+    if(loggedIn()){ var me=myEmail(), nick=emap()[me]||'';
+      html+='<div class="nt-me'+(nick?'':' bad')+'">'+(nick?('👤 ล็อกอินเป็น <b>'+E(nick)+'</b> · '+E(me)):('⚠️ อีเมล <b>'+E(me)+'</b> ยังไม่ผูกกับชื่อใคร — จะไม่ได้รับแจ้งเตือน/การแท็ก (แจ้งผู้ดูแลให้ผูกอีเมลกับชื่อ)'))+'</div>'; }
+    html+='<div class="nt-list">';
     if(!loggedIn()) html+='<div class="nt-empty">เข้าสู่ระบบ (ปุ่มมุมขวาล่าง) เพื่อดูแจ้งเตือน</div>';
     else if(ntBroken==='missing') html+='<div class="nt-empty">ระบบแจ้งเตือนยังไม่พร้อมใช้งาน<br><small>ผู้ดูแลต้องรัน notifications.sql ใน Supabase 1 ครั้ง</small></div>';
     else if(!NT.length) html+='<div class="nt-empty">ยังไม่มีแจ้งเตือน<br><small>เมื่อมีคนแท็กคุณ คอมเมนต์ในงานของคุณ หรือสถานะงานเปลี่ยน จะขึ้นที่นี่</small></div>';
@@ -15161,19 +15171,20 @@ details.fm-more[open]{padding-bottom:6px;}
     var names=people().map(function(p){return p.name;}).sort(function(a,b){return b.length-a.length;}); if(!names.length) return html;
     return String(html).replace(new RegExp('@('+names.map(escRe).join('|')+')','g'),'<span class="cc-mention">@$1</span>');
   };
+  var TEAM_OF={'แนน':'Marketing','ออม':'Marketing','สมายด์':'Marketing','เอ':'Marketing','หรา':'Marketing','เลิฟ':'Marketing','สเปียร์':'Marketing','เมษา':'Graphic','ไอซ์GP':'Graphic','น้ำฝน':'Graphic','เหมียว':'Graphic','พลอย':'NPD','แพรว':'NPD','จ๋า':'NPD','โบนัส':'NPD','มีน':'NPD','พีท':'NPD','ข้าวหอม':'Supply Chain','ไอซ์SC':'Supply Chain','คุณกอล์ฟ':'Executive','คุณยา':'Executive'};
   var MN={open:false,items:[],idx:0,start:-1,ta:null};
   function mnEl(){ return document.getElementById('nt-mention'); }
   window.ntMentionClose=function(){ MN.open=false; var el=mnEl(); if(el&&el.parentNode) el.parentNode.removeChild(el); };
   function mnShow(){
     var ta=MN.ta; if(!ta||!ta.parentNode) return;
     var el=mnEl(); if(!el){ el=document.createElement('div'); el.id='nt-mention'; el.className='nt-mention'; ta.parentNode.insertBefore(el,ta.nextSibling); }
-    el.style.left=ta.offsetLeft+'px'; el.style.top=(ta.offsetTop+ta.offsetHeight+2)+'px'; el.style.width=Math.min(300,ta.offsetWidth)+'px';
+    el.style.left=ta.offsetLeft+'px'; el.style.top=(ta.offsetTop+ta.offsetHeight+2)+'px'; el.style.width=Math.min(320,ta.offsetWidth)+'px';
     el.innerHTML=MN.items.map(function(p,i){
       return '<div class="nt-mi'+(i===MN.idx?' on':'')+(p.disabled?' off':'')+'" onmousedown="event.preventDefault();ntMentionPick('+i+')">'
         +'<span class="nt-av">'+E(p.name.charAt(0))+'</span><span>'+E(p.name)+'</span>'
-        +'<span class="nt-ms">'+(p.disabled?'ยังไม่ผูกอีเมล':E(p.team))+'</span></div>';
+        +'<span class="nt-ms">'+(p.disabled?'ยังไม่ผูกอีเมล':E(p.team||TEAM_OF[p.name]||''))+'</span></div>';
     }).join('');
-    MN.open=true;
+    MN.open=true; try{ var onEl=el.querySelector('.nt-mi.on'); if(onEl) onEl.scrollIntoView({block:'nearest'}); }catch(e){}
     // ที่ด้านล่างไม่พอ → เปิดรายการขึ้นด้านบนของช่องพิมพ์แทน
     try{ var r=ta.getBoundingClientRect(), h=el.offsetHeight; if(r.bottom+h>window.innerHeight-12 && r.top>h+12) el.style.top=(ta.offsetTop-h-2)+'px'; }catch(e){}
   }
@@ -15182,7 +15193,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var m=before.match(/(^|[\s(])@([^\s@]{0,20})$/);
     if(!m){ window.ntMentionClose(); return; }
     var q=m[2]; MN.start=pos-q.length-1; MN.ta=ta;
-    var items=people().filter(function(p){ return !q || p.name.indexOf(q)>=0; }).slice(0,6);
+    var items=people().filter(function(p){ return !p.disabled && (!q || p.name.indexOf(q)>=0); });   // ทุกคนที่มี User (ผูกอีเมลแล้ว) · พิมพ์ต่อเพื่อกรอง
     if(!items.length){ window.ntMentionClose(); return; }
     MN.items=items; MN.idx=0; mnShow();
   };
@@ -15211,6 +15222,7 @@ details.fm-more[open]{padding-bottom:6px;}
    +'.nt-panel.open{display:flex;}'
    +'.nt-ph{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #ECE6DF;font-size:15px;}'
    +'.nt-ph span{font-size:12px;color:#8A7B6F;}'
+   +'.nt-me{padding:6px 16px;font-size:11.5px;color:#8A7B6F;background:#FBF9F6;border-bottom:1px solid #ECE6DF;word-break:break-all;}.nt-me.bad{background:#FFF3E0;color:#8a5a00;}'
    +'.nt-list{overflow-y:auto;flex:1;}'
    +'.nt-it{display:flex;gap:10px;padding:11px 16px;border-bottom:1px solid #F3EEE8;cursor:pointer;align-items:flex-start;}'
    +'.nt-it:hover{background:#EAF1F8;} .nt-it.un{background:#FBF9F6;}'
@@ -15225,7 +15237,7 @@ details.fm-more[open]{padding-bottom:6px;}
    +'.nt-pf button{border:1px solid #ECE6DF;background:#fff;border-radius:999px;padding:4px 11px;font-size:12px;cursor:pointer;color:#443025;font-family:inherit;}'
    +'.nt-snd{display:flex;gap:5px;align-items:center;} .nt-snd button:not(:first-child){border:none;width:26px;height:26px;padding:0;font-weight:700;}'
    +'.cc-cm-box{position:relative;}'
-   +'.nt-mention{position:absolute;z-index:30;background:#fff;border:1px solid #ECE6DF;border-radius:12px;box-shadow:0 10px 24px -10px rgba(68,48,37,.4);overflow:hidden;}'
+   +'.nt-mention{position:absolute;z-index:30;background:#fff;border:1px solid #ECE6DF;border-radius:12px;box-shadow:0 10px 24px -10px rgba(68,48,37,.4);overflow-x:hidden;overflow-y:auto;max-height:300px;}'
    +'.nt-mi{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:13px;cursor:pointer;color:#443025;}'
    +'.nt-mi.on,.nt-mi:hover{background:#EAF1F8;} .nt-mi.off{color:#9a8f86;}'
    +'.nt-av{width:24px;height:24px;border-radius:50%;background:#BED1E8;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none;}'
