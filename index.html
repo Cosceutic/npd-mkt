@@ -2577,7 +2577,7 @@ const AREA_EDITORS = {
 };
 function sbEmail(){ try{ return String((SB_SESSION && SB_SESSION.user && SB_SESSION.user.email) || '').trim().toLowerCase(); }catch(e){ return ''; } }
 /* บัญชีทีมกราฟฟิก: ไอซ์ GP · น้ำฝน · เมษา — แก้ Content ไม่ได้ (หน้า Content แสดงหน้าล็อก) แต่ยังคอมเมนต์ในการ์ดได้ และทำงานบนบอร์ด Graphic ตามปกติ */
-const GRAPHIC_ACCOUNTS = ['graphic01.cil@gmail.com','graphic.cosmania02@gmail.com','graphic03.cil@gmail.com'];
+const GRAPHIC_ACCOUNTS = ['graphic01@cosceutic.com','graphic.cosmania02@gmail.com','graphic03.cil@gmail.com'];
 function isGraphicAccount(){ try{ return !!(sbLoggedIn() && GRAPHIC_ACCOUNTS.indexOf(sbEmail())>=0); }catch(e){ return false; } }
 window.isGraphicAccount = isGraphicAccount;
 function canEditArea(area){ const list=AREA_EDITORS[area]; return !!(sbLoggedIn() && list && list.indexOf(sbEmail())>=0); }
@@ -12618,7 +12618,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     'marketing.glimmersisters@gmail.com':'แพรว',
     'marketing1@cosceutic.com':'สมายด์',
     'mkl@cosceutic.com':'แนน',
-    'graphic01.cil@gmail.com':'ไอซ์GP',
+    'graphic01@cosceutic.com':'ไอซ์GP',
     'npd@cosceutic.com':'พีท',
     'npd1@cosceutic.com':'โบนัส',
     'sm@cosmanialab.com':'จ๋า',
