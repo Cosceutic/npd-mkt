@@ -11161,6 +11161,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   window.ccAddFollowerToField=function(n){ var el=document.getElementById('cc-cf-followers'); if(!el) return; var cur=el.value.split(',').map(function(s){return s.trim();}).filter(Boolean); if(cur.indexOf(n)<0){ cur.push(n); el.value=cur.join(', '); } };
   // latest attached image from a card's comments → shown on the card face (before opening)
   function cardPreviewImage(cardId){ if(typeof commentsFor!=='function') return ''; var cs=commentsFor(cardId); for(var i=cs.length-1;i>=0;i--){ if(cs[i].images){ var f=cs[i].images.split(';').map(function(s){return s.trim();}).filter(Boolean)[0]; if(f) return f; } } return ''; }
+  window.ccPreviewImage=cardPreviewImage;   // ใช้ร่วมกับการ์ดกราฟฟิก (รูปล่าสุดในคอมเมนต์)
+  window.ccEnsureComments=function(cb){ if(!cmLoaded && typeof loadCommentsFromSheet==='function'){ cmLoaded=true; loadCommentsFromSheet().then(function(){ try{ cb&&cb(); }catch(e){} }).catch(function(){}); } };   // โหลดคอมเมนต์ครั้งแรก (บอร์ดกราฟฟิกใช้โชว์รูปตัวอย่าง + ตัวเลข 💬)
   function isoOf(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
   /* ---------- ฟิลเตอร์ปฏิทิน/บอร์ด Content — ปุ่มกลมสไตล์เดียวกับปฏิทินกราฟฟิก (ตัวเลข = จำนวนงานของเดือนที่ดูอยู่) ---------- */
   var CF_PALETTE=['#5B8FF9','#F2994A','#3CA5A5','#EB5FA0','#9B7EF8','#26A69A','#E9557F','#2D9CDB','#8E7CC3','#E0A100'];
@@ -14463,6 +14465,7 @@ details.fm-more[open]{padding-bottom:6px;}
 
   /* ---------- board ---------- */
   function renderGfxBoard(){
+    if(typeof window.ccEnsureComments==='function' && !window.__gfxCmAsked){ window.__gfxCmAsked=true; window.ccEnsureComments(function(){ try{ if(gfxPerson && gfxSub==='board') renderGfxBoard(); }catch(e){} }); }   // คอมเมนต์ยังไม่โหลด (เข้าบอร์ดกราฟฟิกตรงๆ) → โหลดแล้ววาดใหม่ เพื่อให้รูปตัวอย่าง/จำนวนคอมเมนต์ขึ้น
     var main=document.getElementById('gfx-main'); if(!main) return;
     var p=gfxPerson, canEd=gfxCanEdit(); var cols=gfxColsFor(p);
     var list=gfxCardsOf(p).filter(function(x){
@@ -14517,12 +14520,18 @@ details.fm-more[open]{padding-bottom:6px;}
     var cn=gfxDcnt(x.id); var cmn=cn?'<span class="cc-pl-badge">💬 '+cn+'</span>':'';
     var tags=(gfxIsEcomCard(x)?'<span class="cc-tag" style="--tg:#26A69A" title="นับเป็นงาน E-commerce">🛒 E-com</span>':'')+(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+gfxTagColor(t)+'">'+E(t)+'</span>';}).join(''):'');
     var moveOpts=gfxColsFor(x.person).map(function(k){return '<option value="'+E(k.key)+'"'+(k.key===c.key?' selected':'')+'>'+E(k.title)+'</option>';}).join('');
+    // รูปตัวอย่างบนหน้าการ์ด เหมือนการ์ด Content: รูปล่าสุดในคอมเมนต์ (ห้องเดียวกับ Content) → ไม่มีก็ใช้รูปแรกในไฟล์แนบ
+    var pv=''; try{ if(typeof window.ccPreviewImage==='function') pv=window.ccPreviewImage(x.id)||''; }catch(e){}
+    if(!pv){ (Array.isArray(x.images)?x.images:[]).some(function(u){ u=String(u||''); if(u && !GFX_FILE_EXT.test(u)){ pv=u; return true; } return false; }); }
+    var rdl=function(u){ return (typeof resolveDriveLink==='function'&&resolveDriveLink(u))||u; };
+    var pvHtml=pv?('<a class="cc-pl-img" href="'+E(/^https?:/i.test(pv)?pv:rdl(pv))+'" target="_blank" rel="noopener" onclick="event.stopPropagation()"><img src="'+E(rdl(pv))+'" loading="lazy" onerror="this.closest(\'.cc-pl-img\').style.display=\'none\'"></a>'):'';
     var srcBadge=x.srcContent?'<span title="มาจากงาน Content — คลิกดูต้นทาง" onclick="event.stopPropagation();openCardModal(\''+AJ(x.srcContent)+'\')" style="background:#EAF3FB;color:#2F6DA8;border-radius:5px;padding:0 6px;font-size:9.5px;font-weight:700;cursor:pointer;">✨ Content ↗</span>':'';
     var actions=canEd?('<div class="cc-pl-actions"><button class="cc-pl-send" onclick="event.stopPropagation();gfxEdit(\''+AJ(x.id)+'\')">✏️ แก้</button><button class="cc-pl-send" title="Copy สร้างการ์ดใหม่" onclick="event.stopPropagation();gfxCopy(\''+AJ(x.id)+'\')">📋 Copy</button><select class="cc-pl-move" title="ย้ายคอลัมน์" onclick="event.stopPropagation();" onchange="gfxMove(\''+AJ(x.id)+'\',this.value)">'+moveOpts+'</select><button class="cc-pl-no" onclick="event.stopPropagation();gfxDel(\''+AJ(x.id)+'\')" title="ลบ">🗑️</button></div>'):'';
     return '<div class="cc-pl-card" style="--s:'+(c.color||'#7cb6e4')+'"'+(canEd?' draggable="true" ondragstart="gfxDragStart(event,\''+AJ(x.id)+'\')" ondragend="gfxDragEnd(event)" ondragover="gfxCardDragOver(event)" ondragleave="gfxCardDragLeave(event)" ondrop="gfxCardDrop(event,\''+AJ(x.id)+'\')"':'')+'>'
       +'<div class="cc-pl-ct" style="cursor:pointer;" onclick="openCardModal(\''+AJ(x.id)+'\')">'+E(x.title||'(ไม่มีชื่อ)')+'</div>'
       +(tags?'<div class="cc-pl-tags">'+tags+'</div>':'')
       +((srcBadge||brand||who||flw)?'<div class="cc-pl-meta">'+srcBadge+brand+who+flw+'</div>':'')
+      +pvHtml
       +((dateStr||chkStr||revStr||imgStr||cmn||doneStr)?'<div class="cc-pl-meta">'+dateStr+chkStr+revStr+imgStr+cmn+doneStr+'</div>':'')
       +actions+'</div>';
   }
