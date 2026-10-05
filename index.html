@@ -2570,10 +2570,15 @@ function sbLoggedIn(){ return !!SB_SESSION; }
    View is open to everyone EXCEPT NPD Process. Editing (and NPD Process view)
    is limited to the emails below. This is the UI layer; Supabase RLS enforces
    the same lists server-side for writes. Emails compared lowercase. */
+/* ทีม Data Support: ข้าวหอม · Admin — แก้ได้เฉพาะ Product Info + E-Commerce (หน้า Marketing&NPD / ออฟฟิศ ใช้ได้เหมือนทุกคนที่ล็อกอิน) · คอมเมนต์การ์ดได้ แต่แก้ Content / NPD Process ไม่ได้ */
+const DATA_SUPPORT_ACCOUNTS = ['shop@cosceutic.com','admingodmami@gmail.com'];
+function isDataSupportAccount(){ try{ return !!(sbLoggedIn() && DATA_SUPPORT_ACCOUNTS.indexOf(sbEmail())>=0); }catch(e){ return false; } }
+window.isDataSupportAccount = isDataSupportAccount;
 const AREA_EDITORS = {
-  products:    ['marketing.glimmersisters@gmail.com','theeranath@cosceutic.com','cbs@cosceutic.com','npd@cosceutic.com','npd1@cosceutic.com'],
+  products:    ['marketing.glimmersisters@gmail.com','theeranath@cosceutic.com','cbs@cosceutic.com','npd@cosceutic.com','npd1@cosceutic.com','shop@cosceutic.com','admingodmami@gmail.com'],
   npd_process: ['marketing.glimmersisters@gmail.com','theeranath@cosceutic.com','npd@cosceutic.com','npd1@cosceutic.com','sm@cosmanialab.com','supplychain@cosceutic.com','kanticha.rd@cosmanialab.com'],
   content:     ['marketing.glimmersisters@gmail.com','theeranath@cosceutic.com','cbs@cosceutic.com','content03.cil@gmail.com','content04.cil@gmail.com','content@cosceutic.com','sm@cosmanialab.com','marketing1@cosceutic.com','mkl@cosceutic.com','content.cosmanialab@gmail.com','content2.cosmania@gmail.com'],   // ทีมกราฟฟิก (GRAPHIC_ACCOUNTS) ไม่อยู่ในรายชื่อนี้แล้ว — เข้า/แก้ Content ไม่ได้
+  ecom:        ['marketing.glimmersisters@gmail.com','theeranath@cosceutic.com','cbs@cosceutic.com','content03.cil@gmail.com','content04.cil@gmail.com','content@cosceutic.com','sm@cosmanialab.com','marketing1@cosceutic.com','mkl@cosceutic.com','content.cosmanialab@gmail.com','content2.cosmania@gmail.com','shop@cosceutic.com','admingodmami@gmail.com'],   // E-Commerce = ทีม Content (11) + ทีม Data Support (2)
 };
 function sbEmail(){ try{ return String((SB_SESSION && SB_SESSION.user && SB_SESSION.user.email) || '').trim().toLowerCase(); }catch(e){ return ''; } }
 /* บัญชีทีมกราฟฟิก: ไอซ์ GP · น้ำฝน · เมษา — แก้ Content ไม่ได้ (หน้า Content แสดงหน้าล็อก) แต่ยังคอมเมนต์ในการ์ดได้ และทำงานบนบอร์ด Graphic ตามปกติ */
@@ -9960,7 +9965,7 @@ async function uploadUpdateFiles(inputEl){
   inputEl.value='';
 }
 // รายชื่อ PIC (ผู้รับผิดชอบงาน) — เลือกจาก dropdown หรือพิมพ์เองได้ (อื่นๆโปรดระบุ)
-const PIC_NAMES = ['มณ','นิ่ม','มีน','โดนัท','เดียร์','คูณ','ลิง','มิ้นท์','เหมียวGP','ไอซ์SC','ไอซ์GP','ข้าวหอม','พลอย','แพรว','คุณอ้น','คุณจ๋า','โบนัส','พีท','คุณยา','คุณกอล์ฟ','คุณเบส','ไนท์','ออม','แนน','สมายด์','เก็จ','โย','คิ้วท์'];
+const PIC_NAMES = ['มณ','นิ่ม','มีน','โดนัท','เดียร์','คูณ','ลิง','มิ้นท์','เหมียวGP','ไอซ์SC','ไอซ์GP','ข้าวหอม','Admin','พลอย','แพรว','คุณอ้น','คุณจ๋า','โบนัส','พีท','คุณยา','คุณกอล์ฟ','คุณเบส','ไนท์','ออม','แนน','สมายด์','เก็จ','โย','คิ้วท์'];
 // ===== R&D หลายสูตร + รูปต่อสูตร (repeatable formula rows) =====
 let ueFormulaRows = [];
 function ueParseFormulas(raw){
@@ -10860,7 +10865,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function teamUnlocked(){ return (typeof isTeamUnlocked==='function') && isTeamUnlocked(); }
   function unlocked(){ return teamUnlocked() && (typeof canEditArea==='function') && canEditArea('content'); }
   // คอมเมนต์ในการ์ด: ทีม Content + บัญชีกราฟฟิก (กราฟฟิกแก้ Content ไม่ได้ แต่ต้องคุยงานในการ์ดได้)
-  function canComment(){ return unlocked() || (typeof isGraphicAccount==='function' && isGraphicAccount()); }   // เข้าสู่ระบบ + อยู่ในรายชื่อผู้แก้ Content
+  function canComment(){ return unlocked() || (typeof isGraphicAccount==='function' && isGraphicAccount()) || (typeof isDataSupportAccount==='function' && isDataSupportAccount()); }   // เข้าสู่ระบบ + อยู่ในรายชื่อผู้แก้ Content
   window.ccUnlock=function(){
     if(typeof toast==='function') toast('กรุณาเข้าสู่ระบบ (ปุ่มมุมขวาล่าง) เพื่อแก้ไข · แก้แล้วทีมจะเห็นตรงกัน','info');
     if(typeof sbShowLoginModal==='function') sbShowLoginModal();
@@ -12625,7 +12630,9 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     'npd1@cosceutic.com':'โบนัส',
     'sm@cosmanialab.com':'จ๋า',
     'supplychain@cosceutic.com':'ไอซ์SC',
-    'theeranath@cosceutic.com':'พลอย'
+    'theeranath@cosceutic.com':'พลอย',
+    'shop@cosceutic.com':'ข้าวหอม',
+    'admingodmami@gmail.com':'Admin'
   };
   window.QT_EMAIL_MAP_PUB = QT_EMAIL_MAP;   // ให้ระบบแจ้งเตือน/แท็ก @ ใช้แมปเดียวกัน (อีเมลล็อกอิน → ชื่อเล่น)
   // ระบุ “ฉันคือใคร” อัตโนมัติจากอีเมลที่ล็อกอิน (ถ้าเลือกเองไว้ = override ชนะ)
@@ -13728,7 +13735,7 @@ details.fm-more[open]{padding-bottom:6px;}
   window.ecomRemoveDraft=function(i){ ecomDraftsWork.splice(i,1); ecomRenderDrafts(); };
   window.ecomDraftChange=function(i,v){ ecomDraftsWork[i]=v; };
   function ecomRenderDrafts(){ var host=document.getElementById('ecom-drafts'); if(!host) return; host.innerHTML=ecomDraftsWork.map(function(d,i){ return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:5px;"><span style="font-size:11.5px;color:var(--ink-soft);min-width:74px;">📝 '+ecomOrd(i+1)+' draft</span><input type="date" value="'+E(d||'')+'" onchange="ecomDraftChange('+i+',this.value)" style="flex:1;padding:7px 10px;border:1px solid var(--line,#E7ECF5);border-radius:9px;"><button type="button" onclick="ecomRemoveDraft('+i+')" style="border:none;background:#fdecec;color:#d33;border-radius:7px;padding:5px 10px;cursor:pointer;">✕</button></div>'; }).join('') || '<div style="font-size:11.5px;color:var(--ink-soft);">ยังไม่มีรอบส่งตรวจ — กด “➕ เพิ่มรอบ Draft”</div>'; }
-  function ecomCanEdit(){ return (typeof sbLoggedIn==='function'&&sbLoggedIn()) && (typeof canEditArea==='function') && canEditArea('content'); }
+  function ecomCanEdit(){ return (typeof sbLoggedIn==='function'&&sbLoggedIn()) && (typeof canEditArea==='function') && canEditArea('ecom'); }
   function ecomBrandLabel(k){ var f=ECOM_BRANDS.find(function(b){return b[0]===k;}); if(f) return f[1]; return (typeof brandDisplayLabel==='function')?brandDisplayLabel(k):k; }
   function ecomOwnerHas(owner,name){ return String(owner||'').split(/[,\/、]/).map(function(s){return s.trim();}).indexOf(name)>=0; }
   function ecomOwnerNames(){ var s={}; PIC_PRESET.forEach(function(n){s[n]=1;}); ECOM.forEach(function(x){ String(x.owner||'').split(/[,\/、]/).forEach(function(p){ p=p.trim(); if(p) s[p]=1; }); }); return Object.keys(s); }
@@ -15180,7 +15187,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var names=people().map(function(p){return p.name;}).sort(function(a,b){return b.length-a.length;}); if(!names.length) return html;
     return String(html).replace(new RegExp('@('+names.map(escRe).join('|')+')','g'),'<span class="cc-mention">@$1</span>');
   };
-  var TEAM_OF={'แนน':'Marketing','ออม':'Marketing','สมายด์':'Marketing','เอ':'Marketing','หรา':'Marketing','เลิฟ':'Marketing','สเปียร์':'Marketing','เมษา':'Graphic','ไอซ์GP':'Graphic','น้ำฝน':'Graphic','เหมียว':'Graphic','พลอย':'NPD','แพรว':'NPD','จ๋า':'NPD','โบนัส':'NPD','มีน':'NPD','พีท':'NPD','ข้าวหอม':'Supply Chain','ไอซ์SC':'Supply Chain','คุณกอล์ฟ':'Executive','คุณยา':'Executive'};
+  var TEAM_OF={'แนน':'Marketing','ออม':'Marketing','สมายด์':'Marketing','เอ':'Marketing','หรา':'Marketing','เลิฟ':'Marketing','สเปียร์':'Marketing','เมษา':'Graphic','ไอซ์GP':'Graphic','น้ำฝน':'Graphic','เหมียว':'Graphic','พลอย':'NPD','แพรว':'NPD','จ๋า':'NPD','โบนัส':'NPD','มีน':'NPD','พีท':'NPD','ข้าวหอม':'Data Support','Admin':'Data Support','ไอซ์SC':'Supply Chain','คุณกอล์ฟ':'Executive','คุณยา':'Executive'};
   var MN={open:false,items:[],idx:0,start:-1,ta:null};
   function mnEl(){ return document.getElementById('nt-mention'); }
   window.ntMentionClose=function(){ MN.open=false; var el=mnEl(); if(el&&el.parentNode) el.parentNode.removeChild(el); };
