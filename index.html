@@ -15448,16 +15448,22 @@ details.fm-more[open]{padding-bottom:6px;}
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) setTimeout(function(){ tick(true); },300); });
   window.addEventListener('focus',function(){ setTimeout(function(){ tick(false); },300); });
   // Supabase Realtime (ใช้งานได้หลังรัน SQL เปิด publication · ถ้ายังไม่เปิดก็ไม่เป็นไร ยังมีการโหลดเป็นระยะ)
-  (async function(){
+  // ตรวจทุก 60 วิว่า client ปัจจุบันมีช่อง npd-live หรือยัง (sbInit อาจสร้าง client ซ้ำตอนเริ่มหน้า → ช่องที่สมัครไว้กับตัวเก่าจะหลุด)
+  function ensureRealtime(){
     try{
-      await sbInit(); if(!SB_CLIENT || typeof SB_CLIENT.channel!=='function') return;
+      if(typeof SB_CLIENT==='undefined' || !SB_CLIENT || typeof SB_CLIENT.channel!=='function') return;
+      var have=SB_CLIENT.getChannels().some(function(c){ return /npd-live$/.test(c.topic||''); });
+      if(have) return;
       var ch=SB_CLIENT.channel('npd-live');
       ['content_calendar','events','graphic_cards','graphic_config','ecom_content','content_comments'].forEach(function(t){
         ch.on('postgres_changes',{event:'*',schema:'public',table:t},function(){ kick(t); });
       });
       ch.subscribe();
     }catch(e){}
-  })();
+  }
+  window.liveEnsureRealtime=ensureRealtime;
+  sbInit().then(function(){ setTimeout(ensureRealtime,4000); }).catch(function(){});
+  setInterval(ensureRealtime,60000);
 })();
 </script>
 <script id="chk-module-2026-10-05">
