@@ -1789,12 +1789,12 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
         <button class="btn-sm primary" id="cc-lock-btn" style="flex:0 0 auto;" onclick="ccLockBtnClick()">🔓 ปลดล็อกแก้ไข</button>
       </div>
       <div class="cc-subnav">
-        <button class="btn-sm subnav-active" id="cc-nav-calendar" onclick="switchContentSub('calendar')">📅 Content Calendar</button>
-        <button class="btn-sm" id="cc-nav-pipeline" onclick="switchContentSub('pipeline')">🗂️ Task Pipeline</button>
-        <button class="btn-sm" id="cc-nav-dashboard" onclick="switchContentSub('dashboard')">📊 Dashboard</button>
-        <button class="btn-sm" id="cc-nav-idea" onclick="switchContentSub('idea')">💡 Content Idea</button>
-        <button class="btn-sm" id="cc-nav-hashtag" onclick="switchContentSub('hashtag')">#️⃣ Hashtags</button>
-        <button class="btn-sm" id="cc-nav-brandid" onclick="switchContentSub('brandid')">🎨 Brand Identity</button>
+        <button class="btn-sm subnav-active" id="cc-nav-calendar" title="Content Calendar" onclick="switchContentSub('calendar')"><span class="ic">📅</span><span class="lb">Calendar</span></button>
+        <button class="btn-sm" id="cc-nav-pipeline" title="Task Pipeline" onclick="switchContentSub('pipeline')"><span class="ic">🗂️</span><span class="lb">Pipeline</span></button>
+        <button class="btn-sm" id="cc-nav-dashboard" title="Dashboard" onclick="switchContentSub('dashboard')"><span class="ic">📊</span><span class="lb">Dashboard</span></button>
+        <button class="btn-sm" id="cc-nav-idea" title="Content Idea" onclick="switchContentSub('idea')"><span class="ic">💡</span><span class="lb">Idea</span></button>
+        <button class="btn-sm" id="cc-nav-hashtag" title="Hashtags" onclick="switchContentSub('hashtag')"><span class="ic">#️⃣</span><span class="lb">Hashtags</span></button>
+        <button class="btn-sm" id="cc-nav-brandid" title="Brand Identity" onclick="switchContentSub('brandid')"><span class="ic">🎨</span><span class="lb">Brand</span></button>
       </div>
       <div class="brand-filter-bar" id="cc-brand-bar"></div>
       <div id="cc-sub-idea" style="display:none;">
@@ -1831,11 +1831,10 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
         <div id="ccal-host"></div>
       </div>
       <div id="cc-sub-pipeline" style="display:none;">
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
-          <p class="cc-rm-lead">บอร์ดสถานะคอนเทนต์ — ลากการ์ดเพื่อเปลี่ยนสถานะ · ข้อมูลชุดเดียวกับปฏิทิน · ส่งตรวจ/อนุมัติ/ตีกลับได้ในคลิกเดียว</p>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;" title="บอร์ดสถานะคอนเทนต์ — ลากการ์ดเพื่อเปลี่ยนสถานะ · ข้อมูลชุดเดียวกับปฏิทิน · ส่งตรวจ/อนุมัติ/ตีกลับได้ในคลิกเดียว">
+          <div id="cc-pl-picbar" class="cc-pl-picbar" style="margin:0;flex:1 1 auto;"></div>
           <button class="btn-edit primary" id="cc-pl-add" onclick="openContentCalEditor()" style="display:none;flex:0 0 auto;">➕ เพิ่มการ์ด</button>
         </div>
-        <div id="cc-pl-picbar" class="cc-pl-picbar"></div>
         <div id="cc-pl-host"></div>
       </div>
       <div id="cc-sub-dashboard" style="display:none;">
@@ -11212,6 +11211,18 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +(o.color?'<span class="cf-dot" style="background:'+(on?'#fff':o.color)+';opacity:'+((o.n||on)?1:.4)+'"></span>':'')
       +label+(o.n!=null?' <b>'+o.n+'</b>':'')+(o.pct?' <span class="cf-pct">'+o.pct+'%</span>':'')+'</button>'; }
   window.cfPill=cfPill; window.cfColor=cfColor;   // ใช้ร่วมกับบอร์ด E-com
+  /* ดรอปดาวน์เลือกได้หลายอัน (ประเภทงาน / PIC / เสาหลัก) — ใช้ร่วมกันทั้งปฏิทินและบอร์ด */
+  var cfDdOpen='';   // คีย์ของดรอปดาวน์ที่เปิดอยู่ ('' = ปิดทั้งหมด) · ดรอปดาวน์สินค้าใช้ calProdOpen แยกต่างหาก
+  function cfOpt(on, js, label, n, color, pct){
+    return '<button type="button" class="cf-opt'+(on?' on':'')+'" onclick="'+js+'"><span class="cf-chk">'+(on?'✓':'')+'</span>'
+      +(color?'<span class="cf-dot" style="background:'+color+'"></span>':'')
+      +'<span class="cf-opt-t">'+label+'</span><span class="cf-opt-n">'+n+(pct?' · '+pct+'%':'')+'</span></button>'; }
+  function cfDd(key, label, nSel, bodyHtml, clearJs){
+    var panel=(cfDdOpen===key)?('<div class="cf-dd-panel cf-dd-narrow" onclick="event.stopPropagation()"><div class="cf-dd-cap">ตัวเลข = จำนวนงานของเดือนที่ดูอยู่</div><div class="cf-dd-list">'+bodyHtml+'</div>'
+      +'<div class="cf-dd-foot"><button type="button" onclick="'+clearJs+'">ล้างที่เลือก</button><button type="button" class="cf-done" onclick="cfDdToggle(\''+key+'\')">เสร็จ</button></div></div>'):'';
+    return '<div class="cf-dd"><button type="button" class="cf-pill'+(nSel?' on':'')+'" style="'+(nSel?CF_ON:'')+'" aria-haspopup="listbox" aria-expanded="'+(cfDdOpen===key?'true':'false')+'" onclick="event.stopPropagation();cfDdToggle(\''+key+'\')">'+label+' <span style="opacity:.75">▾</span></button>'+panel+'</div>'; }
+  window.cfDdToggle=function(key){ cfDdOpen=(cfDdOpen===key)?'':key; calProdOpen=false; calLegend(); renderPlPicBar(); };
+  window.calFiltersClearAll=function(){ calWorkFilter.clear(); ccOwnerSel.clear(); calPillarSel.clear(); calProdSel.clear(); if(typeof renderCalActive==='function') renderCalActive(); };
   function calProdListHtml(){
     var cnt={}; calFilterItems('prod').forEach(function(x){ var pr=String(x.product||'').trim(); if(pr) cnt[pr]=(cnt[pr]||0)+1; });
     calProdSel.forEach(function(pr){ if(cnt[pr]==null) cnt[pr]=0; });
@@ -11227,29 +11238,29 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     ccOwnerSel.forEach(function(o){ if(names.indexOf(o)<0) ccOwnerSel.delete(o); });   // คนถูกลบไปแล้ว → เอาออกจากตัวกรอง
     if(typeof window.gfxEnsureLoaded==='function' && !window.__calExtAsked){ window.__calExtAsked=true; window.gfxEnsureLoaded(function(){ try{ renderCalActive(); }catch(e){} }); }   // โหลดข้อมูลกราฟฟิกแล้ววาดปฏิทินอีกรอบ
     var monthCtx=function(skip){ return calFilterItems(skip).filter(calInMonth); };
-    // มุมมอง
-    var dm='<div class="cf-row"><span class="cf-lead">มุมมอง:</span>'
-      +cfPill('📮 วันลงโพสต์', calDateMode==='post', "calSetDateMode('post')")
-      +cfPill('🎯 กำหนดส่งงาน (Final+Draft)', calDateMode==='due', "calSetDateMode('due')")
-      +'<span class="cf-hint">'+(calDateMode==='post'?'ดูว่าวันไหนต้องลงโพสต์อะไร':'ดูว่าวันไหนต้องส่งงานอะไร (🎯 Final · 📝 draft)')+' · ตัวเลขบนปุ่ม = จำนวนงานของเดือนนี้</span></div>';
+    // ---- แถบตัวกรองแบบกระชับ: มุมมอง (สลับ 2 ปุ่ม) + ดรอปดาวน์ ประเภทงาน / PIC / เสาหลัก / สินค้า + ปุ่ม E-commerce ----
+    var seg='<span class="cf-seg" role="group" aria-label="มุมมองปฏิทิน">'
+      +'<button type="button" class="'+(calDateMode==='post'?'on':'')+'" title="ดูว่าวันไหนต้องลงโพสต์อะไร" onclick="calSetDateMode(\'post\')">📮 วันลงโพสต์</button>'
+      +'<button type="button" class="'+(calDateMode==='due'?'on':'')+'" title="ดูว่าวันไหนต้องส่งงานอะไร (🎯 Final · 📝 draft) — การ์ดที่ไม่มีวันส่งจะไม่ขึ้น" onclick="calSetDateMode(\'due\')">🎯 กำหนดส่งงาน</button></span>';
     // งานจากบอร์ดกราฟฟิก (คอลัมน์ Brief AW E-commerce)
     var extAll=calExtRaw().filter(function(c){ return c.submitDate; }); var extMonth=extAll.map(calExtVirt).filter(calInMonth).length;
-    var rowExt='<div class="cf-row"><span class="cf-lead">แสดงเพิ่ม:</span>'+cfPill('🛒 งาน E-commerce', calShowEcomB, 'calToggleEcomB()', {color:'#26A69A', onBg:'#26A69A', n:extMonth})+'<span class="cf-hint">การ์ดกราฟฟิกที่สร้าง/ย้ายมาจากคอลัมน์ Brief AW E-commerce (ติดตัวแม้ย้ายคอลัมน์หรือเสร็จแล้ว) · สีตามประเภทงาน (AW) · ดูผู้มอบหมายจากชื่อ 👤 หรือตัวกรองผู้รับมอบหมาย</span></div>';
+    var pillExt=cfPill('🛒 งาน E-commerce', calShowEcomB, 'calToggleEcomB()', {color:'#26A69A', onBg:'#26A69A', n:extMonth}).replace('<button type="button"','<button type="button" title="การ์ดกราฟฟิกที่สร้าง/ย้ายมาจากคอลัมน์ Brief AW E-commerce (ติดตัวแม้ย้ายคอลัมน์หรือเสร็จแล้ว) · สีตามประเภทงาน · ดูผู้มอบหมายจากชื่อ 👤 หรือตัวกรองผู้รับมอบหมาย"');
     // ประเภทงาน
     var wBase=monthCtx('work'), wCnt={}; wBase.forEach(function(x){ var k=workTypeOf(x); wCnt[k]=(wCnt[k]||0)+1; });
-    var wExt=calExtItems('work').filter(calInMonth); wCnt.ecom=(wCnt.ecom||0)+wExt.length; var wTot=wBase.length+wExt.length;   // การ์ดจากบอร์ดกราฟฟิก (Brief AW E-commerce) นับเป็นประเภท E-com
-    var rowType='<div class="cf-row"><span class="cf-lead">ประเภทงาน:</span>'+cfPill('ทั้งหมด', !calWorkFilter.size, 'calWorkAll()', {n:wTot})
-      +WORK_TYPES.map(function(w){ return cfPill(e2(w.t), calWorkFilter.has(w.k), "toggleCalWork('"+w.k+"')", {color:w.c, onBg:w.c, n:wCnt[w.k]||0}); }).join('')+'</div>';
+    var wExt=calExtItems('work').filter(calInMonth); wCnt.ecom=(wCnt.ecom||0)+wExt.length;   // การ์ดจากบอร์ดกราฟฟิก (Brief AW E-commerce) นับเป็นประเภท E-com
+    var wSel=Array.from(calWorkFilter);
+    var ddWork=cfDd('work','ประเภทงาน: '+(wSel.length===0?'ทั้งหมด':(wSel.length===1?e2((WORK_TYPE_MAP[wSel[0]]||{t:wSel[0]}).t):(wSel.length+' ประเภท'))), wSel.length,
+      WORK_TYPES.map(function(w){ return cfOpt(calWorkFilter.has(w.k), "toggleCalWork('"+w.k+"')", e2(w.t), wCnt[w.k]||0, w.c); }).join(''), 'calWorkAll()');
     // ผู้รับมอบหมาย (PIC) — เลือกได้หลายคน
-    var oBase=monthCtx('owner'), oExt=calExtItems('owner').filter(calInMonth), oTot=oBase.length+oExt.length;
-    var rowOwner='<div class="cf-row"><span class="cf-lead">ผู้รับมอบหมาย (PIC):</span>'+cfPill('👥 ทั้งทีม', !ccOwnerSel.size, 'ccOwnerClear()', {n:oTot})
-      +names.map(function(n){ var c=oBase.concat(oExt).filter(function(x){ return ccOwnersOf(x).indexOf(n)>=0; }).length; var col=cfColor(n);
-        return cfPill(e2(n), ccOwnerSel.has(n), "ccOwnerToggle('"+aj(n)+"')", {n:c, pct:(c&&oTot)?Math.round(c/oTot*100):0}); }).join('')
-      +(ccOwnerSel.size>1?'<span class="cf-hint">เลือกอยู่ '+ccOwnerSel.size+' คน</span>':'')+'</div>';
+    var oBase=monthCtx('owner'), oExt=calExtItems('owner').filter(calInMonth), oAll=oBase.concat(oExt), oTot=oAll.length;
+    var oSel=Array.from(ccOwnerSel);
+    var ddOwner=cfDd('owner','👤 PIC: '+(oSel.length===0?'ทั้งทีม':(oSel.length===1?e2(oSel[0]):(oSel.length+' คน'))), oSel.length,
+      names.map(function(n){ var c=oAll.filter(function(x){ return ccOwnersOf(x).indexOf(n)>=0; }).length; return cfOpt(ccOwnerSel.has(n), "ccOwnerToggle('"+aj(n)+"')", e2(n), c, null, (c&&oTot)?Math.round(c/oTot*100):0); }).join(''), 'ccOwnerClear()');
     // เสาหลัก
     var pBase=monthCtx('pillar'), pCnt={}; pBase.forEach(function(x){ var k=x.pillar||''; pCnt[k]=(pCnt[k]||0)+1; });
-    var rowPillar='<div class="cf-row"><span class="cf-lead">เสาหลัก:</span>'+cfPill('🧭 ทุกเสาหลัก', !calPillarSel.size, 'calPillarClear()', {n:pBase.length})
-      +PILLAR_ORDER.map(function(k){ return cfPill(e2(PILLARS[k].t), calPillarSel.has(k), "calPillarToggle('"+k+"')", {color:PILLARS[k].c, onBg:PILLARS[k].c, n:pCnt[k]||0}); }).join('')+'</div>';
+    var pSel=Array.from(calPillarSel);
+    var ddPillar=cfDd('pillar','🧭 เสาหลัก: '+(pSel.length===0?'ทุกเสาหลัก':(pSel.length===1?e2((PILLARS[pSel[0]]||{t:pSel[0]}).t):(pSel.length+' เสา'))), pSel.length,
+      PILLAR_ORDER.map(function(k){ return cfOpt(calPillarSel.has(k), "calPillarToggle('"+k+"')", e2(PILLARS[k].t), pCnt[k]||0, PILLARS[k].c); }).join(''), 'calPillarClear()');
     // สินค้า — ดรอปดาวน์ค้นหา + ติ๊กเลือกได้หลายอัน
     var selArr=Array.from(calProdSel);
     var panel=calProdOpen?('<div class="cf-dd-panel" onclick="event.stopPropagation()">'
@@ -11257,12 +11268,19 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
         +'<div class="cf-dd-list" id="cf-prod-list">'+calProdListHtml()+'</div>'
         +'<div class="cf-dd-foot"><button type="button" onclick="calProdClear()">ล้างที่เลือก</button><button type="button" class="cf-done" onclick="calProdToggleOpen()">เสร็จ</button></div>'
       +'</div>'):'';
-    var rowProd='<div class="cf-row"><span class="cf-lead">สินค้า:</span><div class="cf-dd">'
-      +'<button type="button" class="cf-pill'+(calProdSel.size?' on':'')+'" style="'+(calProdSel.size?CF_ON:'')+'" onclick="event.stopPropagation();calProdToggleOpen()">'+(calProdSel.size?('📦 สินค้า '+calProdSel.size+' รายการ'):'📦 ทุกสินค้า')+' <span style="opacity:.75">▾</span></button>'+panel+'</div>'
-      +selArr.map(function(pr,i){ return '<span class="cf-chip">'+e2(pr)+'<i title="เอาออก" onclick="calProdRemoveAt('+i+')">✕</i></span>'; }).join('')+'</div>';
+    var ddProd='<div class="cf-dd">'
+      +'<button type="button" class="cf-pill'+(calProdSel.size?' on':'')+'" style="'+(calProdSel.size?CF_ON:'')+'" onclick="event.stopPropagation();calProdToggleOpen()">'+(calProdSel.size?('📦 สินค้า: '+calProdSel.size+' รายการ'):'📦 สินค้า: ทุกสินค้า')+' <span style="opacity:.75">▾</span></button>'+panel+'</div>';
+    // ตัวกรองที่เลือกอยู่ (กดกากบาทเพื่อเอาออก)
+    var chip=function(t,js){ return '<span class="cf-chip">'+t+'<i title="เอาออก" onclick="'+js+'">✕</i></span>'; };
+    var chips=[];
+    wSel.forEach(function(k){ chips.push(chip('ประเภท: '+e2((WORK_TYPE_MAP[k]||{t:k}).t), "toggleCalWork('"+k+"')")); });
+    oSel.forEach(function(n){ chips.push(chip('PIC: '+e2(n), "ccOwnerToggle('"+aj(n)+"')")); });
+    pSel.forEach(function(k){ chips.push(chip('เสา: '+e2((PILLARS[k]||{t:k}).t), "calPillarToggle('"+k+"')")); });
+    selArr.forEach(function(pr,i){ chips.push(chip('สินค้า: '+e2(pr), 'calProdRemoveAt('+i+')')); });
+    var chipRow=chips.length?('<div class="cf-chips">'+chips.join('')+'<button type="button" class="cf-clearall" onclick="calFiltersClearAll()">ล้างตัวกรองทั้งหมด</button></div>'):'';
     // legend สถานะ
     var lg='<div class="ccal-statuslegend">'+CAL_STATUS_ORDER.map(function(st){return '<span class="lg"><span class="dot" style="background:'+CAL_STATUS[st].c+'"></span>'+e2(CAL_STATUS[st].t)+'</span>';}).join('')+'</div>';
-    el.innerHTML=dm+rowType+rowOwner+rowPillar+rowProd+lg;
+    el.innerHTML='<div class="cf-bar">'+seg+ddWork+ddOwner+ddPillar+ddProd+pillExt+'</div>'+chipRow+lg;
     if(calProdOpen){ var si=document.getElementById('cf-prod-search'); if(si && document.activeElement!==si){ si.focus(); try{ si.setSelectionRange(si.value.length,si.value.length); }catch(e){} } }
   }
   function calRerenderView(){ var host=document.getElementById('ccal-host'); if(!host) return; if(calMode==='grid') renderCalGrid(host); else renderCalList(host); }
@@ -11270,7 +11288,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   window.ccOwnerClear=function(){ ccOwnerSel.clear(); if(typeof renderCalActive==='function') renderCalActive(); };
   window.calPillarToggle=function(k){ if(calPillarSel.has(k)) calPillarSel.delete(k); else calPillarSel.add(k); if(typeof renderCalActive==='function') renderCalActive(); };
   window.calPillarClear=function(){ calPillarSel.clear(); if(typeof renderCalActive==='function') renderCalActive(); };
-  window.calProdToggleOpen=function(){ calProdOpen=!calProdOpen; if(calProdOpen) calProdQuery=''; calLegend(); };
+  window.calProdToggleOpen=function(){ calProdOpen=!calProdOpen; cfDdOpen=''; if(calProdOpen) calProdQuery=''; calLegend(); renderPlPicBar(); };
   window.calProdSearch=function(v){ calProdQuery=v||''; var l=document.getElementById('cf-prod-list'); if(l) l.innerHTML=calProdListHtml(); };
   window.calProdPick=function(i){ var pr=calProdOpts[i]; if(pr==null) return; if(calProdSel.has(pr)) calProdSel.delete(pr); else calProdSel.add(pr);
     var l=document.getElementById('cf-prod-list'); var top=l?l.scrollTop:0;
@@ -11278,7 +11296,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var l2=document.getElementById('cf-prod-list'); if(l2) l2.scrollTop=top; };
   window.calProdRemoveAt=function(i){ var pr=Array.from(calProdSel)[i]; if(pr==null) return; calProdSel.delete(pr); if(typeof renderCalActive==='function') renderCalActive(); };
   window.calProdClear=function(){ calProdSel.clear(); if(typeof renderCalActive==='function') renderCalActive(); };
-  document.addEventListener('click',function(){ if(calProdOpen){ calProdOpen=false; calLegend(); } });   // คลิกนอกกล่อง = ปิดดรอปดาวน์สินค้า
+  document.addEventListener('click',function(){ if(calProdOpen||cfDdOpen){ calProdOpen=false; cfDdOpen=''; calLegend(); renderPlPicBar(); } });   // คลิกนอกกล่อง = ปิดดรอปดาวน์ทั้งหมด
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && (calProdOpen||cfDdOpen)){ calProdOpen=false; cfDdOpen=''; calLegend(); renderPlPicBar(); } });
   window.calSetDateMode=function(m){ calDateMode=m; if(typeof renderCalActive==='function') renderCalActive(); };
   // แปลงรายการเป็น "จุดที่ต้องพล็อตบนปฏิทิน" ตามโหมด: วันลงโพสต์ หรือ กำหนดส่ง (Final + Draft แต่ละรอบ)
   function calPlot(){ var out=[]; calVisibleItems().forEach(function(x){
@@ -11629,10 +11648,11 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var bar=document.getElementById('cc-pl-picbar'); if(!bar) return;
     var names=plOwnerNames(); ccOwnerSel.forEach(function(o){ if(names.indexOf(o)<0) ccOwnerSel.delete(o); });
     var base=(window.CONTENT_CAL||[]).filter(function(x){ return ciBrand==='all' || (x.brand||'other')===ciBrand; }); var tot=base.length;
-    bar.innerHTML='<span class="cf-lead">👤 ผู้รับมอบหมาย (PIC):</span>'+cfPill('👥 ทั้งทีม', !ccOwnerSel.size, 'ccOwnerClear()', {n:tot})
-      +names.map(function(n){ var c=base.filter(function(x){ return ccOwnersOf(x).indexOf(n)>=0; }).length; var col=cfColor(n);
-        return cfPill(e2(n), ccOwnerSel.has(n), "ccOwnerToggle('"+aj(n)+"')", {n:c, pct:(c&&tot)?Math.round(c/tot*100):0}); }).join('')
-      +(ccOwnerSel.size>1?'<span class="cf-hint">เลือกอยู่ '+ccOwnerSel.size+' คน</span>':'');
+    var oSel=Array.from(ccOwnerSel);
+    var dd=cfDd('plowner','👤 ผู้รับมอบหมาย (PIC): '+(oSel.length===0?'ทั้งทีม ('+tot+')':(oSel.length===1?e2(oSel[0]):(oSel.length+' คน'))), oSel.length,
+      names.map(function(n){ var c=base.filter(function(x){ return ccOwnersOf(x).indexOf(n)>=0; }).length; return cfOpt(ccOwnerSel.has(n), "ccOwnerToggle('"+aj(n)+"')", e2(n), c, null, (c&&tot)?Math.round(c/tot*100):0); }).join(''), 'ccOwnerClear()').replace('ตัวเลข = จำนวนงานของเดือนที่ดูอยู่','ตัวเลข = จำนวนการ์ดทั้งหมดของแต่ละคน');
+    bar.innerHTML=dd+oSel.map(function(n){ return '<span class="cf-chip">PIC: '+e2(n)+'<i title="เอาออก" onclick="ccOwnerToggle(\''+aj(n)+'\')">✕</i></span>'; }).join('')
+      +(oSel.length?'<button type="button" class="cf-clearall" onclick="ccOwnerClear()">ล้างตัวกรอง</button>':'');
   }
   window.renderPipeline=function(){
     var host=document.getElementById('cc-pl-host'); if(!host) return;
@@ -15343,6 +15363,36 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   #view-graphic .gfx-navitem{ flex-direction:row; gap:6px; padding:7px 12px; font-size:13px; }
   #view-graphic .gfx-who{ flex-direction:row; gap:6px; padding:0 6px; font-size:14px; }
 }
+/* หน้า Content: เมนูย่อยเป็นแถบไอคอนซ้าย · ส่วนหัวบรรทัดเดียว (ชื่อหน้า + มุมมองแบรนด์) · ซ่อนคำอธิบายเก่า */
+#view-content .cc-head h2{ font-size:19px; margin:0; }
+#view-content #cc-main-wrap .cc-head .section-sub{ display:none; }
+#view-content .cc-od-banner{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:6px 12px; margin-bottom:8px; }
+#view-content .cc-od-banner .cc-od-h{ margin:0; font-size:12.5px; white-space:nowrap; }
+#view-content #cc-main-wrap .cc-subnav .btn-sm .ic{ line-height:1; }
+@media (min-width:761px){
+  #view-content #cc-main-wrap{ display:grid; grid-template-columns:62px minmax(0,1fr) minmax(0,auto); grid-template-areas:"rail head brand" "rail main main"; column-gap:10px; row-gap:6px; align-items:start; }
+  #view-content #cc-main-wrap > .cc-head{ grid-area:head; margin:0; align-items:center !important; }
+  #view-content #cc-main-wrap > #cc-brand-bar{ grid-area:brand; margin:0; align-self:center; flex-wrap:wrap; justify-content:flex-end; max-width:100%; }
+  #view-content #cc-main-wrap > [id^="cc-sub-"]{ grid-area:main; min-width:0; }
+  #view-content #cc-main-wrap > .cc-subnav{ grid-area:rail; display:flex; flex-direction:column; gap:6px; margin:0; padding:0; width:62px; background:none; border:none; border-radius:0; box-shadow:none; position:sticky; top:calc(var(--hdr-h,80px) + 8px); }
+  #view-content #cc-main-wrap .cc-subnav .btn-sm{ display:flex; flex-direction:column; align-items:center; gap:2px; width:100%; padding:8px 2px; border-radius:12px; font-size:10.5px; font-weight:600; line-height:1.15; text-align:center; background:#fff; border:1px solid var(--line,#E7ECF5); color:var(--ink-soft,#6b7794); box-shadow:none; }
+  #view-content #cc-main-wrap .cc-subnav .btn-sm .ic{ font-size:19px; }
+  #view-content #cc-main-wrap .cc-subnav .btn-sm:hover{ background:var(--accent-pale,#FDEAF3); color:var(--accent-deep,#D14E88); }
+  #view-content #cc-main-wrap .cc-subnav .btn-sm.subnav-active{ background:linear-gradient(135deg,var(--accent,#F067A6),var(--accent-deep,#D14E88)); color:#fff; border-color:transparent; box-shadow:0 5px 14px -6px rgba(209,78,136,.6); }
+}
+@media (max-width:760px){ #view-content #cc-main-wrap .cc-subnav .btn-sm .ic{ margin-right:5px; } }
+/* ตัวกรองปฏิทิน Content: แถบเดียว + ดรอปดาวน์ (เลือกได้หลายอัน) */
+.cf-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 8px; }
+.cf-seg{ display:inline-flex; background:#E3EDF8; border-radius:999px; padding:3px; gap:2px; }
+.cf-seg button{ border:none; background:transparent; border-radius:999px; padding:5px 13px; font:600 12.5px 'Sarabun',sans-serif; color:var(--ink-soft,#6b7794); cursor:pointer; white-space:nowrap; }
+.cf-seg button.on{ background:#fff; color:#2F6DA8; box-shadow:0 1px 4px rgba(0,0,0,.14); }
+.cf-chips{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:0 0 8px; }
+.cf-clearall{ border:none; background:none; color:#C0392B; font:600 12px 'Sarabun',sans-serif; cursor:pointer; text-decoration:underline; padding:2px 6px; }
+.cf-dd-narrow{ width:300px; }
+.cf-dd-cap{ font-size:11px; color:var(--ink-soft,#6b7794); padding:0 8px 6px; }
+.cf-opt .cf-dot{ width:9px; height:9px; border-radius:50%; flex:0 0 9px; }
+#ccal-legend .cf-pill, #cc-pl-picbar .cf-pill{ padding:5px 12px; }
+@media (max-width:640px){ .cf-bar{ position:relative; } .cf-dd-narrow{ width:auto; } }
 /* หัวคอลัมน์: แถบสีฟ้า (ทุกบอร์ด) + ปุ่ม ⋮ */
 .cc-pl-colhead{ background:#3F6DB5; color:#fff; border-radius:13px 13px 0 0; margin:-9px -9px 4px; padding:10px 10px 10px 12px; }
 .cc-pl-colhead .cc-pl-colname{ color:#fff; }
