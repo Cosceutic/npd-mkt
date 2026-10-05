@@ -894,10 +894,10 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
     </div>
   </div>
   <nav id="nav">
+      <div class="tab" data-view="office">🏢 CIL Team</div>
       <div class="tab active" data-view="calendar">NPD &amp; MKT Calendar</div>
       <div class="tab" data-view="catalog">Product Info</div>
-      <div class="tab" data-view="team">NPD Process</div>
-      <div class="tab" data-view="office">🏢 ออฟฟิศ</div>
+      <div class="tab" data-view="team">NPD Team</div>
       <div class="tab" data-view="content">✨ Content Creator</div>
       <div class="tab" data-view="ecom">🛒 E-Commerce Content</div>
       <div class="tab" data-view="graphic">🎨 Graphic Team</div>
@@ -1051,7 +1051,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   <div class="view" id="view-team">
     <div id="team-lock" class="team-lock">
       <div class="team-lock-box">
-        <div class="team-lock-title">🔒 NPD Process</div>
+        <div class="team-lock-title">🔒 NPD Team</div>
         <p class="team-lock-sub" id="team-lock-msg">หน้านี้เป็นความลับ จำกัดเฉพาะทีม NPD — กรุณาเข้าสู่ระบบด้วยบัญชีที่มีสิทธิ์</p>
         <button class="btn-sm primary" style="width:100%; margin-top:10px; padding:9px;" onclick="teamLoginClick()">🔑 เข้าสู่ระบบ</button>
         <div id="team-lock-err" class="team-lock-err"></div>
@@ -1249,7 +1249,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
 
   <div class="view" id="view-workflow">
     <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
-      <button class="btn-sm ghost" onclick="backToProcessFromWorkflow()" style="padding:7px 14px;">← กลับ NPD Process</button>
+      <button class="btn-sm ghost" onclick="backToProcessFromWorkflow()" style="padding:7px 14px;">← กลับ NPD Team</button>
       <button class="btn-sm ghost" onclick="printWorkflow()" style="padding:7px 14px;">🖨️ พิมพ์ / บันทึก PDF</button>
     </div>
     <iframe id="wf-frame" title="NPD Work Flow" style="width:100%; border:none; display:block; min-height:80vh; border-radius:12px; background:#FAFAF7; box-shadow:0 1px 3px rgba(0,0,0,.06);"></iframe>
@@ -1370,9 +1370,11 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
   <div class="view" id="view-office">
     <div class="ofc-wrap">
       <div class="ofc-head">
-        <div class="ofc-logo"><img id="ofc-logo-img" alt="Godmami office"></div>
-        <div class="ofc-htxt"><h1>ออฟฟิศจำลอง</h1><p>แตะที่ทีมแต่ละคนเพื่อดูงานที่ค้าง · ตั้งสถานะของตัวเองได้ · ครบทั้ง 5 ห้องในหน้าเดียว 🐤</p></div>
+        <div class="ofc-logo"><img id="ofc-logo-img" alt="CIL Team"></div>
+        <div class="ofc-htxt"><h1>CIL Team</h1><p>Cosceutic Innovation Lab · ดูได้ทันทีว่าใครออนไลน์ ใครว่างคุย · แตะที่ชื่อเพื่อดูงานที่ค้างและตั้งสถานะ 🐤</p></div>
       </div>
+      <div id="cil-board" aria-live="polite"></div>
+      <div class="cil-roomshead"><h2>🏢 ห้องทำงานจำลอง</h2><p>สีวงรอบหน้า = ภาระงาน · จุดมุมซ้ายบนของป้ายชื่อ = สถานะการคุย · จุดเขียวมุมล่าง = ออนไลน์อยู่</p></div>
       <div class="ofc-legend">
         <div class="ofc-lg"><span class="ofc-dot ofc-d-free"></span>ว่าง</div>
         <div class="ofc-lg"><span class="ofc-dot ofc-d-busy"></span>กำลังทำงาน</div>
@@ -5689,7 +5691,7 @@ function closeTrackLog(){
 function teamLoginClick(){
   if(typeof sbLoggedIn==='function' && sbLoggedIn()){
     const err=document.getElementById('team-lock-err');
-    if(err) err.textContent='บัญชีนี้ ('+(typeof sbEmail==='function'?sbEmail():'')+') ไม่มีสิทธิ์เข้าหน้า NPD Process — ติดต่อแอดมิน';
+    if(err) err.textContent='บัญชีนี้ ('+(typeof sbEmail==='function'?sbEmail():'')+') ไม่มีสิทธิ์เข้าหน้า NPD Team — ติดต่อแอดมิน';
     return;
   }
   if(typeof sbShowLoginModal==='function') sbShowLoginModal();
@@ -5707,7 +5709,7 @@ function applyTeamLockState(unlocked){
   const msg=document.getElementById('team-lock-msg');
   if(msg && !unlocked){
     msg.textContent = (typeof sbLoggedIn==='function' && sbLoggedIn())
-      ? 'บัญชีนี้ไม่มีสิทธิ์เข้าหน้า NPD Process (ข้อมูลลับเฉพาะทีม) — ติดต่อแอดมินเพื่อขอสิทธิ์'
+      ? 'บัญชีนี้ไม่มีสิทธิ์เข้าหน้า NPD Team (ข้อมูลลับเฉพาะทีม) — ติดต่อแอดมินเพื่อขอสิทธิ์'
       : 'หน้านี้เป็นความลับ จำกัดเฉพาะทีม NPD — กรุณาเข้าสู่ระบบด้วยบัญชีที่มีสิทธิ์';
   }
   if(unlocked && typeof renderRoadmap==='function') renderRoadmap();
@@ -10556,8 +10558,9 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       {n:'มีน',  role:'NPD', av:'Office/av-meen.jpg', x:48,y:56, px:48,py:74},
       {n:'พีท',  role:'NPD', x:72,y:56, px:72,py:79}
     ]},
-    {key:'supply', label:'🚚 Supply Chain', bg:'Office/supply.jpg', ar:'1672 / 941', members:[
+    {key:'supply', label:'🚚 Supply Chain · Data Support', bg:'Office/supply.jpg', ar:'1672 / 941', members:[
       {n:'ข้าวหอม', role:'Data Support', av:'Office/av-khaohom.jpg', x:27,y:44, px:27,py:27},
+      {n:'Admin', role:'Data Support', x:49,y:60, px:49,py:77},
       {n:'ไอซ์SC', label:'ไอซ์ SC', role:'Supply Chain', av:'Office/av-ice.jpg',     x:71,y:45, px:71,py:28}
     ]},
     {key:'exec', label:'👔 Executive', bg:'Office/exec.jpg', ar:'1672 / 941', members:[
@@ -10679,6 +10682,17 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var host=document.getElementById('ofc-roomnav'); if(!host) return;
     host.innerHTML='<span class="ofc-nav-lb">ไปที่ห้อง:</span>'+OFC_ROOMS.map(function(r,i){ return '<button type="button" class="ofc-roombtn" onclick="setOfcRoom('+i+')">'+r.label+'</button>'; }).join('');
   }
+  /* ข้อมูลให้บอร์ดสถานะทีม (CIL Team) ใช้ */
+  window.ofcBoardData=function(){
+    return OFC_ROOMS.map(function(r){ return {key:r.key,label:r.label,members:(r.members||[]).map(function(person){
+      var gi=-1; for(var i=0;i<ofcState.length;i++){ if(ofcState[i].person===person){ gi=i; break; } }
+      var S=gi>=0?ofcState[gi]:null; var c=ofcCustom(person.n)||{};
+      return {n:person.n,label:person.label||person.n,role:person.role||'',face:person.av||OFC.faces[person.n]||'',idx:gi,tasks:S?S.tasks.length:0,key:S?S.key:'',c:c};
+    })}; });
+  };
+  window.ofcOpenByName=function(name){ for(var i=0;i<ofcState.length;i++){ if(ofcState[i].person.n===name){ openOfficePerson(i); return true; } } return false; };
+  window.ofcCustomPub=function(n){ return ofcCustom(n)||{}; };
+  window.ofcSaveStatusPub=function(n,e,m,a){ return ofcSaveStatus(n,e,m,a).then(function(ok){ try{ ofcReRender(); }catch(x){} return ok; }); };
   window.renderOffice=function(){
     var host=document.getElementById('ofc-rooms'); if(!host) return;
     var _ofcSy=(window.scrollY||document.documentElement.scrollTop||0); // จำตำแหน่งเลื่อนไว้ กันหน้าเด้งขึ้นบนตอน re-render (เช่น หลังบันทึกสถานะ)
@@ -10719,7 +10733,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
         pin.className='ofc-pin'; pin.tabIndex=0; pin.style.left=person.x+'%'; pin.style.top=person.y+'%';
         pin.innerHTML='<div class="ofc-ring"></div><div class="ofc-hot"></div>';
         var plate=document.createElement('button');
-        plate.type='button'; plate.className='ofc-plate '+key; plate.style.left=plateX+'%'; plate.style.top=person.py+'%';
+        plate.type='button'; plate.setAttribute('data-n',person.n); plate.className='ofc-plate '+key; plate.style.left=plateX+'%'; plate.style.top=person.py+'%';
         var cc = tasks.length ? '<span class="ofc-cc '+key+'">'+tasks.length+'</span>' : '<span class="ofc-free">ว่าง</span>';
         var side = plateX>70?'l':'r';
         var dispName=person.label||person.n;
@@ -10739,6 +10753,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       });
       addOfcDuck(stage);
     });
+    try{ if(typeof window.cilRender==='function') window.cilRender(); if(typeof window.cilDecorate==='function') window.cilDecorate(); }catch(e){}
     // คืนตำแหน่งเลื่อนเดิม (ความสูงห้องคำนวณจาก aspect-ratio ทันที ไม่ต้องรอรูปโหลด)
     try{ window.scrollTo(0,_ofcSy); requestAnimationFrame(function(){ window.scrollTo(0,_ofcSy); }); }catch(e){}
   };
@@ -10786,6 +10801,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   window.openOfficePerson=function(i){
     var S=ofcState[i]; if(!S) return;
     var p=S.person, st=S.st, tasks=S.tasks, key=S.key, c=ofcCustom(p.n);
+    c=Object.assign({},c,{avail:(window.cilFreshAvail?window.cilFreshAvail(c):c.avail)||''});   // สถานะการคุยของเมื่อวานไม่ถูกยกมา
     var body=document.getElementById('ofc-sheet-body'); if(!body) return;
     var dispName=p.label||p.n;
     var pFace=p.av||OFC.faces[p.n];
@@ -10803,9 +10819,9 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     if(unlocked){
       h+='<div class="ofc-edit"><div class="ofc-ed-h">🚦 สถานะการคุย <span>บอกเพื่อนว่าคุยได้ไหม</span></div>'
         +'<div class="ofc-avpick">'
-          +'<button type="button" class="ofc-avbtn av-green'+(c.avail==='green'?' on':'')+'" data-av="green"><span class="ofc-avdot ofc-av-green"></span> คุยได้สบาย</button>'
+          +'<button type="button" class="ofc-avbtn av-green'+(c.avail==='green'?' on':'')+'" data-av="green"><span class="ofc-avdot ofc-av-green"></span> ว่าง · คุยได้</button>'
           +'<button type="button" class="ofc-avbtn av-yellow'+(c.avail==='yellow'?' on':'')+'" data-av="yellow"><span class="ofc-avdot ofc-av-yellow"></span> พอคุยได้</button>'
-          +'<button type="button" class="ofc-avbtn av-red'+(c.avail==='red'?' on':'')+'" data-av="red"><span class="ofc-avdot ofc-av-red"></span> ไม่ว่างคุย</button>'
+          +'<button type="button" class="ofc-avbtn av-red'+(c.avail==='red'?' on':'')+'" data-av="red"><span class="ofc-avdot ofc-av-red"></span> ไม่ว่าง</button>'
         +'</div>'
         +'<div class="ofc-ed-h" style="margin-top:9px;">✏️ ตั้งสถานะ <span>ทุกคนในทีมเห็น</span></div>'
         +'<div class="ofc-emopick">'+EMOS.map(function(e){return '<button type="button" class="ofc-emobtn'+(e===curE?' on':'')+'" data-e="'+e+'">'+e+'</button>';}).join('')+'</div>'
@@ -12782,7 +12798,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var tagH=(t.tags||'').split(',').map(function(s){return s.trim();}).filter(Boolean).map(function(tg){ return '<span class="qt-tag" style="--tg:'+qtTagColor(tg)+'">'+e2(tg)+'</span>'; }).join('');
     var dueH=t.due?('<span class="qt-due'+(late?' late':'')+'">'+(late?'⏰ ':'📅 ')+e2(qtFmtDue(t))+'</span>'):'';
     var whoH=t.assignee?('<span class="qt-who">👤 '+e2(t.assignee)+'</span>'):'';
-    var prodH=t.product?('<span class="qt-prod" onclick="qtOpenProduct(\''+aj(t.product)+'\')" title="เปิดใน NPD Process">📦 '+e2(t.product)+'</span>'):'';
+    var prodH=t.product?('<span class="qt-prod" onclick="qtOpenProduct(\''+aj(t.product)+'\')" title="เปิดใน NPD Team">📦 '+e2(t.product)+'</span>'):'';
     var acts=canEdit()?('<div class="qt-acts"><button onclick="openQtEditor(\''+aj(t.id)+'\')" title="แก้ไข">✏️</button><button onclick="deleteQuickTask(\''+aj(t.id)+'\')" title="ลบ">🗑</button></div>'):'';
     return '<div class="qt-item'+(t.done?' done':'')+(late?' qt-late':'')+'">'+ck+'<div class="qt-body"><div class="qt-t">'+(t.priority?('<span class="qt-stars-s">'+stars(t.priority)+'</span> '):'')+e2(t.title)+'</div>'+((tagH||dueH||whoH||prodH)?'<div class="qt-meta">'+whoH+dueH+prodH+tagH+'</div>':'')+'</div>'+acts+'</div>';
   }
@@ -12804,7 +12820,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +'<div class="pe-field"><label>ความสำคัญ (1-3 ดาว)</label><div class="qt-stars" id="qt-f-stars"><span onclick="qtSetPriority(1)">★</span><span onclick="qtSetPriority(2)">★</span><span onclick="qtSetPriority(3)">★</span></div><input type="hidden" id="qt-f-priority" value="'+(x.priority||2)+'"></div>'
       +'<div class="pe-field"><label>กำหนดวัน</label><input type="date" id="qt-f-due" value="'+e2(x.due||'')+'"></div>'
       +'<div class="pe-field"><label>เวลา</label><input type="time" id="qt-f-duetime" value="'+e2(x.dueTime||'')+'"></div>'
-      +'<div class="pe-field full"><label>📦 สินค้า (เชื่อม NPD Process)</label><input type="text" id="qt-f-product" list="qt-dl-prod" value="'+e2(x.product||'')+'" placeholder="เลือก/พิมพ์ชื่อสินค้า (ถ้ามี)"><datalist id="qt-dl-prod">'+prodDl+'</datalist></div>'
+      +'<div class="pe-field full"><label>📦 สินค้า (เชื่อม NPD Team)</label><input type="text" id="qt-f-product" list="qt-dl-prod" value="'+e2(x.product||'')+'" placeholder="เลือก/พิมพ์ชื่อสินค้า (ถ้ามี)"><datalist id="qt-dl-prod">'+prodDl+'</datalist></div>'
       +'<div class="pe-field full"><label>🏷️ แท็ก (คั่นด้วย ,)</label><input type="text" id="qt-f-tags" value="'+e2(x.tags||'')+'" placeholder="เช่น ด่วน, ตัดต่อ"><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;">'+tagPick+'</div></div>'
       +'<div class="pe-field full"><label>โน้ต</label><textarea id="qt-f-note" placeholder="รายละเอียดเพิ่มเติม">'+e2(x.note||'')+'</textarea></div>'
       +'</div>'
@@ -15378,6 +15394,222 @@ details.fm-more[open]{padding-bottom:6px;}
   setTimeout(load,3500); setTimeout(load,10000);
   setInterval(function(){ load(); },45000);   // โพลต่อแม้แท็บอยู่เบื้องหลัง (เบราว์เซอร์จะหน่วงเหลือ ~1 ครั้ง/นาที) เพื่อให้แจ้งเตือนมุมจอทำงาน
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) load(); });
+})();
+</script>
+<style id="cil-board-css-2026-10-06">
+/* ===== CIL Team: บอร์ดสถานะทีม (ออนไลน์ / ว่าง · พอคุยได้ · ไม่ว่าง) ===== */
+#view-office #cil-board{ margin:0 2px 8px; }
+#view-office .cil-me{ display:flex; flex-wrap:wrap; align-items:center; gap:12px 20px; background:linear-gradient(135deg,#ffffff 0%,#f4f8ff 100%); border:1px solid var(--ofc-line); border-radius:20px; padding:15px 18px; box-shadow:0 14px 30px -22px rgba(80,100,150,.55); margin-bottom:16px; }
+#view-office .cil-me-who{ display:flex; align-items:center; gap:11px; min-width:0; }
+#view-office .cil-me-who b{ font-family:"Mitr",sans-serif; font-weight:500; font-size:15px; display:block; line-height:1.25; }
+#view-office .cil-me-who small{ color:var(--ofc-ink2); font-size:12.5px; }
+#view-office .cil-me-btns{ display:flex; flex-wrap:wrap; gap:8px; }
+#view-office .cil-avbtn{ display:inline-flex; align-items:center; gap:8px; padding:9px 15px; border-radius:14px; border:1.5px solid var(--ofc-line); background:#fff; font:600 14px "Sarabun",sans-serif; color:var(--ofc-ink); cursor:pointer; transition:background .15s,border-color .15s,box-shadow .15s; }
+#view-office .cil-avbtn:hover{ border-color:#c9d2e0; }
+#view-office .cil-avbtn i{ width:11px; height:11px; border-radius:50%; flex:0 0 11px; }
+#view-office .cil-avbtn.green i{ background:#2bc379; } #view-office .cil-avbtn.yellow i{ background:#f4b429; } #view-office .cil-avbtn.red i{ background:#ef4444; }
+#view-office .cil-avbtn.green.on{ background:#E7F8EF; border-color:#2FAE66; color:#16683F; box-shadow:0 0 0 3px rgba(47,174,102,.16); }
+#view-office .cil-avbtn.yellow.on{ background:#FFF6DC; border-color:#E0A41C; color:#8A5B00; box-shadow:0 0 0 3px rgba(224,164,28,.18); }
+#view-office .cil-avbtn.red.on{ background:#FDEBE9; border-color:#E0483A; color:#B3382C; box-shadow:0 0 0 3px rgba(224,72,58,.16); }
+#view-office .cil-msgrow{ display:flex; gap:8px; flex:1 1 260px; min-width:0; }
+#view-office .cil-msgrow input{ flex:1; min-width:0; border:1.5px solid var(--ofc-line); border-radius:12px; padding:9px 12px; font:400 14px "Sarabun",sans-serif; color:var(--ofc-ink); background:#fff; }
+#view-office .cil-msgrow input:focus{ outline:none; border-color:#9bb8e8; box-shadow:0 0 0 3px rgba(125,180,255,.22); }
+#view-office .cil-msgrow button{ border:none; border-radius:12px; padding:0 16px; background:var(--ofc-pinkd,#ec5f97); color:#fff; font:600 13.5px "Sarabun",sans-serif; cursor:pointer; }
+#view-office .cil-hint{ color:var(--ofc-ink2); font-size:13px; flex:1 1 240px; }
+#view-office .cil-hint button{ border:none; background:#EAF1F8; color:#2F6DA8; border-radius:999px; padding:5px 13px; font:600 13px "Sarabun",sans-serif; cursor:pointer; margin-left:6px; }
+#view-office .cil-filters{ display:flex; flex-wrap:wrap; gap:8px; margin:2px 0 4px; }
+#view-office .cil-chip{ display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:999px; border:1.5px solid var(--ofc-line); background:#fff; font:600 13.5px "Sarabun",sans-serif; color:var(--ofc-ink2); cursor:pointer; transition:background .15s,border-color .15s,color .15s; }
+#view-office .cil-chip b{ font-weight:700; color:var(--ofc-ink); }
+#view-office .cil-chip i{ width:10px; height:10px; border-radius:50%; background:#b7c0d1; }
+#view-office .cil-chip.k-online i,#view-office .cil-chip.k-green i{ background:#2bc379; } #view-office .cil-chip.k-yellow i{ background:#f4b429; } #view-office .cil-chip.k-red i{ background:#ef4444; }
+#view-office .cil-chip:hover{ border-color:#c9d2e0; }
+#view-office .cil-chip.on{ background:#37415a; border-color:#37415a; color:#fff; } #view-office .cil-chip.on b{ color:#fff; }
+#view-office .cil-conn{ color:var(--ofc-ink2); font-size:12.5px; margin:0 2px 2px; }
+#view-office .cil-group{ margin-top:18px; }
+#view-office .cil-ghead{ display:flex; align-items:baseline; gap:10px; margin:0 2px 10px; }
+#view-office .cil-ghead h3{ font-family:"Mitr",sans-serif; font-weight:500; font-size:16px; margin:0; color:var(--ofc-ink); }
+#view-office .cil-ghead small{ color:var(--ofc-ink2); font-size:13px; }
+#view-office .cil-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px; }
+#view-office .cil-card{ position:relative; display:grid; grid-template-columns:auto minmax(0,1fr); gap:6px 12px; align-items:center; text-align:left; width:100%; padding:14px 15px; border-radius:18px; border:1px solid var(--ofc-line); background:#fff; box-shadow:0 12px 26px -22px rgba(80,100,150,.6); cursor:pointer; font-family:"Sarabun",sans-serif; color:var(--ofc-ink); transition:transform .15s,box-shadow .15s,border-color .15s; }
+#view-office .cil-card:hover,#view-office .cil-card:focus-visible{ transform:translateY(-2px); box-shadow:0 16px 30px -20px rgba(80,100,150,.7); border-color:#cfd8ea; outline:none; }
+#view-office .cil-card.off{ background:#f8f9fc; box-shadow:none; }
+#view-office .cil-av{ position:relative; width:48px; height:48px; flex:0 0 48px; }
+#view-office .cil-av img,#view-office .cil-av .in{ width:48px; height:48px; border-radius:50%; object-fit:cover; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--ofc-pink),var(--ofc-pinkd)); color:#fff; font:600 18px "Mitr",sans-serif; }
+#view-office .cil-card.off .cil-av img,#view-office .cil-card.off .cil-av .in{ filter:grayscale(1); opacity:.62; }
+#view-office .cil-onl{ position:absolute; right:-1px; bottom:-1px; width:14px; height:14px; border-radius:50%; background:#2bc379; border:2.5px solid #fff; }
+#view-office .cil-card.off .cil-onl{ background:#b7c0d1; }
+#view-office .cil-nm{ min-width:0; }
+#view-office .cil-nm b{ display:block; font-family:"Mitr",sans-serif; font-weight:500; font-size:15.5px; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#view-office .cil-nm small{ color:var(--ofc-ink2); font-size:12.5px; }
+#view-office .cil-pill{ grid-column:1/-1; display:inline-flex; align-items:center; gap:7px; width:max-content; max-width:100%; padding:4px 12px; border-radius:999px; font-size:13px; font-weight:700; line-height:1.3; }
+#view-office .cil-pill i{ width:9px; height:9px; border-radius:50%; flex:0 0 9px; background:currentColor; }
+#view-office .cil-pill.green{ background:#E4F6EC; color:#16683F; } #view-office .cil-pill.yellow{ background:#FFF3D3; color:#8A5B00; } #view-office .cil-pill.red{ background:#FDE7E4; color:#B3382C; }
+#view-office .cil-pill.neutral{ background:#EAF1F8; color:#2F6DA8; } #view-office .cil-pill.offl{ background:#EEF1F6; color:#5E6A85; }
+#view-office .cil-msg{ grid-column:1/-1; font-size:13.5px; color:var(--ofc-ink); line-height:1.45; overflow-wrap:anywhere; }
+#view-office .cil-load{ grid-column:1/-1; font-size:12.5px; color:var(--ofc-ink2); }
+#view-office .cil-load.urgent{ color:#B3382C; font-weight:600; } #view-office .cil-load.busy{ color:#8A5B00; font-weight:600; }
+#view-office .cil-empty{ padding:22px; text-align:center; color:var(--ofc-ink2); background:#fff; border:1px dashed var(--ofc-line); border-radius:16px; }
+#view-office .cil-roomshead{ margin:26px 2px 12px; padding-top:18px; border-top:1px solid var(--ofc-line); }
+#view-office .cil-roomshead h2{ font-family:"Mitr",sans-serif; font-weight:500; font-size:17px; margin:0; }
+#view-office .cil-roomshead p{ margin:3px 0 0; color:var(--ofc-ink2); font-size:13px; }
+/* ป้ายชื่อในห้องจำลอง: จุดออนไลน์ + คนออฟไลน์จางลง */
+#view-office .ofc-plate .ofc-onl{ position:absolute; left:calc(-4px*var(--sc,1)); bottom:calc(-3px*var(--sc,1)); width:calc(12px*var(--sc,1)); height:calc(12px*var(--sc,1)); border-radius:50%; background:#2bc379; border:2px solid #fff; z-index:2; }
+#view-office .ofc-plate.cil-off .ofc-pav{ filter:grayscale(.85); opacity:.72; }
+@media (max-width:560px){ #view-office .cil-grid{ grid-template-columns:1fr 1fr; gap:9px; } #view-office .cil-card{ padding:12px; } #view-office .cil-avbtn{ padding:8px 12px; font-size:13.5px; } }
+@media (max-width:380px){ #view-office .cil-grid{ grid-template-columns:1fr; } }
+</style>
+<script id="cil-presence-2026-10-06">
+/* CIL Team: ใครออนไลน์ (Supabase Realtime Presence) + สถานะการคุย (ว่าง · พอคุยได้ · ไม่ว่าง)
+   • ออนไลน์ = ล็อกอินและเปิดเว็บนี้อยู่ (ปิดแท็บ/ปิดเครื่อง = ออฟไลน์ภายในไม่กี่วินาที) · ไม่มีการเก็บประวัติเข้า-ออก
+   • สถานะการคุยของแต่ละคนเก็บในตาราง office (ช่อง avail = green/yellow/red) เหมือนเดิม และส่งผ่าน presence ให้เห็นทันที */
+(function(){
+  var TOPIC='npd-presence'; try{ TOPIC=localStorage.getItem('cil_topic_test')||TOPIC; }catch(e){}
+  var AVT={green:'ว่าง · คุยได้', yellow:'พอคุยได้', red:'ไม่ว่าง'}, AVO={green:0,yellow:1,'':2,red:3};
+  var pres={ready:false, byName:{}, others:0}, chan=null, tracked='', filter='all', started=false, lastSb=null;
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function myEmail(){ try{ return (typeof sbLoggedIn==='function' && sbLoggedIn())?(sbEmail()||''):''; }catch(e){ return ''; } }
+  function nickOf(em){ var m=window.QT_EMAIL_MAP_PUB||{}; return m[String(em||'').toLowerCase()]||''; }
+  function emailOfName(n){ var m=window.QT_EMAIL_MAP_PUB||{}; for(var e in m){ if(m[e]===n) return e; } return ''; }
+  function myNick(){ return nickOf(myEmail()); }
+  function stored(n){ try{ return (window.ofcCustomPub&&window.ofcCustomPub(n))||{}; }catch(e){ return {}; } }
+  function todayKey(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  // สถานะการคุยมีผลเฉพาะวันที่ตั้ง (ข้ามวัน = ล้างอัตโนมัติ กันค้าง “ไม่ว่าง” จากเมื่อวาน)
+  function freshAvail(c){ c=c||{}; if(!c.avail) return ''; var u=c.updatedAt, k=''; if(typeof u==='number'){ var d=new Date(u); k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); } else k=String(u||'').slice(0,10); return k===todayKey()?c.avail:''; }
+  function payload(){ var e=myEmail(), n=nickOf(e); return {email:e, name:n, avail:n?freshAvail(stored(n)):'', vis:!document.hidden, at:Date.now()}; }
+  function readState(){
+    var st={}; try{ st=chan.presenceState(); }catch(e){}
+    var by={}, others=0;
+    Object.keys(st).forEach(function(k){
+      var metas=st[k]||[]; if(!metas.length) return;
+      var m=metas.slice().sort(function(a,b){ return (a.at||0)-(b.at||0); }).pop();
+      if(!m.email) return;                         // คนที่ยังไม่ล็อกอินไม่แสดง
+      if(!m.name){ others++; return; }             // บัญชีที่ยังไม่ผูกชื่อเล่น
+      var vis=metas.some(function(x){ return x.vis!==false; });
+      var cur=by[m.name]; if(!cur || (m.at||0)>(cur.at||0)) by[m.name]={online:true, avail:m.avail||'', vis:vis, at:m.at||0};
+    });
+    pres.byName=by; pres.others=others;
+  }
+  function officeActive(){ var v=document.getElementById('view-office'); return !!(v && v.classList.contains('active')); }
+  function changed(){ if(officeActive()){ try{ render(); decorate(); }catch(e){} } }
+  function sync(force){
+    if(!chan || !pres.ready) return;
+    var p=payload(), sig=p.email+'|'+p.avail+'|'+p.vis;
+    if(!force && sig===tracked) return; tracked=sig;
+    try{ if(!p.email) chan.untrack(); else chan.track(p); }catch(e){}
+  }
+  async function start(){
+    try{
+      await sbInit(); if(typeof SB_CLIENT==='undefined' || !SB_CLIENT || typeof SB_CLIENT.channel!=='function') return;
+      lastSb=SB_CLIENT; pres.ready=false; tracked='';
+      var key=myEmail()||('v-'+Math.random().toString(36).slice(2,9));
+      chan=SB_CLIENT.channel(TOPIC,{config:{presence:{key:key}}});
+      chan.on('presence',{event:'sync'},function(){ readState(); changed(); });
+      chan.subscribe(function(s){ if(s==='SUBSCRIBED'){ pres.ready=true; sync(true); changed(); } else if(s==='CHANNEL_ERROR'||s==='TIMED_OUT'){ pres.ready=false; changed(); } });
+    }catch(e){}
+  }
+  function ensure(){ try{ if(!started) return; if(typeof SB_CLIENT==='undefined' || !SB_CLIENT) return; var ok=SB_CLIENT.getChannels().some(function(c){ return c.topic==='realtime:'+TOPIC; }); if(!ok || lastSb!==SB_CLIENT) start(); else sync(false); }catch(e){} }
+  window.cilPres={ get:function(n){ return pres.byName[n]||null; }, isReady:function(){ return pres.ready; }, topic:TOPIC, debug:function(){ return {ready:pres.ready, names:Object.keys(pres.byName), others:pres.others}; } };
+  window.cilIsOnline=function(n){ return !!pres.byName[n]; };
+
+  /* ---------- บอร์ดสถานะทีม ---------- */
+  function cardState(m){
+    var pr=pres.byName[m.n]||null, c=m.c||{};
+    var online=!!pr, avail=online?(pr.avail||freshAvail(c)):'';
+    return {online:online, away:online && pr.vis===false, avail:avail};
+  }
+  function render(){
+    var host=document.getElementById('cil-board'); if(!host) return;
+    var rooms=(typeof window.ofcBoardData==='function')?window.ofcBoardData():[]; if(!rooms.length){ host.innerHTML=''; return; }
+    var all=[]; rooms.forEach(function(r){ r.members.forEach(function(m){ m.st=cardState(m); m.room=r; all.push(m); }); });
+    var cnt={all:all.length, online:0, green:0, yellow:0, red:0, offline:0};
+    all.forEach(function(m){ if(m.st.online){ cnt.online++; if(m.st.avail==='green') cnt.green++; else if(m.st.avail==='yellow') cnt.yellow++; else if(m.st.avail==='red') cnt.red++; } else cnt.offline++; });
+    function pass(m){ if(filter==='all') return true; if(filter==='online') return m.st.online; if(filter==='offline') return !m.st.online; return m.st.online && m.st.avail===filter; }
+    // ----- ของฉัน -----
+    var em=myEmail(), me=nickOf(em), mine=null; all.forEach(function(m){ if(m.n===me) mine=m; });
+    var meHtml;
+    if(!em){
+      meHtml='<div class="cil-me"><div class="cil-hint">👋 เข้าสู่ระบบเพื่อให้ทีมเห็นว่าคุณ <b>ออนไลน์</b> และตั้งสถานะ ว่าง · พอคุยได้ · ไม่ว่าง ได้ <button type="button" onclick="sbShowLoginModal()">🔑 เข้าสู่ระบบ</button></div></div>';
+    } else if(!mine){
+      meHtml='<div class="cil-me"><div class="cil-hint">บัญชี <b>'+esc(em)+'</b> ยังไม่ผูกกับชื่อในทีม จึงยังไม่แสดงในบอร์ดนี้ — แจ้งแอดมินให้ผูกชื่อเล่นกับอีเมลนี้</div></div>';
+    } else {
+      var cur=mine.st.avail||freshAvail(mine.c)||'', c=mine.c||{};
+      var av=mine.face?'<img src="'+esc(mine.face)+'" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover">':'<span class="in" style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ff9ec2,#ec5f97);color:#fff;font:600 17px Mitr">'+esc(mine.label.slice(0,1))+'</span>';
+      meHtml='<div class="cil-me"><div class="cil-me-who">'+av+'<div><b>สถานะของฉัน · '+esc(mine.label)+'</b><small>เพื่อนร่วมทีมเห็นทันที</small></div></div>'
+        +'<div class="cil-me-btns" role="group" aria-label="สถานะการคุยของฉัน">'
+        +['green','yellow','red'].map(function(k){ return '<button type="button" class="cil-avbtn '+k+(cur===k?' on':'')+'" aria-pressed="'+(cur===k?'true':'false')+'" onclick="cilSetMy(\''+k+'\')"><i></i>'+AVT[k]+'</button>'; }).join('')
+        +'</div>'
+        +'<div class="cil-msgrow"><input id="cil-my-msg" maxlength="40" placeholder="ข้อความสั้นๆ เช่น ไปประชุม 14:00 / กำลังลุยงาน" value="'+esc(c.message||'')+'" onkeydown="if(event.key===\'Enter\')cilSaveMsg()"><button type="button" onclick="cilSaveMsg()">บันทึก</button></div></div>';
+    }
+    // ----- ตัวกรอง -----
+    function chip(k,label,n,cls){ return '<button type="button" class="cil-chip '+(cls||'')+(filter===k?' on':'')+'" aria-pressed="'+(filter===k?'true':'false')+'" onclick="cilFilter(\''+k+'\')">'+(cls?'<i></i>':'')+label+' <b>'+n+'</b></button>'; }
+    var filt='<div class="cil-filters" role="group" aria-label="กรองตามสถานะ">'+chip('all','ทั้งหมด',cnt.all,'')+chip('online','ออนไลน์',cnt.online,'k-online')+chip('green','ว่าง · คุยได้',cnt.green,'k-green')+chip('yellow','พอคุยได้',cnt.yellow,'k-yellow')+chip('red','ไม่ว่าง',cnt.red,'k-red')+chip('offline','ออฟไลน์',cnt.offline,'')+'</div>';
+    var conn=pres.ready?(cnt.online||pres.others?'':''):'<div class="cil-conn">กำลังเชื่อมต่อสถานะออนไลน์…</div>';
+    if(pres.ready && pres.others) conn='<div class="cil-conn">ยังมีอีก '+pres.others+' บัญชีที่ออนไลน์อยู่ (ยังไม่ผูกชื่อกับทีม)</div>';
+    // ----- กลุ่มทีม -----
+    var groups=rooms.map(function(r){
+      var list=r.members.filter(pass).sort(function(a,b){
+        if(a.st.online!==b.st.online) return a.st.online?-1:1;
+        var d=(AVO[a.st.avail]-AVO[b.st.avail]); return d!==0?d:r.members.indexOf(a)-r.members.indexOf(b);
+      });
+      if(!list.length) return '';
+      var on=r.members.filter(function(m){ return m.st.online; }).length;
+      return '<section class="cil-group"><div class="cil-ghead"><h3>'+esc(r.label)+'</h3><small>ออนไลน์ '+on+'/'+r.members.length+'</small></div><div class="cil-grid">'+list.map(card).join('')+'</div></section>';
+    }).join('');
+    host.innerHTML=meHtml+filt+conn+(groups||'<div class="cil-empty">ไม่มีใครตรงกับตัวกรองนี้ตอนนี้</div>');
+  }
+  function card(m){
+    var st=m.st, c=m.c||{}, pill;
+    if(st.online){
+      pill=st.avail?'<span class="cil-pill '+st.avail+'"><i></i>'+AVT[st.avail]+(st.away?' · พักจอ':'')+'</span>':'<span class="cil-pill neutral"><i></i>ออนไลน์'+(st.away?' · พักจอ':'')+'</span>';
+    } else {
+      pill='<span class="cil-pill offl"><i></i>ออฟไลน์'+(emailOfName(m.n)?'':' · ยังไม่มีบัญชี')+'</span>';
+    }
+    var msg=(c.message||'')?'<div class="cil-msg">'+esc((c.emoji||'💬')+' '+c.message)+'</div>':'';
+    var load=m.tasks?'<div class="cil-load '+(m.key==='urgent'?'urgent':(m.key==='busy'?'busy':''))+'">งานค้าง '+m.tasks+' งาน'+(m.key==='urgent'?' · มีงานด่วน':'')+'</div>':'';
+    var av=m.face?'<img src="'+esc(m.face)+'" alt="">':'<span class="in">'+esc(m.label.slice(0,1))+'</span>';
+    return '<button type="button" class="cil-card'+(st.online?'':' off')+'" onclick="cilOpen(\''+String(m.n).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" aria-label="'+esc(m.label)+' '+(st.online?(st.avail?AVT[st.avail]:'ออนไลน์'):'ออฟไลน์')+'">'
+      +'<span class="cil-av">'+av+'<i class="cil-onl"></i></span>'
+      +'<span class="cil-nm"><b>'+esc(m.label)+'</b><small>'+esc(m.role||'')+'</small></span>'
+      +pill+msg+load+'</button>';
+  }
+  /* ป้ายชื่อในห้องจำลอง: จุดออนไลน์ + จุดสถานะการคุย (อัปเดตได้ทันทีโดยไม่ต้องวาดห้องใหม่) */
+  function decorate(){
+    var plates=document.querySelectorAll('#ofc-rooms .ofc-plate[data-n]'); if(!plates.length) return;
+    [].forEach.call(plates,function(pl){
+      var n=pl.getAttribute('data-n'), pr=pres.byName[n]||null, c=stored(n);
+      var avail=pres.ready?(pr?(pr.avail||freshAvail(c)):''):freshAvail(c);
+      pl.classList.toggle('cil-off', pres.ready && !pr);
+      var onl=pl.querySelector('.ofc-onl'); if(pr && !onl){ onl=document.createElement('i'); onl.className='ofc-onl'; onl.title='ออนไลน์'; pl.appendChild(onl); } else if(!pr && onl){ onl.remove(); }
+      var dot=pl.querySelector('.ofc-avdot');
+      if(avail==='green'||avail==='yellow'||avail==='red'){ if(!dot){ dot=document.createElement('span'); dot.title='สถานะการคุย'; pl.appendChild(dot); } dot.className='ofc-avdot ofc-av-'+avail; }
+      else if(dot){ dot.remove(); }
+    });
+  }
+  window.cilRender=render; window.cilDecorate=decorate;
+  window.cilFreshAvail=freshAvail;
+  window.cilFilter=function(k){ filter=k; render(); };
+  window.cilOpen=function(n){ if(window.ofcOpenByName && window.ofcOpenByName(n)) return; if(typeof toast==='function') toast('ยังไม่มีป้ายของคนนี้ในห้องจำลอง','info'); };
+  window.cilSetMy=async function(k){
+    var n=myNick(); if(!n||!window.ofcSaveStatusPub) return; var c=stored(n);
+    var next=(freshAvail(c)===k)?'':k;
+    await window.ofcSaveStatusPub(n,c.emoji||'',c.message||'',next);
+    sync(true); render(); decorate();
+    if(typeof toast==='function') toast(next?('ตั้งสถานะเป็น “'+AVT[next]+'” แล้ว'):'ล้างสถานะการคุยแล้ว','ok');
+  };
+  window.cilSaveMsg=async function(){
+    var n=myNick(); if(!n||!window.ofcSaveStatusPub) return; var c=stored(n); var el=document.getElementById('cil-my-msg'); var v=el?String(el.value).trim():'';
+    await window.ofcSaveStatusPub(n,c.emoji||'',v,freshAvail(c));
+    render(); if(typeof toast==='function') toast('บันทึกข้อความแล้ว','ok');
+  };
+
+  // เริ่มทำงาน
+  started=true;
+  sbInit().then(function(){ setTimeout(start,1500); }).catch(function(){});
+  setInterval(ensure,5000);
+  document.addEventListener('visibilitychange',function(){ sync(false); });
+  window.addEventListener('beforeunload',function(){ try{ if(chan) chan.untrack(); }catch(e){} });
+  // หน้าแรกของเว็บ = CIL Team
+  setTimeout(function(){ var t=document.querySelector('#nav .tab[data-view="office"]'); var cur=document.querySelector('#nav .tab.active'); if(t && cur && cur.getAttribute('data-view')==='calendar' && !(location.hash&&location.hash.length>1)) t.click(); },0);
 })();
 </script>
 <script id="live-sync-2026-10-06">
