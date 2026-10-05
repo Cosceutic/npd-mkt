@@ -2590,15 +2590,40 @@ window.canEditArea = canEditArea; window.canViewNpdProcess = canViewNpdProcess;
 async function sbLogin(email,password){ await sbInit(); const { data, error } = await SB_CLIENT.auth.signInWithPassword({ email, password }); if(error) throw error; SB_SESSION=data.session; return data.session; }
 async function sbLogout(){ try{ if(SB_CLIENT) await SB_CLIENT.auth.signOut(); }catch(e){} SB_SESSION=null; sbRenderAuthBtn(); }
 function sbRenderAuthBtn(){
+  /* ปุ่มบัญชีอยู่ในแถบบนข้างปุ่มกระดิ่ง: กดแล้วมีเมนูเข้าสู่ระบบ / ออกจากระบบ (เดิมเป็นแถบลอยมุมขวาล่างที่บังหน้าจอ) */
   let b=document.getElementById('sb-auth-btn');
-  if(!b){ b=document.createElement('button'); b.id='sb-auth-btn'; b.onclick=sbAuthClick;
-    b.style.cssText='position:fixed;right:16px;bottom:16px;z-index:99999;padding:8px 14px;border-radius:999px;border:none;background:#b0356a;color:#fff;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer;';
-    document.body.appendChild(b); }
-  const email = SB_SESSION && SB_SESSION.user && SB_SESSION.user.email;
-  b.textContent = sbLoggedIn() ? ('✏️ แก้ไขได้: '+(email||'ล็อกอิน')+' · ออกจากระบบ') : '👁 โหมดดูอย่างเดียว — แตะเพื่อเข้าสู่ระบบแก้ไข';
-  b.style.background = sbLoggedIn() ? '#127a4a' : '#b0356a';
+  const host=document.querySelector('header .header-right');
+  if(!b){ b=document.createElement('button'); b.id='sb-auth-btn'; b.type='button'; b.className='sb-auth-hdr'; b.setAttribute('aria-haspopup','menu'); b.onclick=sbAuthClick;
+    if(host){ const bell=document.getElementById('nt-bell'); if(bell && bell.parentNode===host && bell.nextSibling) host.insertBefore(b,bell.nextSibling); else host.appendChild(b); }
+    else { b.classList.add('floating'); document.body.appendChild(b); } }
+  const email = (SB_SESSION && SB_SESSION.user && SB_SESSION.user.email) || '';
+  const on = sbLoggedIn();
+  const nick = on ? (((window.QT_EMAIL_MAP_PUB||{})[String(email).toLowerCase()]) || String(email).split('@')[0] || 'ล็อกอินแล้ว') : '';
+  b.classList.toggle('on', on);
+  b.title = on ? ('ล็อกอินอยู่: '+email+' — กดเพื่อดูเมนู') : 'โหมดดูอย่างเดียว — กดเพื่อเข้าสู่ระบบ';
+  b.innerHTML = on ? ('<span class="dot"></span><span class="nm">'+String(nick).replace(/[&<>"]/g,'')+'</span>') : '<span class="ic">🔑</span><span class="nm">เข้าสู่ระบบ</span>';
+  const m=document.getElementById('sb-auth-menu'); if(m) m.remove();
 }
-function sbAuthClick(){ if(sbLoggedIn()){ if(confirm('ออกจากระบบ?')) sbLogout(); return; } sbShowLoginModal(); }
+function sbCloseAuthMenu(){ const m=document.getElementById('sb-auth-menu'); if(m) m.remove(); const b=document.getElementById('sb-auth-btn'); if(b) b.setAttribute('aria-expanded','false'); }
+function sbAuthClick(ev){
+  if(ev && ev.stopPropagation) ev.stopPropagation();
+  const old=document.getElementById('sb-auth-menu'); if(old){ sbCloseAuthMenu(); return; }
+  const b=document.getElementById('sb-auth-btn'); if(!b) { if(!sbLoggedIn()) sbShowLoginModal(); return; }
+  const on=sbLoggedIn(); const email=(SB_SESSION && SB_SESSION.user && SB_SESSION.user.email)||'';
+  const nick=on?(((window.QT_EMAIL_MAP_PUB||{})[String(email).toLowerCase()])||''):'';
+  const m=document.createElement('div'); m.id='sb-auth-menu'; m.setAttribute('role','menu');
+  const esc=t=>String(t||'').replace(/[&<>"]/g,'');
+  m.innerHTML = on
+    ? ('<div class="who"><b>'+esc(nick||email)+'</b><small>'+esc(email)+'</small><small class="ok">✏️ แก้ไขได้ตามสิทธิ์ของบัญชีนี้</small></div><button type="button" role="menuitem" class="out" onclick="sbCloseAuthMenu();sbLogout()">↪ ออกจากระบบ</button>')
+    : ('<div class="who"><b>โหมดดูอย่างเดียว</b><small>เข้าสู่ระบบเพื่อเพิ่ม/แก้/ลบ ข้อมูล</small></div><button type="button" role="menuitem" class="in" onclick="sbCloseAuthMenu();sbShowLoginModal()">🔑 เข้าสู่ระบบ</button>');
+  document.body.appendChild(m);
+  const r=b.getBoundingClientRect(); const w=m.offsetWidth;
+  m.style.top=(r.bottom+8)+'px'; m.style.left=Math.max(8,Math.min(r.right-w, window.innerWidth-w-8))+'px';
+  b.setAttribute('aria-expanded','true');
+}
+document.addEventListener('click',function(e){ const m=document.getElementById('sb-auth-menu'); if(m && !m.contains(e.target)) sbCloseAuthMenu(); });
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') sbCloseAuthMenu(); });
+window.addEventListener('resize',function(){ sbCloseAuthMenu(); });
 function sbShowLoginModal(){
   if(document.getElementById('sb-login-ov')) return;
   const ov=document.createElement('div'); ov.id='sb-login-ov';
@@ -11140,6 +11165,11 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function extendBadge(x){ return (x.extendCount>0)?'<span class="cc-ext-badge" title="ขยายเวลาส่ง">⏱️ ขยาย '+x.extendCount+'</span>':''; }
   function logStamp(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
   function appendLog(cur, line){ cur=(cur||'').trim(); return cur ? (cur+'\n'+logStamp()+' · '+line) : (logStamp()+' · '+line); }
+  // ประวัติการย้ายสถานะ (ใคร/เมื่อไหร่) + ถามยืนยันก่อนย้ายเป็น “โพสต์แล้ว”
+  function ccActorName(){ var em=(typeof sbEmail==='function')?sbEmail():''; var m=window.QT_EMAIL_MAP_PUB||{}; return m[em]||em||'ไม่ทราบชื่อ'; }
+  function ccStatusLabel(k){ var st=CAL_STATUS[k]; return st?st.t:String(k||''); }
+  function ccMoveLogLine(from,to){ return 'ย้ายสถานะ '+ccStatusLabel(from)+' → '+ccStatusLabel(to)+' โดย '+ccActorName(); }
+  function ccConfirmPosted(title){ return window.confirm('ยืนยันย้าย “'+String(title||'การ์ดนี้')+'” ไปเป็น 🚀 โพสต์แล้ว ?\n\nกดตกลงเมื่อลงโพสต์จริงแล้วเท่านั้น\n(ระบบจะบันทึกชื่อและเวลาของคนที่กดไว้ในประวัติงาน)'); }
   function overdueList(){ return calItems().filter(function(x){ return dueState(x)==='overdue'; }).sort(function(a,b){return (a.due||'').localeCompare(b.due||'');}); }
   function overdueBannerHtml(){ var od=overdueList(); if(!od.length) return '';
     var chips=od.slice(0,15).map(function(x){ var diff=Math.abs(dueDiff(x)); var st=CAL_STATUS[x.status]||CAL_STATUS.brief;
@@ -11192,6 +11222,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function ecomBriefListRow(x){ var stt=CAL_STATUS[x.status]||CAL_STATUS.brief; var meta=[]; if(x.time) meta.push('🕐 '+e2(x.time)); if(x.brand) meta.push('🏷️ '+e2(bLbl(x.brand))); meta.push('👤 ผู้มอบหมาย '+e2(x.owner||'ไม่ระบุ')); meta.push('🎨 ทำโดย '+e2(x._person)); meta.push('📍 ตอนนี้: '+e2(x._colTitle||'-')+(x._done?' ✅':''));
     return '<div class="ccal-post"'+(x._done?' style="opacity:.7"':'')+'><span class="ccal-post-s" style="--s:'+stt.c+'">'+stt.t+'</span><div class="ccal-post-main"><div class="ccal-post-title" style="cursor:pointer;" onclick="openCardModal(\''+aj(x.id)+'\')">'+e2(x.title)+'</div><div class="ccal-post-meta"><span class="cc-wt" style="--wt:'+calExtColor(x)+'">🛒 E-com</span> '+meta.join(' · ')+'</div></div></div>'; }
   window.calToggleEcomB=function(){ calShowEcomB=!calShowEcomB; if(typeof renderCalActive==='function') renderCalActive(); };
+  window.calEcomOnly=function(){ calShowEcomB=true; if(calWorkFilter.size===1 && calWorkFilter.has('ecom')) calWorkFilter.clear(); else { calWorkFilter.clear(); calWorkFilter.add('ecom'); } if(typeof renderCalActive==='function') renderCalActive(); };
   function calInMonth(x){ var m=calY+'-'+String(calM+1).padStart(2,'0'); if(x._ecomBrief) return String(x.date||'').slice(0,7)===m;
     if(calDateMode==='post') return String(x.date||'').slice(0,7)===m;
     if(String(x.due||'').slice(0,7)===m) return true;
@@ -11242,13 +11273,12 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var seg='<span class="cf-seg" role="group" aria-label="มุมมองปฏิทิน">'
       +'<button type="button" class="'+(calDateMode==='post'?'on':'')+'" title="ดูว่าวันไหนต้องลงโพสต์อะไร" onclick="calSetDateMode(\'post\')">📮 วันลงโพสต์</button>'
       +'<button type="button" class="'+(calDateMode==='due'?'on':'')+'" title="ดูว่าวันไหนต้องส่งงานอะไร (🎯 Final · 📝 draft) — การ์ดที่ไม่มีวันส่งจะไม่ขึ้น" onclick="calSetDateMode(\'due\')">🎯 กำหนดส่งงาน</button></span>';
-    // งานจากบอร์ดกราฟฟิก (คอลัมน์ Brief AW E-commerce)
-    var extAll=calExtRaw().filter(function(c){ return c.submitDate; }); var extMonth=extAll.map(calExtVirt).filter(calInMonth).length;
-    var pillExt=cfPill('🛒 งาน E-commerce', calShowEcomB, 'calToggleEcomB()', {color:'#26A69A', onBg:'#26A69A', n:extMonth}).replace('<button type="button"','<button type="button" title="การ์ดกราฟฟิกที่สร้าง/ย้ายมาจากคอลัมน์ Brief AW E-commerce (ติดตัวแม้ย้ายคอลัมน์หรือเสร็จแล้ว) · สีตามประเภทงาน · ดูผู้มอบหมายจากชื่อ 👤 หรือตัวกรองผู้รับมอบหมาย"');
     // ประเภทงาน
     var wBase=monthCtx('work'), wCnt={}; wBase.forEach(function(x){ var k=workTypeOf(x); wCnt[k]=(wCnt[k]||0)+1; });
     var wExt=calExtItems('work').filter(calInMonth); wCnt.ecom=(wCnt.ecom||0)+wExt.length;   // การ์ดจากบอร์ดกราฟฟิก (Brief AW E-commerce) นับเป็นประเภท E-com
     var wSel=Array.from(calWorkFilter);
+    var ecomOnly=(wSel.length===1 && wSel[0]==='ecom');   // ปุ่มลัด: ดูเฉพาะงาน E-com (การ์ด Content ประเภท E-com + การ์ดกราฟฟิกจากคอลัมน์ Brief AW E-commerce)
+    var pillExt='<button type="button" class="cf-pill'+(ecomOnly?' on':'')+'" style="'+(ecomOnly?CF_ON:'')+'" title="กดเพื่อดูเฉพาะงาน E-com (รวมการ์ดกราฟฟิกจากคอลัมน์ Brief AW E-commerce) · กดอีกครั้งเพื่อกลับไปดูทั้งหมด" onclick="calEcomOnly()">🛒 เฉพาะ E-com <b>'+(wCnt.ecom||0)+'</b></button>';
     var ddWork=cfDd('work','ประเภทงาน: '+(wSel.length===0?'ทั้งหมด':(wSel.length===1?e2((WORK_TYPE_MAP[wSel[0]]||{t:wSel[0]}).t):(wSel.length+' ประเภท'))), wSel.length,
       WORK_TYPES.map(function(w){ return cfOpt(calWorkFilter.has(w.k), "toggleCalWork('"+w.k+"')", e2(w.t), wCnt[w.k]||0, w.c); }).join(''), 'calWorkAll()');
     // ผู้รับมอบหมาย (PIC) — เลือกได้หลายคน
@@ -11280,7 +11310,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var chipRow=chips.length?('<div class="cf-chips">'+chips.join('')+'<button type="button" class="cf-clearall" onclick="calFiltersClearAll()">ล้างตัวกรองทั้งหมด</button></div>'):'';
     // legend สถานะ
     var lg='<div class="ccal-statuslegend">'+CAL_STATUS_ORDER.map(function(st){return '<span class="lg"><span class="dot" style="background:'+CAL_STATUS[st].c+'"></span>'+e2(CAL_STATUS[st].t)+'</span>';}).join('')+'</div>';
-    el.innerHTML='<div class="cf-bar">'+seg+ddWork+ddOwner+ddPillar+ddProd+pillExt+'</div>'+chipRow+lg;
+    el.innerHTML='<div class="cf-bar">'+seg+ddWork+pillExt+ddOwner+ddPillar+ddProd+'</div>'+chipRow+lg;
     if(calProdOpen){ var si=document.getElementById('cf-prod-search'); if(si && document.activeElement!==si){ si.focus(); try{ si.setSelectionRange(si.value.length,si.value.length); }catch(e){} } }
   }
   function calRerenderView(){ var host=document.getElementById('ccal-host'); if(!host) return; if(calMode==='grid') renderCalGrid(host); else renderCalList(host); }
@@ -11596,9 +11626,12 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var draftsJson = JSON.stringify([].slice.call(document.querySelectorAll('#cc-cf-drafts input[type=date]')).map(function(el){return el.value;}).filter(Boolean));
     var prev = calEditId ? (window.CONTENT_CAL||[]).find(function(z){return z.id===calEditId;}) : null;
     if(prev && prev.status!=='revise' && (g('cc-cf-status')||'brief')==='revise' && !ccRevPending){ ccRevOpen(prev.id,{editor:true}); return; }   // เปลี่ยนสถานะเป็น “แก้ไข (ตีกลับ)” ในฟอร์ม → ต้องกรอกสาเหตุก่อนบันทึก
+    var stNew=(g('cc-cf-status')||'brief');
+    if(prev && prev.status!==stNew && stNew==='posted' && !ccConfirmPosted(title)) return;   // ยกเลิก → ฟอร์มยังเปิดอยู่ ยังไม่บันทึก
     var reviseCount = prev?(prev.reviseCount||0):0, extendCount = prev?(prev.extendCount||0):0, log = prev?(prev.log||''):'';
     var revisions = prev?(Array.isArray(prev.revisions)?prev.revisions:[]):[];
     if(ccRevPending){ var tmp={reviseCount:reviseCount,log:log,revisions:revisions}; ccRevApply(tmp,ccRevPending); reviseCount=tmp.reviseCount; log=tmp.log; revisions=tmp.revisions; ccRevPending=null; }
+    if(prev && prev.status!==stNew && stNew!=='revise') log=appendLog(log, ccMoveLogLine(prev.status,stNew));   // เปลี่ยนสถานะในฟอร์ม → ลงประวัติว่าใครย้าย
     // ยืดกำหนดส่งออกไป (วันใหม่ช้ากว่าเดิม) → นับ + ลงประวัติอัตโนมัติ
     if(prev && prev.due && due && due>prev.due){ extendCount++; log=appendLog(log,'ขยายเวลาส่ง: '+prev.due+' → '+due); }
     var item={ id: calEditId || ('cc'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
@@ -11641,6 +11674,12 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
      ============================================================ */
   var plDragId=null, plPresetStatus=null;
   function renderCalActive(){ if(ciSub==='pipeline') renderPipeline(); else renderContentCal(); }
+  // ตัวช่วยให้ระบบอัปเดตสดใช้ (live-sync): ลายเซ็นข้อมูล / โหลดใหม่ / วาดใหม่
+  window.ccLive={
+    sig:function(){ return JSON.stringify((window.CONTENT_CAL||[]).map(function(x){ return [x.id,x.status,x.date,x.due,x.title,x.pos,x.owner,x.reviewer,x.followers,x.gfxPic,x.doneAt,x.time,x.workType,x.pillar,x.format,x.product,x.channel,x.tags,x.note,x.drafts,x.reviseCount,x.extendCount,x.brand]; }))+'#'+(typeof SHEET_ROWS_CM!=='undefined'?SHEET_ROWS_CM.length:0); },
+    reload:async function(withComments){ await window.loadContentCalFromSheet(); if(withComments && typeof window.loadCommentsFromSheet==='function') await window.loadCommentsFromSheet(); },
+    render:function(){ try{ renderCalActive(); }catch(e){} }
+  };
   function plOwnerHas(owner, name){ return String(owner||'').split(/[,\/、]/).map(function(s){return s.trim();}).indexOf(name)>=0; }
   function plOwnerNames(){ var s={}; ['เลิฟ','สเปียร์','เอ','หรา'].forEach(function(n){s[n]=1;}); (window.CONTENT_CAL||[]).forEach(function(x){ String(x.owner||'').split(/[,\/、]/).forEach(function(p){ p=p.trim(); if(p && !ccIsGfxName(p)) s[p]=1; }); }); return Object.keys(s); }
   window.setPlOwner=function(n){ if(!n) ccOwnerSel.clear(); else if(ccOwnerSel.has(n)) ccOwnerSel.delete(n); else ccOwnerSel.add(n); renderCalActive(); };
@@ -11793,7 +11832,10 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     if(i>-1){ base=normCAL(local[i]); } else { var found=(window.CONTENT_CAL||[]).find(function(z){return z.id===id;}); base=found?Object.assign({},found):null; }
     if(!base || base.status===newStatus) return;
     if(newStatus==='revise' && !ccRevPending){ ccRevOpen(id,{move:true}); try{ renderPipeline(); }catch(e){} return; }   // ย้ายเข้า “แก้ไข (ตีกลับ)” → เด้งให้กรอกสาเหตุก่อน (บังคับ)
+    if(newStatus==='posted' && !ccConfirmPosted(base.title)){ try{ renderPipeline(); }catch(e){} return; }   // ย้ายเป็น “โพสต์แล้ว” → ถามยืนยันก่อน (ยกเลิก = ไม่ย้าย)
+    var prevStatus=base.status;
     base.status=newStatus; base.updatedAt=(typeof todayStr==='function'?todayStr():'');
+    if(newStatus!=='revise') base.log=appendLog(base.log, ccMoveLogLine(prevStatus,newStatus));   // ตีกลับมีบรรทัดประวัติของตัวเองอยู่แล้ว (พร้อมสาเหตุ)
     if(newStatus==='posted'||newStatus==='track'){ if(!base.doneAt) base.doneAt=nowStamp(); } else { base.doneAt=''; }
     // ตีกลับให้แก้ → นับจำนวนครั้งอัตโนมัติ + ลงประวัติพร้อมสาเหตุ
     var revNote='';
@@ -11806,7 +11848,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   };
   // เลื่อนสถานะการ์ด Content แบบอัตโนมัติจากระบบ (เช่น ทีมกราฟฟิกรับงาน/ทำเสร็จ) — ไม่ผ่าน gate unlocked()
   // allowedCurrent = ย้ายได้เฉพาะเมื่อสถานะปัจจุบันอยู่ในลิสต์นี้ (กันไปทับสถานะที่เลยไปแล้ว เช่น posted/track)
-  window.plSetStatus=function(id, status, allowedCurrent){
+  window.plSetStatus=function(id, status, allowedCurrent, why){
     // บัญชีที่แก้ Content ไม่ได้ (เช่นทีมกราฟฟิก): ไม่เขียนจากเบราว์เซอร์ — ฐานข้อมูลซิงก์สถานะ Content ให้เองผ่าน trigger (graphic-separation SQL)
     if(!(typeof canEditArea==='function' && canEditArea('content'))) return false;
     if(!CAL_STATUS[status]) return false;
@@ -11816,7 +11858,9 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     if(!base) return false;
     if(allowedCurrent && allowedCurrent.indexOf(base.status)<0) return false;
     if(base.status===status) return false;
+    var prevSt=base.status;
     base.status=status; base.updatedAt=(typeof todayStr==='function'?todayStr():'');
+    if(why) base.log=appendLog(base.log,'ระบบเลื่อนสถานะ '+ccStatusLabel(prevSt)+' → '+ccStatusLabel(status)+' ('+why+') โดย '+ccActorName());
     if(status==='posted'||status==='track'){ if(!base.doneAt) base.doneAt=nowStamp(); } else { base.doneAt=''; }
     if(i>-1) local[i]=base; else local.push(base); calSaveLocal(local);
     rebuildCAL();
@@ -12037,7 +12081,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +(legacyRev?'<div style="font-size:11.5px;color:#9aa4b5;padding:4px 0;">+ อีก '+legacyRev+' รอบเก่าที่ไม่ได้ระบุสาเหตุ (ดูในประวัติงาน)</div>':'')+'</div>';
     var editBtn=unlocked()?('<div class="cc-cd-edit"><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="closeCardModal();openContentCalEditor(\''+aj(id)+'\')">✏️ แก้ไขรายละเอียด</button><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="extendDue(\''+aj(id)+'\')">⏱️ ขยายเวลาส่ง</button><button class="btn-sm warn-ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="closeCardModal();deleteContentCal(\''+aj(id)+'\')">🗑️ ลบการ์ด</button></div>'):'';
     var badgeLine=tagChips(x.tags)+dueBadge(x)+reviseBadge(x)+extendBadge(x);
-    var gfxNote=ccIsGfxPic(x)?'<div style="background:#EEF6FC;border:1px solid #CFE3F2;border-radius:10px;padding:9px 12px;margin:2px 0 10px;font-size:12px;color:#3E6E96;line-height:1.5;">🎨 <b>งานนี้มอบให้ทีมกราฟฟิก</b> — ใช้ 5 สถานะ (บรีฟ → กำลังผลิต → อนุมัติ → โพสต์ → ติดตามผล) · ขั้น <b>🎬 กำลังผลิต / ✅ อนุมัติ</b> จะเลื่อนอัตโนมัติเมื่อกราฟฟิก <b>รับงาน / ทำเสร็จ</b> บนบอร์ด Graphic · ที่เหลือทีม Content เลื่อนเอง</div>':'';
+    var gfxNote=ccIsGfxPic(x)?'<div style="background:#EEF6FC;border:1px solid #CFE3F2;border-radius:10px;padding:9px 12px;margin:2px 0 10px;font-size:12px;color:#3E6E96;line-height:1.6;"><div style="font-weight:700;margin-bottom:2px;">🎨 งานนี้ทำโดยกราฟฟิก · สถานะเลื่อนเอง 2 ขั้น</div><div>🎬 <b>กำลังผลิต</b> → เมื่อกราฟฟิกกด “รับเข้าบอร์ด”</div><div>✅ <b>อนุมัติ</b> → เมื่อกราฟฟิกย้ายงานเข้า “เสร็จแล้ว”</div><div>🚀 <b>โพสต์แล้ว</b> / 📈 <b>ติดตามผล</b> → Content กดเอง</div></div>':'';
     var info='<div class="cc-cd-info"><div class="cc-cd-badges"><span class="cc-cd-s" style="background:'+st.c+'">'+st.t+'</span>'+(x.brand?'<span class="cc-brand" style="--b:'+((typeof BRAND_TINT!=='undefined'?BRAND_TINT:{})[x.brand]||'#6B7280')+'">'+e2(bLbl(x.brand))+'</span>':'')+badgeLine+'</div>'+gfxNote+'<div class="cc-cd-rows">'+rows+'</div>'+revSection+histHtml+editBtn+'</div>';
 
     document.getElementById('cc-card-body').innerHTML =
@@ -13775,16 +13819,21 @@ details.fm-more[open]{padding-bottom:6px;}
     try{
       var rows=(await sbSelect('ecom_content')).map(normEcom).filter(function(r){return r.id;});
       var byId={}; rows.forEach(function(r){byId[r.id]=r;});
-      cache.forEach(function(c){ if(c.id && !byId[c.id]) rows.push(normEcom(c)); });   // เก็บการ์ดที่ยังไม่ซิงค์
+      cache.forEach(function(c){ if(c.id && !byId[c.id] && (typeof window.livePendingRecent!=='function' || window.livePendingRecent(c.id))) rows.push(normEcom(c)); });   // เก็บเฉพาะการ์ดที่เพิ่งสร้าง/แก้เองและยังไม่ซิงค์ — ใบที่คนอื่นลบไปแล้วต้องหายด้วย
       ECOM=rows; ecomSaveLocal(ECOM);
     }catch(e){ ECOM=cache.map(normEcom); }
     return ECOM;
   }
+  window.ecomLive={
+    loaded:function(){ return !!document.querySelector('#ecom-host .cc-pl-board'); },
+    sig:function(){ return JSON.stringify((ECOM||[]).map(function(c){ return [c.id,c.status,c.title,c.owner,c.graphic,c.followers,c.submitDate,c.submitTime,c.finalDate,c.pos,c.doneAt,c.tags,c.brand,(c.checklist||[]).length,(c.drafts||[]).length]; })); },
+    reload:function(){ return loadEcom(); }
+  };
   async function ecomSync(card){
     var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
     try{ await postToSheet({target:'ecom', action:'upsert', keyValue:card.id, row:{id:card.id,title:card.title,brand:card.brand,owner:card.owner,graphic:card.graphic||'',followers:card.followers||'',status:card.status,submitDate:card.submitDate||'',submitTime:card.submitTime||'',drafts:JSON.stringify(card.drafts||[]),finalDate:card.finalDate||'',tags:card.tags||'',note:card.note,checklist:JSON.stringify(card.checklist||[]),pos:(card.pos!=null?String(card.pos):''),doneAt:card.doneAt||'',updatedAt:card.updatedAt||TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){}
   }
-  function ecomUpsertLocal(card){ var i=ECOM.findIndex(function(x){return x.id===card.id;}); if(i>-1) ECOM[i]=card; else ECOM.push(card); ecomSaveLocal(ECOM); }
+  function ecomUpsertLocal(card){ try{ if(window.liveMarkPending) window.liveMarkPending(card.id); }catch(e){} var i=ECOM.findIndex(function(x){return x.id===card.id;}); if(i>-1) ECOM[i]=card; else ECOM.push(card); ecomSaveLocal(ECOM); }
 
   /* ---- view + modal (สร้างครั้งเดียว) ---- */
   function ensureEcomView(){
@@ -14130,7 +14179,7 @@ details.fm-more[open]{padding-bottom:6px;}
     try{
       var rows=(await sbSelect('graphic_cards')).map(normGfx).filter(function(r){return r.id;});
       var byId={}; rows.forEach(function(r){byId[r.id]=r;});
-      cache.forEach(function(c){ if(c.id && !byId[c.id]) rows.push(normGfx(c)); });
+      cache.forEach(function(c){ if(c.id && !byId[c.id] && (typeof window.livePendingRecent!=='function' || window.livePendingRecent(c.id))) rows.push(normGfx(c)); });   // เก็บเฉพาะการ์ดที่เพิ่งสร้าง/แก้เองและยังไม่ขึ้นฐานข้อมูล — ใบที่คนอื่นลบไปแล้วต้องหายด้วย
       GFX=rows; gfxSaveCardsLocal();
     }catch(e){ GFX=cache.map(normGfx); }
     try{
@@ -14142,6 +14191,11 @@ details.fm-more[open]{padding-bottom:6px;}
     }catch(e){ if(!GFX_PEOPLE) GFX_PEOPLE=lget(PPL_LKEY,null); GFX_COLS=lget(COLS_LKEY,{})||{}; GFX_AVATARS=lget(AVA_LKEY,{})||{}; }
     return GFX;
   }
+  window.gfxLive={
+    loaded:function(){ return !!(window.__gfxLoaded||window.__gfxLoadP); },
+    sig:function(){ return JSON.stringify((GFX||[]).map(function(c){ return [c.id,c.person,c.col,c.title,c.owner,c.followers,c.submitDate,c.submitTime,c.tags,c.pos,c.doneAt,c.brand,c.ecom,c.srcContent,c.note,(c.checklist||[]).length,(c.images||[]).length,(c.revisions||[]).length]; }))+JSON.stringify(GFX_COLS||{})+JSON.stringify(GFX_PEOPLE||[]); },
+    reload:function(){ return loadGfx(); }
+  };
   async function gfxSyncCard(card){
     var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
     try{ await postToSheet({target:'graphiccards',action:'upsert',keyValue:card.id,row:{
@@ -14154,7 +14208,7 @@ details.fm-more[open]{padding-bottom:6px;}
   async function gfxSaveCols(p){ lset(COLS_LKEY, GFX_COLS); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'cols::'+p,row:{k:'cols::'+p,v:JSON.stringify(GFX_COLS[p]||[]),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
   async function gfxSaveAvatar(p){ lset(AVA_LKEY, GFX_AVATARS); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'avatar::'+p,row:{k:'avatar::'+p,v:JSON.stringify(GFX_AVATARS[p]||{}),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
   function gfxAvatarHtml(name,size){ var a=GFX_AVATARS[name]||{}; size=size||36; var st='width:'+size+'px;height:'+size+'px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:'+Math.round(size*0.5)+'px;flex:0 0 auto;overflow:hidden;'; if(a.img){ return '<span style="'+st+'"><img src="'+E(a.img)+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.innerHTML=\'🎨\'"></span>'; } return '<span style="'+st+'background:'+(a.color||'linear-gradient(135deg,#7cb6e4,#5aa0d8)')+';">'+E(a.emoji||'🎨')+'</span>'; }
-  function gfxUpsertLocal(card){ var i=GFX.findIndex(function(x){return x.id===card.id;}); if(i>-1) GFX[i]=card; else GFX.push(card); gfxSaveCardsLocal(); }
+  function gfxUpsertLocal(card){ try{ if(window.liveMarkPending) window.liveMarkPending(card.id); }catch(e){} var i=GFX.findIndex(function(x){return x.id===card.id;}); if(i>-1) GFX[i]=card; else GFX.push(card); gfxSaveCardsLocal(); }
 
   function gfxTagColor(t){ t=(t||'').toLowerCase().trim(); if(/ด่วน|urgent|เร่ง|รีบ/.test(t)) return '#EF5350'; var pal=['#5B8FF9','#9B7EF8','#3CA5A5','#F2994A','#2D9CDB','#EB5FA0','#26A69A','#7C5CFC','#E9557F','#8E7CC3']; var h=0; for(var i=0;i<t.length;i++) h=(h*31+t.charCodeAt(i))>>>0; return pal[h%pal.length]; }
   function gfxBrandLabel(k){ var f=GFX_BRANDS.find(function(b){return b[0]===k;}); if(f) return f[1]; return (typeof brandDisplayLabel==='function')?brandDisplayLabel(k):k; }
@@ -14604,7 +14658,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var card={ id:gfxUid('g'), person:p, col:col, title:post.title||'', brand:(typeof normalizeBrand==='function'?normalizeBrand(post.brand):(post.brand||'').trim().toLowerCase()), owner:p, graphic:'', followers:'', submitDate:gfxContentDeadline(post), submitTime:'', tags:post.tags||'', note:post.note||'', checklist:[], revisions:[], images:[], srcContent:cid, doneAt:(gfxIsDoneCol(p,col)?nowStamp():''), updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') };
     gfxUpsertLocal(card); gfxReRender(); TOAST('รับงานเข้าบอร์ดแล้ว 📥 (อยู่คอลัมน์แรก)','ok'); gfxSyncCard(card);
     // เชื่อม Content Pipeline: รับงาน → การ์ด Content เลื่อนไป 🎬 กำลังผลิต อัตโนมัติ (เฉพาะถ้ายังอยู่ 📝 บรีฟ)
-    try{ if(typeof window.plSetStatus==='function') window.plSetStatus(cid,'production',['brief']); }catch(e){}
+    try{ if(typeof window.plSetStatus==='function') window.plSetStatus(cid,'production',['brief'],'กราฟฟิกรับงานเข้าบอร์ด'); }catch(e){}
     try{ if(typeof ntAssigned==='function') ntAssigned('content', cid, post.title, [post.owner, post.reviewer, post.followers], p+' รับงานเข้าบอร์ดกราฟฟิกแล้ว (เริ่มผลิต)'); }catch(e){}
     gfxRefreshContentSoon(card);
   };
@@ -14726,7 +14780,7 @@ details.fm-more[open]{padding-bottom:6px;}
     c.col=nk; if(gfxIsEcomBriefCol(c.person,nk)) c.ecom='1';   // ย้ายเข้าคอลัมน์ Brief AW E-commerce → นับเป็นงาน E-commerce ถาวร
     if(def.done){ if(!c.doneAt) c.doneAt=nowStamp(); } else { c.doneAt=''; } c.updatedAt=TS(); gfxUpsertLocal(c); gfxReRender(); TOAST('ย้ายไป “'+def.title+'” แล้ว','ok'); gfxSyncCard(c);
     // เชื่อม Content Pipeline: การ์ดที่รับมาจาก Content เข้าคอลัมน์ "เสร็จแล้ว" → Content เลื่อนไป ✅ อนุมัติ · ย้ายออก → กลับ 🎬 กำลังผลิต
-    if(c.srcContent && typeof window.plSetStatus==='function'){ try{ if(def.done) window.plSetStatus(c.srcContent,'approved',['brief','production','review','revise']); else window.plSetStatus(c.srcContent,'production',['approved']); }catch(e){} }
+    if(c.srcContent && typeof window.plSetStatus==='function'){ try{ if(def.done) window.plSetStatus(c.srcContent,'approved',['brief','production','review','revise'],'กราฟฟิกย้ายงานเข้า “เสร็จแล้ว”'); else window.plSetStatus(c.srcContent,'production',['approved'],'กราฟฟิกย้ายงานออกจาก “เสร็จแล้ว”'); }catch(e){} }
     try{ if(typeof ntGfxMoved==='function') ntGfxMoved(c, def.title, !!def.done); }catch(e){}
     gfxRefreshContentSoon(c);
   };
@@ -14944,7 +14998,7 @@ details.fm-more[open]{padding-bottom:6px;}
     if(!force && dragged.col!==target.col && gfxIsReviseCol(p,target.col) && !gfxIsReviseCol(p,dragged.col)){ gfxRevOpen(draggedId,{reorder:{target:targetId,after:!!after}}); return; }
     var changed=[];
     if(dragged.col!==target.col){ dragged.col=target.col; if(gfxIsEcomBriefCol(p,dragged.col)) dragged.ecom='1'; if(gfxIsDoneCol(p,dragged.col)){ if(!dragged.doneAt) dragged.doneAt=nowStamp(); } else { dragged.doneAt=''; } changed.push(dragged);
-      if(dragged.srcContent && typeof window.plSetStatus==='function'){ try{ if(gfxIsDoneCol(p,dragged.col)) window.plSetStatus(dragged.srcContent,'approved',['brief','production','review','revise']); else window.plSetStatus(dragged.srcContent,'production',['approved']); }catch(e){} }
+      if(dragged.srcContent && typeof window.plSetStatus==='function'){ try{ if(gfxIsDoneCol(p,dragged.col)) window.plSetStatus(dragged.srcContent,'approved',['brief','production','review','revise'],'กราฟฟิกย้ายงานเข้า “เสร็จแล้ว”'); else window.plSetStatus(dragged.srcContent,'production',['approved'],'กราฟฟิกย้ายงานออกจาก “เสร็จแล้ว”'); }catch(e){} }
       try{ if(typeof ntGfxMoved==='function'){ var gd=gfxColDef(p,dragged.col); ntGfxMoved(dragged, gd?gd.title:'', gfxIsDoneCol(p,dragged.col)); } }catch(e){}
       gfxRefreshContentSoon(dragged);
     }
@@ -15326,6 +15380,86 @@ details.fm-more[open]{padding-bottom:6px;}
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) load(); });
 })();
 </script>
+<script id="live-sync-2026-10-06">
+/* อัปเดตสด: ปฏิทิน/บอร์ดขึ้นเองเมื่อคนอื่นสร้าง แก้ หรือลบ — ไม่ต้องรีเฟรชหน้า
+   • โหลดข้อมูลใหม่เป็นระยะ (ทุก ~25 วิ ตอนเปิดหน้าอยู่) + ทันทีที่กลับมาที่แท็บ + ทันทีที่ Supabase Realtime แจ้งว่าข้อมูลเปลี่ยน
+   • วาดใหม่เฉพาะเมื่อข้อมูลเปลี่ยนจริง และเฉพาะตอนไม่มีหน้าต่างเปิด / ไม่ได้พิมพ์ / ไม่ได้ลากการ์ด (ไม่รบกวนงานที่กำลังทำ)
+   • (แก้บั๊กเดิม) การ์ดกราฟฟิก/E-Commerce ที่คนอื่นลบไปแล้ว เคยโผล่กลับมาจากแคชในเครื่อง — ตอนนี้เก็บแคชเฉพาะใบที่เพิ่งสร้าง/แก้เองและยังไม่ขึ้นฐานข้อมูล */
+(function(){
+  var PKEY='npd_live_pending_v1';
+  function pmap(){ try{ return JSON.parse(localStorage.getItem(PKEY)||'{}')||{}; }catch(e){ return {}; } }
+  window.liveMarkPending=function(id){ try{ if(!id) return; var m=pmap(), cut=Date.now()-3600000; m[id]=Date.now(); Object.keys(m).forEach(function(k){ if(m[k]<cut) delete m[k]; }); localStorage.setItem(PKEY,JSON.stringify(m)); }catch(e){} };
+  window.livePendingRecent=function(id){ var t=pmap()[id]; return !!(t && Date.now()-t<60000); };   // การ์ดที่เพิ่งแก้เองภายใน 1 นาที = อาจยังส่งขึ้นฐานข้อมูลไม่ทัน → เก็บไว้ก่อน · เกินนั้นถ้าฐานข้อมูลไม่มี = คนอื่นลบไปแล้ว
+
+  var busy=false, last=0, tickN=0, dirty=null, kickT=0, forceCm=false;
+  function blocked(){
+    if(document.hidden) return true;
+    if(document.querySelector('[id$="overlay"].open')) return true;                 // มีหน้าต่าง/ฟอร์มเปิดอยู่
+    var a=document.activeElement;
+    if(a && (a.tagName==='TEXTAREA' || (a.tagName==='INPUT' && !/^(checkbox|radio|button|submit)$/i.test(a.type||'')))) return true;   // กำลังพิมพ์
+    if(document.querySelector('.cc-pl-card.dragging')) return true;                  // กำลังลากการ์ด
+    return false;
+  }
+  function evSig(){ try{ return JSON.stringify((ALL_EVENTS||[]).map(function(e){ return [e.id,e.title,e.start,e.end,e.type,e.pic,e.note]; })); }catch(e){ return ''; } }
+  function captureScroll(){ var out=[]; [].forEach.call(document.querySelectorAll('.cc-pl-board'),function(b){ if(!b.offsetParent) return; var o={id:b.parentNode&&b.parentNode.id, x:b.scrollLeft, cols:{}}; [].forEach.call(b.querySelectorAll('.cc-pl-col'),function(c){ var k=c.getAttribute('data-status'), cd=c.querySelector('.cc-pl-cards'); if(k&&cd) o.cols[k]=cd.scrollTop; }); out.push(o); }); return out; }
+  function restoreScroll(sc){ [].forEach.call(document.querySelectorAll('.cc-pl-board'),function(b){ if(!b.offsetParent) return; var id=b.parentNode&&b.parentNode.id, o=sc.filter(function(z){ return z.id===id; })[0]; if(!o) return; b.scrollLeft=o.x; [].forEach.call(b.querySelectorAll('.cc-pl-col'),function(c){ var k=c.getAttribute('data-status'), cd=c.querySelector('.cc-pl-cards'); if(k&&cd&&o.cols[k]!=null) cd.scrollTop=o.cols[k]; }); }); }
+  function rerender(ch){
+    var v=document.querySelector('.view.active'); var view=v?v.id:'';
+    var y=window.pageYOffset||0, sc=captureScroll();
+    try{
+      if(view==='view-calendar'){ if(ch.events && typeof renderAll==='function') renderAll(); }
+      else if(view==='view-content'){ if((ch.content||ch.events||ch.gfx) && typeof renderContentCreator==='function') renderContentCreator(); }
+      else if(view==='view-ecom'){ if((ch.ecom||ch.content) && typeof renderEcomBoard==='function') renderEcomBoard(); }
+      else if(view==='view-graphic'){ if((ch.gfx||ch.content||ch.events) && typeof renderGraphicTeam==='function') renderGraphicTeam(); }
+    }catch(e){}
+    restoreScroll(sc); try{ window.scrollTo(0,y); }catch(e){}
+    try{ window.dispatchEvent(new Event('resize')); }catch(e){}
+  }
+  function stamp(){ var b=document.getElementById('updated-badge'); if(!b) return; var t=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); b.textContent='● อัปเดต '+t; b.title='Live from Supabase · ข้อมูลอัปเดตล่าสุดเมื่อ '+t+' (ระบบโหลดข้อมูลใหม่ให้เองเป็นระยะ)'; }
+  async function tick(force){
+    if(busy) return;
+    if(blocked()) return;
+    if(!force && Date.now()-last<15000) return;
+    busy=true; last=Date.now(); tickN++;
+    var fail=false, origSel=sbSelect, snapCal=window.CONTENT_CAL, snapEv=ALL_EVENTS;
+    sbSelect=async function(t){ try{ return await origSel(t); }catch(e){ fail=true; throw e; } };   // เน็ตหลุด/ดึงไม่สำเร็จ → ไม่เอาข้อมูลว่างมาทับของเดิม
+    var ch={content:false,events:false,gfx:false,ecom:false};
+    try{
+      var withCm=forceCm || (tickN%4===0); forceCm=false;
+      if(window.ccLive){ var a=window.ccLive.sig(); await window.ccLive.reload(withCm); ch.content=(a!==window.ccLive.sig()); }
+      if(typeof loadEventsFromSheet==='function'){ var e0=evSig(); await loadEventsFromSheet(); ch.events=(e0!==evSig()); }
+      if(window.gfxLive && window.gfxLive.loaded()){ var g0=window.gfxLive.sig(); await window.gfxLive.reload(); ch.gfx=(g0!==window.gfxLive.sig()); }
+      if(window.ecomLive && window.ecomLive.loaded()){ var c0=window.ecomLive.sig(); await window.ecomLive.reload(); ch.ecom=(c0!==window.ecomLive.sig()); }
+      if(typeof window.chkLoad==='function') window.chkLoad(false);
+    }catch(e){ fail=true; }
+    sbSelect=origSel;
+    if(fail){ window.CONTENT_CAL=snapCal; ALL_EVENTS=snapEv; ch={content:false,events:false,gfx:false,ecom:false}; }
+    else stamp();
+    dirty=dirty||{content:false,events:false,gfx:false,ecom:false};
+    Object.keys(ch).forEach(function(k){ if(ch[k]) dirty[k]=true; });
+    if((dirty.content||dirty.events||dirty.gfx||dirty.ecom) && !blocked()){ var d=dirty; dirty=null; rerender(d); }
+    busy=false;
+  }
+  window.liveTick=tick;
+  function kick(table){ if(table==='content_comments') forceCm=true; clearTimeout(kickT); kickT=setTimeout(function(){ tick(true); },700); }
+  setInterval(function(){ tick(false); },25000);
+  setTimeout(stamp,3500);
+  setTimeout(function(){ tick(true); },10000);
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) setTimeout(function(){ tick(true); },300); });
+  window.addEventListener('focus',function(){ setTimeout(function(){ tick(false); },300); });
+  // Supabase Realtime (ใช้งานได้หลังรัน SQL เปิด publication · ถ้ายังไม่เปิดก็ไม่เป็นไร ยังมีการโหลดเป็นระยะ)
+  (async function(){
+    try{
+      await sbInit(); if(!SB_CLIENT || typeof SB_CLIENT.channel!=='function') return;
+      var ch=SB_CLIENT.channel('npd-live');
+      ['content_calendar','events','graphic_cards','graphic_config','ecom_content','content_comments'].forEach(function(t){
+        ch.on('postgres_changes',{event:'*',schema:'public',table:t},function(){ kick(t); });
+      });
+      ch.subscribe();
+    }catch(e){}
+  })();
+})();
+</script>
 <script id="chk-module-2026-10-05">
 /* ปุ่มเช็คที่การ์ด (Content / Graphic / E-Commerce) — เช็คแล้วการ์ดถูกเก็บไว้ล่างสุดของคอลัมน์ กด “แสดง N งานที่เช็คแล้ว” เพื่อเปิดดู
    เก็บสถานะแบบใช้ร่วมกันทั้งทีมในตาราง graphic_config (1 แถวต่อ 1 การ์ด: k='chk::<id การ์ด>' v='1') — ไม่ต้องมี SQL ใหม่ · ไม่ยุ่งกับสถานะ/คอลัมน์ของการ์ด */
@@ -15404,7 +15538,7 @@ header .brand img{ height:30px; width:30px; padding:2px; }
 header .brand .name small{ font-size:9.5px; }
 header .header-top{ gap:10px; }
 #nav{ padding:3px !important; gap:2px; }
-#nav .tab{ padding:6px 11px; font-size:12.5px; }
+#nav .tab{ padding:6px 11px; font-size:12.5px; white-space:nowrap; }
 .updated-badge{ padding:3px 11px !important; font-size:11px !important; }
 .notice-banner{ padding:5px 16px !important; font-size:12.5px !important; gap:8px; }
 .notice-banner .icon{ font-size:14px; line-height:1.35; }
@@ -15414,7 +15548,8 @@ header .header-top{ gap:10px; }
   header{ flex-direction:row; align-items:center; flex-wrap:nowrap; gap:14px !important; }
   header .header-top{ display:contents; }
   header .brand{ order:1; flex:0 0 auto; }
-  #nav{ order:2; flex:1 1 auto; align-self:center; flex-wrap:nowrap; justify-content:center; min-width:0; }
+  #nav{ order:2; flex:1 1 auto; align-self:center; flex-wrap:nowrap; justify-content:center; min-width:0; overflow-x:auto; scrollbar-width:none; }
+  #nav::-webkit-scrollbar{ display:none; }
   header .header-right{ order:3; flex:0 0 auto; }
 }
 /* หน้าที่มีบอร์ด: กว้างเต็มจอ (ไม่ถูกจำกัดที่ 1220px) */
@@ -15486,6 +15621,23 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   #cc-card-body .cc-cm-list{ flex:1 1 auto; min-height:0; overflow-y:auto; margin-bottom:10px; }
   #cc-card-body .cc-cm-box{ flex:0 0 auto; }
 }
+/* ปุ่มบัญชี (เข้าสู่ระบบ/ออกจากระบบ) อยู่ข้างปุ่มกระดิ่งในแถบบน */
+.sb-auth-hdr{ display:inline-flex; align-items:center; gap:7px; height:36px; padding:0 13px; border-radius:999px; border:1px solid rgba(255,255,255,.45); background:rgba(255,255,255,.2); color:#fff; font:600 13px 'Sarabun',sans-serif; cursor:pointer; white-space:nowrap; max-width:170px; }
+.sb-auth-hdr:hover,.sb-auth-hdr:focus-visible{ background:rgba(255,255,255,.34); }
+.sb-auth-hdr .nm{ overflow:hidden; text-overflow:ellipsis; }
+.sb-auth-hdr .dot{ width:9px; height:9px; border-radius:50%; background:#5BE39A; box-shadow:0 0 0 2px rgba(255,255,255,.55); flex:0 0 9px; }
+.sb-auth-hdr.on{ background:rgba(255,255,255,.28); }
+.sb-auth-hdr.floating{ position:fixed; right:16px; bottom:16px; z-index:99999; background:#b0356a; border:none; }
+#sb-auth-menu{ position:fixed; z-index:100001; min-width:230px; max-width:min(300px,calc(100vw - 16px)); background:#fff; border:1px solid var(--line,#E7ECF5); border-radius:14px; padding:8px; box-shadow:0 16px 38px -12px rgba(30,45,90,.4); font-family:'Sarabun',sans-serif; }
+#sb-auth-menu .who{ padding:8px 10px 10px; border-bottom:1px solid var(--line,#E7ECF5); margin-bottom:6px; display:flex; flex-direction:column; gap:1px; }
+#sb-auth-menu .who b{ font-family:'Anuphan','Prompt',sans-serif; font-size:14px; color:var(--ink,#1F2A36); }
+#sb-auth-menu .who small{ font-size:12px; color:var(--ink-soft,#6b7794); overflow-wrap:anywhere; }
+#sb-auth-menu .who small.ok{ color:#1E7C4B; margin-top:3px; }
+#sb-auth-menu button{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; border:none; background:transparent; padding:9px 10px; border-radius:9px; font:600 13.5px 'Sarabun',sans-serif; cursor:pointer; color:var(--ink,#1F2A36); }
+#sb-auth-menu button.in{ background:linear-gradient(120deg,#7cb6e4,#5aa0d8); color:#fff; }
+#sb-auth-menu button.out{ color:#C0392B; }
+#sb-auth-menu button.out:hover{ background:#FCE9E6; }
+@media (max-width:560px){ .sb-auth-hdr .nm{ max-width:84px; } }
 /* ปุ่มเช็คที่การ์ด: กดแล้วการ์ดไปอยู่ล่างสุดของคอลัมน์ (พับเก็บ กดเปิดดูได้) */
 .cc-pl-card{ position:relative; }
 .chk-box{ position:absolute; top:11px; left:10px; width:18px; height:18px; padding:0; border-radius:5px; border:1.8px solid #B7C4DA; background:#fff; color:#fff; font-size:12px; line-height:1; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer; }
