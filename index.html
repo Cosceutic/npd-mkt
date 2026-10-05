@@ -1374,14 +1374,17 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
         <div class="ofc-htxt"><h1>CIL Team</h1><p>Cosceutic Innovation Lab · ดูได้ทันทีว่าใครออนไลน์ ใครว่างคุย · แตะที่ชื่อเพื่อดูงานที่ค้างและตั้งสถานะ 🐤</p></div>
       </div>
       <div id="cil-board" aria-live="polite"></div>
-      <div class="cil-roomshead"><h2>🏢 ห้องทำงานจำลอง</h2><p>สีวงรอบหน้า = ภาระงาน · จุดมุมซ้ายบนของป้ายชื่อ = สถานะการคุย · จุดเขียวมุมล่าง = ออนไลน์อยู่</p></div>
-      <div class="ofc-legend">
-        <div class="ofc-lg"><span class="ofc-dot ofc-d-free"></span>ว่าง</div>
-        <div class="ofc-lg"><span class="ofc-dot ofc-d-busy"></span>กำลังทำงาน</div>
-        <div class="ofc-lg"><span class="ofc-dot ofc-d-urgent"></span>มีงานด่วน/เลยกำหนด</div>
+      <button type="button" class="cil-roomsbar" id="cil-roomsbar" aria-expanded="false" aria-controls="cil-roomsbox" onclick="cilToggleRooms()"><span class="t">🏢 ห้องทำงานจำลอง</span><span class="s">ดูหน้าตาห้องแต่ละทีม · ทีละห้อง</span><span class="chev" aria-hidden="true">▾</span></button>
+      <div id="cil-roomsbox">
+        <div class="ofc-legend">
+          <div class="ofc-lg"><span class="ofc-dot ofc-d-free"></span>ว่าง</div>
+          <div class="ofc-lg"><span class="ofc-dot ofc-d-busy"></span>กำลังทำงาน</div>
+          <div class="ofc-lg"><span class="ofc-dot ofc-d-urgent"></span>มีงานด่วน/เลยกำหนด</div>
+        </div>
+        <p class="cil-roomshint">จุดมุมซ้ายบนของป้ายชื่อ = สถานะการคุย · จุดเขียวมุมล่าง = ออนไลน์อยู่</p>
+        <div class="ofc-roomnav" id="ofc-roomnav"></div>
+        <div class="ofc-rooms" id="ofc-rooms"></div>
       </div>
-      <div class="ofc-roomnav" id="ofc-roomnav"></div>
-      <div class="ofc-rooms" id="ofc-rooms"></div>
       <div class="ofc-foot">🐤 เป็ดน้อยสู้ๆ · ข้อมูลงานดึงจาก Updates Log (ช่อง PIC + Next Due) อัตโนมัติ · สถานะที่ตั้งเองแชร์ทั้งทีม</div>
       <div class="ofc-scrim" id="ofc-scrim" onclick="closeOfficeSheet()"></div>
       <div class="ofc-sheet" id="ofc-sheet" role="dialog" aria-modal="true"><div class="ofc-grab"></div><div id="ofc-sheet-body"></div></div>
@@ -15425,38 +15428,52 @@ details.fm-more[open]{padding-bottom:6px;}
 #view-office .cil-chip:hover{ border-color:#c9d2e0; }
 #view-office .cil-chip.on{ background:#37415a; border-color:#37415a; color:#fff; } #view-office .cil-chip.on b{ color:#fff; }
 #view-office .cil-conn{ color:var(--ofc-ink2); font-size:12.5px; margin:0 2px 2px; }
-#view-office .cil-group{ margin-top:18px; }
-#view-office .cil-ghead{ display:flex; align-items:baseline; gap:10px; margin:0 2px 10px; }
-#view-office .cil-ghead h3{ font-family:"Mitr",sans-serif; font-weight:500; font-size:16px; margin:0; color:var(--ofc-ink); }
-#view-office .cil-ghead small{ color:var(--ofc-ink2); font-size:13px; }
-#view-office .cil-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px; }
-#view-office .cil-card{ position:relative; display:grid; grid-template-columns:auto minmax(0,1fr); gap:6px 12px; align-items:center; text-align:left; width:100%; padding:14px 15px; border-radius:18px; border:1px solid var(--ofc-line); background:#fff; box-shadow:0 12px 26px -22px rgba(80,100,150,.6); cursor:pointer; font-family:"Sarabun",sans-serif; color:var(--ofc-ink); transition:transform .15s,box-shadow .15s,border-color .15s; }
-#view-office .cil-card:hover,#view-office .cil-card:focus-visible{ transform:translateY(-2px); box-shadow:0 16px 30px -20px rgba(80,100,150,.7); border-color:#cfd8ea; outline:none; }
-#view-office .cil-card.off{ background:#f8f9fc; box-shadow:none; }
-#view-office .cil-av{ position:relative; width:48px; height:48px; flex:0 0 48px; }
-#view-office .cil-av img,#view-office .cil-av .in{ width:48px; height:48px; border-radius:50%; object-fit:cover; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--ofc-pink),var(--ofc-pinkd)); color:#fff; font:600 18px "Mitr",sans-serif; }
-#view-office .cil-card.off .cil-av img,#view-office .cil-card.off .cil-av .in{ filter:grayscale(1); opacity:.62; }
-#view-office .cil-onl{ position:absolute; right:-1px; bottom:-1px; width:14px; height:14px; border-radius:50%; background:#2bc379; border:2.5px solid #fff; }
-#view-office .cil-card.off .cil-onl{ background:#b7c0d1; }
-#view-office .cil-nm{ min-width:0; }
-#view-office .cil-nm b{ display:block; font-family:"Mitr",sans-serif; font-weight:500; font-size:15.5px; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-#view-office .cil-nm small{ color:var(--ofc-ink2); font-size:12.5px; }
-#view-office .cil-pill{ grid-column:1/-1; display:inline-flex; align-items:center; gap:7px; width:max-content; max-width:100%; padding:4px 12px; border-radius:999px; font-size:13px; font-weight:700; line-height:1.3; }
-#view-office .cil-pill i{ width:9px; height:9px; border-radius:50%; flex:0 0 9px; background:currentColor; }
+#view-office .cil-sec{ margin-top:18px; }
+#view-office .cil-sech{ display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 10px; margin:0 2px 9px; }
+#view-office .cil-sech h3{ font-family:"Mitr",sans-serif; font-weight:500; font-size:15.5px; margin:0; color:var(--ofc-ink); }
+#view-office .cil-sech small{ color:var(--ofc-ink2); font-size:13px; }
+#view-office .cil-onrow{ display:flex; flex-wrap:wrap; gap:10px; }
+#view-office .cil-none{ color:var(--ofc-ink2); font-size:14px; padding:13px 16px; background:#fff; border:1px dashed var(--ofc-line); border-radius:14px; }
+#view-office .cil-team{ display:grid; grid-template-columns:150px minmax(0,1fr); gap:6px 12px; align-items:start; padding:9px 2px; border-top:1px solid var(--ofc-line); }
+#view-office .cil-team:first-of-type{ border-top:none; }
+#view-office .cil-tl{ font-family:"Mitr",sans-serif; font-weight:500; font-size:13.5px; line-height:1.3; color:var(--ofc-ink); padding-top:5px; }
+#view-office .cil-tl small{ display:block; font-family:"Sarabun",sans-serif; font-weight:400; font-size:12px; color:var(--ofc-ink2); margin-top:1px; }
+#view-office .cil-chips{ display:flex; flex-wrap:wrap; gap:7px; }
+#view-office .cil-p{ display:inline-flex; align-items:center; gap:9px; max-width:100%; border:1px solid var(--ofc-line); background:#fff; border-radius:999px; padding:4px 14px 4px 4px; cursor:pointer; font-family:"Sarabun",sans-serif; color:var(--ofc-ink); text-align:left; transition:transform .15s,box-shadow .15s,border-color .15s; }
+#view-office .cil-p:hover,#view-office .cil-p:focus-visible{ border-color:#c3cfe6; box-shadow:0 8px 18px -14px rgba(80,100,150,.8); transform:translateY(-1px); outline:none; }
+#view-office .cil-p.off{ background:#f8f9fc; color:var(--ofc-ink2); }
+#view-office .cil-p.off b{ font-family:"Sarabun",sans-serif; font-weight:600; font-size:13.5px; }
+#view-office .cil-p.on{ padding:6px 17px 6px 6px; border-color:#cfe3d8; background:#fff; box-shadow:0 12px 24px -20px rgba(40,120,80,.7); }
+#view-office .cil-pt{ min-width:0; display:flex; flex-direction:column; gap:3px; }
+#view-office .cil-pt .l1{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+#view-office .cil-pt .l1 b{ font-family:"Mitr",sans-serif; font-weight:500; font-size:15px; line-height:1.25; }
+#view-office .cil-pt .l2{ font-size:12.5px; color:var(--ofc-ink2); line-height:1.35; max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#view-office .cil-av{ position:relative; width:var(--s,32px); height:var(--s,32px); flex:0 0 var(--s,32px); }
+#view-office .cil-av img,#view-office .cil-av .in{ width:100%; height:100%; border-radius:50%; object-fit:cover; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--ofc-pink),var(--ofc-pinkd)); color:#fff; font:600 14px "Mitr",sans-serif; }
+#view-office .cil-p.off .cil-av img,#view-office .cil-p.off .cil-av .in{ filter:grayscale(1); opacity:.62; }
+#view-office .cil-onl{ position:absolute; right:-1px; bottom:-1px; width:12px; height:12px; border-radius:50%; background:#2bc379; border:2.5px solid #fff; box-sizing:content-box; }
+#view-office .cil-p.off .cil-onl{ display:none; }
+#view-office .cil-pill{ display:inline-flex; align-items:center; gap:6px; width:max-content; max-width:100%; padding:2px 10px; border-radius:999px; font-size:12.5px; font-weight:700; line-height:1.35; }
+#view-office .cil-pill i{ width:8px; height:8px; border-radius:50%; flex:0 0 8px; background:currentColor; }
 #view-office .cil-pill.green{ background:#E4F6EC; color:#16683F; } #view-office .cil-pill.yellow{ background:#FFF3D3; color:#8A5B00; } #view-office .cil-pill.red{ background:#FDE7E4; color:#B3382C; }
-#view-office .cil-pill.neutral{ background:#EAF1F8; color:#2F6DA8; } #view-office .cil-pill.offl{ background:#EEF1F6; color:#5E6A85; }
-#view-office .cil-msg{ grid-column:1/-1; font-size:13.5px; color:var(--ofc-ink); line-height:1.45; overflow-wrap:anywhere; }
-#view-office .cil-load{ grid-column:1/-1; font-size:12.5px; color:var(--ofc-ink2); }
-#view-office .cil-load.urgent{ color:#B3382C; font-weight:600; } #view-office .cil-load.busy{ color:#8A5B00; font-weight:600; }
-#view-office .cil-empty{ padding:22px; text-align:center; color:var(--ofc-ink2); background:#fff; border:1px dashed var(--ofc-line); border-radius:16px; }
-#view-office .cil-roomshead{ margin:26px 2px 12px; padding-top:18px; border-top:1px solid var(--ofc-line); }
-#view-office .cil-roomshead h2{ font-family:"Mitr",sans-serif; font-weight:500; font-size:17px; margin:0; }
-#view-office .cil-roomshead p{ margin:3px 0 0; color:var(--ofc-ink2); font-size:13px; }
+#view-office .cil-pill.neutral{ background:#EAF1F8; color:#2F6DA8; }
+/* แถบพับ "ห้องทำงานจำลอง" (เปิดทีละห้อง · พับเก็บเป็นค่าเริ่มต้น) */
+#view-office .cil-roomsbar{ display:flex; align-items:center; gap:12px; width:100%; margin:22px 0 0; padding:13px 18px; border-radius:16px; border:1px solid var(--ofc-line); background:#fff; cursor:pointer; text-align:left; font-family:"Sarabun",sans-serif; color:var(--ofc-ink); box-shadow:0 10px 24px -20px rgba(80,100,150,.55); transition:border-color .15s,box-shadow .15s; }
+#view-office .cil-roomsbar:hover{ border-color:#c9d2e0; }
+#view-office .cil-roomsbar .t{ font-family:"Mitr",sans-serif; font-weight:500; font-size:15.5px; }
+#view-office .cil-roomsbar .s{ color:var(--ofc-ink2); font-size:13px; flex:1; min-width:0; }
+#view-office .cil-roomsbar .chev{ color:var(--ofc-ink2); font-size:16px; transition:transform .2s; }
+#view-office.cil-rooms-open .cil-roomsbar .chev{ transform:rotate(180deg); }
+#view-office #cil-roomsbox{ display:none; margin-top:14px; }
+#view-office.cil-rooms-open #cil-roomsbox{ display:block; }
+#view-office.cil-one .ofc-room{ display:none; }
+#view-office.cil-one .ofc-room.cil-cur{ display:flex; }
+#view-office .ofc-legend{ flex-wrap:wrap; }
+#view-office .cil-roomshint{ text-align:center; color:var(--ofc-ink2); font-size:12.5px; margin:-4px 0 12px; }
 /* ป้ายชื่อในห้องจำลอง: จุดออนไลน์ + คนออฟไลน์จางลง */
 #view-office .ofc-plate .ofc-onl{ position:absolute; left:calc(-4px*var(--sc,1)); bottom:calc(-3px*var(--sc,1)); width:calc(12px*var(--sc,1)); height:calc(12px*var(--sc,1)); border-radius:50%; background:#2bc379; border:2px solid #fff; z-index:2; }
 #view-office .ofc-plate.cil-off .ofc-pav{ filter:grayscale(.85); opacity:.72; }
-@media (max-width:560px){ #view-office .cil-grid{ grid-template-columns:1fr 1fr; gap:9px; } #view-office .cil-card{ padding:12px; } #view-office .cil-avbtn{ padding:8px 12px; font-size:13.5px; } }
-@media (max-width:380px){ #view-office .cil-grid{ grid-template-columns:1fr; } }
+@media (max-width:560px){ #view-office .cil-avbtn{ padding:8px 12px; font-size:13.5px; } #view-office .cil-team{ grid-template-columns:1fr; gap:4px; } #view-office .cil-tl{ padding-top:0; } #view-office .cil-tl small{ display:inline; margin-left:8px; } #view-office .cil-roomsbar .s{ display:none; } #view-office .cil-roomsbar .t{ flex:1; } #view-office .cil-pt .l2{ max-width:210px; } }
 </style>
 <script id="cil-presence-2026-10-06">
 /* CIL Team: ใครออนไลน์ (Supabase Realtime Presence) + สถานะการคุย (ว่าง · พอคุยได้ · ไม่ว่าง)
@@ -15520,7 +15537,7 @@ details.fm-more[open]{padding-bottom:6px;}
   function render(){
     var host=document.getElementById('cil-board'); if(!host) return;
     var rooms=(typeof window.ofcBoardData==='function')?window.ofcBoardData():[]; if(!rooms.length){ host.innerHTML=''; return; }
-    var all=[]; rooms.forEach(function(r){ r.members.forEach(function(m){ m.st=cardState(m); m.room=r; all.push(m); }); });
+    var all=[]; rooms.forEach(function(r){ r.members.forEach(function(m){ m.st=cardState(m); m.room=r; m.ord=all.length; all.push(m); }); });
     var cnt={all:all.length, online:0, green:0, yellow:0, red:0, offline:0};
     all.forEach(function(m){ if(m.st.online){ cnt.online++; if(m.st.avail==='green') cnt.green++; else if(m.st.avail==='yellow') cnt.yellow++; else if(m.st.avail==='red') cnt.red++; } else cnt.offline++; });
     function pass(m){ if(filter==='all') return true; if(filter==='online') return m.st.online; if(filter==='offline') return !m.st.online; return m.st.online && m.st.avail===filter; }
@@ -15545,35 +15562,40 @@ details.fm-more[open]{padding-bottom:6px;}
     var filt='<div class="cil-filters" role="group" aria-label="กรองตามสถานะ">'+chip('all','ทั้งหมด',cnt.all,'')+chip('online','ออนไลน์',cnt.online,'k-online')+chip('green','ว่าง · คุยได้',cnt.green,'k-green')+chip('yellow','พอคุยได้',cnt.yellow,'k-yellow')+chip('red','ไม่ว่าง',cnt.red,'k-red')+chip('offline','ออฟไลน์',cnt.offline,'')+'</div>';
     var conn=pres.ready?(cnt.online||pres.others?'':''):'<div class="cil-conn">กำลังเชื่อมต่อสถานะออนไลน์…</div>';
     if(pres.ready && pres.others) conn='<div class="cil-conn">ยังมีอีก '+pres.others+' บัญชีที่ออนไลน์อยู่ (ยังไม่ผูกชื่อกับทีม)</div>';
-    // ----- กลุ่มทีม -----
-    var groups=rooms.map(function(r){
-      var list=r.members.filter(pass).sort(function(a,b){
-        if(a.st.online!==b.st.online) return a.st.online?-1:1;
-        var d=(AVO[a.st.avail]-AVO[b.st.avail]); return d!==0?d:r.members.indexOf(a)-r.members.indexOf(b);
-      });
-      if(!list.length) return '';
-      var on=r.members.filter(function(m){ return m.st.online; }).length;
-      return '<section class="cil-group"><div class="cil-ghead"><h3>'+esc(r.label)+'</h3><small>ออนไลน์ '+on+'/'+r.members.length+'</small></div><div class="cil-grid">'+list.map(card).join('')+'</div></section>';
-    }).join('');
-    host.innerHTML=meHtml+filt+conn+(groups||'<div class="cil-empty">ไม่มีใครตรงกับตัวกรองนี้ตอนนี้</div>');
-  }
-  function card(m){
-    var st=m.st, c=m.c||{}, pill;
-    if(st.online){
-      pill=st.avail?'<span class="cil-pill '+st.avail+'"><i></i>'+AVT[st.avail]+(st.away?' · พักจอ':'')+'</span>':'<span class="cil-pill neutral"><i></i>ออนไลน์'+(st.away?' · พักจอ':'')+'</span>';
-    } else {
-      pill='<span class="cil-pill offl"><i></i>ออฟไลน์'+(emailOfName(m.n)?'':' · ยังไม่มีบัญชี')+'</span>';
+    // ----- ออนไลน์ตอนนี้ (ชิปละเอียด) + ออฟไลน์ (ชิปชื่ออย่างเดียว จัดตามทีม) -----
+    var sec='';
+    if(filter!=='offline'){
+      var onl=all.filter(function(m){ return m.st.online && pass(m); }).sort(function(a,b){ var d=AVO[a.st.avail]-AVO[b.st.avail]; return d!==0?d:a.ord-b.ord; });
+      sec+='<section class="cil-sec"><div class="cil-sech"><h3>🟢 ออนไลน์ตอนนี้</h3><small>'+onl.length+' คน · แตะชื่อเพื่อดูงานค้าง</small></div>'
+        +(onl.length?'<div class="cil-onrow">'+onl.map(chipOn).join('')+'</div>':'<div class="cil-none">'+((filter==='all'||filter==='online')?'ตอนนี้ยังไม่มีใครออนไลน์':'ไม่มีใครตรงกับตัวกรองนี้ตอนนี้')+'</div>')+'</section>';
     }
-    var msg=(c.message||'')?'<div class="cil-msg">'+esc((c.emoji||'💬')+' '+c.message)+'</div>':'';
-    var load=m.tasks?'<div class="cil-load '+(m.key==='urgent'?'urgent':(m.key==='busy'?'busy':''))+'">งานค้าง '+m.tasks+' งาน'+(m.key==='urgent'?' · มีงานด่วน':'')+'</div>':'';
-    var av=m.face?'<img src="'+esc(m.face)+'" alt="">':'<span class="in">'+esc(m.label.slice(0,1))+'</span>';
-    return '<button type="button" class="cil-card'+(st.online?'':' off')+'" onclick="cilOpen(\''+String(m.n).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" aria-label="'+esc(m.label)+' '+(st.online?(st.avail?AVT[st.avail]:'ออนไลน์'):'ออฟไลน์')+'">'
-      +'<span class="cil-av">'+av+'<i class="cil-onl"></i></span>'
-      +'<span class="cil-nm"><b>'+esc(m.label)+'</b><small>'+esc(m.role||'')+'</small></span>'
-      +pill+msg+load+'</button>';
+    if(filter==='all'||filter==='offline'){
+      var rows=rooms.map(function(r){
+        var list=r.members.filter(function(m){ return !m.st.online; }); if(!list.length) return '';
+        return '<div class="cil-team"><div class="cil-tl">'+esc(r.label)+'<small>ออฟไลน์ '+list.length+'/'+r.members.length+'</small></div><div class="cil-chips">'+list.map(chipOff).join('')+'</div></div>';
+      }).join('');
+      sec+='<section class="cil-sec"><div class="cil-sech"><h3>⚪ ออฟไลน์</h3><small>'+cnt.offline+' คน</small></div>'+(rows||'<div class="cil-none">ทุกคนออนไลน์อยู่ 🎉</div>')+'</section>';
+    }
+    host.innerHTML=meHtml+filt+conn+sec;
+  }
+  function avOf(m){ return m.face?'<img src="'+esc(m.face)+'" alt="">':'<span class="in">'+esc(m.label.slice(0,1))+'</span>'; }
+  function openAttr(m){ return 'onclick="cilOpen(\''+String(m.n).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')"'; }
+  function chipOn(m){
+    var st=m.st, c=m.c||{};
+    var pill=st.avail?'<span class="cil-pill '+st.avail+'"><i></i>'+AVT[st.avail]+'</span>':'<span class="cil-pill neutral"><i></i>ออนไลน์</span>';
+    var l2=(st.away?'พักจอ · ':'')+(m.role||'')+((c.message||'')?' · '+(c.emoji||'💬')+' '+c.message:'');
+    var tip=m.label+' · '+(st.avail?AVT[st.avail]:'ออนไลน์')+(c.message?' · '+c.message:'')+(m.tasks?' · งานค้าง '+m.tasks+' งาน':'');
+    return '<button type="button" class="cil-p on" '+openAttr(m)+' title="'+esc(tip)+'">'
+      +'<span class="cil-av" style="--s:40px">'+avOf(m)+'<i class="cil-onl"></i></span>'
+      +'<span class="cil-pt"><span class="l1"><b>'+esc(m.label)+'</b>'+pill+'</span><span class="l2">'+esc(l2)+'</span></span></button>';
+  }
+  function chipOff(m){
+    var tip=m.label+(m.role?' · '+m.role:'')+' · ออฟไลน์'+(emailOfName(m.n)?'':' (ยังไม่มีบัญชี)')+(m.tasks?' · งานค้าง '+m.tasks+' งาน':'');
+    return '<button type="button" class="cil-p off" '+openAttr(m)+' title="'+esc(tip)+'"><span class="cil-av" style="--s:28px">'+avOf(m)+'</span><b>'+esc(m.label)+'</b></button>';
   }
   /* ป้ายชื่อในห้องจำลอง: จุดออนไลน์ + จุดสถานะการคุย (อัปเดตได้ทันทีโดยไม่ต้องวาดห้องใหม่) */
   function decorate(){
+    applyRooms();
     var plates=document.querySelectorAll('#ofc-rooms .ofc-plate[data-n]'); if(!plates.length) return;
     [].forEach.call(plates,function(pl){
       var n=pl.getAttribute('data-n'), pr=pres.byName[n]||null, c=stored(n);
@@ -15585,6 +15607,32 @@ details.fm-more[open]{padding-bottom:6px;}
       else if(dot){ dot.remove(); }
     });
   }
+  /* ---------- ห้องจำลอง: พับเก็บเป็นค่าเริ่มต้น · เปิดทีละห้อง ---------- */
+  var roomsOpen=false, curRoom=-1;
+  try{ roomsOpen=localStorage.getItem('cil_rooms_open')==='1'; }catch(e){}
+  function pickRoom(){
+    if(curRoom>=0) return curRoom;
+    var me=myNick(), rs=(typeof window.ofcBoardData==='function')?window.ofcBoardData():[];
+    for(var i=0;i<rs.length;i++){ if(me && rs[i].members.some(function(m){ return m.n===me; })) return (curRoom=i); }
+    return (curRoom=0);
+  }
+  function applyRooms(){
+    var v=document.getElementById('view-office'); if(!v) return;
+    v.classList.toggle('cil-rooms-open',roomsOpen);
+    var b=document.getElementById('cil-roomsbar'); if(b) b.setAttribute('aria-expanded',roomsOpen?'true':'false');
+    if(!roomsOpen) return;
+    var cur=pickRoom();
+    [].forEach.call(document.querySelectorAll('#ofc-rooms .ofc-room'),function(el){ el.classList.toggle('cil-cur', el.id==='ofc-room-'+cur); });
+    [].forEach.call(document.querySelectorAll('#ofc-roomnav .ofc-roombtn'),function(el,i){ el.classList.toggle('on',i===cur); });
+    var lb=document.querySelector('#ofc-roomnav .ofc-nav-lb'); if(lb) lb.textContent='เลือกห้อง:';
+    v.classList.add('cil-one');
+  }
+  window.cilToggleRooms=function(){
+    roomsOpen=!roomsOpen; try{ localStorage.setItem('cil_rooms_open',roomsOpen?'1':'0'); }catch(e){}
+    applyRooms();
+    if(roomsOpen){ try{ window.renderOffice(); }catch(e){} }   // วาดห้องใหม่ให้ขนาดพอดีจอ (ตอนพับอยู่วัดความกว้างไม่ได้)
+  };
+  window.setOfcRoom=function(i){ curRoom=i; applyRooms(); };
   window.cilRender=render; window.cilDecorate=decorate;
   window.cilFreshAvail=freshAvail;
   window.cilFilter=function(k){ filter=k; render(); };
