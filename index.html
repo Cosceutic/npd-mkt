@@ -14497,18 +14497,10 @@ details.fm-more[open]{padding-bottom:6px;}
     var board='<div class="cc-pl-board">'+gfxLinkedColHtml(p)+cols.map(function(c,idx){
       var listc=byCol[c.key]||[];
       var cardsHtml=listc.map(function(x){return gfxCard(x,c);}).join('')||'<div class="cc-pl-empty">— ว่าง —</div>';
-      var tools=canEd?('<div style="display:flex;gap:3px;flex-wrap:wrap;margin:1px 0 7px;">'
-        +'<button '+TB+' title="แก้ชื่อ" onclick="gfxRenameCol(\''+AJ(c.key)+'\')">✏️</button>'
-        +'<button '+TB+' title="เปลี่ยนสี" onclick="gfxColorCol(\''+AJ(c.key)+'\')">🎨</button>'
-        +'<button '+TB+' title="ตั้ง/ยกเลิก เป็นคอลัมน์เสร็จแล้ว" onclick="gfxToggleDoneCol(\''+AJ(c.key)+'\')">'+(c.done?'✅ เสร็จ':'○ ตั้งเสร็จ')+'</button>'
-        +'<button '+TB+' title="นับ/ไม่นับเป็นจำนวนงาน (คอลัมน์ต้นฉบับ)" onclick="gfxToggleNoCountCol(\''+AJ(c.key)+'\')">'+(c.nocount?'🚫 ไม่นับ':'# นับ')+'</button>'
-        +'<button '+TB+' title="เลื่อนซ้าย" onclick="gfxMoveCol(\''+AJ(c.key)+'\',-1)">◀</button>'
-        +'<button '+TB+' title="เลื่อนขวา" onclick="gfxMoveCol(\''+AJ(c.key)+'\',1)">▶</button>'
-        +'<button '+TB+' title="ลบคอลัมน์" style="color:#d33;" onclick="gfxDelCol(\''+AJ(c.key)+'\')">🗑️</button>'
-        +'</div>'):'';
+      var tools='';   // เครื่องมือคอลัมน์ย้ายไปอยู่ในเมนู ⋮ ที่หัวคอลัมน์ (gfxColMenu)
       var addC=canEd?'<button class="cc-pl-add" onclick="gfxAddIn(\''+AJ(c.key)+'\')">➕ เพิ่มการ์ด</button>':'';
       return '<div class="cc-pl-col" data-status="'+E(c.key)+'"'+(canEd?' ondragover="gfxDragOver(event)" ondragleave="gfxDragLeave(event)" ondrop="gfxDrop(event,\''+AJ(c.key)+'\')"':'')+'>'
-        +'<div class="cc-pl-colhead"><span class="cc-pl-dot" style="background:'+(c.color||'#7cb6e4')+'"></span><span class="cc-pl-colname">'+E(c.title)+(c.nocount?' <span style="font-size:9.5px;font-weight:700;color:#9aa4b5;background:#eef1f7;border-radius:5px;padding:0 5px;">ไม่นับ</span>':'')+'</span><span class="cc-pl-colcount">'+listc.length+'</span></div>'
+        +'<div class="cc-pl-colhead"><span class="cc-pl-dot" style="background:'+(c.color||'#7cb6e4')+'"></span><span class="cc-pl-colname">'+E(c.title)+(c.nocount?' <span style="font-size:9.5px;font-weight:700;color:#9aa4b5;background:#eef1f7;border-radius:5px;padding:0 5px;">ไม่นับ</span>':'')+'</span><span class="cc-pl-colcount">'+listc.length+'</span>'+(canEd?'<button type="button" class="gfx-colmore" title="จัดการคอลัมน์" aria-label="จัดการคอลัมน์" aria-haspopup="menu" onclick="gfxColMenu(event,\''+AJ(c.key)+'\')">⋮</button>':'')+'</div>'
         +tools+'<div class="cc-pl-cards">'+cardsHtml+'</div>'+addC+'</div>';
     }).join('')+(canEd?'<div class="cc-pl-col" style="background:transparent;border:none;box-shadow:none;min-width:150px;"><button class="cc-pl-add" style="border-style:dashed;height:44px;" onclick="gfxAddCol()">➕ เพิ่มคอลัมน์</button></div>':'')+'</div>';
     main.innerHTML=filterBar+board;
@@ -14660,6 +14652,42 @@ details.fm-more[open]{padding-bottom:6px;}
   window.gfxToggleNoCountCol=function(key){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); var c=cols.find(function(x){return x.key===key;}); if(!c) return; c.nocount=!c.nocount; gfxSaveCols(gfxPerson); gfxReRender(); TOAST(c.nocount?('“'+c.title+'” = ไม่นับเป็นจำนวนงาน'):('“'+c.title+'” = นับเป็นจำนวนงานแล้ว'),'ok'); };
   window.gfxMoveCol=function(key,dir){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); var i=cols.findIndex(function(x){return x.key===key;}); var j=i+dir; if(i<0||j<0||j>=cols.length) return; var tmp=cols[i]; cols[i]=cols[j]; cols[j]=tmp; gfxSaveCols(gfxPerson); gfxReRender(); };
   window.gfxDelCol=function(key){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); if(cols.length<=1){ TOAST('ต้องมีอย่างน้อย 1 คอลัมน์','info'); return; } var c=cols.find(function(x){return x.key===key;}); var inCol=gfxCardsOf(gfxPerson).filter(function(x){return x.col===key;}); if(!confirm('ลบคอลัมน์ “'+((c&&c.title)||'')+'”?'+(inCol.length?(' การ์ด '+inCol.length+' ใบจะย้ายไปคอลัมน์แรก'):''))) return; var newCols=cols.filter(function(x){return x.key!==key;}); GFX_COLS[gfxPerson]=newCols; var firstKey=newCols[0].key; inCol.forEach(function(x){ x.col=firstKey; if(gfxIsDoneCol(gfxPerson,firstKey)){ if(!x.doneAt) x.doneAt=TS(); } else { x.doneAt=''; } x.updatedAt=TS(); gfxUpsertLocal(x); gfxSyncCard(x); }); gfxSaveCols(gfxPerson); gfxReRender(); };
+
+  /* เมนู ⋮ ของหัวคอลัมน์ (แทนปุ่มเครื่องมือเดิมที่เรียงอยู่ใต้ชื่อคอลัมน์) */
+  window.gfxColMenuClose=function(){ var m=document.getElementById('gfx-colmenu'); if(m && m.parentNode) m.parentNode.removeChild(m); };
+  window.gfxColMenu=function(ev,key){
+    if(ev){ ev.stopPropagation(); ev.preventDefault(); }
+    if(!gfxCanEdit()) return;
+    var old=document.getElementById('gfx-colmenu'); if(old){ var same=old.getAttribute('data-key')===key; window.gfxColMenuClose(); if(same) return; }
+    var cols=gfxEnsureCols(gfxPerson), idx=-1, c=null; cols.forEach(function(x,i){ if(x.key===key){ c=x; idx=i; } }); if(!c) return;
+    var k=AJ(key);
+    var items=[
+      ['✏️','แก้ชื่อคอลัมน์','gfxRenameCol(\''+k+'\')',''],
+      ['🎨','เปลี่ยนสีจุดหน้าชื่อ','gfxColorCol(\''+k+'\')',''],
+      [c.done?'✅':'○', c.done?'เป็นคอลัมน์เสร็จแล้ว (กดเพื่อยกเลิก)':'ตั้งเป็นคอลัมน์เสร็จแล้ว','gfxToggleDoneCol(\''+k+'\')',''],
+      [c.nocount?'🚫':'#', c.nocount?'ไม่นับเป็นงาน (กดเพื่อให้นับ)':'นับเป็นงาน (กดเพื่อไม่นับ)','gfxToggleNoCountCol(\''+k+'\')',''],
+      ['◀','เลื่อนคอลัมน์ไปทางซ้าย','gfxMoveCol(\''+k+'\',-1)', idx<=0?'off':''],
+      ['▶','เลื่อนคอลัมน์ไปทางขวา','gfxMoveCol(\''+k+'\',1)', idx>=cols.length-1?'off':''],
+      ['🗑️','ลบคอลัมน์','gfxDelCol(\''+k+'\')','danger']
+    ];
+    var m=document.createElement('div'); m.id='gfx-colmenu'; m.className='gfx-colmenu'; m.setAttribute('role','menu'); m.setAttribute('data-key',key);
+    m.innerHTML='<div class="gfx-colmenu-h">'+E(c.title)+'</div>'+items.map(function(it){
+      return '<button type="button" role="menuitem" class="'+it[3]+'"'+(it[3]==='off'?' disabled':'')+' onclick="gfxColMenuClose();'+it[2]+'"><span class="mi">'+it[0]+'</span><span>'+it[1]+'</span></button>';
+    }).join('');
+    document.body.appendChild(m);
+    var btn=ev&&ev.currentTarget||ev&&ev.target; var r=btn&&btn.getBoundingClientRect?btn.getBoundingClientRect():{right:window.innerWidth-20,bottom:60,top:40};
+    var w=m.offsetWidth, h=m.offsetHeight;
+    var left=Math.max(8, Math.min(r.right-w, window.innerWidth-w-8));
+    var top=r.bottom+6; if(top+h>window.innerHeight-8) top=Math.max(8, r.top-h-6);
+    m.style.left=left+'px'; m.style.top=top+'px';
+  };
+  if(!window.__gfxColMenuBound){
+    window.__gfxColMenuBound=true;
+    document.addEventListener('click',function(e){ var m=document.getElementById('gfx-colmenu'); if(m && !m.contains(e.target)) window.gfxColMenuClose(); });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape') window.gfxColMenuClose(); });
+    window.addEventListener('resize',function(){ window.gfxColMenuClose(); });
+    window.addEventListener('scroll',function(){ window.gfxColMenuClose(); },true);
+  }
 
   /* ---------- cards ---------- */
   window.gfxAddIn=function(k){ if(!gfxCanEdit()){ TOAST('เข้าสู่ระบบ (สิทธิ์ทีม) ก่อนจึงจะเพิ่มได้','info'); return; } gfxPresetCol=k||gfxFirstActiveColKey(gfxPerson); gfxEditId=null; openGfxEditor(null); };
@@ -15315,6 +15343,21 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   #view-graphic .gfx-navitem{ flex-direction:row; gap:6px; padding:7px 12px; font-size:13px; }
   #view-graphic .gfx-who{ flex-direction:row; gap:6px; padding:0 6px; font-size:14px; }
 }
+/* หัวคอลัมน์: แถบสีฟ้า (ทุกบอร์ด) + ปุ่ม ⋮ */
+.cc-pl-colhead{ background:#3F6DB5; color:#fff; border-radius:13px 13px 0 0; margin:-9px -9px 4px; padding:10px 10px 10px 12px; }
+.cc-pl-colhead .cc-pl-colname{ color:#fff; }
+.cc-pl-colhead .cc-pl-colcount{ background:rgba(255,255,255,.22); color:#fff; }
+.cc-pl-colhead .cc-pl-dot{ box-shadow:0 0 0 2px rgba(255,255,255,.9); }
+.gfx-colmore{ flex:0 0 auto; border:none; background:rgba(255,255,255,.18); color:#fff; width:26px; height:26px; border-radius:7px; font-size:18px; line-height:1; cursor:pointer; padding:0; }
+.gfx-colmore:hover,.gfx-colmore:focus-visible{ background:rgba(255,255,255,.34); }
+.gfx-colmenu{ position:fixed; z-index:200; min-width:236px; max-width:min(300px,calc(100vw - 16px)); background:#fff; border:1px solid var(--line,#E7ECF5); border-radius:12px; padding:6px; box-shadow:0 14px 34px -10px rgba(30,45,90,.38); font-family:'Sarabun',sans-serif; }
+.gfx-colmenu-h{ font-family:'Anuphan','Prompt',sans-serif; font-size:12px; font-weight:700; color:var(--ink-soft,#6b7794); padding:6px 10px 6px; border-bottom:1px solid var(--line,#E7ECF5); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.gfx-colmenu button{ display:flex; align-items:center; gap:10px; width:100%; text-align:left; border:none; background:transparent; padding:8px 10px; border-radius:8px; font-size:13.5px; color:var(--ink,#1F2A36); cursor:pointer; font-family:inherit; }
+.gfx-colmenu button:hover:not(:disabled){ background:#EEF3FB; }
+.gfx-colmenu button .mi{ width:20px; text-align:center; flex:0 0 20px; }
+.gfx-colmenu button.danger{ color:#C0392B; }
+.gfx-colmenu button.danger:hover{ background:#FCE9E6 !important; }
+.gfx-colmenu button:disabled{ opacity:.38; cursor:default; }
 </style>
 <script id="compact-layout-js-2026-10-05">
 /* คำนวณความสูงบอร์ดให้พอดีจอ (ขอบล่างบอร์ด = ขอบล่างหน้าต่าง) + ส่งความสูงแถบบนให้เมนูซ้ายที่ลอยตาม */
