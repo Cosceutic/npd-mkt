@@ -14461,11 +14461,11 @@ details.fm-more[open]{padding-bottom:6px;}
   };
   function gfxWorkspaceHtml(){
     var p=gfxPerson;
-    var item=function(k,l){ return '<button class="gfx-navitem'+(gfxSub===k?' on':'')+'" onclick="gfxSetSub(\''+k+'\')">'+l+'</button>'; };
+    var item=function(k,ic,lb,full){ return '<button class="gfx-navitem'+(gfxSub===k?' on':'')+'" title="'+full+'" aria-label="'+full+'" onclick="gfxSetSub(\''+k+'\')"><span class="ic">'+ic+'</span><span class="lb">'+lb+'</span></button>'; };
     var side='<div class="gfx-side">'
-      +'<button class="gfx-navitem" style="background:#f4f2fb;font-weight:700;" onclick="gfxBackHome()">← ทีมกราฟฟิก</button>'
-      +'<div style="padding:6px 4px 2px;font-weight:800;font-size:15px;font-family:\'Anuphan\',\'Prompt\',sans-serif;">🎨 '+E(p)+'</div>'
-      +item('board','📋 บอร์ดงาน')+item('dashboard','📊 แดชบอร์ด')
+      +'<button class="gfx-navitem gfx-back" title="กลับไปหน้าทีมกราฟฟิก" aria-label="ทีมกราฟฟิก" onclick="gfxBackHome()"><span class="ic">←</span><span class="lb">ทีม</span></button>'
+      +'<div class="gfx-who" title="'+E(p)+'"><span class="ic">🎨</span><span>'+E(p)+'</span></div>'
+      +item('board','📋','บอร์ด','บอร์ดงาน')+item('dashboard','📊','แดชบอร์ด','แดชบอร์ด')
       +'</div>';
     return '<div class="gfx-wrap">'+side+'<div id="gfx-main" style="flex:1;min-width:0;"></div></div>';
   }
@@ -15267,6 +15267,79 @@ details.fm-more[open]{padding-bottom:6px;}
   setTimeout(load,3500); setTimeout(load,10000);
   setInterval(function(){ load(); },45000);   // โพลต่อแม้แท็บอยู่เบื้องหลัง (เบราว์เซอร์จะหน่วงเหลือ ~1 ครั้ง/นาที) เพื่อให้แจ้งเตือนมุมจอทำงาน
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) load(); });
+})();
+</script>
+<style id="compact-layout-2026-10-05">
+/* ===== เลย์เอาต์กระชับ (2026-10-05): แถบบนบาง · เมนูซ้ายแบบไอคอน · บอร์ดเต็มจอ · แถบเลื่อนซ้ายขวาติดขอบล่าง ===== */
+header{ padding:7px 18px !important; gap:6px !important; }
+header .brand{ font-size:15px; gap:8px; }
+header .brand img{ height:30px; width:30px; padding:2px; }
+header .brand .name small{ font-size:9.5px; }
+header .header-top{ gap:10px; }
+#nav{ padding:3px !important; gap:2px; }
+#nav .tab{ padding:6px 11px; font-size:12.5px; }
+.updated-badge{ padding:3px 11px !important; font-size:11px !important; }
+.notice-banner{ padding:5px 16px !important; font-size:12.5px !important; gap:8px; }
+.notice-banner .icon{ font-size:14px; line-height:1.35; }
+.notice-banner .msg{ line-height:1.35; }
+@media (max-width:700px){ #nav{ flex-wrap:nowrap; overflow-x:auto; justify-content:flex-start; scrollbar-width:none; } #nav::-webkit-scrollbar{ display:none; } #nav .tab{ flex:0 0 auto; white-space:nowrap; } }
+@media (min-width:1400px){
+  header{ flex-direction:row; align-items:center; flex-wrap:nowrap; gap:14px !important; }
+  header .header-top{ display:contents; }
+  header .brand{ order:1; flex:0 0 auto; }
+  #nav{ order:2; flex:1 1 auto; align-self:center; flex-wrap:nowrap; justify-content:center; min-width:0; }
+  header .header-right{ order:3; flex:0 0 auto; }
+}
+/* หน้าที่มีบอร์ด: กว้างเต็มจอ (ไม่ถูกจำกัดที่ 1220px) */
+#cc-main-wrap{ max-width:none !important; margin-left:0 !important; margin-right:0 !important; }
+main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-content.active){ max-width:none; padding:10px 14px 6px; }
+/* บอร์ด: สูงเต็มจอ แถบเลื่อนซ้ายขวาอยู่ติดขอบล่างของหน้าต่าง · การ์ดในแต่ละคอลัมน์เลื่อนขึ้นลงเองในคอลัมน์ */
+.cc-pl-board{ align-items:stretch !important; padding-bottom:0 !important; overflow-x:auto; overflow-y:hidden; max-height:calc(100vh - 190px); scrollbar-width:auto; scrollbar-color:#9bb0d4 #e3e9f4; }
+.cc-pl-board::-webkit-scrollbar{ height:14px; }
+.cc-pl-board::-webkit-scrollbar-track{ background:#e3e9f4; border-radius:8px; }
+.cc-pl-board::-webkit-scrollbar-thumb{ background:#9bb0d4; border-radius:8px; border:3px solid #e3e9f4; }
+.cc-pl-board::-webkit-scrollbar-thumb:hover{ background:#7f98c4; }
+.cc-pl-board > .cc-pl-col{ max-height:100%; min-height:0; }
+.cc-pl-board .cc-pl-cards{ flex:1 1 auto; min-height:0; max-height:none !important; }
+/* เมนูซ้ายของบอร์ดกราฟฟิก: แถบไอคอนแคบ */
+#view-graphic .gfx-wrap{ gap:10px; margin-top:4px; }
+#view-graphic .gfx-side{ width:62px; flex:0 0 62px; gap:6px; position:sticky; top:calc(var(--hdr-h,80px) + 8px); }
+#view-graphic .gfx-navitem{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:8px 2px; border-radius:12px; text-align:center; line-height:1.15; font-size:10.5px; font-weight:600; }
+#view-graphic .gfx-navitem .ic{ font-size:19px; line-height:1; }
+#view-graphic .gfx-who{ display:flex; flex-direction:column; align-items:center; gap:1px; padding:6px 2px 4px; font-family:'Anuphan','Prompt',sans-serif; font-weight:800; font-size:11.5px; line-height:1.15; text-align:center; word-break:break-word; }
+#view-graphic .gfx-who .ic{ font-size:20px; }
+@media (max-width:760px){
+  #view-graphic .gfx-wrap{ flex-direction:column; align-items:stretch; }
+  #view-graphic #gfx-main{ width:100%; max-width:100%; }
+  #view-graphic .gfx-side{ width:100%; flex:0 0 auto; flex-direction:row; flex-wrap:wrap; align-items:center; position:static; }
+  #view-graphic .gfx-navitem{ flex-direction:row; gap:6px; padding:7px 12px; font-size:13px; }
+  #view-graphic .gfx-who{ flex-direction:row; gap:6px; padding:0 6px; font-size:14px; }
+}
+</style>
+<script id="compact-layout-js-2026-10-05">
+/* คำนวณความสูงบอร์ดให้พอดีจอ (ขอบล่างบอร์ด = ขอบล่างหน้าต่าง) + ส่งความสูงแถบบนให้เมนูซ้ายที่ลอยตาม */
+(function(){
+  var raf=0;
+  function hdrH(){ var h=document.querySelector('header'); var v=h?h.offsetHeight:0; document.documentElement.style.setProperty('--hdr-h', v+'px'); }
+  function fit(){
+    raf=0; hdrH();
+    var boards=document.querySelectorAll('.view.active .cc-pl-board');
+    for(var i=0;i<boards.length;i++){
+      var b=boards[i]; if(!b.offsetParent) continue;
+      var top=b.getBoundingClientRect().top+(window.pageYOffset||0);
+      var h=Math.round(window.innerHeight-top-4);
+      if(h<window.innerHeight*0.55){ var hd=document.querySelector('header'); h=Math.round(window.innerHeight-(hd?hd.offsetHeight:60)-8); }   /* เนื้อหาเหนือบอร์ดสูงมาก → ให้บอร์ดสูงเต็มจอ เลื่อนหน้าลงแล้วขอบล่างบอร์ดติดขอบจอ */
+      h=Math.max(330,h);
+      if(parseInt(b.style.height,10)!==h){ b.style.height=h+'px'; b.style.maxHeight=h+'px'; }
+    }
+  }
+  function sched(){ if(!raf) raf=setTimeout(fit,40); }
+  window.addEventListener('resize',sched);
+  window.addEventListener('load',function(){ sched(); setTimeout(sched,700); });
+  document.addEventListener('click',function(){ setTimeout(sched,90); },true);
+  var m=document.querySelector('main');
+  if(m && window.MutationObserver) new MutationObserver(sched).observe(m,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+  sched();
 })();
 </script>
 </body>
