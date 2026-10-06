@@ -16827,17 +16827,21 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
 })();
 </script>
 <script id="game-zone-2026-10-07">
-/* 🎮 Game Zone — เมนูเกมของทีม · เกมแรก: XO (Tic-Tac-Toe)
-   • เล่นกับเพื่อนแบบเรียลไทม์ผ่าน Supabase Realtime (broadcast + presence ช่อง npd-game-xo — ไม่ใช้ตารางฐานข้อมูล)
-   • เล่นกับบอทได้ (ง่าย/กลาง/ยาก) ไม่ต้องล็อกอิน · ตารางคะแนนทีมเก็บที่ graphic_config k='game::xo::<ชื่อเล่น>' (นับเฉพาะเล่นกับเพื่อน)
-   • เพิ่มเกมใหม่: เพิ่มใน GAMES แล้วเขียนหน้าจอเกมนั้น */
+/* 🎮 Game Zone — เมนูเกมของทีม (เพิ่มเกมใหม่: ใส่ใน GAMES + เขียน mount/หน้าจอของเกมนั้น)
+   เกม: ❌⭕ XO (เล่นกับเพื่อนเรียลไทม์ / บอท · แมตช์เดียว หรือ Best of 3) · 🔢 ทายตัวเลข · 🐍 เกมงู · 🔍 จับผิดภาพ
+   • Realtime: ช่อง npd-game-xo (broadcast + presence) เชื่อมไว้ตลอดเมื่อล็อกอิน → คำท้าเด้งได้ในทุกเมนู (ไม่ใช้ตารางฐานข้อมูล)
+   • คะแนน: graphic_config k='game::<เกม>::<ชื่อเล่น>' (แต่ละคนเขียนของตัวเอง) · เกมคะแนนมีรายสัปดาห์ (wk/ws) + คะแนนรวมทีม */
 (function(){
-  var TOPIC='npd-game-xo', PFX='game::xo::';
+  var TOPIC='npd-game-xo', PFX='game::';
   var LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-  var GAMES=[{k:'xo',ic:'❌⭕',t:'XO',d:'ต่อแถวให้ครบ 3 ช่องก่อนใคร — ท้าเพื่อนในทีมแบบเรียลไทม์ หรือซ้อมกับบอท',on:true},
-             {k:'soon',ic:'🧩',t:'เกมต่อไป…',d:'กำลังคิดอยู่ — มีไอเดียเกมที่อยากเล่นบอกได้เลย',on:false}];
-  var screen='hub', tab='friend', bot={diff:'hard',side:'X'}, S=null, chan=null, conn='', presence={}, scores={}, scoresAt=0, inv=null, outInv=null;
-  var rec={}, series={w:0,l:0,d:0}, sound=true, oppGone=null, botT=null, invT=null, scT=null;
+  var GAMES=[
+    {k:'xo',ic:'❌⭕',t:'XO',d:'ต่อแถวให้ครบ 3 ช่องก่อนใคร — ท้าเพื่อนแบบเรียลไทม์ (แมตช์เดียว / Best of 3) หรือซ้อมกับบอท',on:true,score:false},
+    {k:'num',ic:'🔢',t:'ทายตัวเลข',d:'ถอดรหัสเลข 4 หลักที่ไม่ซ้ำกันใน 10 ครั้ง — โจทย์ประจำวัน ทั้งทีมได้โจทย์เดียวกัน ยิ่งทายน้อยครั้งยิ่งได้แต้มเยอะ',on:true,score:true,mode:'sum',unit:'แต้ม',daily:true},
+    {k:'snk',ic:'🐍',t:'เกมงู',d:'กินแอปเปิลให้ตัวยาวที่สุดโดยไม่ชนกำแพงหรือตัวเอง — ทำสถิติสูงสุดของสัปดาห์ให้ทีม',on:true,score:true,mode:'best',unit:'แต้ม',daily:false},
+    {k:'spot',ic:'🔍',t:'จับผิดภาพ',d:'หาจุดที่ต่างกัน 5 จุดให้ไวที่สุด — โจทย์ประจำวัน 3 รอบ สะสมแต้มให้ทีม',on:true,score:true,mode:'sum',unit:'แต้ม',daily:true}];
+  var screen='hub', tab='friend', bot={diff:'hard',side:'X'}, fmtPick=1, S=null, chan=null, conn='', presence={};
+  var ALL={xo:{},num:{},snk:{},spot:{}}, scoresAt=0, inv=null, outInv=null, lb={}, rec={}, series={w:0,l:0,d:0};
+  var sound=true, oppGone=null, botT=null, invT=null, scT=null, flashT=null, origTitle='';
   try{ sound=localStorage.getItem('gm_sound')!=='0'; }catch(e){}
   function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function js(t){ return String(t).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
@@ -16845,10 +16849,21 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function root(){ return document.getElementById('gm-root'); }
   function viewActive(){ var v=document.getElementById('view-game'); return !!(v&&v.classList.contains('active')); }
   function nm(n){ return window.pplName?window.pplName(n):esc(n); }
+  function dn(n){ return window.pplDisplay?window.pplDisplay(n):String(n); }
   function av(n,s){ return window.pplAv?window.pplAv(n,s):''; }
   function say(m,k){ try{ if(typeof toast==='function') toast(m,k||'info'); }catch(e){} }
+  function gameOf(k){ for(var i=0;i<GAMES.length;i++) if(GAMES[i].k===k) return GAMES[i]; return null; }
+  function pad(n){ return n<10?'0'+n:''+n; }
+  function dayKey(d){ d=d||new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function weekKey(d){ d=d||new Date(); var t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())), day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day+3); var y=t.getUTCFullYear(), j=new Date(Date.UTC(y,0,4)); var w=1+Math.round(((t-j)/86400000-3+((j.getUTCDay()+6)%7))/7); return y+'-W'+pad(w); }
+  window.gmUtil={dayKey:dayKey,weekKey:weekKey};
 
-  /* ---------- กติกา + บอท ---------- */
+  /* ---------- สุ่มแบบกำหนด seed (ทุกคนได้โจทย์ประจำวันเดียวกัน) ---------- */
+  function rng(seed){ var s=String(seed), h=1779033703^s.length; for(var i=0;i<s.length;i++){ h=Math.imul(h^s.charCodeAt(i),3432918353); h=(h<<13)|(h>>>19); }
+    var a=(function(){ h=Math.imul(h^(h>>>16),2246822507); h=Math.imul(h^(h>>>13),3266489909); return (h^=h>>>16)>>>0; })();
+    return function(){ a|=0; a=(a+0x6D2B79F5)|0; var t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+  /* ---------- กติกา XO + บอท ---------- */
   function winnerOf(b){ for(var i=0;i<LINES.length;i++){ var l=LINES[i], a=b[l[0]]; if(a&&a===b[l[1]]&&a===b[l[2]]) return {w:a,line:l}; } return b.every(Boolean)?{w:'D',line:null}:null; }
   function other(s){ return s==='X'?'O':'X'; }
   function turnOf(b){ var x=0,o=0; b.forEach(function(c){ if(c==='X') x++; else if(c==='O') o++; }); return x<=o?'X':'O'; }
@@ -16861,211 +16876,426 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     function finish(s){ for(var k=0;k<e.length;k++){ var t=b.slice(); t[e[k]]=s; var r=winnerOf(t); if(r&&r.w===s) return e[k]; } return -1; }
     if(diff==='mid'){ var w=finish(botS); if(w>=0) return w; var bl=finish(human); if(bl>=0&&Math.random()<0.8) return bl; return pick(e); }
     var best=-99, mv=[]; e.forEach(function(i){ var t=b.slice(); t[i]=botS; var v=minimax(t,human,botS,1); if(v>best){ best=v; mv=[i]; } else if(v===best) mv.push(i); }); return pick(mv); }
-  window.gmLogic={winnerOf:winnerOf,botPick:botPick,turnOf:turnOf};
 
-  /* ---------- เสียง / ฉลอง ---------- */
+  /* ---------- ทายตัวเลข (Bulls & Cows) ---------- */
+  function numSecret(seed){ var r=rng(seed), d=[0,1,2,3,4,5,6,7,8,9]; for(var i=9;i>0;i--){ var j=Math.floor(r()*(i+1)), t=d[i]; d[i]=d[j]; d[j]=t; } return d.slice(0,4).join(''); }
+  function numCheck(secret,guess){ var b=0,c=0; for(var i=0;i<4;i++){ if(guess[i]===secret[i]) b++; else if(secret.indexOf(guess[i])>=0) c++; } return {b:b,c:c}; }
+  function numPoints(n){ return Math.max(10,110-10*n); }
+
+  /* ---------- เกมงู ---------- */
+  var SN_N=18;
+  function snkFood(sn,rnd){ var free=[]; for(var y=0;y<SN_N;y++) for(var x=0;x<SN_N;x++){ var hit=false; for(var i=0;i<sn.length;i++){ if(sn[i].x===x&&sn[i].y===y){ hit=true; break; } } if(!hit) free.push({x:x,y:y}); } return free.length?free[Math.floor(rnd()*free.length)]:null; }
+  function snkInit(rnd){ var m=Math.floor(SN_N/2), sn=[{x:m,y:m},{x:m-1,y:m},{x:m-2,y:m}]; return {snake:sn,dir:'R',nd:'R',food:snkFood(sn,rnd),score:0,alive:true}; }
+  function snkStep(st,rnd){ if(!st.alive) return st; var opp={U:'D',D:'U',L:'R',R:'L'}, d=st.nd; if(opp[d]===st.dir) d=st.dir; st.dir=d;
+    var h=st.snake[0], nx=h.x+(d==='R'?1:d==='L'?-1:0), ny=h.y+(d==='D'?1:d==='U'?-1:0);
+    if(nx<0||ny<0||nx>=SN_N||ny>=SN_N){ st.alive=false; return st; }
+    var eat=!!(st.food&&nx===st.food.x&&ny===st.food.y), body=eat?st.snake:st.snake.slice(0,-1);
+    for(var i=0;i<body.length;i++){ if(body[i].x===nx&&body[i].y===ny){ st.alive=false; return st; } }
+    st.snake=[{x:nx,y:ny}].concat(body); if(eat){ st.score+=10; st.food=snkFood(st.snake,rnd); if(!st.food) st.alive=false; } return st; }
+  function snkDelay(score){ return Math.max(62,150-Math.floor(score/30)*9); }
+
+  /* ---------- จับผิดภาพ ---------- */
+  var SP_W=350, SP_H=220, SP_COL=['#EF5350','#FFA726','#FFD54F','#66BB6A','#26A69A','#42A5F5','#7E57C2','#EC407A'], SP_DIFFS=5;
+  function spotGen(seed){ var r=rng(seed), L=[]; for(var row=0;row<4;row++) for(var col=0;col<7;col++){ L.push({x:25+col*50+(r()*10-5),y:30+row*53+(r()*10-5),k:Math.floor(r()*5),c:Math.floor(r()*8),s:14+Math.floor(r()*6)}); }
+    var R=L.map(function(o){ return {x:o.x,y:o.y,k:o.k,c:o.c,s:o.s}; }), idx=L.map(function(_,i){ return i; });
+    for(var i=idx.length-1;i>0;i--){ var j=Math.floor(r()*(i+1)), t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
+    var diffs=idx.slice(0,SP_DIFFS), types=['color','shape','size','gone'];
+    diffs.forEach(function(i,n){ var ty=types[(Math.floor(r()*4)+n)%4], o=R[i];
+      if(ty==='color') o.c=(o.c+1+Math.floor(r()*7))%8; else if(ty==='shape') o.k=(o.k+1+Math.floor(r()*4))%5; else if(ty==='size') o.s=o.s>=17?Math.round(o.s*0.55):Math.round(o.s*1.55); else R[i]=null; });
+    return {left:L,right:R,diffs:diffs}; }
+  function spotHit(scene,vx,vy){ var best=-1,bd=26; scene.left.forEach(function(o,i){ var d=Math.hypot(o.x-vx,o.y-vy); if(d<bd){ bd=d; best=i; } }); return best; }
+  function shapeSvg(o){ var s=o.s, x=o.x, y=o.y, f=SP_COL[o.c], a='fill="'+f+'" stroke="rgba(40,50,80,.35)" stroke-width="1.2"';
+    if(o.k===0) return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+s+'" '+a+'/>';
+    if(o.k===1) return '<rect x="'+(x-s).toFixed(1)+'" y="'+(y-s).toFixed(1)+'" width="'+(2*s)+'" height="'+(2*s)+'" rx="3" '+a+'/>';
+    if(o.k===2) return '<polygon points="'+x.toFixed(1)+','+(y-s*1.2).toFixed(1)+' '+(x+s*1.1).toFixed(1)+','+(y+s*.85).toFixed(1)+' '+(x-s*1.1).toFixed(1)+','+(y+s*.85).toFixed(1)+'" '+a+'/>';
+    if(o.k===3){ var p=[]; for(var i=0;i<10;i++){ var ang=-Math.PI/2+i*Math.PI/5, rr=(i%2?s*.5:s*1.25); p.push((x+Math.cos(ang)*rr).toFixed(1)+','+(y+Math.sin(ang)*rr).toFixed(1)); } return '<polygon points="'+p.join(' ')+'" '+a+'/>'; }
+    return '<polygon points="'+x.toFixed(1)+','+(y-s*1.25).toFixed(1)+' '+(x+s).toFixed(1)+','+y.toFixed(1)+' '+x.toFixed(1)+','+(y+s*1.25).toFixed(1)+' '+(x-s).toFixed(1)+','+y.toFixed(1)+'" '+a+'/>'; }
+  window.gmLogic={winnerOf:winnerOf,botPick:botPick,turnOf:turnOf,numSecret:numSecret,numCheck:numCheck,numPoints:numPoints,snkInit:snkInit,snkStep:snkStep,snkDelay:snkDelay,spotGen:spotGen,spotHit:spotHit,rng:rng};
+
+  /* ---------- เสียง / ฉลอง / เตือน ---------- */
   var AC=null;
   function beep(f,d,v){ if(!sound) return; try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); var o=AC.createOscillator(), g=AC.createGain(); o.type='sine'; o.frequency.value=f; g.gain.value=v||0.05; o.connect(g); g.connect(AC.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+d); o.stop(AC.currentTime+d); }catch(e){} }
-  function sfx(k){ if(k==='move') beep(520,.08); else if(k==='inv'){ beep(660,.12); setTimeout(function(){ beep(880,.16); },130); } else if(k==='win'){ [523,659,784,1047].forEach(function(f,i){ setTimeout(function(){ beep(f,.18,.07); },i*120); }); } else if(k==='lose') beep(220,.35); else if(k==='draw') beep(400,.2); }
-  function burst(){ try{ var d=document.createElement('div'); d.className='gm-confetti'; var h=''; var em=['🎉','✨','🎊','⭐','💖','🌟'];
+  function sfx(k){ if(k==='move') beep(520,.08); else if(k==='inv'){ beep(660,.12); setTimeout(function(){ beep(880,.16); },130); } else if(k==='win'){ [523,659,784,1047].forEach(function(f,i){ setTimeout(function(){ beep(f,.18,.07); },i*120); }); } else if(k==='lose') beep(220,.35); else if(k==='draw') beep(400,.2); else if(k==='ok') beep(740,.09); else if(k==='bad') beep(180,.12); else if(k==='eat') beep(880,.06); }
+  function burst(){ try{ var d=document.createElement('div'); d.className='gm-confetti'; var h='', em=['🎉','✨','🎊','⭐','💖','🌟'];
     for(var i=0;i<28;i++){ h+='<i style="--x:'+(Math.random()*100).toFixed(1)+'vw;--r:'+Math.round(Math.random()*540-270)+'deg;--t:'+(1.8+Math.random()*1.6).toFixed(2)+'s;--dl:'+(Math.random()*.5).toFixed(2)+'s;--s:'+(18+Math.round(Math.random()*18))+'px">'+em[i%em.length]+'</i>'; }
     d.innerHTML=h; document.body.appendChild(d); setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); },3800); }catch(e){} }
+  function deskOn(){ try{ return typeof Notification!=='undefined' && Notification.permission==='granted' && localStorage.getItem('npd_nt_desktop_v1')!=='off'; }catch(e){ return false; } }
+  function startFlash(txt){ try{ if(flashT) return; origTitle=document.title; var on=false; flashT=setInterval(function(){ on=!on; document.title=on?txt:origTitle; },900); }catch(e){} }
+  function stopFlash(){ try{ if(flashT){ clearInterval(flashT); flashT=null; document.title=origTitle||document.title; } }catch(e){} }
 
-  /* ---------- Realtime ---------- */
-  function myStatus(){ return (S&&S.mode==='pvp'&&!S.over)?'play':(viewActive()&&!document.hidden?'lobby':'away'); }
+  /* ---------- คะแนน (graphic_config k='game::<เกม>::<ชื่อเล่น>') ---------- */
+  function parseKey(k){ var m=/^game::([a-z]+)::(.+)$/.exec(String(k||'')); return m?{g:m[1],n:m[2]}:null; }
+  async function loadAll(force){ if(!force&&Date.now()-scoresAt<8000) return; scoresAt=Date.now();
+    try{ var rows=await sbSelect('graphic_config','k=like.'+encodeURIComponent(PFX+'*')), o={xo:{},num:{},snk:{},spot:{}};
+      rows.forEach(function(r){ var p=parseKey(r.k); if(!p||!o[p.g]) return; try{ o[p.g][p.n]=JSON.parse(r.v||'{}'); }catch(e){} });
+      ALL=o; refresh(); }catch(e){} }
+  async function fetchOwn(g){ var n=me(), key=PFX+g+'::'+n; try{ var rows=await sbSelect('graphic_config','k=eq.'+encodeURIComponent(key)); for(var i=0;i<rows.length;i++){ if(rows[i].k===key) return JSON.parse(rows[i].v||'{}'); } return {}; }catch(e){ return ALL[g][n]||{}; } }
+  async function putOwn(g,cur){ var n=me(), key=PFX+g+'::'+n; ALL[g][n]=cur; refresh();
+    try{ var r=await postToSheet({target:'graphicconfig',action:'upsert',keyValue:key,row:{k:key,v:JSON.stringify(cur),updatedAt:(typeof todayStr==='function'?todayStr():''),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}});
+      if(r&&r.ok===false) say('❌ บันทึกคะแนนไม่สำเร็จ: '+(r.error||''),'err'); else send({t:'sc'}); return r; }catch(e){} }
+  /* XO: นับเป็น "แมตช์" (แมตช์เดียว = 1 เกม · Best of 3 = 1 ซีรีส์) */
+  async function record(res){ var n=me(); if(!n) return; var cur=Object.assign({w:0,l:0,d:0,s:0,b:0},await fetchOwn('xo'));
+    cur={w:+cur.w||0,l:+cur.l||0,d:+cur.d||0,s:+cur.s||0,b:+cur.b||0};
+    if(res==='w'){ cur.w++; cur.s++; cur.b=Math.max(cur.b,cur.s); } else if(res==='l'){ cur.l++; cur.s=0; } else cur.d++; await putOwn('xo',cur); }
+  /* เกมคะแนน: mode 'sum' = สะสมรายสัปดาห์ · 'best' = สถิติสูงสุดของสัปดาห์ */
+  async function recordScore(g,sc,day){ var n=me(), G=gameOf(g); if(!n||!G) return; var cur=await fetchOwn(g), wk=weekKey();
+    if(cur.wk!==wk){ cur.wk=wk; cur.ws=0; }
+    cur.ws=G.mode==='sum'?(+cur.ws||0)+sc:Math.max(+cur.ws||0,sc); cur.b=Math.max(+cur.b||0,sc); cur.p=(+cur.p||0)+1; cur.t=(+cur.t||0)+sc;
+    if(day){ cur.ld=day; cur.lp=sc; } await putOwn(g,cur); }
+  function wv(r){ return (r&&r.wk===weekKey())?(+r.ws||0):0; }
+  function playedToday(g){ var r=ALL[g][me()]; return !!(r&&r.ld===dayKey()); }
+  function teamWeek(g){ var t=0,c=0; Object.keys(ALL[g]).forEach(function(n){ var v=wv(ALL[g][n]); if(v>0){ t+=v; c++; } }); return {total:t,players:c}; }
+  function rankScore(g,kind){ var G=gameOf(g); return Object.keys(ALL[g]).map(function(n){ var r=ALL[g][n]; return {n:n,r:r,v:kind==='wk'?wv(r):(G.mode==='sum'?(+r.t||0):(+r.b||0))}; }).filter(function(x){ return x.v>0; }).sort(function(a,b){ return (b.v-a.v)||(a.n<b.n?-1:1); }); }
+  function rankXo(){ return Object.keys(ALL.xo).map(function(n){ var s=ALL.xo[n], g=(+s.w||0)+(+s.l||0)+(+s.d||0); return {n:n,s:s,g:g,rate:g?(+s.w||0)/g:0}; }).filter(function(x){ return x.g>0; })
+    .sort(function(a,b){ return ((+b.s.w||0)-(+a.s.w||0))||(b.rate-a.rate)||((+a.s.l||0)-(+b.s.l||0))||(a.n<b.n?-1:1); }); }
+  window.gmScore={weekKey:weekKey,wv:wv,teamWeek:teamWeek};
+
+  /* ---------- Realtime (เชื่อมไว้ตลอดเมื่อล็อกอิน → คำท้าเด้งได้ทุกเมนู) ---------- */
+  function myStatus(){ return (S&&S.mode==='pvp'&&!S.sOver)?'play':(viewActive()&&!document.hidden?'lobby':'away'); }
   function track(){ try{ if(chan&&conn==='ok'&&me()) chan.track({n:me(),st:myStatus()}); }catch(e){} }
   function send(p){ try{ if(chan) chan.send({type:'broadcast',event:'xo',payload:p}); }catch(e){} }
   async function connect(){
-    if(chan||!me()||screen!=='xo') return;
-    try{ if(typeof sbInit==='function') await sbInit(); if(typeof SB_CLIENT==='undefined'||!SB_CLIENT){ conn='err'; render(); return; }
+    if(chan||!me()) return;
+    try{ if(typeof sbInit==='function') await sbInit(); if(typeof SB_CLIENT==='undefined'||!SB_CLIENT){ conn='err'; refresh(); return; }
       conn='...'; var ch=SB_CLIENT.channel(TOPIC,{config:{broadcast:{self:false},presence:{key:(typeof sbEmail==='function'?sbEmail():me())}}}); chan=ch;
       ch.on('presence',{event:'sync'},readPresence);
       ch.on('broadcast',{event:'xo'},function(m){ onMsg((m&&m.payload)||m); });
-      ch.subscribe(function(s){ if(chan!==ch) return; if(s==='SUBSCRIBED'){ conn='ok'; track(); } else if(s==='CHANNEL_ERROR'||s==='TIMED_OUT'||s==='CLOSED'){ conn='err'; } render(); });
-      render();
-    }catch(e){ conn='err'; chan=null; render(); } }
+      ch.subscribe(function(s){ if(chan!==ch) return; if(s==='SUBSCRIBED'){ conn='ok'; track(); } else if(s==='CHANNEL_ERROR'||s==='TIMED_OUT'||s==='CLOSED'){ conn='err'; } refresh(); });
+      refresh();
+    }catch(e){ conn='err'; chan=null; refresh(); } }
   function disconnect(){ try{ if(chan&&typeof SB_CLIENT!=='undefined'&&SB_CLIENT){ var c=chan; chan=null; conn=''; presence={}; SB_CLIENT.removeChannel(c); } }catch(e){} chan=null; conn=''; presence={}; }
   function readPresence(){ try{ var st=chan.presenceState(), o={}; Object.keys(st).forEach(function(k){ var metas=st[k]||[]; var m=metas[metas.length-1]; if(m&&m.n) o[m.n]={st:m.st||'lobby',key:k}; }); presence=o; }catch(e){ presence={}; }
-    if(S&&S.mode==='pvp'&&!S.over){ if(!presence[S.opp]){ if(!oppGone) oppGone=setTimeout(function(){ oppGone=null; if(S&&S.mode==='pvp'&&!S.over&&!presence[S.opp]) forfeitWin('คู่แข่งหลุดจากห้องเกม'); },14000); } else if(oppGone){ clearTimeout(oppGone); oppGone=null; } }
-    render(); }
+    if(S&&S.mode==='pvp'&&!S.sOver){ if(!presence[S.opp]){ if(!oppGone) oppGone=setTimeout(function(){ oppGone=null; if(S&&S.mode==='pvp'&&!S.sOver&&!presence[S.opp]) forfeitWin('คู่แข่งหลุดจากห้องเกม'); },14000); } else if(oppGone){ clearTimeout(oppGone); oppGone=null; } }
+    refresh(); }
   function onMsg(p){ if(!p||!p.t) return; var m=me();
-    if(p.t==='sc'){ clearTimeout(scT); scT=setTimeout(function(){ loadScores(true); },700); return; }
+    if(p.t==='sc'){ clearTimeout(scT); scT=setTimeout(function(){ loadAll(true); },700); return; }
     if(!m||p.to!==m) return;
-    if(p.t==='inv'){ if(S&&S.mode==='pvp'&&!S.over||inv||outInv){ send({t:'dec',id:p.id,from:m,to:p.from,why:'busy'}); return; } inv={id:p.id,from:p.from}; clearTimeout(invT); invT=setTimeout(function(){ if(inv&&inv.id===p.id){ inv=null; render(); } },30000); sfx('inv'); say('⚔️ '+window.pplDisplay(p.from)+' ท้าคุณเล่น XO!','info'); render(); }
-    else if(p.t==='acc'){ if(outInv&&outInv.id===p.id&&outInv.to===p.from){ var o=outInv; outInv=null; clearTimeout(invT); startPvp(o.id,o.to,'X',1); } }
-    else if(p.t==='dec'){ if(outInv&&outInv.id===p.id){ var to=outInv.to; outInv=null; clearTimeout(invT); say((p.why==='busy'?window.pplDisplay(to)+' กำลังเล่นอยู่':window.pplDisplay(to)+' ขอผ่านรอบนี้')+' ',"info"); render(); } }
-    else if(p.t==='can'){ if(inv&&inv.id===p.id){ inv=null; render(); } }
+    if(p.t==='inv'){ if((S&&S.mode==='pvp'&&!S.sOver)||inv||outInv){ send({t:'dec',id:p.id,from:m,to:p.from,why:'busy'}); return; }
+      inv={id:p.id,from:p.from,fmt:p.fmt===3?3:1}; clearTimeout(invT); invT=setTimeout(function(){ if(inv&&inv.id===p.id){ inv=null; renderPop(); refresh(); } },30000);
+      sfx('inv'); startFlash('⚔️ '+dn(p.from)+' ท้าเล่น XO!'); try{ if(document.hidden&&deskOn()){ var nt=new Notification('⚔️ '+dn(p.from)+' ท้าคุณเล่น XO!',{body:'กลับมาที่เว็บเพื่อตอบรับ (รอได้ 30 วินาที)',tag:'gm-inv',icon:((document.querySelector('link[rel~="icon"]')||{}).href)||undefined}); nt.onclick=function(){ try{ window.focus(); nt.close(); }catch(e){} }; } }catch(e){}
+      renderPop(); refresh(); }
+    else if(p.t==='acc'){ if(outInv&&outInv.id===p.id&&outInv.to===p.from){ var o=outInv; outInv=null; clearTimeout(invT); goGame('xo'); startPvp(o.id,o.to,'X',1,{fmt:o.fmt,ser:1}); } }
+    else if(p.t==='dec'){ if(outInv&&outInv.id===p.id){ var to=outInv.to; outInv=null; clearTimeout(invT); say(dn(to)+(p.why==='busy'?' กำลังเล่นอยู่':' ขอผ่านรอบนี้'),'info'); refresh(); } }
+    else if(p.t==='can'){ if(inv&&inv.id===p.id){ inv=null; renderPop(); refresh(); } }
     else if(p.t==='mv'){ if(S&&S.mode==='pvp'&&S.id===p.id&&S.opp===p.from) applyRemote(p); }
-    else if(p.t==='rem'){ if(S&&S.mode==='pvp'&&S.opp===p.from&&S.over){ S.oppRe=true; tryRematch(); render(); } }
-    else if(p.t==='lv'){ if(S&&S.mode==='pvp'&&S.opp===p.from){ if(!S.over) forfeitWin(window.pplDisplay(p.from)+' ออกจากเกม'); else { S.oppLeft=true; render(); } } } }
+    else if(p.t==='rem'){ if(S&&S.mode==='pvp'&&S.opp===p.from&&S.over){ S.oppRe=true; tryRematch(); refresh(); } }
+    else if(p.t==='lv'){ if(S&&S.mode==='pvp'&&S.opp===p.from){ if(!S.sOver) forfeitWin(dn(p.from)+' ออกจากเกม'); else { S.oppLeft=true; refresh(); } } } }
 
-  /* ---------- สถานะเกม ---------- */
-  function newState(mode,o){ return Object.assign({mode:mode,board:Array(9).fill(''),me:'X',opp:'',over:false,winner:'',line:null,last:-1,res:'',round:1,id:'',reMe:false,oppRe:false,oppLeft:false,msg:''},o||{}); }
-  function startBot(){ clearTimeout(botT); S=newState('bot',{me:bot.side,opp:'น้องบอท',diff:bot.diff}); track(); render(); if(S.me==='O') botTurn(); }
-  function startPvp(id,opp,mySym,round){ clearTimeout(botT); S=newState('pvp',{me:mySym,opp:opp,id:id,round:round||1}); oppGone=null; track(); render(); sfx('inv'); }
-  function botTurn(){ clearTimeout(botT); if(!S||S.mode!=='bot'||S.over) return; botT=setTimeout(function(){ if(!S||S.mode!=='bot'||S.over) return; var i=botPick(S.board,other(S.me),S.diff); if(i<0) return; S.board[i]=other(S.me); S.last=i; S.fresh=i; sfx('move'); settle(); if(!S.over) render(); },S.diff==='hard'?650:500); }
+  /* ---------- XO: สถานะเกม (แมตช์เดียว / Best of 3) ---------- */
+  function newState(mode,o){ return Object.assign({mode:mode,board:Array(9).fill(''),me:'X',opp:'',over:false,winner:'',line:null,last:-1,fresh:-1,res:'',round:1,id:'',reMe:false,oppRe:false,oppLeft:false,msg:'',fmt:1,sw:{me:0,opp:0},ser:1,sOver:false,sRes:''},o||{}); }
+  function startBot(carry){ clearTimeout(botT); carry=carry||{}; S=newState('bot',{me:carry.me||bot.side,opp:'น้องบอท',diff:bot.diff,fmt:carry.fmt||fmtPick,round:carry.round||1,sw:carry.sw||{me:0,opp:0},ser:carry.ser||1}); track(); refresh(); if(S.me==='O') botTurn(); }
+  function startPvp(id,opp,mySym,round,carry){ clearTimeout(botT); carry=carry||{}; S=newState('pvp',{me:mySym,opp:opp,id:id,round:round||1,fmt:carry.fmt||1,sw:carry.sw||{me:0,opp:0},ser:carry.ser||1}); oppGone=null; track(); refresh(); sfx('inv'); }
+  function botTurn(){ clearTimeout(botT); if(!S||S.mode!=='bot'||S.over) return; botT=setTimeout(function(){ if(!S||S.mode!=='bot'||S.over) return; var i=botPick(S.board,other(S.me),S.diff); if(i<0) return; S.board[i]=other(S.me); S.last=i; S.fresh=i; sfx('move'); settle(); if(!S.over) refresh(); },S.diff==='hard'?650:500); }
   window.gmCell=function(i){ if(!S||S.over||S.board[i]) return; if(turnOf(S.board)!==S.me) return;
     S.board[i]=S.me; S.last=i; S.fresh=i; sfx('move');
-    if(S.mode==='pvp') send({t:'mv',id:S.id,from:me(),to:S.opp,b:S.board.map(function(c){return c||'-';}).join(''),r:S.round});
-    settle(); if(!S.over){ render(); if(S.mode==='bot') botTurn(); } };
-  function applyRemote(p){ var b=String(p.b||''); if(b.length!==9||/[^XO-]/.test(b)||(p.r&&p.r!==S.round)) return; var nb=b.split('').map(function(c){return c==='-'?'':c;});
+    if(S.mode==='pvp') send({t:'mv',id:S.id,from:me(),to:S.opp,b:S.board.map(function(c){return c||'-';}).join(''),r:S.round,s:S.ser});
+    settle(); if(!S.over){ refresh(); if(S.mode==='bot') botTurn(); } };
+  function applyRemote(p){ var b=String(p.b||''); if(b.length!==9||/[^XO-]/.test(b)||(p.r&&p.r!==S.round)||(p.s&&p.s!==S.ser)) return; var nb=b.split('').map(function(c){return c==='-'?'':c;});
     var cnt=function(a){ return a.filter(Boolean).length; }; if(cnt(nb)<=cnt(S.board)) return;
-    for(var i=0;i<9;i++){ if(S.board[i]&&S.board[i]!==nb[i]) return; }   // ต้องสอดคล้องกับของเรา
-    for(var j=0;j<9;j++){ if(nb[j]&&!S.board[j]){ S.last=j; S.fresh=j; } } S.board=nb; sfx('move'); settle(); render(); }
-  function settle(){ var r=winnerOf(S.board); if(!r) return; S.over=true; S.line=r.line; S.winner=r.w;
-    S.res=r.w==='D'?'d':(r.w===S.me?'w':'l');
-    if(S.mode==='bot'){ series[S.res]++; } else { logResult(S.res); }
-    if(S.res==='w'){ burst(); sfx('win'); } else if(S.res==='l') sfx('lose'); else sfx('draw');
-    track(); render(); }
-  function forfeitWin(why){ if(!S||S.over) return; S.over=true; S.winner=S.me; S.res='w'; S.msg=why; S.oppLeft=true; logResult('w'); burst(); sfx('win'); track(); render(); }
-  function logResult(res){ var k=S.id+'#'+S.round; if(rec[k]) return; rec[k]=1; record(res); }
-  window.gmLeave=function(){ if(S&&S.mode==='pvp'){ if(!S.over){ S.over=true; S.res='l'; logResult('l'); } send({t:'lv',id:S.id,from:me(),to:S.opp}); }
-    clearTimeout(botT); clearTimeout(oppGone); oppGone=null; S=null; track(); render(); };
-  window.gmAgain=function(){ if(!S) return; if(S.mode==='bot'){ startBot(); return; }
-    if(S.oppLeft) return; S.reMe=true; send({t:'rem',id:S.id,from:me(),to:S.opp}); tryRematch(); render(); };
-  function tryRematch(){ if(S&&S.mode==='pvp'&&S.over&&S.reMe&&S.oppRe&&!S.oppLeft){ var o=S.opp,id=S.id,r=S.round+1,sym=other(S.me); startPvp(id,o,sym,r); } }
+    for(var i=0;i<9;i++){ if(S.board[i]&&S.board[i]!==nb[i]) return; }
+    for(var j=0;j<9;j++){ if(nb[j]&&!S.board[j]){ S.last=j; S.fresh=j; } } S.board=nb; sfx('move'); settle(); refresh(); }
+  function settle(){ var r=winnerOf(S.board); if(!r) return; S.over=true; S.line=r.line; S.winner=r.w; S.res=r.w==='D'?'d':(r.w===S.me?'w':'l');
+    if(S.res==='w') S.sw.me++; else if(S.res==='l') S.sw.opp++;
+    if(S.fmt===3){ if(S.sw.me>=2||S.sw.opp>=2||S.round>=5){ S.sOver=true; S.sRes=S.sw.me>S.sw.opp?'w':(S.sw.me<S.sw.opp?'l':'d'); } } else { S.sOver=true; S.sRes=S.res; }
+    if(S.sOver){ if(S.mode==='bot') series[S.sRes]++; else logResult(S.sRes); }
+    var fin=S.sOver?S.sRes:S.res; if(fin==='w'&&S.sOver){ burst(); sfx('win'); } else if(fin==='l'&&S.sOver) sfx('lose'); else sfx(S.res==='w'?'ok':(S.res==='l'?'bad':'draw'));
+    track(); refresh(); }
+  function forfeitWin(why){ if(!S||S.sOver) return; S.over=true; S.sOver=true; S.winner=S.me; S.res='w'; S.sRes='w'; S.msg=why; S.oppLeft=true; logResult('w'); burst(); sfx('win'); track(); refresh(); }
+  function logResult(res){ var k=S.id+'#'+S.ser; if(rec[k]) return; rec[k]=1; record(res); }
+  window.gmLeave=function(){ if(S&&S.mode==='pvp'){ if(!S.sOver){ S.over=true; S.sOver=true; S.res='l'; S.sRes='l'; logResult('l'); } send({t:'lv',id:S.id,from:me(),to:S.opp}); }
+    clearTimeout(botT); clearTimeout(oppGone); oppGone=null; S=null; track(); refresh(); };
+  window.gmAgain=function(){ if(!S) return;
+    if(S.mode==='bot'){ if(S.sOver) startBot({fmt:S.fmt,ser:S.ser+1}); else startBot({me:other(S.me),fmt:S.fmt,round:S.round+1,sw:S.sw,ser:S.ser}); return; }
+    if(S.oppLeft) return; S.reMe=true; send({t:'rem',id:S.id,from:me(),to:S.opp}); tryRematch(); refresh(); };
+  function tryRematch(){ if(S&&S.mode==='pvp'&&S.over&&S.reMe&&S.oppRe&&!S.oppLeft){ var o=S.opp,id=S.id,sym=other(S.me);
+    if(S.sOver) startPvp(id,o,sym,1,{fmt:S.fmt,ser:S.ser+1}); else startPvp(id,o,sym,S.round+1,{fmt:S.fmt,sw:S.sw,ser:S.ser}); } }
 
-  /* ---------- ท้าเล่น ---------- */
-  window.gmChallenge=function(n){ if(!me()||!chan||conn!=='ok'||outInv||inv||(S&&S.mode==='pvp'&&!S.over)) return; if(!presence[n]||n===me()) return;
-    var id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); outInv={id:id,to:n}; send({t:'inv',id:id,from:me(),to:n}); clearTimeout(invT);
-    invT=setTimeout(function(){ if(outInv&&outInv.id===id){ outInv=null; say(window.pplDisplay(n)+' ยังไม่ตอบ — ลองใหม่อีกครั้งได้','info'); render(); } },30000); render(); };
-  window.gmCancelInv=function(){ if(outInv){ send({t:'can',id:outInv.id,from:me(),to:outInv.to}); outInv=null; clearTimeout(invT); render(); } };
-  window.gmAccept=function(){ if(!inv) return; var i=inv; inv=null; clearTimeout(invT); send({t:'acc',id:i.id,from:me(),to:i.from}); startPvp(i.id,i.from,'O',1); };
-  window.gmDecline=function(){ if(!inv) return; var i=inv; inv=null; clearTimeout(invT); send({t:'dec',id:i.id,from:me(),to:i.from}); render(); };
+  /* ---------- ท้าเล่น + ป๊อปอัปคำท้า (ลอยในทุกเมนู) ---------- */
+  window.gmChallenge=function(n){ if(!me()||!chan||conn!=='ok'||outInv||inv||(S&&S.mode==='pvp'&&!S.sOver)) return; if(!presence[n]||n===me()) return;
+    var id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); outInv={id:id,to:n,fmt:fmtPick}; send({t:'inv',id:id,from:me(),to:n,fmt:fmtPick}); clearTimeout(invT);
+    invT=setTimeout(function(){ if(outInv&&outInv.id===id){ outInv=null; say(dn(n)+' ยังไม่ตอบ — ลองใหม่อีกครั้งได้','info'); refresh(); } },30000); refresh(); };
+  window.gmCancelInv=function(){ if(outInv){ send({t:'can',id:outInv.id,from:me(),to:outInv.to}); outInv=null; clearTimeout(invT); refresh(); } };
+  window.gmAccept=function(){ if(!inv) return; var i=inv; inv=null; clearTimeout(invT); stopFlash(); renderPop(); send({t:'acc',id:i.id,from:me(),to:i.from}); goGame('xo'); startPvp(i.id,i.from,'O',1,{fmt:i.fmt,ser:1}); };
+  window.gmDecline=function(){ if(!inv) return; var i=inv; inv=null; clearTimeout(invT); stopFlash(); renderPop(); send({t:'dec',id:i.id,from:me(),to:i.from}); refresh(); };
+  function renderPop(){ var el=document.getElementById('gm-pop');
+    if(!inv){ if(el&&el.parentNode) el.parentNode.removeChild(el); stopFlash(); return; }
+    if(!el||!el.parentNode){ el=document.createElement('div'); el.id='gm-pop'; document.body.appendChild(el); }
+    el.innerHTML='<div class="gm-pop-in" role="alertdialog" aria-label="คำท้าเล่น XO"><div class="gm-pop-h">⚔️ คำท้าเล่น XO!</div><div class="gm-pop-b">'+av(inv.from,40)+'<span><b>'+nm(inv.from)+'</b> ท้าคุณเล่น<br><small>'+(inv.fmt===3?'Best of 3 (ชนะ 2 ใน 3 ยก)':'แมตช์เดียว')+'</small></span></div><div class="gm-pop-a"><button type="button" class="gm-btn pri" onclick="gmAccept()">ลุยเลย</button><button type="button" class="gm-btn" onclick="gmDecline()">ขอผ่าน</button></div></div>'; }
+  function goGame(k){ try{ var t=document.querySelector('#nav .tab[data-view="game"]'); if(t&&!viewActive()) t.click(); }catch(e){} openGame(k); }
 
-  /* ---------- คะแนนทีม ---------- */
-  async function loadScores(force){ if(!force&&Date.now()-scoresAt<8000) return; scoresAt=Date.now();
-    try{ var rows=await sbSelect('graphic_config','k=like.'+encodeURIComponent(PFX+'*')), o={};
-      rows.forEach(function(r){ var k=String(r.k||''); if(k.indexOf(PFX)!==0) return; try{ var v=JSON.parse(r.v||'{}'); o[k.slice(PFX.length)]={w:+v.w||0,l:+v.l||0,d:+v.d||0,s:+v.s||0,b:+v.b||0}; }catch(e){} });
-      scores=o; render(); }catch(e){} }
-  async function record(res){ var n=me(); if(!n) return; var key=PFX+n, cur={w:0,l:0,d:0,s:0,b:0};
-    try{ var rows=await sbSelect('graphic_config','k=eq.'+encodeURIComponent(key)); for(var i=0;i<rows.length;i++){ if(rows[i].k===key){ var v=JSON.parse(rows[i].v||'{}'); cur={w:+v.w||0,l:+v.l||0,d:+v.d||0,s:+v.s||0,b:+v.b||0}; } } }catch(e){ cur=Object.assign(cur,scores[n]||{}); }
-    if(res==='w'){ cur.w++; cur.s++; cur.b=Math.max(cur.b,cur.s); } else if(res==='l'){ cur.l++; cur.s=0; } else cur.d++;
-    scores[n]=cur; render();
-    try{ var r=await postToSheet({target:'graphicconfig',action:'upsert',keyValue:key,row:{k:key,v:JSON.stringify(cur),updatedAt:(typeof todayStr==='function'?todayStr():''),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}});
-      if(r&&r.ok===false) say('❌ บันทึกคะแนนไม่สำเร็จ: '+(r.error||''),'err'); else send({t:'sc'}); }catch(e){} }
-  function rank(){ return Object.keys(scores).map(function(n){ var s=scores[n], g=s.w+s.l+s.d; return {n:n,s:s,g:g,rate:g?s.w/g:0}; }).filter(function(x){ return x.g>0; })
-    .sort(function(a,b){ return (b.s.w-a.s.w)||(b.rate-a.rate)||(a.s.l-b.s.l)||(a.n<b.n?-1:1); }); }
-
-  /* ---------- วาดหน้าจอ ---------- */
+  /* ---------- วาด: XO ---------- */
   function markSvg(c,fresh){ var cls='gm-mk '+(c==='X'?'x':'o')+(fresh?' new':'');
     return c==='X'?'<svg class="'+cls+'" viewBox="0 0 100 100" aria-label="X"><path d="M26 26 L74 74 M74 26 L26 74"/></svg>':'<svg class="'+cls+'" viewBox="0 0 100 100" aria-label="O"><circle cx="50" cy="50" r="27"/></svg>'; }
   function boardHtml(){ var b=S?S.board:Array(9).fill(''), myTurn=!!(S&&!S.over&&turnOf(b)===S.me);
     return '<div class="gm-board'+(S?'':' idle')+'" role="grid" aria-label="กระดาน XO" data-me="'+(S?S.me:'')+'">'+b.map(function(c,i){
       var win=S&&S.line&&S.line.indexOf(i)>=0, can=S&&!S.over&&!c&&myTurn;
       return '<button type="button" class="gm-cell'+(win?' win':'')+(can?' can':'')+(S&&S.last===i?' last':'')+'" '+(can?'onclick="gmCell('+i+')"':'disabled')+' aria-label="ช่อง '+(i+1)+(c?' '+c:'')+'">'+(c?markSvg(c,!!(S&&S.fresh===i)):'')+'</button>'; }).join('')+'</div>'; }
-  function playerCard(name,sym,active,who){ var disp=name===''?'':nm(name); var isBot=(S&&S.mode==='bot'&&who==='opp');
-    return '<div class="gm-pl'+(active?' on':'')+'"><span class="gm-pav">'+(isBot?'<span class="gm-botav">🤖</span>':av(name,44))+'</span><span class="gm-pn"><b>'+(isBot?'น้องบอท':disp)+'</b><small>'+(who==='me'?'คุณ':(isBot?({easy:'ระดับง่าย',mid:'ระดับกลาง',hard:'ระดับยาก 🔥'}[S.diff]):'คู่แข่ง'))+'</small></span><span class="gm-sym '+(sym==='X'?'x':'o')+'">'+sym+'</span></div>'; }
+  function playerCard(name,sym,active,who){ var isBot=(S&&S.mode==='bot'&&who==='opp');
+    return '<div class="gm-pl'+(active?' on':'')+'"><span class="gm-pav">'+(isBot?'<span class="gm-botav">🤖</span>':av(name,44))+'</span><span class="gm-pn"><b>'+(isBot?'น้องบอท':nm(name))+'</b><small>'+(who==='me'?'คุณ':(isBot?({easy:'ระดับง่าย',mid:'ระดับกลาง',hard:'ระดับยาก 🔥'}[S.diff]):'คู่แข่ง'))+'</small></span><span class="gm-sym '+(sym==='X'?'x':'o')+'">'+sym+'</span></div>'; }
+  function vsMid(){ if(!S||S.fmt!==3) return '<span class="vs">VS</span>'; return '<span class="vs sc"><b>'+S.sw.me+'</b> – <b>'+S.sw.opp+'</b><small>Best of 3 · ยกที่ '+S.round+'</small></span>'; }
   function statusHtml(){ if(!S) return '<div class="gm-st idle">เลือกโหมดทางขวา แล้วเริ่มเล่นได้เลย 👉</div>';
-    if(S.over){ var t=S.res==='w'?'🎉 คุณชนะ!':(S.res==='l'?'😵 แพ้แล้ว… เอาใหม่!':'🤝 เสมอกัน'); if(S.msg) t+=' · '+esc(S.msg); return '<div class="gm-st '+S.res+'">'+t+'</div>'; }
-    var my=turnOf(S.board)===S.me; return '<div class="gm-st '+(my?'my':'wait')+'">'+(my?'ถึงตาคุณ — แตะช่องที่ว่าง':'รอ '+(S.mode==='bot'?'น้องบอท':esc(window.pplDisplay(S.opp)))+' เดิน…')+'</div>'; }
+    if(S.over){ var t, k=S.res; if(S.fmt===3&&S.sOver){ var sc=S.sw.me+'–'+S.sw.opp; t=S.sRes==='w'?'🏆 ชนะซีรีส์ '+sc+'!':(S.sRes==='l'?'😵 แพ้ซีรีส์ '+sc+' — เอาใหม่!':'🤝 ซีรีส์เสมอ '+sc); k=S.sRes; }
+      else if(S.fmt===3){ t=(S.res==='w'?'🎉 ชนะยกนี้!':(S.res==='l'?'😅 แพ้ยกนี้':'🤝 ยกนี้เสมอ'))+' · ซีรีส์ '+S.sw.me+'–'+S.sw.opp; }
+      else t=S.res==='w'?'🎉 คุณชนะ!':(S.res==='l'?'😵 แพ้แล้ว… เอาใหม่!':'🤝 เสมอกัน');
+      if(S.msg) t+=' · '+esc(S.msg); return '<div class="gm-st '+k+'">'+t+'</div>'; }
+    var my=turnOf(S.board)===S.me; return '<div class="gm-st '+(my?'my':'wait')+'">'+(my?'ถึงตาคุณ — แตะช่องที่ว่าง':'รอ '+(S.mode==='bot'?'น้องบอท':esc(dn(S.opp)))+' เดิน…')+'</div>'; }
   function controlsHtml(){ if(!S) return ''; var b='';
-    if(S.over){ if(S.mode==='bot') b+='<button type="button" class="gm-btn pri" onclick="gmAgain()">🔄 เล่นอีกรอบ</button>';
-      else if(!S.oppLeft) b+='<button type="button" class="gm-btn pri" onclick="gmAgain()"'+(S.reMe?' disabled':'')+'>'+(S.reMe?'⏳ รอ '+esc(window.pplDisplay(S.opp))+' ตอบรับ…':(S.oppRe?'🔄 '+esc(window.pplDisplay(S.opp))+' อยากเล่นอีก — กดเลย':'🔄 เล่นอีกรอบ (สลับฝั่ง)'))+'</button>'; }
-    b+='<button type="button" class="gm-btn" onclick="gmQuit()">'+(S.over?'กลับห้องรอ':'ออกจากเกม')+'</button>'; return '<div class="gm-ctl">'+b+'</div>'; }
-  function scoreLine(){ if(!S) return ''; if(S.mode==='bot') return '<div class="gm-series">ซ้อมกับบอท (รอบนี้ในหน้านี้): ชนะ <b>'+series.w+'</b> · เสมอ <b>'+series.d+'</b> · แพ้ <b>'+series.l+'</b> <small>(ไม่นับคะแนนทีม)</small></div>'; return '<div class="gm-series"><small>เล่นกับเพื่อน — นับเข้าตารางคะแนนทีม 🏆</small></div>'; }
+    if(S.over){ var lbl=S.sOver?'🔄 เล่นอีกครั้ง':'▶ ยกต่อไป';
+      if(S.mode==='bot') b+='<button type="button" class="gm-btn pri" onclick="gmAgain()">'+lbl+'</button>';
+      else if(!S.oppLeft) b+='<button type="button" class="gm-btn pri" onclick="gmAgain()"'+(S.reMe?' disabled':'')+'>'+(S.reMe?'⏳ รอ '+esc(dn(S.opp))+' ตอบรับ…':(S.oppRe?lbl+' — '+esc(dn(S.opp))+' พร้อมแล้ว':lbl+' (สลับฝั่ง)'))+'</button>'; }
+    b+='<button type="button" class="gm-btn" onclick="gmQuit()">'+(S.over&&S.sOver?'กลับห้องรอ':'ออกจากเกม')+'</button>'; return '<div class="gm-ctl">'+b+'</div>'; }
+  function scoreLine(){ if(!S) return ''; if(S.mode==='bot') return '<div class="gm-series">ซ้อมกับบอท (ในหน้านี้): ชนะ <b>'+series.w+'</b> · เสมอ <b>'+series.d+'</b> · แพ้ <b>'+series.l+'</b> <small>(ไม่นับคะแนนทีม)</small></div>'; return '<div class="gm-series"><small>เล่นกับเพื่อน — นับเข้าตารางคะแนนทีม 🏆 ('+(S.fmt===3?'ซีรีส์ Best of 3 นับเป็น 1 แมตช์':'แมตช์เดียว')+')</small></div>'; }
+  function fmtSeg(){ var seg=function(v,l){ return '<button type="button" class="gm-seg'+(fmtPick===v?' on':'')+'" onclick="gmFmt('+v+')">'+l+'</button>'; };
+    return '<div class="gm-opt"><div class="gm-ol">รูปแบบแมตช์</div><div class="gm-segs">'+seg(1,'แมตช์เดียว')+seg(3,'Best of 3')+'</div>'+(fmtPick===3?'<div class="gm-hint">ชนะก่อน 2 ยก · ผลัดกันเดินก่อนทุกยก · เสมอไม่นับแต้ม (สูงสุด 5 ยก)</div>':'')+'</div>'; }
   function lobbyHtml(){
     if(!me()) return '<div class="gm-empty"><span class="e">🔑</span><span><b>เข้าสู่ระบบเพื่อเล่นกับเพื่อนร่วมทีม</b><small>ล็อกอินแล้วท้ากันแบบเรียลไทม์ได้ · หรือสลับไปแท็บ “เล่นกับบอท” ซ้อมมือก่อนก็ได้</small></span></div><button type="button" class="gm-btn pri" onclick="sbShowLoginModal()">🔑 เข้าสู่ระบบ</button>';
     var h=''; if(conn==='err') h+='<div class="gm-warn">เชื่อมต่อห้องเกมไม่ได้ตอนนี้ — ลองสลับหน้าแล้วกลับมาใหม่ · เล่นกับบอทได้ตามปกติ</div>'; else if(conn!=='ok') h+='<div class="gm-warn soft">⏳ กำลังเข้าห้องเกม…</div>';
-    if(inv) h+='<div class="gm-inv"><div class="t">⚔️ <b>'+nm(inv.from)+'</b> ท้าคุณเล่น XO!</div><div class="b"><button type="button" class="gm-btn pri" onclick="gmAccept()">ลุยเลย</button><button type="button" class="gm-btn" onclick="gmDecline()">ขอผ่าน</button></div></div>';
     if(outInv) h+='<div class="gm-inv out"><div class="t">⏳ รอ <b>'+nm(outInv.to)+'</b> ตอบรับ…</div><div class="b"><button type="button" class="gm-btn" onclick="gmCancelInv()">ยกเลิก</button></div></div>';
-    var names=Object.keys(presence).filter(function(n){ return n!==me(); }).sort();
-    var busy=!!(S&&S.mode==='pvp'&&!S.over)||!!outInv||!!inv;
-    h+='<div class="gm-lh"><b>ห้องรอ</b><small>'+(conn==='ok'?(names.length+1)+' คนอยู่ในห้องเกมตอนนี้':'')+'</small></div>';
-    if(!names.length) h+='<div class="gm-empty"><span class="e">🪑</span><span><b>ตอนนี้มีแค่คุณในห้องเกม</b><small>ชวนเพื่อนเปิดเมนู 🎮 Game → XO แล้วท้ากันได้เลย · ระหว่างรอซ้อมกับบอทไปก่อน</small></span></div>';
-    else h+='<div class="gm-list">'+names.map(function(n){ var p=presence[n], st=p.st==='play'?'กำลังเล่นอยู่':(p.st==='away'?'สลับไปหน้าอื่น':'ว่าง — ท้าได้');
-      var can=!busy&&p.st!=='play'&&conn==='ok'; return '<div class="gm-row"><span class="gm-pav">'+av(n,38)+'</span><span class="gm-rn"><b>'+nm(n)+'</b><small class="'+(p.st==='play'?'busy':'free')+'">'+st+'</small></span><button type="button" class="gm-btn pri sm" onclick="gmChallenge(\''+js(n)+'\')"'+(can?'':' disabled')+'>⚔️ ท้าเล่น</button></div>'; }).join('')+'</div>';
+    h+=fmtSeg();
+    var names=Object.keys(presence).filter(function(n){ return n!==me(); }).sort(function(a,b){ var o={lobby:0,away:1,play:2}; return (o[presence[a].st]||0)-(o[presence[b].st]||0)||(a<b?-1:1); });
+    var busy=!!(S&&S.mode==='pvp'&&!S.sOver)||!!outInv||!!inv;
+    h+='<div class="gm-lh"><b>ผู้เล่นที่ออนไลน์</b><small>'+(conn==='ok'?(names.length+1)+' คน':'')+'</small></div>';
+    if(!names.length) h+='<div class="gm-empty"><span class="e">🪑</span><span><b>ตอนนี้มีแค่คุณออนไลน์</b><small>พอเพื่อนล็อกอินและเปิดเว็บนี้ ชื่อจะโผล่ที่นี่ — ท้าได้แม้เขาอยู่เมนูอื่น (คำท้าจะเด้งให้เห็นเลย)</small></span></div>';
+    else h+='<div class="gm-list">'+names.map(function(n){ var p=presence[n], stT=p.st==='play'?'กำลังเล่นอยู่':(p.st==='away'?'ออนไลน์อยู่เมนูอื่น — ท้าได้ คำท้าจะเด้ง':'อยู่ในห้องเกม — ว่าง');
+      var can=!busy&&p.st!=='play'&&conn==='ok'; return '<div class="gm-row"><span class="gm-pav">'+av(n,38)+'</span><span class="gm-rn"><b>'+nm(n)+'</b><small class="'+(p.st==='play'?'busy':'free')+'">'+stT+'</small></span><button type="button" class="gm-btn pri sm" onclick="gmChallenge(\''+js(n)+'\')"'+(can?'':' disabled')+'>⚔️ ท้าเล่น</button></div>'; }).join('')+'</div>';
     return h; }
   function botHtml(){ var seg=function(k,v,l,cur){ return '<button type="button" class="gm-seg'+(cur===v?' on':'')+'" onclick="gmSet(\''+k+'\',\''+v+'\')">'+l+'</button>'; };
     return '<div class="gm-opt"><div class="gm-ol">ความเก่งของบอท</div><div class="gm-segs">'+seg('diff','easy','🙂 ง่าย',bot.diff)+seg('diff','mid','😏 กลาง',bot.diff)+seg('diff','hard','🔥 ยาก',bot.diff)+'</div>'
       +'<div class="gm-hint">'+({easy:'เดินมั่วๆ — เหมาะวอร์มอัพ',mid:'ชนะเมื่อมีจังหวะ บล็อกบ้างไม่บ้าง',hard:'แทบไม่พลาด — ลองเสมอให้ได้!'}[bot.diff])+'</div></div>'
-      +'<div class="gm-opt"><div class="gm-ol">ใครเดินก่อน</div><div class="gm-segs">'+seg('side','X','ฉันเดินก่อน (X)',bot.side)+seg('side','O','บอทเดินก่อน (O)',bot.side)+'</div></div>'
-      +'<button type="button" class="gm-btn pri big" onclick="gmStartBot()">▶ เริ่มเล่นกับบอท</button>'; }
-  function rankHtml(){ var r=rank(); var h='<div class="gm-lh"><b>🏆 ตารางคะแนนทีม</b><small>เฉพาะแมตช์กับเพื่อน</small></div>';
+      +(fmtPick===1?'<div class="gm-opt"><div class="gm-ol">ใครเดินก่อน</div><div class="gm-segs">'+seg('side','X','ฉันเดินก่อน (X)',bot.side)+seg('side','O','บอทเดินก่อน (O)',bot.side)+'</div></div>':'')
+      +fmtSeg()+'<button type="button" class="gm-btn pri big" onclick="gmStartBot()">▶ เริ่มเล่นกับบอท</button>'; }
+  function xoRankHtml(){ var r=rankXo(); var h='<div class="gm-lh"><b>🏆 ตารางคะแนนทีม</b><small>เฉพาะแมตช์กับเพื่อน</small></div>';
     if(!r.length) return h+'<div class="gm-empty"><span class="e">🥇</span><span><b>ยังไม่มีใครลงสนาม</b><small>ชนะเพื่อนในทีมเป็นคนแรก แล้วชื่อคุณจะขึ้นอันดับ 1</small></span></div>';
     var medal=['🥇','🥈','🥉'];
-    return h+'<div class="gm-rank">'+r.slice(0,10).map(function(x,i){ var mine=x.n===me(); return '<div class="gm-rk'+(mine?' me':'')+'"><span class="no">'+(medal[i]||(i+1))+'</span><span class="gm-pav">'+av(x.n,32)+'</span><span class="gm-rn"><b>'+nm(x.n)+(mine?' <em>คุณ</em>':'')+'</b><small>ชนะ '+x.s.w+' · เสมอ '+x.s.d+' · แพ้ '+x.s.l+(x.s.s>1?' · 🔥 ติดกัน '+x.s.s:'')+'</small></span><span class="pct">'+Math.round(x.rate*100)+'%</span></div>'; }).join('')+'</div>'; }
-  function hubHtml(){ return '<div class="gm-hub">'+GAMES.map(function(g){ return '<div class="gm-gc'+(g.on?'':' soon')+'"'+(g.on?' onclick="gmOpen(\''+g.k+'\')" onkeydown="if(event.key===\'Enter\')gmOpen(\''+g.k+'\')" role="button" tabindex="0"':'')+'><div class="ic">'+g.ic+'</div><div class="tx"><h3>'+esc(g.t)+'</h3><p>'+esc(g.d)+'</p></div>'+(g.on?'<span class="go">เล่นเลย →</span>':'<span class="go soon">เร็วๆ นี้</span>')+'</div>'; }).join('')+'</div>'; }
+    return h+'<div class="gm-rank">'+r.slice(0,10).map(function(x,i){ var mine=x.n===me(), s=x.s; return '<div class="gm-rk'+(mine?' me':'')+'"><span class="no">'+(medal[i]||(i+1))+'</span><span class="gm-pav">'+av(x.n,32)+'</span><span class="gm-rn"><b>'+nm(x.n)+(mine?' <em>คุณ</em>':'')+'</b><small>ชนะ '+(+s.w||0)+' · เสมอ '+(+s.d||0)+' · แพ้ '+(+s.l||0)+((+s.s||0)>1?' · 🔥 ติดกัน '+s.s:'')+'</small></span><span class="pct">'+Math.round(x.rate*100)+'%</span></div>'; }).join('')+'</div>'; }
+  function backBar(){ return '<div class="gm-bar"><button type="button" class="gm-back" onclick="gmHome()">← Game Zone</button><button type="button" class="gm-snd" onclick="gmSound()" title="เปิด/ปิดเสียง">'+(sound?'🔊 เสียง: เปิด':'🔇 เสียง: ปิด')+'</button></div>'; }
   function xoHtml(){
-    var left='<div class="gm-card gm-play"><div class="gm-vs">'+(S?playerCard(me()||'ฉัน',S.me,!S.over&&turnOf(S.board)===S.me,'me')+'<span class="vs">VS</span>'+playerCard(S.opp,other(S.me),!S.over&&turnOf(S.board)!==S.me,'opp'):'<div class="gm-vsidle">❌ <b>XO</b> ⭕</div>')+'</div>'+statusHtml()+boardHtml()+scoreLine()+controlsHtml()+'</div>';
+    var left='<div class="gm-card gm-play"><div class="gm-vs">'+(S?playerCard(me()||'ฉัน',S.me,!S.over&&turnOf(S.board)===S.me,'me')+vsMid()+playerCard(S.opp,other(S.me),!S.over&&turnOf(S.board)!==S.me,'opp'):'<div class="gm-vsidle">❌ <b>XO</b> ⭕</div>')+'</div>'+statusHtml()+boardHtml()+scoreLine()+controlsHtml()+'</div>';
     var right='<div class="gm-card gm-side"><div class="gm-tabs"><button type="button" class="'+(tab==='friend'?'on':'')+'" onclick="gmTab(\'friend\')">👥 เล่นกับเพื่อน</button><button type="button" class="'+(tab==='bot'?'on':'')+'" onclick="gmTab(\'bot\')">🤖 เล่นกับบอท</button></div>'
-      +'<div class="gm-tabbody">'+(tab==='friend'?lobbyHtml():botHtml())+'</div></div><div class="gm-card gm-side">'+rankHtml()+'</div>';
-    return '<div class="gm-bar"><button type="button" class="gm-back" onclick="gmHome()">← Game Zone</button><button type="button" class="gm-snd" onclick="gmSound()" title="เปิด/ปิดเสียง">'+(sound?'🔊 เสียง: เปิด':'🔇 เสียง: ปิด')+'</button></div><div class="gm-xo"><div class="gm-col">'+left+'</div><div class="gm-col">'+right+'</div></div>'; }
+      +'<div class="gm-tabbody">'+(tab==='friend'?lobbyHtml():botHtml())+'</div></div><div class="gm-card gm-side">'+xoRankHtml()+'</div>';
+    return backBar()+'<div class="gm-xo"><div class="gm-col">'+left+'</div><div class="gm-col">'+right+'</div></div>'; }
+
+  /* ---------- ทายตัวเลข ---------- */
+  var N=null;
+  function numKey(){ return 'gm_num_'+dayKey()+'_'+(me()||'anon'); }
+  function numSave(){ try{ if(N&&N.daily) localStorage.setItem(numKey(),JSON.stringify({g:N.guesses.map(function(x){ return x.g; }),saved:N.saved})); }catch(e){} }
+  function numStart(daily){ var d=dayKey(), use=!!daily&&!playedToday('num'), seed=use?('num-'+d):('p'+Date.now()+Math.random());
+    N={daily:use,secret:numSecret(seed),guesses:[],cur:'',done:false,win:false,pts:0,msg:'',saved:false};
+    if(use){ try{ var sv=JSON.parse(localStorage.getItem(numKey())||'null');   // โจทย์ประจำวันที่เล่นค้างไว้ → เล่นต่อ (กันเปิดซ้ำเพื่อเริ่มใหม่)
+      if(sv&&Array.isArray(sv.g)){ sv.g.forEach(function(g){ if(N.done||!/^\d{4}$/.test(g)) return; var r=numCheck(N.secret,g); N.guesses.push({g:g,b:r.b,c:r.c}); if(r.b===4){ N.done=true; N.win=true; N.pts=numPoints(N.guesses.length); } });
+        if(!N.done&&N.guesses.length>=10){ N.done=true; N.win=false; N.pts=0; } N.saved=!!sv.saved; } }catch(e){} }
+    numDraw(); }
+  function numDraw(){ var m=document.getElementById('gm-main'); if(!m||!N) return; var rs=ALL.num[me()]||{}, today=playedToday('num');
+    var badge=N.daily?'<span class="gm-badge d">🗓️ โจทย์ประจำวัน · นับคะแนนทีม'+(me()?'':' (ล็อกอินเพื่อบันทึก)')+'</span>':'<span class="gm-badge">🎲 ซ้อมมือ · ไม่นับคะแนน</span>';
+    var slots=''; for(var i=0;i<4;i++){ slots+='<span class="gm-slot'+(N.cur[i]!==undefined?' f':'')+'">'+(N.cur[i]!==undefined?N.cur[i]:'')+'</span>'; }
+    var pad=''; ['1','2','3','4','5','6','7','8','9'].forEach(function(d){ pad+='<button type="button" class="gm-key" onclick="gmNumKey(\''+d+'\')">'+d+'</button>'; }); pad+='<button type="button" class="gm-key fn" onclick="gmNumDel()" aria-label="ลบ">⌫</button><button type="button" class="gm-key" onclick="gmNumKey(\'0\')">0</button><button type="button" class="gm-key ok" onclick="gmNumOk()">ตกลง</button>';
+    var hist=N.guesses.slice().reverse().map(function(g,i){ var n=N.guesses.length-i; return '<div class="gm-gr"><span class="no">'+n+'</span><span class="dg">'+g.g.split('').map(function(c){ return '<i>'+c+'</i>'; }).join('')+'</span><span class="fb"><b class="bu" title="เลขถูกและตรงตำแหน่ง">🎯 '+g.b+'</b><b class="cw" title="เลขถูกแต่ผิดตำแหน่ง">🔄 '+g.c+'</b></span></div>'; }).join('');
+    var res=''; if(N.done){ res='<div class="gm-st '+(N.win?'w':'l')+'">'+(N.win?'🎉 ถอดรหัสได้ใน '+N.guesses.length+' ครั้ง'+(N.daily?' · +'+N.pts+' แต้มให้ทีม':''):'😵 หมด 10 ครั้งแล้ว — รหัสคือ <b>'+N.secret+'</b>')+'</div>'; }
+    var info=(!N.daily&&today)?'<div class="gm-hint c">วันนี้คุณเล่นโจทย์ประจำวันไปแล้ว ได้ '+(+rs.lp||0)+' แต้ม — พรุ่งนี้มีโจทย์ใหม่!</div>':'';
+    m.innerHTML='<div class="gm-nm">'+badge+'<div class="gm-nm-hint">ทาย <b>เลข 4 หลักที่ไม่ซ้ำกัน</b> · 🎯 = ถูกตัวและตรงตำแหน่ง · 🔄 = ถูกตัวแต่ผิดตำแหน่ง</div>'
+      +'<div class="gm-nm-info">ครั้งที่ <b>'+Math.min(N.guesses.length+(N.done?0:1),10)+'</b>/10</div>'+info
+      +(N.done?res:'<div class="gm-slots">'+slots+'</div><div class="gm-nm-msg">'+(N.msg?esc(N.msg):'&nbsp;')+'</div><div class="gm-pad">'+pad+'</div>')
+      +(hist?'<div class="gm-hist">'+hist+'</div>':'')
+      +'<div class="gm-ctl">'+(N.done?'<button type="button" class="gm-btn pri" onclick="gmNumNew(false)">🎲 ซ้อมมืออีกรอบ</button>':'<button type="button" class="gm-btn" onclick="gmNumNew(false)">🎲 เปลี่ยนเป็นโจทย์ซ้อมมือ</button>')+'</div></div>'; }
+  window.gmNumNew=function(daily){ numStart(daily); };
+  window.gmNumKey=function(d){ if(!N||N.done) return; if(N.cur.length>=4) return; if(N.cur.indexOf(d)>=0){ N.msg='เลขห้ามซ้ำกัน'; sfx('bad'); numDraw(); return; } N.cur+=d; N.msg=''; sfx('move'); numDraw(); };
+  window.gmNumDel=function(){ if(!N||N.done) return; N.cur=N.cur.slice(0,-1); N.msg=''; numDraw(); };
+  window.gmNumOk=function(){ if(!N||N.done) return; if(N.cur.length<4){ N.msg='ใส่ให้ครบ 4 หลักก่อน'; sfx('bad'); numDraw(); return; }
+    var r=numCheck(N.secret,N.cur); N.guesses.push({g:N.cur,b:r.b,c:r.c}); N.cur=''; N.msg='';
+    if(r.b===4){ N.done=true; N.win=true; N.pts=numPoints(N.guesses.length); sfx('win'); burst(); } else if(N.guesses.length>=10){ N.done=true; N.win=false; N.pts=0; sfx('lose'); } else sfx('ok');
+    if(N.done&&N.daily&&!N.saved){ N.saved=true; if(me()) recordScore('num',N.pts,dayKey()); else say('เข้าสู่ระบบเพื่อบันทึกคะแนนให้ทีม','info'); }
+    numSave(); numDraw(); };
+
+  /* ---------- เกมงู ---------- */
+  var SNK={st:null,run:false,t:null,over:false,cv:null,saved:false};
+  function snkMount(){ var m=document.getElementById('gm-main'); if(!m) return; var best=(ALL.snk[me()]||{}).b||0;
+    m.innerHTML='<div class="gm-sn"><div class="gm-sn-top"><span>คะแนน <b id="gm-sn-score">0</b></span><span>สถิติของฉัน <b id="gm-sn-best">'+(+best||0)+'</b></span></div>'
+      +'<div class="gm-sn-wrap"><canvas id="gm-sn-cv" width="360" height="360" aria-label="กระดานเกมงู"></canvas><div class="gm-sn-ov" id="gm-sn-ov"></div></div>'
+      +'<div class="gm-dpad"><button type="button" onclick="gmSnkDir(\'U\')" aria-label="ขึ้น">▲</button><div><button type="button" onclick="gmSnkDir(\'L\')" aria-label="ซ้าย">◀</button><button type="button" onclick="gmSnkDir(\'D\')" aria-label="ลง">▼</button><button type="button" onclick="gmSnkDir(\'R\')" aria-label="ขวา">▶</button></div></div>'
+      +'<div class="gm-hint c">ใช้ลูกศร / WASD หรือปัดบนจอ · ชนกำแพงหรือตัวเองคือจบ · กินแอปเปิลได้ +10</div></div>';
+    SNK.cv=document.getElementById('gm-sn-cv'); SNK.st=snkInit(Math.random); SNK.run=false; SNK.over=false; SNK.saved=false; clearTimeout(SNK.t);
+    var cv=SNK.cv, sx=0, sy=0; if(cv&&cv.addEventListener){ cv.addEventListener('touchstart',function(e){ var t=e.touches[0]; sx=t.clientX; sy=t.clientY; },{passive:true}); cv.addEventListener('touchend',function(e){ var t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy; if(Math.max(Math.abs(dx),Math.abs(dy))<18) return; window.gmSnkDir(Math.abs(dx)>Math.abs(dy)?(dx>0?'R':'L'):(dy>0?'D':'U')); },{passive:true}); }
+    snkOverlay('ready'); snkDraw(); }
+  function snkOverlay(kind){ var o=document.getElementById('gm-sn-ov'); if(!o) return; if(kind==='run'){ o.style.display='none'; return; } o.style.display='flex';
+    if(kind==='ready') o.innerHTML='<div class="b"><div class="e">🐍</div><b>พร้อมไหม?</b><small>กดลูกศร / ปัดจอ หรือกดปุ่มเพื่อเริ่ม</small><button type="button" class="gm-btn pri" onclick="gmSnkStart()">▶ เริ่มเลย</button></div>';
+    else if(kind==='pause') o.innerHTML='<div class="b"><div class="e">⏸️</div><b>พักอยู่</b><button type="button" class="gm-btn pri" onclick="gmSnkStart(true)">▶ เล่นต่อ</button></div>';
+    else { var sc=SNK.st.score, best=(ALL.snk[me()]||{}).b||0; o.innerHTML='<div class="b"><div class="e">'+(sc>=best&&sc>0?'🏅':'💥')+'</div><b>จบเกม · '+sc+' แต้ม</b><small>'+(me()?(sc>0?(sc>=best?'สถิติใหม่ของคุณ! บันทึกให้ทีมแล้ว':'บันทึกคะแนนให้ทีมแล้ว'):'กินแอปเปิลให้ได้ก่อนนะ'):'ล็อกอินเพื่อบันทึกคะแนนให้ทีม')+'</small><button type="button" class="gm-btn pri" onclick="gmSnkStart()">🔄 เล่นอีกครั้ง</button></div>'; } }
+  function snkDraw(){ var cv=SNK.cv, st=SNK.st; if(!cv||!st||!cv.getContext) return; var g=cv.getContext('2d'), c=cv.width/SN_N;
+    for(var y=0;y<SN_N;y++) for(var x=0;x<SN_N;x++){ g.fillStyle=((x+y)%2)?'#eef4ff':'#e6eefc'; g.fillRect(x*c,y*c,c,c); }
+    if(st.food){ g.font=Math.round(c*.8)+'px serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('🍎',(st.food.x+.5)*c,(st.food.y+.55)*c); }
+    st.snake.forEach(function(p,i){ var t=i/Math.max(1,st.snake.length-1); g.fillStyle=i===0?'#2f9e6b':'hsl(150,55%,'+(48+t*14)+'%)'; var r=c*.22; g.beginPath(); if(g.roundRect){ g.roundRect(p.x*c+1,p.y*c+1,c-2,c-2,r); } else { g.rect(p.x*c+1,p.y*c+1,c-2,c-2); } g.fill(); });
+    var h=st.snake[0]; if(h){ g.fillStyle='#fff'; var ex=st.dir==='L'?-.18:(st.dir==='R'?.18:0), ey=st.dir==='U'?-.18:(st.dir==='D'?.18:0), ox=st.dir==='U'||st.dir==='D'?.2:0, oy=st.dir==='L'||st.dir==='R'?.2:0;
+      [[-1,-1],[1,1]].forEach(function(s){ g.beginPath(); g.arc((h.x+.5+ex+ox*s[0])*c,(h.y+.5+ey+oy*s[0])*c,c*.1,0,7); g.fill(); }); }
+    var sc=document.getElementById('gm-sn-score'); if(sc) sc.textContent=st.score; }
+  function snkTick(){ clearTimeout(SNK.t); if(!SNK.run||!SNK.st) return; snkStep(SNK.st,Math.random); snkDraw();
+    if(!SNK.st.alive){ SNK.run=false; SNK.over=true; sfx('lose'); if(!SNK.saved){ SNK.saved=true; if(me()&&SNK.st.score>0) recordScore('snk',SNK.st.score); } var be=document.getElementById('gm-sn-best'); if(be) be.textContent=Math.max(+be.textContent||0,SNK.st.score); snkOverlay('over'); return; }
+    SNK.t=setTimeout(snkTick,snkDelay(SNK.st.score)); }
+  window.gmSnkStart=function(resume){ if(resume&&SNK.st&&SNK.st.alive){ SNK.run=true; snkOverlay('run'); snkTick(); return; } SNK.st=snkInit(Math.random); SNK.over=false; SNK.saved=false; SNK.run=true; snkOverlay('run'); snkDraw(); SNK.t=setTimeout(snkTick,snkDelay(0)); };
+  window.gmSnkDir=function(d){ if(screen!=='snk') return; if(SNK.over) return; if(!SNK.run){ if(SNK.st&&SNK.st.alive&&SNK.st.score>0) return; window.gmSnkStart(); }
+    var opp={U:'D',D:'U',L:'R',R:'L'}; if(SNK.st&&opp[d]!==SNK.st.dir) SNK.st.nd=d; else if(SNK.st&&SNK.st.snake.length<2) SNK.st.nd=d; };
+  function snkPause(){ if(SNK.run){ SNK.run=false; clearTimeout(SNK.t); snkOverlay('pause'); } }
+  /* ---------- จับผิดภาพ ---------- */
+  var SPT=null;
+  function spKey(){ return 'gm_spot_'+dayKey()+'_'+(me()||'anon'); }
+  function spSave(){ try{ if(SPT&&SPT.daily) localStorage.setItem(spKey(),JSON.stringify({round:SPT.round,t0:SPT.t0,found:SPT.found,wrong:SPT.wrong,results:SPT.results,total:SPT.total,phase:SPT.phase,saved:SPT.saved})); }catch(e){} }
+  function spotStart(daily){ var use=!!daily&&!playedToday('spot'); SPT={daily:use,rounds:use?3:1,round:0,total:0,results:[],scene:null,found:[],wrong:0,t0:0,left:45,over:false,saved:false,timer:null,phase:'play'};
+    if(use){ try{ var sv=JSON.parse(localStorage.getItem(spKey())||'null');   // เล่นค้างไว้ → กลับมาต่อ (เวลาเดินต่อ ไม่รีเซ็ต)
+      if(sv&&sv.round>=1&&sv.round<=3){ SPT.round=sv.round; SPT.t0=sv.t0||Date.now(); SPT.found=sv.found||[]; SPT.wrong=sv.wrong||0; SPT.results=sv.results||[]; SPT.total=sv.total||0; SPT.phase=sv.phase==='end'?'end':'play'; SPT.saved=!!sv.saved;
+        SPT.scene=spotGen('spot-'+dayKey()+'-'+SPT.round); SPT.left=Math.max(0,45-(Date.now()-SPT.t0)/1000);
+        if(SPT.phase==='play'&&SPT.left<=0){ spotEnd(false); return; } if(SPT.phase==='play') SPT.timer=setInterval(spotTimer,250); spotDraw(); return; } }catch(e){} }
+    spotRound(1); }
+  function spotRound(n){ clearInterval(SPT.timer); var seed=SPT.daily?('spot-'+dayKey()+'-'+n):('sp'+Date.now()+'-'+n); SPT.round=n; SPT.scene=spotGen(seed); SPT.found=[]; SPT.wrong=0; SPT.t0=Date.now(); SPT.left=45; SPT.phase='play'; SPT.flash='';
+    SPT.timer=setInterval(spotTimer,250); spSave(); spotDraw(); }
+  function spotTimer(){ if(!SPT||SPT.phase!=='play') return; SPT.left=Math.max(0,45-(Date.now()-SPT.t0)/1000); var b=document.getElementById('gm-sp-bar'), t=document.getElementById('gm-sp-t'); if(b) b.style.width=(SPT.left/45*100)+'%'; if(t) t.textContent=Math.ceil(SPT.left); if(SPT.left<=0) spotEnd(false); }
+  function spotPanel(side){ var sc=SPT.scene, objs=side==='L'?sc.left:sc.right, found=SPT.found, miss=SPT.phase==='end';
+    var rings=sc.diffs.map(function(i){ var o=sc.left[i], f=found.indexOf(i)>=0; if(!f&&!miss) return ''; return '<circle cx="'+o.x.toFixed(1)+'" cy="'+o.y.toFixed(1)+'" r="26" class="'+(f?'gm-ring ok':'gm-ring miss')+'"/>'; }).join('');
+    return '<svg class="gm-sp-svg'+(SPT.flash?' bad':'')+'" viewBox="0 0 '+SP_W+' '+SP_H+'" onclick="gmSpotClick(event)" role="img" aria-label="ภาพ'+(side==='L'?'ซ้าย':'ขวา')+'"><rect width="'+SP_W+'" height="'+SP_H+'" rx="14" fill="#f6f9ff"/>'+objs.map(function(o){ return o?shapeSvg(o):''; }).join('')+rings+'</svg>'; }
+  function spotDraw(){ var m=document.getElementById('gm-main'); if(!m||!SPT) return; var today=playedToday('spot'), rs=ALL.spot[me()]||{};
+    var badge=SPT.daily?'<span class="gm-badge d">🗓️ โจทย์ประจำวัน · นับคะแนนทีม'+(me()?'':' (ล็อกอินเพื่อบันทึก)')+'</span>':'<span class="gm-badge">🎲 ซ้อมมือ · ไม่นับคะแนน</span>';
+    var end=SPT.phase==='end', last=SPT.round>=SPT.rounds, r=SPT.results[SPT.results.length-1];
+    var res=''; if(end&&r){ res='<div class="gm-st '+(r.all?'w':'d')+'">'+(r.all?'🎉 เจอครบ 5 จุด!':'⏱️ เจอ '+r.found+' จาก 5 จุด')+' · ยกนี้ได้ <b>'+r.pts+'</b> แต้ม <small>(เหลือ '+Math.ceil(r.left)+' วิ · ผิด '+r.wrong+')</small></div>'; }
+    if(end&&last){ res+='<div class="gm-st w sum">รวมทั้งหมด <b>'+SPT.total+'</b> แต้ม'+(SPT.daily?' → เข้าคะแนนรวมทีมแล้ว':'')+'</div>'; }
+    m.innerHTML='<div class="gm-sp">'+badge+'<div class="gm-sp-top"><span>ยกที่ <b>'+SPT.round+'</b>/'+SPT.rounds+'</span><span>เจอแล้ว <b>'+SPT.found.length+'</b>/'+SP_DIFFS+'</span><span>ผิด <b>'+SPT.wrong+'</b></span></div>'
+      +'<div class="gm-tbar"><i id="gm-sp-bar" style="width:'+(SPT.left/45*100)+'%"></i><b id="gm-sp-t">'+Math.ceil(SPT.left)+'</b></div>'
+      +'<div class="gm-sp-pair">'+spotPanel('L')+spotPanel('R')+'</div>'
+      +(!end?'<div class="gm-hint c">แตะตรงจุดที่ต่างกัน (แตะที่ภาพซ้ายหรือขวาก็ได้) · ผิดโดนหัก 25 แต้ม · ต่างกันได้ทั้ง สี รูปร่าง ขนาด หรือหายไป</div>':res)
+      +((!today&&!SPT.daily&&!end)?'':'')
+      +'<div class="gm-ctl">'+(end?(last?'<button type="button" class="gm-btn pri" onclick="gmSpotNew()">🎲 ซ้อมมืออีกรอบ</button>':'<button type="button" class="gm-btn pri" onclick="gmSpotNext()">▶ ยกต่อไป</button>'):'<button type="button" class="gm-btn" onclick="gmSpotNew()">🎲 เปลี่ยนเป็นโจทย์ซ้อมมือ</button>')+'</div>'
+      +((!SPT.daily&&today)?'<div class="gm-hint c">วันนี้คุณเล่นโจทย์ประจำวันไปแล้ว ได้ '+(+rs.lp||0)+' แต้ม — พรุ่งนี้มีโจทย์ใหม่!</div>':'')+'</div>'; }
+  window.gmSpotNew=function(){ spotStart(false); };
+  window.gmSpotNext=function(){ if(SPT&&SPT.phase==='end'&&SPT.round<SPT.rounds) spotRound(SPT.round+1); };
+  window.gmSpotClick=function(ev){ if(!SPT||SPT.phase!=='play') return; var svg=ev.currentTarget, rc=svg.getBoundingClientRect(); if(!rc.width) return;
+    var vx=(ev.clientX-rc.left)/rc.width*SP_W, vy=(ev.clientY-rc.top)/rc.height*SP_H, i=spotHit(SPT.scene,vx,vy);
+    if(i>=0&&SPT.scene.diffs.indexOf(i)>=0){ if(SPT.found.indexOf(i)<0){ SPT.found.push(i); sfx('ok'); if(SPT.found.length>=SP_DIFFS){ spotEnd(true); return; } } }
+    else { SPT.wrong++; sfx('bad'); SPT.flash='1'; setTimeout(function(){ if(SPT){ SPT.flash=''; if(SPT.phase==='play') spotDraw(); } },260); }
+    spSave(); spotDraw(); };
+  function spotEnd(all){ if(!SPT||SPT.phase!=='play') return; clearInterval(SPT.timer); SPT.phase='end'; var left=all?Math.max(0,45-(Date.now()-SPT.t0)/1000):0;
+    var pts=Math.max(0,SPT.found.length*100+(all?Math.round(left*3):0)-SPT.wrong*25); SPT.results.push({found:SPT.found.length,wrong:SPT.wrong,left:left,pts:pts,all:all}); SPT.total+=pts;
+    if(all){ burst(); sfx('win'); } else sfx('draw');
+    if(SPT.round>=SPT.rounds&&SPT.daily&&!SPT.saved){ SPT.saved=true; if(me()) recordScore('spot',SPT.total,dayKey()); else say('เข้าสู่ระบบเพื่อบันทึกคะแนนให้ทีม','info'); }
+    spSave(); spotDraw(); }
+
+  /* ---------- ฮับ + โครงหน้า + แผงอันดับ ---------- */
+  function head(){ return '<div class="gm-head"><div class="gm-logo">🎮</div><div><h1>Game Zone</h1><p>พักสมองกับเกมเล็กๆ ของทีม CIL — แข่งกับเพื่อนแบบเรียลไทม์ หรือสะสมคะแนนให้ทีมทุกวัน</p></div></div>'; }
+  function medalOf(i){ return ['🥇','🥈','🥉'][i]||String(i+1); }
+  function hubHtml(){
+    var tot=0, ppl={}; ['num','snk','spot'].forEach(function(g){ tot+=teamWeek(g).total; Object.keys(ALL[g]).forEach(function(n){ if(wv(ALL[g][n])>0) ppl[n]=1; }); });
+    var banner='<div class="gm-hubteam"><div><div class="k">⭐ คะแนนรวมทีม · สัปดาห์นี้ <small>('+weekKey()+')</small></div><div class="v">'+tot+' <small>แต้ม</small></div></div><div class="s">'+Object.keys(ppl).length+' คนร่วมทำคะแนนแล้ว<br>เล่นเกมให้ทีมกันเยอะๆ นะ 💪</div></div>';
+    var cards=GAMES.map(function(g){ var stat='';
+      if(g.score){ var tw=teamWeek(g.k), top=rankScore(g.k,'wk')[0]; stat='<div class="st"><span>ทีมสัปดาห์นี้ <b>'+tw.total+'</b> '+g.unit+'</span>'+(top?'<span>'+medalOf(0)+' '+nm(top.n)+' <b>'+top.v+'</b></span>':'')+'</div>';
+        if(g.daily) stat+='<div class="dl'+(me()&&playedToday(g.k)?' done':'')+'">'+(me()&&playedToday(g.k)?'✓ วันนี้เล่นโจทย์ประจำวันแล้ว +'+((ALL[g.k][me()]||{}).lp||0):'🗓️ โจทย์ประจำวันรออยู่ — ทั้งทีมได้โจทย์เดียวกัน'+(me()?'':' (ล็อกอินเพื่อบันทึกคะแนน)'))+'</div>'; }
+      else { var rx=rankXo()[0]; stat='<div class="st">'+(rx?'<span>'+medalOf(0)+' '+nm(rx.n)+' ชนะ <b>'+(+rx.s.w||0)+'</b></span>':'<span>ยังไม่มีใครลงสนาม</span>')+'</div>'; }
+      return '<div class="gm-gc" onclick="gmOpen(\''+g.k+'\')" onkeydown="if(event.key===\'Enter\')gmOpen(\''+g.k+'\')" role="button" tabindex="0"><div class="ic">'+g.ic+'</div><div class="tx"><h3>'+esc(g.t)+'</h3><p>'+esc(g.d)+'</p>'+stat+'</div><span class="go">เล่นเลย →</span></div>'; }).join('');
+    return banner+'<div class="gm-hub">'+cards+'</div>'; }
+  function shellHtml(){ return backBar()+'<div class="gm-xo"><div class="gm-col"><div class="gm-card gm-play"><div id="gm-main" class="gm-mainbox"></div></div></div><div class="gm-col"><div class="gm-card gm-side" id="gm-side"></div></div></div>'; }
+  function sideHtml(G){ var kind=lb[G.k]||'wk', rows=rankScore(G.k,kind), tw=teamWeek(G.k);
+    var team='<div class="gm-team"><div class="k">⭐ คะแนนรวมทีม · สัปดาห์นี้</div><div class="v">'+tw.total+' <small>'+G.unit+'</small></div><div class="s">'+tw.players+' คนร่วมทำคะแนน'+(G.mode==='best'?' · นับสถิติสูงสุดของแต่ละคน':' · สะสมจากโจทย์ประจำวัน')+'</div></div>';
+    var tabs='<div class="gm-tabs sm"><button type="button" class="'+(kind==='wk'?'on':'')+'" onclick="gmLb(\'wk\')">สัปดาห์นี้</button><button type="button" class="'+(kind==='all'?'on':'')+'" onclick="gmLb(\'all\')">'+(G.mode==='sum'?'สะสมตลอดกาล':'สถิติสูงสุด')+'</button></div>';
+    var list=rows.length?'<div class="gm-rank">'+rows.slice(0,10).map(function(x,i){ var mine=x.n===me(); return '<div class="gm-rk'+(mine?' me':'')+'"><span class="no">'+medalOf(i)+'</span><span class="gm-pav">'+av(x.n,32)+'</span><span class="gm-rn"><b>'+nm(x.n)+(mine?' <em>คุณ</em>':'')+'</b><small>เล่นแล้ว '+(+x.r.p||0)+' ครั้ง'+(kind==='wk'?' · สถิติสูงสุด '+(+x.r.b||0):'')+'</small></span><span class="pct">'+x.v+'</span></div>'; }).join('')+'</div>'
+      :'<div class="gm-empty"><span class="e">🥇</span><span><b>ยังไม่มีใครลงคะแนน'+(kind==='wk'?'ในสัปดาห์นี้':'')+'</b><small>เป็นคนแรกที่ทำคะแนนให้ทีมเลย!</small></span></div>';
+    return team+'<div class="gm-lh"><b>🏆 อันดับ</b></div>'+tabs+list; }
+  function renderSide(){ var el=document.getElementById('gm-side'), G=gameOf(screen); if(!el||!G||!G.score) return; el.innerHTML=sideHtml(G); }
   function render(){ var r=root(); if(!r) return;
-    var _h='<div class="gm-head"><div class="gm-logo">🎮</div><div><h1>Game Zone</h1><p>พักสมองกับเกมเล็กๆ ของทีม CIL — เล่นกับเพื่อนแบบเรียลไทม์ หรือซ้อมกับบอทก่อนก็ได้</p></div></div>'+(screen==='xo'?xoHtml():hubHtml()); r.innerHTML=_h; if(S) S.fresh=-1; }
-  window.gmOpen=function(g){ if(g!=='xo') return; screen='xo'; render(); connect(); loadScores(true); try{ if(window.rvSave) setTimeout(window.rvSave,60); }catch(e){} };
-  window.gmQuit=function(){ if(S&&S.mode==='pvp'&&!S.over&&!confirm('ออกจากเกมนี้ = ยอมแพ้ (นับเป็นแพ้) — ต้องการออกไหม?')) return; window.gmLeave(); };
-  window.gmHome=function(){ if(S&&S.mode==='pvp'&&!S.over&&!confirm('กำลังเล่นกับเพื่อนอยู่ — ออกจากเกมนี้ (นับเป็นแพ้) ?')) return; if(S) window.gmLeave(); screen='hub'; disconnect(); render(); try{ if(window.rvSave) setTimeout(window.rvSave,60); }catch(e){} };
-  window.gmTab=function(t){ tab=t; render(); };
-  window.gmSet=function(k,v){ bot[k]=v; render(); };
+    if(screen==='hub'){ r.removeAttribute('data-g'); r.innerHTML=head()+hubHtml(); return; }
+    if(screen==='xo'){ r.removeAttribute('data-g'); r.innerHTML=head()+xoHtml(); if(S) S.fresh=-1; return; }
+    if(r.getAttribute('data-g')!==screen||!document.getElementById('gm-main')){ r.innerHTML=head()+shellHtml(); r.setAttribute('data-g',screen); mountGame(screen); }
+    renderSide(); }
+  function refresh(){ if(!viewActive()) return; render(); }
+  function mountGame(k){ if(k==='num') numStart(true); else if(k==='snk') snkMount(); else if(k==='spot') spotStart(true); }
+  function stopAll(){ clearTimeout(SNK.t); SNK.run=false; if(SPT&&SPT.timer){ clearInterval(SPT.timer); SPT.timer=null; } }
+  function openGame(k){ stopAll(); screen=k; var r=root(); if(r) r.removeAttribute('data-g'); render(); loadAll(false); connect(); track(); try{ if(window.rvSave) setTimeout(window.rvSave,60); }catch(e){} }
+  window.gmOpen=function(k){ var G=gameOf(k); if(G&&G.on) openGame(k); };
+  window.gmQuit=function(){ if(S&&S.mode==='pvp'&&!S.sOver&&!confirm('ออกจากเกมนี้ = ยอมแพ้ (นับเป็นแพ้) — ต้องการออกไหม?')) return; window.gmLeave(); };
+  window.gmHome=function(){ if(S&&S.mode==='pvp'&&!S.sOver&&!confirm('กำลังเล่นกับเพื่อนอยู่ — ออกจากเกมนี้ (นับเป็นแพ้) ?')) return; if(S) window.gmLeave(); stopAll(); screen='hub'; render(); loadAll(false); try{ if(window.rvSave) setTimeout(window.rvSave,60); }catch(e){} };
+  window.gmTab=function(t){ tab=t; refresh(); };
+  window.gmSet=function(k,v){ bot[k]=v; refresh(); };
+  window.gmFmt=function(v){ fmtPick=(v===3?3:1); refresh(); };
+  window.gmLb=function(k){ lb[screen]=k; renderSide(); };
   window.gmStartBot=function(){ startBot(); };
-  window.gmSound=function(){ sound=!sound; try{ localStorage.setItem('gm_sound',sound?'1':'0'); }catch(e){} if(sound) beep(660,.1); render(); };
-  window.gmCur=function(){ return screen==='xo'?'xo':''; };
-  window.gmDebug=function(){ return {S:S,presence:presence,inv:inv,outInv:outInv,conn:conn,screen:screen,scores:scores}; };
-  /* เข้า/ออกจากแท็บ Game */
-  function onEnter(){ render(); if(screen==='xo'){ connect(); loadScores(false); track(); } }
-  function onLeave(){ if(S&&S.mode==='pvp'&&!S.over){ track(); return; } if(chan) disconnect(); }
+  window.gmSound=function(){ sound=!sound; try{ localStorage.setItem('gm_sound',sound?'1':'0'); }catch(e){} if(sound) beep(660,.1); refresh(); };
+  window.gmCur=function(){ return screen==='hub'?'':screen; };
+  window.gmDebug=function(){ return {S:S,presence:presence,inv:inv,outInv:outInv,conn:conn,screen:screen,ALL:ALL,N:N,SPT:SPT,SNK:SNK,fmtPick:fmtPick}; };
+  /* ---------- เข้า/ออกแท็บ Game · คีย์บอร์ด ---------- */
+  function onEnter(){ render(); connect(); loadAll(false); track(); }
+  function onLeave(){ if(SNK.run) snkPause(); track(); }
   function wire(){ var t=document.querySelector('#nav .tab[data-view="game"]'); if(t) t.addEventListener('click',function(){ setTimeout(onEnter,30); });
     document.addEventListener('click',function(e){ var tb=e.target&&e.target.closest?e.target.closest('#nav .tab'):null; if(tb&&tb.getAttribute('data-view')!=='game') setTimeout(function(){ if(!viewActive()) onLeave(); },120); },true);
-    document.addEventListener('visibilitychange',function(){ if(chan) track(); });
-    window.addEventListener('pagehide',function(){ try{ if(S&&S.mode==='pvp'&&!S.over) send({t:'lv',id:S.id,from:me(),to:S.opp}); }catch(e){} });
-    var lastMe=me();   // ล็อกอิน/ออกจากระบบทีหลัง (หรือรีเฟรชแล้วเซสชันมาช้า) → เชื่อมห้องเกมใหม่/วาดหน้าใหม่ให้เอง
-    setInterval(function(){ var m=me(); if(m!==lastMe){ lastMe=m; if(!m&&chan) disconnect(); render(); }
-      if(screen==='xo'&&viewActive()&&m&&!chan) connect(); },2500);
+    document.addEventListener('visibilitychange',function(){ if(document.hidden&&screen==='snk'&&SNK.run) snkPause(); track(); });
+    document.addEventListener('keydown',function(e){ if(!viewActive()) return; var tg=e.target; if(tg&&(/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName)||tg.isContentEditable)) return; if(e.ctrlKey||e.metaKey||e.altKey) return;
+      if(screen==='snk'){ var mp={ArrowUp:'U',ArrowDown:'D',ArrowLeft:'L',ArrowRight:'R',w:'U',s:'D',a:'L',d:'R',W:'U',S:'D',A:'L',D:'R'}[e.key]; if(mp){ e.preventDefault(); window.gmSnkDir(mp); } else if(e.key===' '){ e.preventDefault(); if(SNK.run) snkPause(); } }
+      else if(screen==='num'&&N&&!N.done){ if(/^[0-9]$/.test(e.key)) window.gmNumKey(e.key); else if(e.key==='Backspace') window.gmNumDel(); else if(e.key==='Enter') window.gmNumOk(); } });
+    window.addEventListener('pagehide',function(){ try{ if(S&&S.mode==='pvp'&&!S.sOver) send({t:'lv',id:S.id,from:me(),to:S.opp}); }catch(e){} });
+    var lastMe=me();   // ล็อกอิน/ออกจากระบบทีหลัง → เชื่อม/ตัดห้องเกมให้เอง
+    setInterval(function(){ var m=me(); if(m!==lastMe){ lastMe=m; if(!m&&chan) disconnect(); refresh(); } if(m&&!chan) connect(); },2500);
+    setTimeout(function(){ if(me()) connect(); loadAll(false); },1200);
     if(viewActive()) onEnter(); else render(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wire); else wire();
-  /* CSS */
+  /* ---------- CSS ---------- */
   var st=document.createElement('style'); st.id='gm-css'; st.textContent=
     '#view-game{--g-ink:#37415a;--g-ink2:#6b7794;--g-line:#e6ebf5;--g-x:#4C7DF0;--g-o:#EC5F97;--g-pink:#ff9ec2;}'
     +'.gm-wrap{max-width:1120px;margin:0 auto;padding:22px 18px 46px;color:var(--g-ink);font-family:"Sarabun",sans-serif;}'
     +'.gm-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;}.gm-logo{width:56px;height:56px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;background:linear-gradient(135deg,#ffd6e7,#cfe4ff);box-shadow:0 12px 24px -16px rgba(80,100,150,.7);}'
     +'.gm-head h1{margin:0;font:500 24px "Mitr",sans-serif;}.gm-head p{margin:2px 0 0;color:var(--g-ink2);font-size:14px;}'
-    +'.gm-hub{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}'
-    +'.gm-gc{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--g-line);border-radius:22px;padding:20px;box-shadow:0 16px 32px -24px rgba(80,100,150,.7);cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative;}'
-    +'.gm-gc:hover{transform:translateY(-3px);box-shadow:0 22px 38px -22px rgba(80,100,150,.8);}.gm-gc.soon{cursor:default;opacity:.7;background:#f8faff;border-style:dashed;}.gm-gc.soon:hover{transform:none;box-shadow:0 16px 32px -24px rgba(80,100,150,.7);}'
-    +'.gm-gc .ic{font-size:34px;width:68px;height:68px;border-radius:20px;background:linear-gradient(135deg,#eef4ff,#fff0f6);display:flex;align-items:center;justify-content:center;flex:none;}'
-    +'.gm-gc h3{margin:0;font:500 19px "Mitr",sans-serif;}.gm-gc p{margin:4px 0 0;font-size:13px;color:var(--g-ink2);line-height:1.5;}'
-    +'.gm-gc .go{position:absolute;right:16px;bottom:12px;font-size:12.5px;font-weight:700;color:#4C7DF0;}.gm-gc .go.soon{color:#9aa4b5;}.gm-gc .tx{padding-bottom:14px;}'
+    +'.gm-hubteam{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:linear-gradient(120deg,#fff5da,#ffe9f2);border:1px solid #ffe2a8;border-radius:22px;padding:16px 22px;margin-bottom:16px;}.gm-hubteam .k{font-weight:700;font-size:13.5px;color:#9a6a00;}.gm-hubteam .k small{font-weight:500;}.gm-hubteam .v{font:500 34px "Mitr",sans-serif;color:#37415a;line-height:1.15;}.gm-hubteam .v small{font-size:15px;color:var(--g-ink2);}.gm-hubteam .s{font-size:13px;color:var(--g-ink2);text-align:right;line-height:1.6;}'
+    +'.gm-hub{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}'
+    +'.gm-gc{display:flex;align-items:flex-start;gap:14px;background:#fff;border:1px solid var(--g-line);border-radius:22px;padding:20px;box-shadow:0 16px 32px -24px rgba(80,100,150,.7);cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative;}'
+    +'.gm-gc:hover{transform:translateY(-3px);box-shadow:0 22px 38px -22px rgba(80,100,150,.8);}'
+    +'.gm-gc .ic{font-size:32px;width:68px;height:68px;border-radius:20px;background:linear-gradient(135deg,#eef4ff,#fff0f6);display:flex;align-items:center;justify-content:center;flex:none;}'
+    +'.gm-gc h3{margin:0;font:500 19px "Mitr",sans-serif;}.gm-gc p{margin:4px 0 0;font-size:13px;color:var(--g-ink2);line-height:1.5;}.gm-gc .tx{padding-bottom:22px;min-width:0;}'
+    +'.gm-gc .st{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:9px;font-size:12.5px;color:var(--g-ink2);}.gm-gc .st b{color:var(--g-ink);}.gm-gc .dl{margin-top:6px;font-size:12px;font-weight:600;color:#b36b00;}.gm-gc .dl.done{color:#1b8a55;}'
+    +'.gm-gc .go{position:absolute;right:16px;bottom:12px;font-size:12.5px;font-weight:700;color:#4C7DF0;}'
     +'.gm-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap;}'
     +'.gm-back,.gm-snd{border:1px solid var(--g-line);background:#fff;border-radius:999px;padding:8px 15px;font:600 13.5px "Sarabun",sans-serif;color:var(--g-ink);cursor:pointer;}.gm-back:hover,.gm-snd:hover{background:#f3f6fc;}'
     +'.gm-xo{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start;}.gm-col{display:flex;flex-direction:column;gap:18px;min-width:0;}'
     +'.gm-card{background:#fff;border:1px solid var(--g-line);border-radius:24px;padding:18px;box-shadow:0 16px 32px -26px rgba(80,100,150,.7);}'
-    +'.gm-play{display:flex;flex-direction:column;align-items:center;gap:14px;}'
-    +'.gm-vs{display:flex;align-items:center;gap:10px;width:100%;justify-content:center;flex-wrap:wrap;}.gm-vs .vs{font:500 14px "Mitr",sans-serif;color:var(--g-ink2);}'
+    +'.gm-play{display:flex;flex-direction:column;align-items:center;gap:14px;}.gm-mainbox{width:100%;display:flex;flex-direction:column;align-items:center;}'
+    +'.gm-vs{display:flex;align-items:center;gap:10px;width:100%;justify-content:center;flex-wrap:wrap;}.gm-vs .vs{font:500 14px "Mitr",sans-serif;color:var(--g-ink2);}.gm-vs .vs.sc{display:flex;flex-direction:column;align-items:center;font-size:22px;color:var(--g-ink);line-height:1.1;}.gm-vs .vs.sc small{font:600 11px "Sarabun",sans-serif;color:var(--g-ink2);margin-top:2px;}'
     +'.gm-vsidle{font:500 22px "Mitr",sans-serif;padding:8px 0;}'
     +'.gm-pl{display:flex;align-items:center;gap:10px;padding:8px 14px 8px 8px;border-radius:999px;border:2px solid transparent;background:#f6f8fd;min-width:0;transition:all .2s;}.gm-pl.on{background:#fff;border-color:#bcd2ff;box-shadow:0 10px 22px -14px rgba(76,125,240,.8);}'
     +'.gm-pn{display:flex;flex-direction:column;line-height:1.2;min-width:0;}.gm-pn b{font:500 14.5px "Mitr",sans-serif;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.gm-pn small{font-size:11.5px;color:var(--g-ink2);}'
     +'.gm-sym{font:700 15px "Mitr",sans-serif;width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;}.gm-sym.x{background:var(--g-x);}.gm-sym.o{background:var(--g-o);}'
     +'.gm-botav{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#e5ecff,#ffe3ef);display:flex;align-items:center;justify-content:center;font-size:24px;}'
-    +'.gm-st{font:500 16px "Mitr",sans-serif;padding:9px 18px;border-radius:999px;background:#f3f6fc;color:var(--g-ink);text-align:center;}.gm-st.my{background:#e8f0ff;color:#2f56c0;animation:gm-pulse 1.6s ease-in-out infinite;}.gm-st.wait{background:#f3f6fc;color:var(--g-ink2);}'
-    +'.gm-st.w{background:#e3f7ec;color:#1b7d4b;}.gm-st.l{background:#ffe9ee;color:#c0334f;}.gm-st.d{background:#fff4dc;color:#a46a00;}.gm-st.idle{color:var(--g-ink2);font-size:14.5px;}'
+    +'.gm-st{font:500 16px "Mitr",sans-serif;padding:9px 18px;border-radius:999px;background:#f3f6fc;color:var(--g-ink);text-align:center;margin:4px 0;}.gm-st.my{background:#e8f0ff;color:#2f56c0;animation:gm-pulse 1.6s ease-in-out infinite;}.gm-st.wait{background:#f3f6fc;color:var(--g-ink2);}'
+    +'.gm-st.w{background:#e3f7ec;color:#1b7d4b;}.gm-st.l{background:#ffe9ee;color:#c0334f;}.gm-st.d{background:#fff4dc;color:#a46a00;}.gm-st.idle{color:var(--g-ink2);font-size:14.5px;}.gm-st.sum{font-size:18px;}.gm-st small{font:500 12px "Sarabun",sans-serif;opacity:.85;}'
     +'@keyframes gm-pulse{0%,100%{box-shadow:0 0 0 0 rgba(76,125,240,.35);}50%{box-shadow:0 0 0 7px rgba(76,125,240,0);}}'
     +'.gm-board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:min(100%,400px);aspect-ratio:1;}.gm-board.idle{opacity:.45;}'
     +'.gm-cell{position:relative;border:none;border-radius:20px;background:#f1f5fd;box-shadow:inset 0 -4px 0 rgba(120,140,190,.18);cursor:default;padding:0;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .12s;}'
     +'.gm-cell.can{cursor:pointer;}.gm-cell.can:hover{background:#e6eeff;transform:translateY(-2px);}'
-    +'.gm-board[data-me="X"] .gm-cell.can:hover::after{content:"X";}.gm-board[data-me="O"] .gm-cell.can:hover::after{content:"O";}.gm-cell.can:hover::after{position:absolute;font:600 44px "Mitr",sans-serif;opacity:.18;}'
-    +'.gm-board[data-me="X"] .gm-cell.can:hover::after{color:var(--g-x);}.gm-board[data-me="O"] .gm-cell.can:hover::after{color:var(--g-o);}'
-    +'.gm-cell.win{background:#fff3c4;box-shadow:inset 0 -4px 0 rgba(214,160,0,.3);animation:gm-win .7s ease-in-out infinite alternate;}@keyframes gm-win{from{transform:scale(1);}to{transform:scale(1.06);}}'
-    +'.gm-cell.last:not(.win){background:#eaf1ff;}'
+    +'.gm-board[data-me="X"] .gm-cell.can:hover::after{content:"X";color:var(--g-x);}.gm-board[data-me="O"] .gm-cell.can:hover::after{content:"O";color:var(--g-o);}.gm-cell.can:hover::after{position:absolute;font:600 44px "Mitr",sans-serif;opacity:.18;}'
+    +'.gm-cell.win{background:#fff3c4;box-shadow:inset 0 -4px 0 rgba(214,160,0,.3);animation:gm-win .7s ease-in-out infinite alternate;}@keyframes gm-win{from{transform:scale(1);}to{transform:scale(1.06);}}.gm-cell.last:not(.win){background:#eaf1ff;}'
     +'.gm-mk{width:72%;height:72%;fill:none;stroke-width:11;stroke-linecap:round;}.gm-mk.x{stroke:var(--g-x);}.gm-mk.o{stroke:var(--g-o);}'
     +'.gm-mk.new path,.gm-mk.new circle{stroke-dasharray:170;stroke-dashoffset:170;animation:gm-draw .32s ease-out forwards;}@keyframes gm-draw{to{stroke-dashoffset:0;}}'
-    +'.gm-series{font-size:13px;color:var(--g-ink2);text-align:center;}.gm-series b{color:var(--g-ink);}'
-    +'.gm-ctl{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}'
+    +'.gm-series{font-size:13px;color:var(--g-ink2);text-align:center;}.gm-series b{color:var(--g-ink);}.gm-ctl{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px;}'
     +'.gm-btn{border:1.5px solid var(--g-line);background:#fff;border-radius:999px;padding:9px 18px;font:600 14px "Sarabun",sans-serif;color:var(--g-ink);cursor:pointer;transition:background .15s,transform .1s;}.gm-btn:hover:not(:disabled){background:#f3f6fc;}.gm-btn:active:not(:disabled){transform:scale(.97);}'
     +'.gm-btn.pri{background:linear-gradient(120deg,#7cb6e4,#5aa0d8);color:#fff;border-color:transparent;}.gm-btn.pri:hover:not(:disabled){filter:brightness(1.06);background:linear-gradient(120deg,#7cb6e4,#5aa0d8);}.gm-btn:disabled{opacity:.5;cursor:not-allowed;}.gm-btn.sm{padding:7px 14px;font-size:13px;}.gm-btn.big{width:100%;padding:12px;font-size:15.5px;margin-top:6px;}'
-    +'.gm-tabs{display:flex;gap:6px;background:#f1f5fd;border-radius:999px;padding:4px;margin-bottom:14px;}.gm-tabs button{flex:1;border:none;background:transparent;border-radius:999px;padding:9px 8px;font:600 13.5px "Sarabun",sans-serif;color:var(--g-ink2);cursor:pointer;}.gm-tabs button.on{background:#fff;color:var(--g-ink);box-shadow:0 6px 14px -10px rgba(60,80,140,.7);}'
+    +'.gm-tabs{display:flex;gap:6px;background:#f1f5fd;border-radius:999px;padding:4px;margin-bottom:14px;}.gm-tabs button{flex:1;border:none;background:transparent;border-radius:999px;padding:9px 8px;font:600 13.5px "Sarabun",sans-serif;color:var(--g-ink2);cursor:pointer;}.gm-tabs button.on{background:#fff;color:var(--g-ink);box-shadow:0 6px 14px -10px rgba(60,80,140,.7);}.gm-tabs.sm button{padding:7px 8px;font-size:13px;}'
     +'.gm-lh{display:flex;align-items:baseline;gap:10px;margin:2px 2px 10px;}.gm-lh b{font:500 15.5px "Mitr",sans-serif;}.gm-lh small{color:var(--g-ink2);font-size:12.5px;}'
     +'.gm-list,.gm-rank{display:flex;flex-direction:column;gap:8px;}.gm-row,.gm-rk{display:flex;align-items:center;gap:11px;padding:8px 10px;border:1px solid var(--g-line);border-radius:16px;background:#fff;}'
     +'.gm-rn{display:flex;flex-direction:column;line-height:1.25;min-width:0;flex:1;}.gm-rn b{font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.gm-rn small{font-size:12px;color:var(--g-ink2);}.gm-rn small.free{color:#1b8a55;}.gm-rn small.busy{color:#c07a00;}'
     +'.gm-rn em{font-style:normal;font-size:10.5px;background:#e8f0ff;color:#2f56c0;border-radius:6px;padding:0 6px;margin-left:4px;}'
-    +'.gm-rk.me{background:#f2f7ff;border-color:#c9dcff;}.gm-rk .no{width:26px;text-align:center;font:500 16px "Mitr",sans-serif;color:var(--g-ink2);}.gm-rk .pct{font:500 15px "Mitr",sans-serif;color:#2f56c0;}'
+    +'.gm-rk.me{background:#f2f7ff;border-color:#c9dcff;}.gm-rk .no{width:26px;text-align:center;font:500 16px "Mitr",sans-serif;color:var(--g-ink2);}.gm-rk .pct{font:500 16px "Mitr",sans-serif;color:#2f56c0;}'
+    +'.gm-team{background:linear-gradient(120deg,#fff5da,#ffe9f2);border:1px solid #ffe2a8;border-radius:18px;padding:12px 16px;margin-bottom:14px;}.gm-team .k{font-weight:700;font-size:12.5px;color:#9a6a00;}.gm-team .v{font:500 28px "Mitr",sans-serif;line-height:1.2;}.gm-team .v small{font-size:13px;color:var(--g-ink2);}.gm-team .s{font-size:12px;color:var(--g-ink2);}'
     +'.gm-empty{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#f8faff;border:1px dashed var(--g-line);border-radius:16px;color:var(--g-ink2);}.gm-empty .e{font-size:26px;line-height:1;}.gm-empty b{display:block;color:var(--g-ink);font-weight:600;font-size:14px;}.gm-empty small{display:block;margin-top:2px;font-size:12.5px;}'
     +'.gm-warn{background:#fff1f1;color:#b3263e;border-radius:12px;padding:9px 12px;font-size:13px;margin-bottom:10px;}.gm-warn.soft{background:#f3f6fc;color:var(--g-ink2);}'
-    +'.gm-inv{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fff8e1;border:1.5px solid #ffd978;border-radius:16px;padding:12px 14px;margin-bottom:12px;animation:gm-pulse 1.6s ease-in-out infinite;}.gm-inv.out{background:#f3f6fc;border-color:var(--g-line);animation:none;}.gm-inv .b{display:flex;gap:8px;}'
-    +'.gm-opt{margin-bottom:14px;}.gm-ol{font-weight:700;font-size:13px;margin-bottom:7px;}.gm-segs{display:flex;gap:6px;flex-wrap:wrap;}.gm-seg{flex:1;min-width:92px;border:1.5px solid var(--g-line);background:#fff;border-radius:14px;padding:10px 8px;font:600 13.5px "Sarabun",sans-serif;color:var(--g-ink2);cursor:pointer;}.gm-seg.on{background:#37415a;border-color:#37415a;color:#fff;}.gm-hint{font-size:12.5px;color:var(--g-ink2);margin-top:7px;}'
-    +'.gm-confetti{position:fixed;inset:0;pointer-events:none;z-index:100010;overflow:hidden;}.gm-confetti i{position:absolute;top:-40px;left:var(--x);font-style:normal;font-size:var(--s);animation:gm-fall var(--t) var(--dl) ease-in forwards;}@keyframes gm-fall{to{transform:translateY(112vh) rotate(var(--r));opacity:.9;}}'
-    +'@media (max-width:860px){.gm-xo{grid-template-columns:minmax(0,1fr);}.gm-pn b{max-width:90px;}}'
-    +'@media (prefers-reduced-motion:reduce){.gm-st.my,.gm-cell.win,.gm-inv{animation:none;}.gm-mk.new path,.gm-mk.new circle{animation:none;stroke-dashoffset:0;}}';
+    +'.gm-inv{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#f3f6fc;border:1.5px solid var(--g-line);border-radius:16px;padding:12px 14px;margin-bottom:12px;}.gm-inv .b{display:flex;gap:8px;}'
+    +'.gm-opt{margin-bottom:14px;}.gm-ol{font-weight:700;font-size:13px;margin-bottom:7px;}.gm-segs{display:flex;gap:6px;flex-wrap:wrap;}.gm-seg{flex:1;min-width:92px;border:1.5px solid var(--g-line);background:#fff;border-radius:14px;padding:10px 8px;font:600 13.5px "Sarabun",sans-serif;color:var(--g-ink2);cursor:pointer;}.gm-seg.on{background:#37415a;border-color:#37415a;color:#fff;}.gm-hint{font-size:12.5px;color:var(--g-ink2);margin-top:7px;}.gm-hint.c{text-align:center;}'
+    +'.gm-badge{display:inline-block;background:#eef2fb;color:var(--g-ink2);border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:700;}.gm-badge.d{background:#fff1cf;color:#9a6a00;}'
+    +'.gm-nm,.gm-sp,.gm-sn{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;}.gm-nm-hint{font-size:13px;color:var(--g-ink2);text-align:center;line-height:1.6;}.gm-nm-info{font-size:13.5px;color:var(--g-ink2);}.gm-nm-info b{color:var(--g-ink);}'
+    +'.gm-slots{display:flex;gap:10px;margin-top:2px;}.gm-slot{width:56px;height:64px;border-radius:16px;background:#f1f5fd;border:2px solid var(--g-line);display:flex;align-items:center;justify-content:center;font:500 30px "Mitr",sans-serif;color:var(--g-ink);}.gm-slot.f{background:#fff;border-color:#bcd2ff;}'
+    +'.gm-nm-msg{min-height:20px;font-size:13px;color:#c0334f;}.gm-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:min(100%,280px);}.gm-key{border:none;background:#f1f5fd;border-radius:14px;padding:13px 0;font:500 20px "Mitr",sans-serif;color:var(--g-ink);cursor:pointer;box-shadow:inset 0 -3px 0 rgba(120,140,190,.2);}.gm-key:active{transform:translateY(1px);}.gm-key.fn{background:#ffe9ee;color:#c0334f;}.gm-key.ok{background:linear-gradient(120deg,#7cb6e4,#5aa0d8);color:#fff;font:600 15px "Sarabun",sans-serif;}'
+    +'.gm-hist{display:flex;flex-direction:column;gap:6px;width:min(100%,360px);margin-top:4px;max-height:300px;overflow:auto;}.gm-gr{display:flex;align-items:center;gap:10px;background:#f8faff;border-radius:12px;padding:6px 10px;}.gm-gr .no{width:20px;font-size:12px;color:var(--g-ink2);}.gm-gr .dg{display:flex;gap:5px;flex:1;}.gm-gr .dg i{font:500 18px "Mitr",sans-serif;font-style:normal;width:30px;height:34px;border-radius:9px;background:#fff;border:1px solid var(--g-line);display:flex;align-items:center;justify-content:center;}.gm-gr .fb{display:flex;gap:8px;font-size:13px;}.gm-gr .fb b{font-weight:700;}'
+    +'.gm-sn-top,.gm-sp-top{display:flex;gap:18px;font-size:13.5px;color:var(--g-ink2);flex-wrap:wrap;justify-content:center;}.gm-sn-top b,.gm-sp-top b{color:var(--g-ink);font-size:16px;}'
+    +'.gm-sn-wrap{position:relative;width:min(100%,360px);aspect-ratio:1;}.gm-sn-wrap canvas{width:100%;height:100%;border-radius:18px;display:block;touch-action:none;box-shadow:0 0 0 3px #fff,0 0 0 5px #D9E2F2;}'
+    +'.gm-sn-ov{position:absolute;inset:0;border-radius:18px;background:rgba(255,255,255,.82);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;text-align:center;}.gm-sn-ov .b{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;}.gm-sn-ov .e{font-size:44px;line-height:1;}.gm-sn-ov b{font:500 20px "Mitr",sans-serif;}.gm-sn-ov small{color:var(--g-ink2);font-size:13px;}.gm-sn-ov .gm-btn{margin-top:8px;}'
+    +'.gm-dpad{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:2px;}.gm-dpad div{display:flex;gap:6px;}.gm-dpad button{width:54px;height:46px;border:none;border-radius:14px;background:#f1f5fd;font-size:18px;color:var(--g-ink);cursor:pointer;box-shadow:inset 0 -3px 0 rgba(120,140,190,.2);}.gm-dpad button:active{transform:translateY(1px);}'
+    +'.gm-tbar{position:relative;width:100%;height:22px;border-radius:999px;background:#eef2fb;overflow:hidden;}.gm-tbar i{display:block;height:100%;background:linear-gradient(90deg,#7cc8a8,#f4b429,#ef5350);background-size:300% 100%;background-position:0 0;border-radius:999px;transition:width .25s linear;}.gm-tbar b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#37415a;}'
+    +'.gm-sp-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;}.gm-sp-svg{width:100%;height:auto;display:block;cursor:crosshair;border-radius:14px;box-shadow:0 0 0 2px #e6ebf5;transition:box-shadow .15s;}.gm-sp-svg.bad{box-shadow:0 0 0 3px #ef5350;}.gm-ring{fill:none;stroke-width:3.5;}.gm-ring.ok{stroke:#26A69A;}.gm-ring.miss{stroke:#ef5350;stroke-dasharray:5 4;}'
+    +'.gm-pop-in{position:fixed;right:18px;bottom:18px;z-index:100020;width:min(340px,calc(100vw - 36px));background:#fff;border:2px solid #ffd978;border-radius:20px;padding:16px;box-shadow:0 22px 50px -16px rgba(40,55,100,.55);animation:gm-pop .35s ease-out,gm-pulse 1.6s ease-in-out .35s infinite;font-family:"Sarabun",sans-serif;color:#37415a;}@keyframes gm-pop{from{transform:translateY(24px) scale(.96);opacity:0;}to{transform:none;opacity:1;}}'
+    +'.gm-pop-h{font:500 17px "Mitr",sans-serif;margin-bottom:10px;}.gm-pop-b{display:flex;align-items:center;gap:12px;font-size:14.5px;line-height:1.5;}.gm-pop-b small{color:#6b7794;}.gm-pop-a{display:flex;gap:10px;margin-top:14px;}.gm-pop-a .gm-btn{flex:1;}'
+    +'.gm-confetti{position:fixed;inset:0;pointer-events:none;z-index:100030;overflow:hidden;}.gm-confetti i{position:absolute;top:-40px;left:var(--x);font-style:normal;font-size:var(--s);animation:gm-fall var(--t) var(--dl) ease-in forwards;}@keyframes gm-fall{to{transform:translateY(112vh) rotate(var(--r));opacity:.9;}}'
+    +'@media (max-width:860px){.gm-xo{grid-template-columns:minmax(0,1fr);}.gm-pn b{max-width:90px;}.gm-hubteam .s{text-align:left;}}'
+    +'@media (max-width:520px){.gm-sp-pair{grid-template-columns:1fr;}.gm-slot{width:50px;height:58px;}}'
+    +'@media (prefers-reduced-motion:reduce){.gm-st.my,.gm-cell.win,.gm-pop-in{animation:none;}.gm-mk.new path,.gm-mk.new circle{animation:none;stroke-dashoffset:0;}}';
   document.head.appendChild(st);
 })();
 </script>
