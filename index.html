@@ -15002,6 +15002,7 @@ details.fm-more[open]{padding-bottom:6px;}
   window.gfxOpenPerson=function(name){ gfxPerson=name; gfxSub='board'; renderGraphicTeam(); };
   window.gfxBackHome=function(){ gfxPerson=null; renderGraphicTeam(); };
   window.gfxSetSub=function(k){ gfxSub=k; renderGraphicTeam(); };
+  window.gfxViewState=function(){ return {p:gfxPerson||'', s:gfxSub||'board'}; };   // ให้ระบบจำหน้าตอนรีเฟรชอ่านได้
   window.gfxSetBrand=function(b){ gfxFilterBrand=b||'all'; gfxReRender(); };
   window.gfxSetGraphic=function(n){ gfxFilterGraphic=n||''; gfxReRender(); };
   window.gfxSetTag=function(t){ gfxFilterTag=t||''; gfxReRender(); };
@@ -16362,6 +16363,54 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   });
   setInterval(check,180000);
   setTimeout(check,20000);
+})();
+</script>
+<script id="restore-view-2026-10-06">
+/* จำหน้าที่เปิดอยู่ — กดรีเฟรชแล้วอยู่หน้าเดิม (ไม่เด้งไปเมนูแรก)
+   • เก็บไว้ใน URL ส่วนท้าย (#v=...) → รีเฟรชได้ · เปิดลิงก์เดิมซ้ำได้ · ส่งลิงก์หน้านั้นให้เพื่อนได้
+   • จำเมนูหลัก + เมนูย่อยของ Content / Graphic Team (รวมคนที่เปิดอยู่) / NPD Team */
+(function(){
+  function parse(){
+    try{ var h=String(location.hash||'').replace(/^#/,''); if(!h) return null; var q=new URLSearchParams(h); var v=q.get('v'); if(!v) return null; return {v:v, s:q.get('s')||'', p:q.get('p')||''}; }catch(e){ return null; }
+  }
+  function current(){
+    var t=document.querySelector('#nav .tab.active'); if(!t) return null;
+    var st={v:t.getAttribute('data-view')||'', s:'', p:''}; if(!st.v) return null;
+    try{
+      if(st.v==='content'){ var b=document.querySelector('[id^="cc-nav-"].subnav-active'); if(b) st.s=b.id.replace('cc-nav-',''); }
+      else if(st.v==='graphic' && typeof window.gfxViewState==='function'){ var g=window.gfxViewState(); st.p=g.p||''; st.s=g.p?(g.s||''):''; }
+      else if(st.v==='team'){ var a=document.querySelector('.npd-navitem.active'); if(a && /^subnav-/.test(a.id)) st.s=a.id.replace('subnav-',''); }
+    }catch(e){}
+    return st;
+  }
+  function save(){
+    var st=current(); if(!st) return;
+    var q=new URLSearchParams(); q.set('v',st.v); if(st.s) q.set('s',st.s); if(st.p) q.set('p',st.p);
+    var h='#'+q.toString();
+    if(location.hash!==h){ try{ history.replaceState(null,'',location.pathname+location.search+h); }catch(e){} }
+  }
+  var restored=false;
+  function restore(){
+    if(restored) return; restored=true;
+    var st=parse(); if(!st) return;
+    var t=document.querySelector('#nav .tab[data-view="'+st.v+'"]'); if(!t) return;
+    if(!t.classList.contains('active')) t.click();
+    setTimeout(function(){
+      try{
+        if(st.v==='content' && st.s && typeof window.switchContentSub==='function') window.switchContentSub(st.s);
+        else if(st.v==='graphic' && st.p){ if(typeof window.gfxOpenPerson==='function'){ window.gfxOpenPerson(st.p); if(st.s && st.s!=='board' && typeof window.gfxSetSub==='function') window.gfxSetSub(st.s); } }
+        else if(st.v==='team' && st.s && typeof window.switchTeamSubview==='function') window.switchTeamSubview(st.s);
+      }catch(e){}
+      save();
+    },350);
+  }
+  // เปลี่ยนหน้า/เมนูย่อยเมื่อไหร่ → อัปเดต URL (รอให้เมนูทำงานเสร็จก่อนค่อยอ่านสถานะ)
+  document.addEventListener('click',function(){ setTimeout(save,250); },true);
+  window.addEventListener('pagehide',save);
+  window.restoreViewNow=restore;
+  // โหลดหน้าแล้วคืนหน้าเดิมทันที (รันก่อนโค้ด “หน้าแรก = CIL Team” ซึ่งจะข้ามเมื่อมี # อยู่)
+  function init(){ restore(); setTimeout(save,900); }   // ไม่มี # (เข้าครั้งแรก) → จดหน้าแรกไว้ด้วย
+  if(document.readyState==='complete') setTimeout(init,0); else window.addEventListener('load',function(){ setTimeout(init,0); });
 })();
 </script>
 </body>
