@@ -16913,9 +16913,67 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   window.gmLogic={winnerOf:winnerOf,botPick:botPick,turnOf:turnOf,numSecret:numSecret,numCheck:numCheck,numPoints:numPoints,snkInit:snkInit,snkStep:snkStep,snkDelay:snkDelay,spotGen:spotGen,spotHit:spotHit,rng:rng};
 
   /* ---------- เสียง / ฉลอง / เตือน ---------- */
-  var AC=null;
-  function beep(f,d,v){ if(!sound) return; try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); var o=AC.createOscillator(), g=AC.createGain(); o.type='sine'; o.frequency.value=f; g.gain.value=v||0.05; o.connect(g); g.connect(AC.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+d); o.stop(AC.currentTime+d); }catch(e){} }
+  /* ---------- เสียงเอฟเฟกต์ + เพลงประกอบ (สังเคราะห์ด้วย WebAudio ในเบราว์เซอร์ — ไม่ต้องมีไฟล์เสียง) ---------- */
+  var AC=null, busM=null, busS=null, musicOn=true, musicVol=0.55, noiseBuf=null, MU={key:'',T:null,bars:null,step:0,next:0,tempo:1,timer:null}, TRK={};
+  try{ musicOn=localStorage.getItem('gm_music')!=='0'; var _mv=parseFloat(localStorage.getItem('gm_vol')); if(_mv>=0&&_mv<=1) musicVol=_mv; }catch(e){}
+  function ac(){ try{ if(!AC){ var C=window.AudioContext||window.webkitAudioContext; if(!C) return null; AC=new C(); var cp=AC.createDynamicsCompressor(); cp.connect(AC.destination);
+        busM=AC.createGain(); busM.gain.value=musicVol*0.5; busM.connect(cp); busS=AC.createGain(); busS.gain.value=0.9; busS.connect(cp); }
+      if(AC.state==='suspended'&&AC.resume) AC.resume(); return AC; }catch(e){ return null; } }
+  function beep(f,d,v){ if(!sound) return; var a=ac(); if(!a) return; try{ var o=a.createOscillator(), g=a.createGain(), t=a.currentTime; o.type='sine'; o.frequency.value=f; g.gain.setValueAtTime(v||0.05,t); o.connect(g); g.connect(busS); o.start(t); g.gain.exponentialRampToValueAtTime(0.0001,t+d); o.stop(t+d+0.02); }catch(e){} }
   function sfx(k){ if(k==='move') beep(520,.08); else if(k==='inv'){ beep(660,.12); setTimeout(function(){ beep(880,.16); },130); } else if(k==='win'){ [523,659,784,1047].forEach(function(f,i){ setTimeout(function(){ beep(f,.18,.07); },i*120); }); } else if(k==='lose') beep(220,.35); else if(k==='draw') beep(400,.2); else if(k==='ok') beep(740,.09); else if(k==='bad') beep(180,.12); else if(k==='eat') beep(880,.06); }
+  function mtof(m){ return 440*Math.pow(2,(m-69)/12); }
+  function tone(t,f,dur,type,vol,o){ var a=AC; try{ var os=a.createOscillator(), g=a.createGain(); os.type=type; os.frequency.setValueAtTime(f,t); if(o&&o.slide) os.frequency.exponentialRampToValueAtTime(o.slide,t+dur);
+      g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+((o&&o.atk)||0.008)); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); os.connect(g); g.connect(busM); os.start(t); os.stop(t+dur+0.04); }catch(e){} }
+  function noise(t,dur,vol,hp,bp){ var a=AC; try{ if(!noiseBuf){ noiseBuf=a.createBuffer(1,a.sampleRate,a.sampleRate); var d=noiseBuf.getChannelData(0); for(var i=0;i<d.length;i++) d[i]=Math.random()*2-1; }
+      var s=a.createBufferSource(), f=a.createBiquadFilter(), g=a.createGain(); s.buffer=noiseBuf; if(bp){ f.type='bandpass'; f.frequency.value=bp; } else { f.type='highpass'; f.frequency.value=hp||6000; }
+      g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); s.connect(f); f.connect(g); g.connect(busM); s.start(t); s.stop(t+dur+0.02); }catch(e){} }
+  function kick(t,v){ tone(t,150,.16,'sine',v,{slide:42}); }
+  function snareD(t,v){ noise(t,.12,v,0,1800); tone(t,200,.08,'triangle',v*.4); }
+  function hatD(t,v,open){ noise(t,open?.12:.035,v,7000,0); }
+  var CH={M:[0,4,7],m:[0,3,7],M7:[0,4,7,11],m7:[0,3,7,10],'7':[0,4,7,10]};
+  /* เพลงของแต่ละเกม — สร้างแบบกำหนดผล (seed) ทำนองวนซ้ำ 8 ห้อง */
+  var TRACKS={
+    hub: {bpm:112,root:60,scale:[0,2,4,7,9],prog:[0,7,9,5],q:['M','M','m','M'],lead:'triangle',leadV:.20,dens:.55,bass:'hub',arp:'hub',dr:'soft',swing:0},
+    xo:  {bpm:100,root:65,scale:[0,2,4,5,7,9,11],prog:[0,9,2,7],q:['M7','m7','m7','7'],lead:'sine',leadV:.24,dens:.5,bass:'walk',arp:'stab',dr:'brush',swing:.28},
+    num: {bpm:84,root:57,scale:[0,3,5,7,10],prog:[0,8,3,10],q:['m','M','M','M'],lead:'sine',leadV:.22,dens:.32,bass:'long',arp:'',dr:'tick',swing:0,pad:true},
+    snk: {bpm:138,root:64,scale:[0,3,5,7,10],prog:[0,0,8,10],q:['m','m','M','M'],lead:'square',leadV:.11,dens:.7,bass:'pump',arp:'fast',dr:'rock',swing:0},
+    spot:{bpm:118,root:62,scale:[0,2,3,5,7,8,10],prog:[0,0,8,7],q:['m','m','M','M'],lead:'square',leadV:.10,dens:.42,bass:'pizz',arp:'',dr:'tick2',swing:0}};
+  function buildTrack(key){ if(TRK[key]) return TRK[key]; var T=TRACKS[key]||TRACKS.hub, r=rng('mus-'+key), pool=[]; for(var o=0;o<2;o++) T.scale.forEach(function(s){ pool.push(T.root+12*o+s); }); pool.push(T.root+24);
+    var idx=Math.floor(pool.length/3), bars=[];
+    for(var b=0;b<8;b++){ var ci=b%4, rt=T.root+T.prog[ci]-12, ch=CH[T.q[ci]].map(function(i){ return rt+12+i; }), pcs=ch.map(function(m){ return ((m%12)+12)%12; }), bar={lead:[],bass:[],arp:[],pad:null,dr:T.dr};
+      for(var s=0;s<16;s++){ var strong=(s%4===0), pr=strong?Math.min(.95,T.dens+.35):(s%2===0?T.dens:T.dens*.35);
+        if(r()<pr){ var st=[-2,-1,-1,0,1,1,2][Math.floor(r()*7)]; idx=Math.max(0,Math.min(pool.length-1,idx+st));
+          if(strong){ var bi=idx,bd=99; pool.forEach(function(m,i){ if(pcs.indexOf(((m%12)+12)%12)>=0&&Math.abs(i-idx)<bd){ bd=Math.abs(i-idx); bi=i; } }); idx=bi; }
+          bar.lead[s]=pool[idx]; } }
+      var bs=T.bass; if(bs==='hub'){ bar.bass[0]=rt; bar.bass[6]=rt; bar.bass[8]=rt+7; bar.bass[12]=rt; } else if(bs==='walk'){ bar.bass[0]=ch[0]-12; bar.bass[4]=ch[1]-12; bar.bass[8]=ch[2]-12; bar.bass[12]=ch[1]-12; }
+      else if(bs==='long'){ bar.bass[0]=rt; bar.bass[8]=rt+7; } else if(bs==='pump'){ for(var k=0;k<16;k+=2) bar.bass[k]=(k%4===2)?rt+12:rt; } else if(bs==='pizz'){ [0,3,6,8,11,14].forEach(function(k,j){ bar.bass[k]=(j%3===2)?rt+7:rt; }); }
+      var ar=T.arp; if(ar==='hub'){ for(var a=0;a<16;a+=2) bar.arp[a]=ch[(a/2)%ch.length]+12; } else if(ar==='fast'){ for(var f=0;f<16;f++) bar.arp[f]=ch[f%ch.length]+12; } else if(ar==='stab'){ [2,6,10,14].forEach(function(k){ bar.arp[k]=ch; }); }
+      if(T.pad) bar.pad=ch; bars.push(bar); }
+    return (TRK[key]={T:T,bars:bars}); }
+  function musicStep(){ var T=MU.T, b=MU.bars[Math.floor(MU.step/16)%8], s=MU.step%16, spd=60/(T.bpm*MU.tempo)/4, t=MU.next+((T.swing&&s%4===2)?T.swing*spd:0);
+    if(b.lead[s]) tone(t,mtof(b.lead[s]),spd*(T.lead==='sine'?3:1.9),T.lead,T.leadV,{atk:.006});
+    if(b.bass[s]!==undefined) tone(t,mtof(b.bass[s]),spd*(T.bass==='long'?7:(T.bass==='walk'?3.4:1.6)),T.bass==='pizz'||T.bass==='pump'?'square':'triangle',T.bass==='pump'?.16:.2,{atk:.004});
+    var ar=b.arp[s]; if(ar){ if(Array.isArray(ar)) ar.forEach(function(m){ tone(t,mtof(m),spd*1.6,'triangle',.07,{atk:.004}); }); else tone(t,mtof(ar),spd*(T.arp==='fast'?1.1:1.6),T.arp==='fast'?'square':'triangle',T.arp==='fast'?.05:.09,{atk:.004}); }
+    if(b.pad&&s===0) b.pad.forEach(function(m){ tone(t,mtof(m),spd*15,'triangle',.055,{atk:.35}); });
+    var d=T.dr; if(d==='soft'){ if(s===0||s===8) kick(t,.5); if(s%4===2) hatD(t,.12); }
+    else if(d==='brush'){ if(s===0||s===10) kick(t,.38); if(s===4||s===12) noise(t,.11,.2,0,2400); if(s%4===2) hatD(t,.1); }
+    else if(d==='tick'){ if(s===0) kick(t,.3); if(s%4===0) hatD(t,.1); if(s===8) tone(t,880,.05,'sine',.04); }
+    else if(d==='rock'){ if(s===0||s===8||s===10) kick(t,.55); if(s===4||s===12) snareD(t,.3); if(s%2===0) hatD(t,.1,s===14); }
+    else if(d==='tick2'){ if(s===0||s===8) kick(t,.35); if(s===4||s===12) tone(t,1500,.04,'square',.05); if(s%2===0) hatD(t,s%4===0?.14:.07); }
+    MU.step++; MU.next+=spd; }
+  function musicPump(){ if(!MU.T||!AC) return; var lim=AC.currentTime+0.14; if(MU.next<AC.currentTime-0.4) MU.next=AC.currentTime+0.05; var n=0; while(MU.next<lim&&n++<32) musicStep(); }
+  function musicStop(){ try{ if(MU.timer){ clearInterval(MU.timer); MU.timer=null; } MU.key=''; MU.T=null; if(AC&&busM){ busM.gain.cancelScheduledValues(AC.currentTime); busM.gain.setTargetAtTime(0,AC.currentTime,.1); } }catch(e){} }
+  function musicPlay(key){ if(!key) return; MU.want=key; if(!musicOn) return; if(MU.key===key&&MU.timer) return; var a=ac(); if(!a) return;
+    try{ if(MU.timer){ clearInterval(MU.timer); MU.timer=null; } var tr=buildTrack(key); MU.key=key; MU.T=tr.T; MU.bars=tr.bars; MU.step=0; MU.tempo=1; MU.next=a.currentTime+0.12;
+      busM.gain.cancelScheduledValues(a.currentTime); busM.gain.setValueAtTime(0.0001,a.currentTime); busM.gain.linearRampToValueAtTime(musicVol*0.5,a.currentTime+0.5); MU.timer=setInterval(musicPump,30); musicPump(); }catch(e){} }
+  function musicTempo(x){ if(MU.T) MU.tempo=Math.max(.6,Math.min(1.7,x)); }
+  function audUi(){ var a=document.getElementById('gm-mus'), b=document.getElementById('gm-snd'); if(a) a.textContent=musicOn?'🎵 เพลง: เปิด':'🔇 เพลง: ปิด'; if(b) b.textContent=sound?'🔊 เอฟเฟกต์: เปิด':'🔈 เอฟเฟกต์: ปิด'; }
+  function audBar(){ return '<div class="gm-aud"><button type="button" id="gm-mus" class="gm-snd" onclick="gmMusic()" title="เปิด/ปิดเพลงประกอบ">'+(musicOn?'🎵 เพลง: เปิด':'🔇 เพลง: ปิด')+'</button><input type="range" class="gm-vol" min="0" max="100" value="'+Math.round(musicVol*100)+'" oninput="gmVol(this.value)" aria-label="ความดังเพลง" title="ความดังเพลง"><button type="button" id="gm-snd" class="gm-snd" onclick="gmSound()" title="เปิด/ปิดเสียงเอฟเฟกต์">'+(sound?'🔊 เอฟเฟกต์: เปิด':'🔈 เอฟเฟกต์: ปิด')+'</button></div>'; }
+  window.gmMusic=function(){ musicOn=!musicOn; try{ localStorage.setItem('gm_music',musicOn?'1':'0'); }catch(e){} if(musicOn) musicPlay(MU.want||curKey()); else musicStop(); audUi(); };
+  window.gmVol=function(v){ musicVol=Math.max(0,Math.min(1,(+v)/100)); try{ localStorage.setItem('gm_vol',String(musicVol)); }catch(e){} try{ if(busM&&AC) busM.gain.setTargetAtTime(musicVol*0.5,AC.currentTime,.05); }catch(e){} };
+  window.gmSound=function(){ sound=!sound; try{ localStorage.setItem('gm_sound',sound?'1':'0'); }catch(e){} audUi(); if(sound) beep(660,.1); };
+  function curKey(){ return screen==='hub'?'hub':screen; }
+  window.gmAudioDebug=function(){ return {MU:MU,musicOn:musicOn,sound:sound,vol:musicVol,TRK:TRK}; };
   function burst(){ try{ var d=document.createElement('div'); d.className='gm-confetti'; var h='', em=['🎉','✨','🎊','⭐','💖','🌟'];
     for(var i=0;i<28;i++){ h+='<i style="--x:'+(Math.random()*100).toFixed(1)+'vw;--r:'+Math.round(Math.random()*540-270)+'deg;--t:'+(1.8+Math.random()*1.6).toFixed(2)+'s;--dl:'+(Math.random()*.5).toFixed(2)+'s;--s:'+(18+Math.round(Math.random()*18))+'px">'+em[i%em.length]+'</i>'; }
     d.innerHTML=h; document.body.appendChild(d); setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); },3800); }catch(e){} }
@@ -17068,7 +17126,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     if(!r.length) return h+'<div class="gm-empty"><span class="e">🥇</span><span><b>ยังไม่มีใครลงสนาม</b><small>ชนะเพื่อนในทีมเป็นคนแรก แล้วชื่อคุณจะขึ้นอันดับ 1</small></span></div>';
     var medal=['🥇','🥈','🥉'];
     return h+'<div class="gm-rank">'+r.slice(0,10).map(function(x,i){ var mine=x.n===me(), s=x.s; return '<div class="gm-rk'+(mine?' me':'')+'"><span class="no">'+(medal[i]||(i+1))+'</span><span class="gm-pav">'+av(x.n,32)+'</span><span class="gm-rn"><b>'+nm(x.n)+(mine?' <em>คุณ</em>':'')+'</b><small>ชนะ '+(+s.w||0)+' · เสมอ '+(+s.d||0)+' · แพ้ '+(+s.l||0)+((+s.s||0)>1?' · 🔥 ติดกัน '+s.s:'')+'</small></span><span class="pct">'+Math.round(x.rate*100)+'%</span></div>'; }).join('')+'</div>'; }
-  function backBar(){ return '<div class="gm-bar"><button type="button" class="gm-back" onclick="gmHome()">← Game Zone</button><button type="button" class="gm-snd" onclick="gmSound()" title="เปิด/ปิดเสียง">'+(sound?'🔊 เสียง: เปิด':'🔇 เสียง: ปิด')+'</button></div>'; }
+  function backBar(){ return '<div class="gm-bar"><button type="button" class="gm-back" onclick="gmHome()">← Game Zone</button>'+audBar()+'</div>'; }
   function xoHtml(){
     var left='<div class="gm-card gm-play"><div class="gm-vs">'+(S?playerCard(me()||'ฉัน',S.me,!S.over&&turnOf(S.board)===S.me,'me')+vsMid()+playerCard(S.opp,other(S.me),!S.over&&turnOf(S.board)!==S.me,'opp'):'<div class="gm-vsidle">❌ <b>XO</b> ⭕</div>')+'</div>'+statusHtml()+boardHtml()+scoreLine()+controlsHtml()+'</div>';
     var right='<div class="gm-card gm-side"><div class="gm-tabs"><button type="button" class="'+(tab==='friend'?'on':'')+'" onclick="gmTab(\'friend\')">👥 เล่นกับเพื่อน</button><button type="button" class="'+(tab==='bot'?'on':'')+'" onclick="gmTab(\'bot\')">🤖 เล่นกับบอท</button></div>'
@@ -17127,10 +17185,10 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     var h=st.snake[0]; if(h){ g.fillStyle='#fff'; var ex=st.dir==='L'?-.18:(st.dir==='R'?.18:0), ey=st.dir==='U'?-.18:(st.dir==='D'?.18:0), ox=st.dir==='U'||st.dir==='D'?.2:0, oy=st.dir==='L'||st.dir==='R'?.2:0;
       [[-1,-1],[1,1]].forEach(function(s){ g.beginPath(); g.arc((h.x+.5+ex+ox*s[0])*c,(h.y+.5+ey+oy*s[0])*c,c*.1,0,7); g.fill(); }); }
     var sc=document.getElementById('gm-sn-score'); if(sc) sc.textContent=st.score; }
-  function snkTick(){ clearTimeout(SNK.t); if(!SNK.run||!SNK.st) return; snkStep(SNK.st,Math.random); snkDraw();
+  function snkTick(){ clearTimeout(SNK.t); if(!SNK.run||!SNK.st) return; var _was=SNK.st.score; snkStep(SNK.st,Math.random); snkDraw(); if(SNK.st.score>_was) sfx('eat'); musicTempo(SNK.st.alive?1+Math.min(.55,SNK.st.score/260):.8);
     if(!SNK.st.alive){ SNK.run=false; SNK.over=true; sfx('lose'); if(!SNK.saved){ SNK.saved=true; if(me()&&SNK.st.score>0) recordScore('snk',SNK.st.score); } var be=document.getElementById('gm-sn-best'); if(be) be.textContent=Math.max(+be.textContent||0,SNK.st.score); snkOverlay('over'); return; }
     SNK.t=setTimeout(snkTick,snkDelay(SNK.st.score)); }
-  window.gmSnkStart=function(resume){ if(resume&&SNK.st&&SNK.st.alive){ SNK.run=true; snkOverlay('run'); snkTick(); return; } SNK.st=snkInit(Math.random); SNK.over=false; SNK.saved=false; SNK.run=true; snkOverlay('run'); snkDraw(); SNK.t=setTimeout(snkTick,snkDelay(0)); };
+  window.gmSnkStart=function(resume){ musicTempo(1); if(resume&&SNK.st&&SNK.st.alive){ SNK.run=true; snkOverlay('run'); snkTick(); return; } SNK.st=snkInit(Math.random); SNK.over=false; SNK.saved=false; SNK.run=true; snkOverlay('run'); snkDraw(); SNK.t=setTimeout(snkTick,snkDelay(0)); };
   window.gmSnkDir=function(d){ if(screen!=='snk') return; if(SNK.over) return; if(!SNK.run){ if(SNK.st&&SNK.st.alive&&SNK.st.score>0) return; window.gmSnkStart(); }
     var opp={U:'D',D:'U',L:'R',R:'L'}; if(SNK.st&&opp[d]!==SNK.st.dir) SNK.st.nd=d; else if(SNK.st&&SNK.st.snake.length<2) SNK.st.nd=d; };
   function snkPause(){ if(SNK.run){ SNK.run=false; clearTimeout(SNK.t); snkOverlay('pause'); } }
@@ -17144,9 +17202,9 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
         SPT.scene=spotGen('spot-'+dayKey()+'-'+SPT.round); SPT.left=Math.max(0,45-(Date.now()-SPT.t0)/1000);
         if(SPT.phase==='play'&&SPT.left<=0){ spotEnd(false); return; } if(SPT.phase==='play') SPT.timer=setInterval(spotTimer,250); spotDraw(); return; } }catch(e){} }
     spotRound(1); }
-  function spotRound(n){ clearInterval(SPT.timer); var seed=SPT.daily?('spot-'+dayKey()+'-'+n):('sp'+Date.now()+'-'+n); SPT.round=n; SPT.scene=spotGen(seed); SPT.found=[]; SPT.wrong=0; SPT.t0=Date.now(); SPT.left=45; SPT.phase='play'; SPT.flash='';
+  function spotRound(n){ clearInterval(SPT.timer); var seed=SPT.daily?('spot-'+dayKey()+'-'+n):('sp'+Date.now()+'-'+n); musicTempo(1); SPT.round=n; SPT.scene=spotGen(seed); SPT.found=[]; SPT.wrong=0; SPT.t0=Date.now(); SPT.left=45; SPT.phase='play'; SPT.flash='';
     SPT.timer=setInterval(spotTimer,250); spSave(); spotDraw(); }
-  function spotTimer(){ if(!SPT||SPT.phase!=='play') return; SPT.left=Math.max(0,45-(Date.now()-SPT.t0)/1000); var b=document.getElementById('gm-sp-bar'), t=document.getElementById('gm-sp-t'); if(b) b.style.width=(SPT.left/45*100)+'%'; if(t) t.textContent=Math.ceil(SPT.left); if(SPT.left<=0) spotEnd(false); }
+  function spotTimer(){ if(!SPT||SPT.phase!=='play') return; SPT.left=Math.max(0,45-(Date.now()-SPT.t0)/1000); musicTempo(SPT.left<10?1.28:1); var b=document.getElementById('gm-sp-bar'), t=document.getElementById('gm-sp-t'); if(b) b.style.width=(SPT.left/45*100)+'%'; if(t) t.textContent=Math.ceil(SPT.left); if(SPT.left<=0) spotEnd(false); }
   function spotPanel(side){ var sc=SPT.scene, objs=side==='L'?sc.left:sc.right, found=SPT.found, miss=SPT.phase==='end';
     var rings=sc.diffs.map(function(i){ var o=sc.left[i], f=found.indexOf(i)>=0; if(!f&&!miss) return ''; return '<circle cx="'+o.x.toFixed(1)+'" cy="'+o.y.toFixed(1)+'" r="26" class="'+(f?'gm-ring ok':'gm-ring miss')+'"/>'; }).join('');
     return '<svg class="gm-sp-svg'+(SPT.flash?' bad':'')+'" viewBox="0 0 '+SP_W+' '+SP_H+'" onclick="gmSpotClick(event)" role="img" aria-label="ภาพ'+(side==='L'?'ซ้าย':'ขวา')+'"><rect width="'+SP_W+'" height="'+SP_H+'" rx="14" fill="#f6f9ff"/>'+objs.map(function(o){ return o?shapeSvg(o):''; }).join('')+rings+'</svg>'; }
@@ -17169,7 +17227,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     if(i>=0&&SPT.scene.diffs.indexOf(i)>=0){ if(SPT.found.indexOf(i)<0){ SPT.found.push(i); sfx('ok'); if(SPT.found.length>=SP_DIFFS){ spotEnd(true); return; } } }
     else { SPT.wrong++; sfx('bad'); SPT.flash='1'; setTimeout(function(){ if(SPT){ SPT.flash=''; if(SPT.phase==='play') spotDraw(); } },260); }
     spSave(); spotDraw(); };
-  function spotEnd(all){ if(!SPT||SPT.phase!=='play') return; clearInterval(SPT.timer); SPT.phase='end'; var left=all?Math.max(0,45-(Date.now()-SPT.t0)/1000):0;
+  function spotEnd(all){ if(!SPT||SPT.phase!=='play') return; clearInterval(SPT.timer); SPT.phase='end'; musicTempo(.9); var left=all?Math.max(0,45-(Date.now()-SPT.t0)/1000):0;
     var pts=Math.max(0,SPT.found.length*100+(all?Math.round(left*3):0)-SPT.wrong*25); SPT.results.push({found:SPT.found.length,wrong:SPT.wrong,left:left,pts:pts,all:all}); SPT.total+=pts;
     if(all){ burst(); sfx('win'); } else sfx('draw');
     if(SPT.round>=SPT.rounds&&SPT.daily&&!SPT.saved){ SPT.saved=true; if(me()) recordScore('spot',SPT.total,dayKey()); else say('เข้าสู่ระบบเพื่อบันทึกคะแนนให้ทีม','info'); }
@@ -17186,7 +17244,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
         if(g.daily) stat+='<div class="dl'+(me()&&playedToday(g.k)?' done':'')+'">'+(me()&&playedToday(g.k)?'✓ วันนี้เล่นโจทย์ประจำวันแล้ว +'+((ALL[g.k][me()]||{}).lp||0):'🗓️ โจทย์ประจำวันรออยู่ — ทั้งทีมได้โจทย์เดียวกัน'+(me()?'':' (ล็อกอินเพื่อบันทึกคะแนน)'))+'</div>'; }
       else { var rx=rankXo()[0]; stat='<div class="st">'+(rx?'<span>'+medalOf(0)+' '+nm(rx.n)+' ชนะ <b>'+(+rx.s.w||0)+'</b></span>':'<span>ยังไม่มีใครลงสนาม</span>')+'</div>'; }
       return '<div class="gm-gc" onclick="gmOpen(\''+g.k+'\')" onkeydown="if(event.key===\'Enter\')gmOpen(\''+g.k+'\')" role="button" tabindex="0"><div class="ic">'+g.ic+'</div><div class="tx"><h3>'+esc(g.t)+'</h3><p>'+esc(g.d)+'</p>'+stat+'</div><span class="go">เล่นเลย →</span></div>'; }).join('');
-    return banner+'<div class="gm-hub">'+cards+'</div>'; }
+    return '<div class="gm-bar"><span></span>'+audBar()+'</div>'+banner+'<div class="gm-hub">'+cards+'</div>'; }
   function shellHtml(){ return backBar()+'<div class="gm-xo"><div class="gm-col"><div class="gm-card gm-play"><div id="gm-main" class="gm-mainbox"></div></div></div><div class="gm-col"><div class="gm-card gm-side" id="gm-side"></div></div></div>'; }
   function sideHtml(G){ var kind=lb[G.k]||'wk', rows=rankScore(G.k,kind), tw=teamWeek(G.k);
     var team='<div class="gm-team"><div class="k">⭐ คะแนนรวมทีม · สัปดาห์นี้</div><div class="v">'+tw.total+' <small>'+G.unit+'</small></div><div class="s">'+tw.players+' คนร่วมทำคะแนน'+(G.mode==='best'?' · นับสถิติสูงสุดของแต่ละคน':' · สะสมจากโจทย์ประจำวัน')+'</div></div>';
@@ -17203,24 +17261,24 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function refresh(){ if(!viewActive()) return; render(); }
   function mountGame(k){ if(k==='num') numStart(true); else if(k==='snk') snkMount(); else if(k==='spot') spotStart(true); }
   function stopAll(){ clearTimeout(SNK.t); SNK.run=false; if(SPT&&SPT.timer){ clearInterval(SPT.timer); SPT.timer=null; } }
-  function openGame(k){ stopAll(); screen=k; var r=root(); if(r) r.removeAttribute('data-g'); render(); loadAll(false); connect(); track(); try{ if(window.rvSave) setTimeout(window.rvSave,60); }catch(e){} }
+  function openGame(k){ stopAll(); screen=k; musicPlay(k); var r=root(); if(r) r.removeAttribute('data-g'); render(); loadAll(false); connect(); track(); try{ if(window.rvSave) setTimeout(window.rvSave,60); }catch(e){} }
   window.gmOpen=function(k){ var G=gameOf(k); if(G&&G.on) openGame(k); };
   window.gmQuit=function(){ if(S&&S.mode==='pvp'&&!S.sOver&&!confirm('ออกจากเกมนี้ = ยอมแพ้ (นับเป็นแพ้) — ต้องการออกไหม?')) return; window.gmLeave(); };
-  window.gmHome=function(){ if(S&&S.mode==='pvp'&&!S.sOver&&!confirm('กำลังเล่นกับเพื่อนอยู่ — ออกจากเกมนี้ (นับเป็นแพ้) ?')) return; if(S) window.gmLeave(); stopAll(); screen='hub'; render(); loadAll(false); try{ if(window.rvSave) setTimeout(window.rvSave,60); }catch(e){} };
+  window.gmHome=function(){ if(S&&S.mode==='pvp'&&!S.sOver&&!confirm('กำลังเล่นกับเพื่อนอยู่ — ออกจากเกมนี้ (นับเป็นแพ้) ?')) return; if(S) window.gmLeave(); stopAll(); screen='hub'; musicPlay('hub'); render(); loadAll(false); try{ if(window.rvSave) setTimeout(window.rvSave,60); }catch(e){} };
   window.gmTab=function(t){ tab=t; refresh(); };
   window.gmSet=function(k,v){ bot[k]=v; refresh(); };
   window.gmFmt=function(v){ fmtPick=(v===3?3:1); refresh(); };
   window.gmLb=function(k){ lb[screen]=k; renderSide(); };
   window.gmStartBot=function(){ startBot(); };
-  window.gmSound=function(){ sound=!sound; try{ localStorage.setItem('gm_sound',sound?'1':'0'); }catch(e){} if(sound) beep(660,.1); refresh(); };
   window.gmCur=function(){ return screen==='hub'?'':screen; };
   window.gmDebug=function(){ return {S:S,presence:presence,inv:inv,outInv:outInv,conn:conn,screen:screen,ALL:ALL,N:N,SPT:SPT,SNK:SNK,fmtPick:fmtPick}; };
   /* ---------- เข้า/ออกแท็บ Game · คีย์บอร์ด ---------- */
-  function onEnter(){ render(); connect(); loadAll(false); track(); }
-  function onLeave(){ if(SNK.run) snkPause(); track(); }
+  function onEnter(){ render(); connect(); loadAll(false); track(); musicPlay(curKey()); }
+  function onLeave(){ if(SNK.run) snkPause(); musicStop(); track(); }
   function wire(){ var t=document.querySelector('#nav .tab[data-view="game"]'); if(t) t.addEventListener('click',function(){ setTimeout(onEnter,30); });
     document.addEventListener('click',function(e){ var tb=e.target&&e.target.closest?e.target.closest('#nav .tab'):null; if(tb&&tb.getAttribute('data-view')!=='game') setTimeout(function(){ if(!viewActive()) onLeave(); },120); },true);
-    document.addEventListener('visibilitychange',function(){ if(document.hidden&&screen==='snk'&&SNK.run) snkPause(); track(); });
+    document.addEventListener('visibilitychange',function(){ if(document.hidden){ if(screen==='snk'&&SNK.run) snkPause(); musicStop(); } else if(viewActive()) musicPlay(curKey()); track(); });
+    document.addEventListener('click',function(){ if(AC&&AC.state==='suspended'&&AC.resume) AC.resume(); if(viewActive()&&musicOn&&!MU.timer) musicPlay(curKey()); },true);   // เบราว์เซอร์ต้องมีการคลิกก่อนถึงจะเล่นเสียงได้
     document.addEventListener('keydown',function(e){ if(!viewActive()) return; var tg=e.target; if(tg&&(/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName)||tg.isContentEditable)) return; if(e.ctrlKey||e.metaKey||e.altKey) return;
       if(screen==='snk'){ var mp={ArrowUp:'U',ArrowDown:'D',ArrowLeft:'L',ArrowRight:'R',w:'U',s:'D',a:'L',d:'R',W:'U',S:'D',A:'L',D:'R'}[e.key]; if(mp){ e.preventDefault(); window.gmSnkDir(mp); } else if(e.key===' '){ e.preventDefault(); if(SNK.run) snkPause(); } }
       else if(screen==='num'&&N&&!N.done){ if(/^[0-9]$/.test(e.key)) window.gmNumKey(e.key); else if(e.key==='Backspace') window.gmNumDel(); else if(e.key==='Enter') window.gmNumOk(); } });
@@ -17244,7 +17302,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     +'.gm-gc h3{margin:0;font:500 19px "Mitr",sans-serif;}.gm-gc p{margin:4px 0 0;font-size:13px;color:var(--g-ink2);line-height:1.5;}.gm-gc .tx{padding-bottom:22px;min-width:0;}'
     +'.gm-gc .st{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:9px;font-size:12.5px;color:var(--g-ink2);}.gm-gc .st b{color:var(--g-ink);}.gm-gc .dl{margin-top:6px;font-size:12px;font-weight:600;color:#b36b00;}.gm-gc .dl.done{color:#1b8a55;}'
     +'.gm-gc .go{position:absolute;right:16px;bottom:12px;font-size:12.5px;font-weight:700;color:#4C7DF0;}'
-    +'.gm-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap;}'
+    +'.gm-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap;}.gm-aud{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}.gm-vol{width:96px;accent-color:#5aa0d8;cursor:pointer;}'
     +'.gm-back,.gm-snd{border:1px solid var(--g-line);background:#fff;border-radius:999px;padding:8px 15px;font:600 13.5px "Sarabun",sans-serif;color:var(--g-ink);cursor:pointer;}.gm-back:hover,.gm-snd:hover{background:#f3f6fc;}'
     +'.gm-xo{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start;}.gm-col{display:flex;flex-direction:column;gap:18px;min-width:0;}'
     +'.gm-card{background:#fff;border:1px solid var(--g-line);border-radius:24px;padding:18px;box-shadow:0 16px 32px -26px rgba(80,100,150,.7);}'
