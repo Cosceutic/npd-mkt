@@ -15957,6 +15957,7 @@ details.fm-more[open]{padding-bottom:6px;}
 #view-office .cil-sech h3{ font-family:"Mitr",sans-serif; font-weight:500; font-size:15.5px; margin:0; color:var(--ofc-ink); }
 #view-office .cil-sech small{ color:var(--ofc-ink2); font-size:13px; }
 #view-office .cil-onrow{ display:flex; flex-wrap:wrap; gap:10px; }
+#view-office .cil-empty{ display:flex; align-items:center; gap:12px; } #view-office .cil-empty .e{ font-size:26px; line-height:1; } #view-office .cil-empty b{ display:block; color:var(--ofc-ink); font-weight:600; } #view-office .cil-empty small{ display:block; margin-top:2px; font-size:12.5px; }
 #view-office .cil-none{ color:var(--ofc-ink2); font-size:14px; padding:13px 16px; background:#fff; border:1px dashed var(--ofc-line); border-radius:14px; }
 #view-office .cil-p{ display:inline-flex; align-items:center; gap:9px; max-width:100%; border:1px solid var(--ofc-line); background:#fff; border-radius:999px; padding:4px 14px 4px 4px; cursor:pointer; font-family:"Sarabun",sans-serif; color:var(--ofc-ink); text-align:left; transition:transform .15s,box-shadow .15s,border-color .15s; }
 #view-office .cil-p:hover,#view-office .cil-p:focus-visible{ border-color:#c3cfe6; box-shadow:0 8px 18px -14px rgba(80,100,150,.8); transform:translateY(-1px); outline:none; }
@@ -16021,7 +16022,7 @@ details.fm-more[open]{padding-bottom:6px;}
   var AVT={green:'ว่าง · คุยได้', yellow:'พอคุยได้', red:'ไม่ว่าง'}, AVO={green:0,yellow:1,'':2,red:3};
   var deskReg=null, deskRegAt=0, deskOpen=false;
   try{ deskOpen=localStorage.getItem('cil_desk_open')==='1'; }catch(e){}
-  var pres={ready:false, byName:{}, others:0, t0:Date.now()}, chan=null, tracked='', filter='all', started=false, lastSb=null, offOpen=false;
+  var pres={ready:false, byName:{}, others:0, t0:Date.now()}, chan=null, tracked='', filter='online', started=false, lastSb=null, offOpen=false;
   try{ offOpen=localStorage.getItem('cil_off_open')==='1'; }catch(e){}
   function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function myEmail(){ try{ return (typeof sbLoggedIn==='function' && sbLoggedIn())?(sbEmail()||''):''; }catch(e){ return ''; } }
@@ -16099,7 +16100,7 @@ details.fm-more[open]{padding-bottom:6px;}
     }
     // ----- ตัวกรอง -----
     function chip(k,label,n,cls){ return '<button type="button" class="cil-chip '+(cls||'')+(filter===k?' on':'')+'" aria-pressed="'+(filter===k?'true':'false')+'" onclick="cilFilter(\''+k+'\')">'+(cls?'<i></i>':'')+label+' <b>'+n+'</b></button>'; }
-    var filt='<div class="cil-filters" role="group" aria-label="กรองตามสถานะ">'+chip('all','ทั้งหมด',cnt.all,'')+chip('online','ออนไลน์',cnt.online,'k-online')+chip('green','ว่าง · คุยได้',cnt.green,'k-green')+chip('yellow','พอคุยได้',cnt.yellow,'k-yellow')+chip('red','ไม่ว่าง',cnt.red,'k-red')+chip('offline','ออฟไลน์',cnt.offline,'')+'</div>';
+    var filt='<div class="cil-filters" role="group" aria-label="กรองตามสถานะ">'+chip('online','ออนไลน์ทั้งหมด',cnt.online,'k-online')+chip('green','ว่าง · คุยได้',cnt.green,'k-green')+chip('yellow','พอคุยได้',cnt.yellow,'k-yellow')+chip('red','ไม่ว่าง',cnt.red,'k-red')+'</div>';
     var conn=pres.ready?(cnt.online||pres.others?'':''):'<div class="cil-conn">กำลังเชื่อมต่อสถานะออนไลน์…</div>';
     if(pres.ready && pres.others) conn='<div class="cil-conn">ยังมีอีก '+pres.others+' บัญชีที่ออนไลน์อยู่ (ยังไม่ผูกชื่อกับทีม)</div>';
     // ----- ออนไลน์ตอนนี้ (ชิปละเอียด) + ออฟไลน์ (ชิปชื่ออย่างเดียว จัดตามทีม) -----
@@ -16107,25 +16108,7 @@ details.fm-more[open]{padding-bottom:6px;}
     if(filter!=='offline'){
       var onl=all.filter(function(m){ return m.st.online && pass(m); }).sort(function(a,b){ var d=AVO[a.st.avail]-AVO[b.st.avail]; return d!==0?d:a.ord-b.ord; });
       sec+='<section class="cil-sec"><div class="cil-sech"><h3>🟢 ออนไลน์ตอนนี้</h3><small>'+onl.length+' คน · แตะชื่อเพื่อดูงานค้าง</small></div>'
-        +(onl.length?'<div class="cil-onrow">'+onl.map(chipOn).join('')+'</div>':'<div class="cil-none">'+((filter==='all'||filter==='online')?'ตอนนี้ยังไม่มีใครออนไลน์':'ไม่มีใครตรงกับตัวกรองนี้ตอนนี้')+'</div>')+'</section>';
-    }
-    if(filter==='all'||filter==='offline'){
-      var offs=all.filter(function(m){ return !m.st.online; });
-      if(offs.length){
-        var open=offOpen||filter==='offline';
-        var stack=offs.slice(0,12).map(function(m){ return '<span class="cil-st">'+avOf(m)+'</span>'; }).join('')+(offs.length>12?'<span class="cil-st more">+'+(offs.length-12)+'</span>':'');
-        var bar='<button type="button" class="cil-offbar'+(open?' open':'')+'" aria-expanded="'+(open?'true':'false')+'" onclick="cilToggleOff()"><span class="t">⚪ ออฟไลน์</span><span class="n">'+offs.length+' คน</span>'+(open?'':'<span class="stack">'+stack+'</span>')+'<span class="chev" aria-hidden="true">▾</span></button>';
-        var body='';
-        if(open){
-          body='<div class="cil-offgrid">'+rooms.map(function(r){
-            var list=r.members.filter(function(m){ return !m.st.online; }); if(!list.length) return '';
-            return '<div class="cil-ot"><b>'+esc(r.label)+'</b><span class="cil-names">'+list.map(nameBtn).join('')+'</span></div>';
-          }).join('')+'</div>';
-        }
-        sec+='<section class="cil-sec cil-offsec">'+bar+body+'</section>';
-      } else {
-        sec+='<section class="cil-sec"><div class="cil-none">ทุกคนออนไลน์อยู่ 🎉</div></section>';
-      }
+        +(onl.length?'<div class="cil-onrow">'+onl.map(chipOn).join('')+'</div>':'<div class="cil-none cil-empty"><span class="e">😴</span><span><b>'+(filter==='online'?'ตอนนี้ยังไม่มีใครออนไลน์':'ไม่มีใครตรงกับตัวกรองนี้ตอนนี้')+'</b><small>พอเพื่อนร่วมทีมล็อกอินและเปิดเว็บนี้ ชื่อจะโผล่ที่นี่ทันที</small></span></div>')+'</section>';
     }
     sec+=deskSection(all); loadDeskReg();
     if(!pres.ready && Date.now()-pres.t0<6000){ host.innerHTML=meHtml+'<div class="cil-none" style="margin-top:16px;">⏳ กำลังตรวจสอบว่าใครออนไลน์อยู่…</div>'; return; }   // ยังไม่รู้สถานะออนไลน์ → ไม่โชว์ “ออฟไลน์ทุกคน” ที่ไม่จริง
