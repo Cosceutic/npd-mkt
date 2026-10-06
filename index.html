@@ -16285,5 +16285,43 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   sched();
 })();
 </script>
+<script id="version-watch-2026-10-06">
+/* ตรวจว่ามีเวอร์ชันเว็บใหม่หรือยัง (ทุก 3 นาที + ตอนกลับมาที่แท็บ) — ทีมไม่ต้องล้างแคช/ตามกันรีเฟรช
+   • เทียบเวลาแก้ไฟล์ (Last-Modified) ของหน้าที่โหลดอยู่ กับของจริงบนเซิร์ฟเวอร์ (HEAD ไม่โหลดไฟล์ซ้ำ)
+   • พบเวอร์ชันใหม่ → ขึ้นแถบเล็กๆ ด้านบน · กดอัปเดตได้ทันที · และอัปเดตให้เองตอนผู้ใช้กลับมาที่แท็บ ถ้าไม่ได้พิมพ์/เปิดหน้าต่างค้างอยู่ */
+(function(){
+  var loaded=Date.parse(document.lastModified)||0, pending=false, checking=false;
+  function busy(){
+    var a=document.activeElement; if(a && (a.tagName==='TEXTAREA' || (a.tagName==='INPUT' && !/^(checkbox|radio|button|submit|color|range)$/i.test(a.type||'')))) return true;
+    if(document.querySelector('[id$="overlay"].open, .modal-overlay.open')) return true;
+    if(document.querySelector('.cc-pl-card.dragging')) return true;
+    return false;
+  }
+  function bar(){
+    if(document.getElementById('ver-bar')) return;
+    var b=document.createElement('div'); b.id='ver-bar'; b.setAttribute('role','status');
+    b.style.cssText='position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:9999;background:#2F6DA8;color:#fff;border-radius:999px;padding:8px 8px 8px 16px;font:600 13.5px Sarabun,sans-serif;box-shadow:0 8px 24px -8px rgba(0,0,0,.35);display:flex;align-items:center;gap:10px;max-width:92vw;';
+    b.innerHTML='<span>🔄 มีเวอร์ชันใหม่ของเว็บ</span><button type="button" style="border:none;background:#fff;color:#2F6DA8;border-radius:999px;padding:6px 14px;font:700 13px Sarabun,sans-serif;cursor:pointer;">อัปเดตเลย</button>';
+    b.querySelector('button').onclick=function(){ location.reload(); };
+    document.body.appendChild(b);
+  }
+  async function check(){
+    if(checking || pending || !loaded) return; checking=true;
+    try{
+      var r=await fetch(location.pathname,{method:'HEAD',cache:'no-store'});
+      var lm=Date.parse(r.headers.get('last-modified')||'')||0;
+      if(r.ok && lm && lm>loaded+1000){ pending=true; bar(); }
+    }catch(e){}
+    checking=false;
+  }
+  window.verCheck=check;
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden) return;
+    if(pending){ if(!busy()) location.reload(); } else check();
+  });
+  setInterval(check,180000);
+  setTimeout(check,20000);
+})();
+</script>
 </body>
 </html>
