@@ -2533,11 +2533,16 @@ function isSetType(t){ return String(t||'').trim().toLowerCase()==='ชุด se
 // ---- Supabase (Calendar data backend; replaces Supabase reads) ----
 const SB_URL = "https://oamvkcjuhnaytthzngci.supabase.co";
 const SB_KEY = "sb_publishable_I3cAhyK8yroutnMQfPhaFg_uh8impiF";
+/* รายการที่เพิ่งลบเอง (ตาราง|คอลัมน์คีย์|ค่า → เวลา) — โหลดซ้ำ/โพลที่ยังได้ข้อมูลก่อนการลบถึงฐานข้อมูล จะไม่ทำให้การ์ดโผล่กลับมา (มีผล 2 นาที) */
+const SB_TOMBS = {};
 async function sbSelect(table, query){
   const url = `${SB_URL}/rest/v1/${table}?select=*` + (query ? '&' + query : '');
   const res = await fetch(url, { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY }, cache: 'no-store' });
   if(!res.ok) throw new Error('supabase ' + table + ' ' + res.status);
-  const data = await res.json();
+  let data = await res.json();
+  { const now = Date.now(), dead = [];
+    Object.keys(SB_TOMBS).forEach(k => { const t = SB_TOMBS[k]; if(now - t.at > 120000){ delete SB_TOMBS[k]; return; } if(t.table === table) dead.push(t); });
+    if(dead.length) data = data.filter(r => !dead.some(t => String(r[t.col]) === t.val)); }
   // Cache the table's column names (for write filtering) from a sample row.
   if(data.length && !SB_COLS[table]) SB_COLS[table] = new Set(Object.keys(data[0]));
   // Normalize to the same shape the CSV parser produced: all string values, '' for null.
@@ -4091,9 +4096,14 @@ function normEventRow(r){
   };
 }
 function rebuildEvents(){
+  // ฉบับที่เพิ่งแก้/เพิ่มในเครื่อง (ภายใน 10 นาที) ทับฉบับจากฐานข้อมูลได้ จนกว่าฐานข้อมูลจะตามทัน — แก้แล้วเห็นทันที
+  const now = Date.now();
+  const localAll = getEventsLocal();
+  const fresh = {}; localAll.forEach(e=>{ if(e && e.id && e._at && now - e._at < 600000) fresh[e.id] = normEventRow(e); });
+  const sheet = SHEET_EVENTS_RAW.map(e=> fresh[e.id] || e);
   const sheetIds = new Set(SHEET_EVENTS_RAW.map(e=>e.id).filter(Boolean));
-  const local = getEventsLocal().map(normEventRow).filter(e=>!sheetIds.has(e.id));
-  ALL_EVENTS = SHEET_EVENTS_RAW.concat(local).filter(e=>e.title && e.start);
+  const local = localAll.map(normEventRow).filter(e=>!sheetIds.has(e.id));
+  ALL_EVENTS = sheet.concat(local).filter(e=>e.title && e.start);
 }
 async function loadEventsFromSheet(){
   try{
@@ -4102,10 +4112,15 @@ async function loadEventsFromSheet(){
     console.error('Events load failed (fine if the Events tab does not exist yet)', err);
     SHEET_EVENTS_RAW = [];
   }
-  // drop local rows already confirmed on the sheet
-  const sheetIds = new Set(SHEET_EVENTS_RAW.map(e=>e.id).filter(Boolean));
+  // drop local rows the sheet already shows identically (or that are old enough that the sheet is the truth)
+  const sig = e => JSON.stringify([e.title, e.type, e.start, e.end||e.start, e.pic, e.note].map(v=>String(v||'').trim()));
+  const sheetById = {}; SHEET_EVENTS_RAW.forEach(e=>{ if(e.id) sheetById[e.id] = e; });
   const local = getEventsLocal();
-  const kept = local.filter(e=>!sheetIds.has((e.id||'').trim()));
+  const kept = local.filter(e=>{
+    const sr = sheetById[(e.id||'').trim()]; if(!sr) return true;                   // ยังไม่ขึ้นฐานข้อมูล → เก็บไว้
+    if(!e._at || Date.now() - e._at > 600000) return false;                         // เก่าแล้ว → ใช้ฐานข้อมูลเป็นหลัก
+    return sig(normEventRow(e)) !== sig(sr);                                        // ตรงกันแล้ว → ทิ้ง · ยังต่าง → เก็บไว้ให้เห็นฉบับที่เพิ่งแก้
+  });
   if(kept.length !== local.length) saveEventsLocal(kept);
   rebuildEvents();
 }
@@ -4212,6 +4227,7 @@ function saveEventEntry(){
   rememberEventPic(f.pic);
   const id = evEditId || ('ev'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
   const ev = Object.assign({id}, f, {updatedBy:''});
+  ev._at = Date.now();
   const arr=getEventsLocal();
   const li=arr.findIndex(x=>x.id===id);
   if(li>-1) arr[li]=ev; else arr.push(ev);
@@ -4228,6 +4244,7 @@ function deleteEventEntry(){
   const id=evEditId;
   saveEventsLocal(getEventsLocal().filter(x=>x.id!==id));
   SHEET_EVENTS_RAW = SHEET_EVENTS_RAW.filter(x=>x.id!==id);   // hide immediately even if it came from the sheet
+  try{ SB_TOMBS['events|id|'+id] = { table:'events', col:'id', val:String(id), at:Date.now() }; }catch(e){}
   rebuildEvents();
   refreshCalendarsAfterEvent();
   closeEventEditor();
@@ -4256,7 +4273,17 @@ async function syncEventToSheet(action, ev){
       updatedBy:ev.updatedBy||'', updatedAt: todayStr()
     }
   };
-  try{ await postReadable(payload); }
+  try{
+    const r = await postReadable(payload);
+    if(r && r.ok===false){
+      const hint = /replica identity/i.test(r.error||'') ? ' · ตาราง events ต้องรัน SQL แก้ 1 ครั้ง (แจ้งแอดมิน)' : '';
+      toast('❌ ฐานข้อมูลไม่รับ'+(action==='delete'?'การลบ':'การบันทึก')+' Event: '+(r.error||'ไม่ทราบสาเหตุ')+hint,'err');
+      if(action==='delete') loadEventsFromSheet().then(refreshCalendarsAfterEvent).catch(()=>{});   // ลบไม่สำเร็จ → โหลดความจริงจากฐานข้อมูลกลับมาแสดง
+      return;
+    }
+    // ยืนยันจากฐานข้อมูลจริง แล้ววาดปฏิทินใหม่ (ให้ตรงกับที่ทีมเห็น)
+    setTimeout(()=>{ loadEventsFromSheet().then(refreshCalendarsAfterEvent).catch(()=>{}); }, 1200);
+  }
   catch(e){ toast('บันทึกในเครื่องแล้ว แต่ต่อ Supabase ไม่ได้ — จะซิงค์เมื่อรีเฟรช','err'); }
 }
 
@@ -9200,6 +9227,8 @@ async function postToSheet(payload){
   if(!table) return { ok:false, error:'unknown target: '+payload.target };
   const key = KEY[payload.target];
   const row = sbFilterRow(table, payload.row);
+  const tombK = (payload.action==='delete' && key && payload.keyValue!=null) ? (table+'|'+key+'|'+payload.keyValue) : '';
+  if(tombK) SB_TOMBS[tombK] = { table, col:key, val:String(payload.keyValue), at:Date.now() };
   try{
     if(payload.action==='append'){
       const { error } = await SB_CLIENT.from(table).insert(row); if(error) throw error;
@@ -9212,7 +9241,7 @@ async function postToSheet(payload){
       if(!upd || !upd.length){ const { error: e2 } = await SB_CLIENT.from(table).insert(row); if(e2) throw e2; }
     } else { return { ok:false, error:'unknown action: '+payload.action }; }
     return { ok:true };
-  }catch(e){ return { ok:false, error: (e && e.message) || String(e) }; }
+  }catch(e){ if(tombK) delete SB_TOMBS[tombK]; return { ok:false, error: (e && e.message) || String(e) }; }
 }
 /* One sender for every tab. `target` selects the Sheet tab; `sku` is kept alongside
    keyValue for products so an older (products-only) Apps Script deployment still works. */
@@ -11693,6 +11722,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
      ============================================================ */
   var plDragId=null, plPresetStatus=null;
   function renderCalActive(){ if(ciSub==='pipeline') renderPipeline(); else renderContentCal(); }
+  /* บอร์ดกราฟฟิก/E-com ลบ-แก้การ์ดแล้ว ปฏิทิน/ไปป์ไลน์ Content ที่แสดงการ์ดเดียวกัน (เช่นชิป 🛒 E-com) ต้องวาดใหม่ทันทีด้วย */
+  window.ccRefreshActive=function(){ try{ var v=document.getElementById('view-content'); if(v && v.classList.contains('active')) renderCalActive(); }catch(e){} };
   // ตัวช่วยให้ระบบอัปเดตสดใช้ (live-sync): ลายเซ็นข้อมูล / โหลดใหม่ / วาดใหม่
   window.ccLive={
     sig:function(){ return JSON.stringify((window.CONTENT_CAL||[]).map(function(x){ return [x.id,x.status,x.date,x.due,x.title,x.pos,x.owner,x.reviewer,x.followers,x.gfxPic,x.doneAt,x.time,x.workType,x.pillar,x.format,x.product,x.channel,x.tags,x.note,x.drafts,x.reviseCount,x.extendCount,x.brand]; }))+'#'+(typeof SHEET_ROWS_CM!=='undefined'?SHEET_ROWS_CM.length:0); },
@@ -13907,6 +13938,7 @@ details.fm-more[open]{padding-bottom:6px;}
     renderEcomBoard();
     if(host){ [].forEach.call(host.querySelectorAll('.cc-pl-col'),function(col){ var s=col.getAttribute('data-status'); var cd=col.querySelector('.cc-pl-cards'); if(s&&cd&&scrolls[s]!=null) cd.scrollTop=scrolls[s]; }); }
     try{ window.scrollTo(0, winY); }catch(e){}
+    try{ if(typeof window.ccRefreshActive==='function') window.ccRefreshActive(); }catch(e){}   // ปฏิทิน Content ที่แสดงการ์ดเดียวกัน
   }
   window.ecomToggleArchive=function(){ ecomShowDoneArchive=!ecomShowDoneArchive; ecomReRender(); };
   window.renderEcomBoard=function(){
@@ -14494,7 +14526,7 @@ details.fm-more[open]{padding-bottom:6px;}
     GFX.forEach(function(x){ if(!x.submitDate || gfxIsNoCountCol(x.person,x.col)) return; var d=new Date(String(x.submitDate).slice(0,10)+'T00:00:00'); if(isNaN(d)||d.getFullYear()!==Y||d.getMonth()!==M) return; add(d.getDate(), {id:x.id, person:(x.person||String(x.owner||'').split(/[,\/、]/)[0].trim()), title:x.title, col:x.col, src:'gfx'}); });
     // งาน Content ที่ PIC = ชื่อกราฟฟิก → พล็อตตามวันลงโพสต์ (สีตามคน · ตรา ✨)
     var people=gfxPeople(); var cal=(window.CONTENT_CAL||[]);
-    cal.forEach(function(x){ if(!x||x.status==='posted'||x.status==='track'||!x.date) return; var d=new Date(String(x.date).slice(0,10)+'T00:00:00'); if(isNaN(d)||d.getFullYear()!==Y||d.getMonth()!==M) return; var owners=String(x.gfxPic||'').split(/[,\/、]/).map(function(s){return s.trim();}); people.forEach(function(p){ if(owners.indexOf(p)<0) return; if(gfxAdoptedCardId(p,x.id)) return; add(d.getDate(), {id:x.id, person:p, title:x.title, src:'content'}); }); });
+    cal.forEach(function(x){ if(!x||x.status==='posted'||x.status==='track') return; var dl=gfxContentDeadline(x); if(!dl) return; var d=new Date(String(dl).slice(0,10)+'T00:00:00'); if(isNaN(d)||d.getFullYear()!==Y||d.getMonth()!==M) return; var owners=String(x.gfxPic||'').split(/[,\/、]/).map(function(s){return s.trim();}); people.forEach(function(p){ if(owners.indexOf(p)<0) return; if(gfxAdoptedCardId(p,x.id)) return; add(d.getDate(), {id:x.id, person:p, title:x.title, src:'content', post:x.date||''}); }); });
     return out;
   }
   function renderGfxCal(){
@@ -14534,7 +14566,7 @@ details.fm-more[open]{padding-bottom:6px;}
         var evs=(typeof eventsOnDay==='function')?eventsOnDay(isoD):[];
         chips+=evs.slice(0,2).map(function(ev){ return eventChipHtml(ev,isoD); }).join('')+(evs.length>2?'<span class="gfx-cal-more" onclick="gfxCalDay(\''+isoD+'\')">+'+(evs.length-2)+' ประกาศ</span>':'');
         var list=(byDay[dayNum]||[]).filter(function(x){ return gfxCalPerson===''||x.person===gfxCalPerson; }); var cap=3;
-        chips+=list.slice(0,cap).map(function(x){ var pre=(x.src==='content'?'✨ ':''); var lbl=pre+(gfxCalPerson?E(x.title||'(ไม่มีชื่อ)'):(E(x.person)+': '+E(x.title||'(ไม่มีชื่อ)'))); return '<span class="gfx-cal-chip" style="background:'+gfxPersonColor(x.person)+(x.src==='content'?';box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.65);':'')+'" onclick="openCardModal(\''+AJ(x.id)+'\')" title="'+(x.src==='content'?'งาน Content · ':'')+E(x.person)+' · '+E(x.title||'')+'">'+lbl+'</span>'; }).join('');
+        chips+=list.slice(0,cap).map(function(x){ var pre=(x.src==='content'?'✨ ':''); var lbl=pre+(gfxCalPerson?E(x.title||'(ไม่มีชื่อ)'):(E(x.person)+': '+E(x.title||'(ไม่มีชื่อ)'))); return '<span class="gfx-cal-chip" style="background:'+gfxPersonColor(x.person)+(x.src==='content'?';box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.65);':'')+'" onclick="openCardModal(\''+AJ(x.id)+'\')" title="'+(x.src==='content'?'งาน Content (วันนี้คือ “กำหนดส่งงาน”'+(x.post?' · ลงโพสต์ '+gfxFmtDDMM(x.post):'')+') · ':'')+E(x.person)+' · '+E(x.title||'')+'">'+lbl+'</span>'; }).join('');
         if(list.length>cap){ var iso=Y+'-'+String(M+1).padStart(2,'0')+'-'+String(dayNum).padStart(2,'0'); chips+='<span class="gfx-cal-more" onclick="gfxCalDay(\''+iso+'\')">+'+(list.length-cap)+' เพิ่มเติม</span>'; }
       }
       grid+='<div class="'+cls+'"><span class="gfx-cal-dnum">'+dispNum+'</span>'+chips+'</div>';
@@ -14693,6 +14725,7 @@ details.fm-more[open]{padding-bottom:6px;}
     renderGfxBoard();
     if(main){ [].forEach.call(main.querySelectorAll('.cc-pl-col'),function(col){ var s=col.getAttribute('data-status'); var cd=col.querySelector('.cc-pl-cards'); if(s&&cd&&sc[s]!=null) cd.scrollTop=sc[s]; }); }
     try{ window.scrollTo(0,winY); }catch(e){}
+    try{ if(typeof window.ccRefreshActive==='function') window.ccRefreshActive(); if(typeof window.gfxCalRefresh==='function') window.gfxCalRefresh(); }catch(e){}   // ปฏิทิน Content / ปฏิทินกราฟฟิกที่แสดงการ์ดเดียวกัน
   }
 
   /* ---------- filters / nav ---------- */
