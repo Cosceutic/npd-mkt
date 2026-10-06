@@ -15400,7 +15400,7 @@ details.fm-more[open]{padding-bottom:6px;}
   var DESK_KEY='npd_nt_desktop_v1', BASE_TITLE=document.title;
   function deskSupported(){ try{ return typeof window.Notification!=='undefined'; }catch(e){ return false; } }
   function deskPerm(){ try{ return deskSupported()?window.Notification.permission:'unsupported'; }catch(e){ return 'unsupported'; } }
-  function deskOn(){ try{ return localStorage.getItem(DESK_KEY)==='on' && deskPerm()==='granted'; }catch(e){ return false; } }
+  function deskOn(){ try{ return localStorage.getItem(DESK_KEY)!=='off' && deskPerm()==='granted'; }catch(e){ return false; } }   // อนุญาตแล้ว = เปิดให้เลย (ปิดเองได้ที่แผงกระดิ่ง)
   function deskShow(title,body,tag,id){
     try{
       var ic=(document.querySelector('link[rel~="icon"]')||{}).href||'';
@@ -15425,6 +15425,52 @@ details.fm-more[open]{padding-bottom:6px;}
     render();
   };
   function deskLabel(){ var p=deskPerm(); if(p==='unsupported') return ''; if(p==='denied') return '🖥️ มุมจอ: ถูกบล็อก'; if(p==='default') return '🖥️ เปิดแจ้งเตือนมุมจอ'; return deskOn()?'🖥️ มุมจอ: เปิด':'🖥️ มุมจอ: ปิด'; }
+
+
+  /* ---------- ชวนเปิดแจ้งเตือนมุมจอ (ครั้งเดียว · ปุ่มเด่น แทนปุ่มเล็กท้ายแผง) ---------- */
+  var ASK_KEY='npd_nt_desk_asked_v1';
+  function askOld(){ try{ var t=parseInt(localStorage.getItem(ASK_KEY)||'0',10); return !t || Date.now()-t>14*86400000; }catch(e){ return true; } }
+  function askRemove(){ var el=document.getElementById('nt-ask'); if(el&&el.parentNode) el.parentNode.removeChild(el); }
+  function askMaybe(){
+    try{
+      if(!loggedIn() || !deskSupported() || deskPerm()!=='default' || !askOld() || document.getElementById('nt-ask')) return;
+      var el=document.createElement('div'); el.id='nt-ask'; el.setAttribute('role','dialog');
+      el.style.cssText='position:fixed;right:18px;bottom:18px;z-index:9998;max-width:340px;background:#fff;border:1px solid #E7ECF5;border-radius:16px;padding:14px 16px;box-shadow:0 18px 40px -14px rgba(40,54,110,.45);font-family:Sarabun,sans-serif;';
+      el.innerHTML='<div style="font-weight:700;font-size:14.5px;margin-bottom:4px;">🔔 ให้เด้งเตือนตอนอยู่แท็บอื่นไหม?</div>'
+        +'<div style="font-size:13px;color:#6b7794;line-height:1.5;margin-bottom:10px;">ถ้ามีคนแท็ก คอมเมนต์ หรือย้ายงานของคุณ จะเด้งที่มุมจอทันที แม้กำลังเปิดเว็บอื่นอยู่ (ต้องเปิดแท็บเว็บนี้ค้างไว้)</div>'
+        +'<div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" id="nt-ask-no" style="border:1px solid #dfe4ee;background:#fff;color:#5b6472;border-radius:9px;padding:7px 14px;font-weight:600;cursor:pointer;">ไว้ทีหลัง</button><button type="button" id="nt-ask-yes" style="border:none;background:#2F6DA8;color:#fff;border-radius:9px;padding:7px 16px;font-weight:700;cursor:pointer;">เปิดแจ้งเตือน</button></div>';
+      document.body.appendChild(el);
+      document.getElementById('nt-ask-no').onclick=function(){ try{ localStorage.setItem(ASK_KEY,String(Date.now())); }catch(e){} askRemove(); };
+      document.getElementById('nt-ask-yes').onclick=function(){ try{ localStorage.setItem(ASK_KEY,String(Date.now())); }catch(e){} askRemove(); window.ntDeskToggle(); };   // กดปุ่มเอง = เบราว์เซอร์ยอมให้ขออนุญาต
+    }catch(e){}
+  }
+
+  /* ---------- กระพริบชื่อแท็บตอนไม่ได้เปิดหน้านี้อยู่ (ไม่ต้องขออนุญาตอะไร) ---------- */
+  var blinkT=null;
+  function titleNow(){ var c=unread(); return (c?('('+(c>99?'99+':c)+') '):'')+BASE_TITLE; }
+  function blinkStart(txt){
+    blinkStop(); var on=false;
+    blinkT=setInterval(function(){ on=!on; try{ document.title=on?('🔔 '+txt):titleNow(); }catch(e){} },1300);
+  }
+  function blinkStop(){ if(blinkT){ clearInterval(blinkT); blinkT=null; try{ document.title=titleNow(); }catch(e){} } }
+  window.addEventListener('focus',blinkStop);
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) blinkStop(); });
+
+  /* ---------- รับแจ้งเตือนทันที (Realtime) — ไม่ต้องรอรอบโพล 45 วิ ที่เบราว์เซอร์หน่วงตอนอยู่แท็บอื่น ---------- */
+  var ntChan=null, ntChanClient=null, ntRtFailAt=0, ntAgain=false;
+  function ntRealtime(){
+    try{
+      if(!loggedIn() || typeof SB_CLIENT==='undefined' || !SB_CLIENT || typeof SB_CLIENT.channel!=='function') return;
+      if(ntChan && ntChanClient===SB_CLIENT) return;
+      if(ntRtFailAt && Date.now()-ntRtFailAt<600000) return;   // เปิด Realtime ให้ตารางนี้ไม่ได้ → ลองใหม่อีก 10 นาที (ยังมีโพลสำรองอยู่)
+      ntChanClient=SB_CLIENT;
+      var ch=SB_CLIENT.channel('npd-notify-'+Math.random().toString(36).slice(2,6));
+      ch.on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications'},function(){ load(); });
+      ch.subscribe(function(st){ if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){ ntRtFailAt=Date.now(); try{ SB_CLIENT.removeChannel(ch); }catch(e){} ntChan=null; } });
+      ntChan=ch;
+    }catch(e){}
+  }
+  window.ntLoadNow=function(){ return load(); };
 
   /* ---------- สร้างแจ้งเตือน (ฝั่งผู้ทำรายการ → เขียนแถวให้ผู้รับ) ---------- */
   async function insertRow(row){ try{ var r=await postToSheet({target:'notifications',action:'append',row:row}); return !!(r&&r.ok); }catch(e){ return false; } }
@@ -15508,7 +15554,7 @@ details.fm-more[open]{padding-bottom:6px;}
 
   /* ---------- โหลด/โพลแจ้งเตือนของฉัน ---------- */
   async function load(){
-    if(ntLoading||!loggedIn()) return; ntLoading=true;
+    if(!loggedIn()) return; if(ntLoading){ ntAgain=true; return; } ntLoading=true;
     try{
       await sbInit();
       var res=await SB_CLIENT.from('notifications').select('*').order('createdAt',{ascending:false}).limit(150);
@@ -15519,19 +15565,22 @@ details.fm-more[open]{padding-bottom:6px;}
       NT=rows;
       if(!ntFirstLoad && fresh.length) alertNew(fresh);
       ntFirstLoad=false; ntLoadedOnce=true;
-      render(); dueScan();
+      render(); dueScan(); setTimeout(askMaybe,2500); ntRealtime();
     }catch(e){
       var msg=String((e&&(e.message||e.code))||e);
       ntBroken=/does not exist|PGRST205|42P01|404|schema cache/i.test(msg)?'missing':'error';
       render();
     }
     ntLoading=false;
+    if(ntAgain){ ntAgain=false; setTimeout(load,300); }
   }
   function alertNew(fresh){
     var boards=[]; fresh.forEach(function(n){ if(boards.indexOf(n.board)<0) boards.push(n.board); });
     boards.slice(0,2).forEach(function(b,i){ setTimeout(function(){ play(b); }, i*650); });
     var f=fresh[0]; var lab=(BOARDS[f.board]||BOARDS.content).t;
-    if(deskOn() && (document.hidden || !document.hasFocus())){
+    var away=(document.hidden || !document.hasFocus());
+    if(away){ blinkStart((fresh.length>1?(fresh.length+' แจ้งเตือนใหม่'):((f.fromName?f.fromName+' · ':'')+(f.title||lab)))); }
+    if(deskOn() && away){
       fresh.slice(0,3).forEach(function(n){ var bd=BOARDS[n.board]||BOARDS.content; deskShow('🔔 '+bd.t+' · '+(n.fromName||'ระบบ'), (n.title||'')+(n.body?(' — '+n.body):''), 'npd-'+n.id, n.id); });
       if(fresh.length>3) deskShow('🔔 มีแจ้งเตือนใหม่อีก '+(fresh.length-3)+' รายการ','เปิดเว็บเพื่อดูทั้งหมด','npd-more',null);
     }
