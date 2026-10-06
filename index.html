@@ -1897,7 +1897,7 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
     </div>
     <div class="modal-overlay" id="cc-card-overlay" style="z-index:74;" onclick="if(event.target===this) closeCardModal()">
       <div class="modal-box" style="max-width:980px;width:96vw;">
-        <div class="modal-header"><div class="mh-name" id="cc-card-title" style="min-width:0;">การ์ด</div><button class="modal-close" onclick="closeCardModal()">✕</button></div>
+        <div class="modal-header"><div class="mh-name" id="cc-card-title" style="min-width:0;">การ์ด</div><button type="button" id="cc-copylink" class="cc-copylink" title="คัดลอกลิงก์การ์ดใบนี้ ส่งให้เพื่อนกดเปิดดูได้" onclick="ccCopyCardLink()">🔗 คัดลอกลิงก์</button><button class="modal-close" onclick="closeCardModal()">✕</button></div>
         <div class="modal-body" id="cc-card-body" style="padding:0;max-height:82vh;overflow:auto;"></div>
       </div>
     </div>
@@ -11130,7 +11130,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   var TH_WDF=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
   var CAL_CSV='https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=ContentCalendar';
   var CAL_LKEY='npd_content_cal_v1';
-  var CAL_HEADERS=['id','date','due','title','brand','product','pillar','format','workType','channel','status','goal','time','owner','reviewer','followers','note','tags','reviseCount','extendCount','log','drafts','pos','doneAt','gfxPic','revisions'];
+  var CAL_HEADERS=['id','date','due','title','brand','product','pillar','format','workType','channel','status','goal','time','owner','reviewer','followers','note','tags','reviseCount','extendCount','log','drafts','pos','doneAt','gfxPic','revisions','createdBy','createdAt','updatedBy','updatedAt'];
   // ประเภทงานหลัก (สำหรับแดชบอร์ดวัดผล) — VDO / AW / Activities / Post / อื่นๆ
   var WORK_TYPES=[{k:'vdo',t:'🎬 VDO',c:'#9B7EF8'},{k:'vdo_flagship',t:'🎬 VDO Flagship',c:'#C026D3'},{k:'aw',t:'🎨 AW (กราฟิก)',c:'#EF5350'},{k:'aw_flagship',t:'🎨 AW Flagship',c:'#E11D74'},{k:'motion',t:'🎞️ Motion',c:'#22A55A'},{k:'ecom',t:'🛒 E-com',c:'#0891B2'},{k:'activities',t:'🎉 Activities',c:'#F2994A'},{k:'post',t:'📝 Post',c:'#5B8FF9'},{k:'other',t:'📦 อื่นๆ',c:'#8A94A6'}];
   var calWorkFilter = new Set();   // filter ประเภทงานในปฏิทิน Content (ว่าง = ทุกประเภท)
@@ -11190,7 +11190,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     drafts:(function(d){ return Array.isArray(d)?JSON.stringify(d):String(d==null?'':d).trim(); })(r.drafts!=null?r.drafts:r.Drafts),
     pos:(r.pos!=null&&r.pos!==''?(parseInt(r.pos,10)||0):null),
     doneAt:(r.doneAt||r.DoneAt||'').trim(),
-    gfxPic:(r.gfxPic||r.GfxPic||'').trim() }; }
+    gfxPic:(r.gfxPic||r.GfxPic||'').trim(), createdBy:(r.createdBy||'').trim(), createdAt:(r.createdAt||'').trim(), updatedBy:(r.updatedBy||'').trim(), updatedAt:(r.updatedAt||'').trim() }; }
   function calLocalFresh(raw){ return !!(raw && raw.__t && (Date.now()-raw.__t)<600000); }
   function calSig(b){ return [b.date,b.due,b.title,b.brand,b.product,b.pillar,b.format,b.workType,b.channel,b.status,b.goal,b.time,b.owner,b.reviewer,b.followers,b.tags,b.note,b.reviseCount,b.extendCount,b.log,b.drafts,b.pos,b.doneAt,b.gfxPic,JSON.stringify(b.revisions||[])].join('|'); }
   function rebuildCAL(){
@@ -11209,7 +11209,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     if(kept.length!==local.length) calSaveLocal(kept);
     rebuildCAL();
   };
-  function calRowOf(item){ return {id:item.id,date:item.date||'',due:item.due||'',title:item.title||'',brand:item.brand||'',product:item.product||'',pillar:item.pillar||'',format:item.format||'',workType:item.workType||'',channel:item.channel||'',status:item.status||'brief',goal:item.goal||'',time:item.time||'',owner:item.owner||'',reviewer:item.reviewer||'',followers:item.followers||'',tags:item.tags||'',note:item.note||'',reviseCount:item.reviseCount||0,extendCount:item.extendCount||0,log:String(item.log||'').trim(),drafts:item.drafts||'',pos:(item.pos!=null?String(item.pos):''),doneAt:item.doneAt||'',gfxPic:item.gfxPic||'',revisions:JSON.stringify(item.revisions||[])}; }
+  function calRowOf(item){ return {id:item.id,date:item.date||'',due:item.due||'',title:item.title||'',brand:item.brand||'',product:item.product||'',pillar:item.pillar||'',format:item.format||'',workType:item.workType||'',channel:item.channel||'',status:item.status||'brief',goal:item.goal||'',time:item.time||'',owner:item.owner||'',reviewer:item.reviewer||'',followers:item.followers||'',tags:item.tags||'',note:item.note||'',reviseCount:item.reviseCount||0,extendCount:item.extendCount||0,log:String(item.log||'').trim(),drafts:item.drafts||'',pos:(item.pos!=null?String(item.pos):''),doneAt:item.doneAt||'',gfxPic:item.gfxPic||'',revisions:JSON.stringify(item.revisions||[]),createdBy:item.createdBy||'',createdAt:item.createdAt||'',updatedBy:item.updatedBy||'',updatedAt:item.updatedAt||''}; }
   function calStamp(id){ var L=calLocal(), i=L.findIndex(function(z){return z.id===id;}); if(i<0) return 0; var t=Date.now(); L[i].__t=t; calSaveLocal(L); return t; }
   function calJsonArr(v){ try{ var a=(typeof v==='string')?JSON.parse(v||'[]'):v; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
   function calMergeLog(freshLog, wasLog, nowLog){
@@ -11231,7 +11231,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     await sbInit(); if(!sbLoggedIn()) return {ok:false,error:'ยังไม่ได้เข้าสู่ระบบ'};
     var id=item.id, now=calRowOf(item), was=calRowOf(prev), patch={};
     Object.keys(now).forEach(function(k){ if(k!=='id' && String(now[k])!==String(was[k])) patch[k]=now[k]; });
-    if(!Object.keys(patch).length) return {ok:true,nochange:true};
+    var _metaK=['createdBy','createdAt','updatedBy','updatedAt'];   // ผู้แก้/เวลาแก้ ตามไปกับการแก้จริงเท่านั้น (ไม่มีอะไรเปลี่ยน = ไม่เขียนทับ)
+    if(!Object.keys(patch).some(function(k){ return _metaK.indexOf(k)<0; })) return {ok:true,nochange:true};
     var needMerge=('log' in patch)||('revisions' in patch)||('reviseCount' in patch)||('extendCount' in patch);
     var fresh=null;
     if(needMerge || ('status' in patch)){ fresh=(await sbSelect('content_calendar','id=eq.'+encodeURIComponent(id)))[0]||null; if(!fresh) return await postToSheet({target:'contentcal', action:'upsert', keyValue:id, row:now}); }
@@ -11268,6 +11269,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     try{
       if(isDel){ res=await postToSheet({target:'contentcal', action:'delete', keyValue:item.id}); }
       else{
+        try{ var _em=(typeof sbEmail==='function')?sbEmail():'', _st=(typeof nowStamp==='function')?nowStamp():''; item.updatedBy=_em; item.updatedAt=_st; if(!prev && !item.createdBy){ item.createdBy=_em; item.createdAt=_st; } }catch(e){}   // ผู้สร้าง/ผู้แก้ล่าสุด อัตโนมัติจากบัญชีที่ล็อกอิน
         t=calStamp(item.id);
         res = prev ? await calPatch(item,prev) : await postToSheet({target:'contentcal', sheetName:'ContentCalendar', key:'id', create:CAL_HEADERS, action:'upsert', keyValue:item.id, row:calRowOf(item)});
       }
@@ -12212,6 +12214,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     renderCardModal();
     document.getElementById('cc-card-overlay').classList.add('open');
   };
+  window.ccCurrentCard=function(){ return cmModalCard; };
   window.closeCardModal=function(){ var el=document.getElementById('cc-card-overlay'); if(el) el.classList.remove('open'); cmModalCard=null; ccDraft={images:[],links:[]}; };
   window.renderCardModal=function(){
     var id=cmModalCard; if(!id) return;
@@ -14086,7 +14089,7 @@ details.fm-more[open]{padding-bottom:6px;}
   // สีแท็ก (มีสีหลากหลาย) — ต้องนิยามในโมดูลนี้เอง เพราะ tagColor() ของหน้า Content อยู่คนละ IIFE เข้าถึงไม่ได้ → ก่อนหน้านี้ตกไปใช้สีเทา default
   function ecomTagColor(t){ t=(t||'').toLowerCase().trim(); if(/ด่วน|urgent|เร่ง|รีบ/.test(t)) return '#EF5350'; var pal=['#5B8FF9','#9B7EF8','#3CA5A5','#F2994A','#2D9CDB','#EB5FA0','#26A69A','#7C5CFC','#E9557F','#8E7CC3']; var h=0; for(var i=0;i<t.length;i++) h=(h*31+t.charCodeAt(i))>>>0; return pal[h%pal.length]; }
   function ecomParseChecklist(s){ if(Array.isArray(s)) return s.map(function(it){return {text:String(it&&it.text||''),done:!!(it&&it.done)};}).filter(function(it){return it.text;}); try{ var a=JSON.parse(s||'[]'); return Array.isArray(a)?a.map(function(it){return {text:String(it&&it.text||''),done:!!(it&&it.done)};}).filter(function(it){return it.text;}):[]; }catch(e){ return []; } }
-  function normEcom(r){ var drafts=ecomParseDrafts(r.drafts); if(!drafts.length && r.draftDate) drafts=[r.draftDate]; return {id:(r.id||'').trim(), title:r.title||'', brand:(typeof normalizeBrand==='function'?normalizeBrand(r.brand):(r.brand||'').trim().toLowerCase()), owner:(r.owner||'').trim(), graphic:(r.graphic||'').trim(), followers:(r.followers||'').trim(), status:ecomStat(r.status), submitDate:r.submitDate||'', submitTime:r.submitTime||'', drafts:drafts, finalDate:r.finalDate||'', tags:r.tags||'', note:r.note||'', checklist:ecomParseChecklist(r.checklist), pos:(r.pos!=null&&r.pos!==''?(parseInt(r.pos,10)||0):null), doneAt:r.doneAt||'', updatedAt:r.updatedAt||'', updatedBy:r.updatedBy||''}; }
+  function normEcom(r){ var drafts=ecomParseDrafts(r.drafts); if(!drafts.length && r.draftDate) drafts=[r.draftDate]; return {id:(r.id||'').trim(), title:r.title||'', brand:(typeof normalizeBrand==='function'?normalizeBrand(r.brand):(r.brand||'').trim().toLowerCase()), owner:(r.owner||'').trim(), graphic:(r.graphic||'').trim(), followers:(r.followers||'').trim(), status:ecomStat(r.status), submitDate:r.submitDate||'', submitTime:r.submitTime||'', drafts:drafts, finalDate:r.finalDate||'', tags:r.tags||'', note:r.note||'', checklist:ecomParseChecklist(r.checklist), pos:(r.pos!=null&&r.pos!==''?(parseInt(r.pos,10)||0):null), doneAt:r.doneAt||'', updatedAt:r.updatedAt||'', updatedBy:r.updatedBy||'', createdBy:(r.createdBy||'').trim(), createdAt:(r.createdAt||'').trim()}; }
   var ecomDraftsWork=[];
   window.ecomAddDraft=function(){ ecomDraftsWork.push(''); ecomRenderDrafts(); };
   window.ecomRemoveDraft=function(i){ ecomDraftsWork.splice(i,1); ecomRenderDrafts(); };
@@ -14109,7 +14112,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var cache=ecomLocal();
     try{
       var rows=(await sbSelect('ecom_content')).map(normEcom).filter(function(r){return r.id;});
-      var byId={}; rows.forEach(function(r){byId[r.id]=r;});
+      var byId={}; rows.forEach(function(r){byId[r.id]=r;}); (window.__srvIds=window.__srvIds||{}).ecom=byId;   // ใบที่มีในฐานข้อมูลแล้ว (ที่ไม่อยู่ในนี้ = สร้างใหม่ → บันทึกผู้สร้าง)
       cache.forEach(function(c){ if(c.id && !byId[c.id] && (typeof window.livePendingRecent!=='function' || window.livePendingRecent(c.id))) rows.push(normEcom(c)); });   // เก็บเฉพาะการ์ดที่เพิ่งสร้าง/แก้เองและยังไม่ซิงค์ — ใบที่คนอื่นลบไปแล้วต้องหายด้วย
       ECOM=rows; ecomSaveLocal(ECOM);
     }catch(e){ ECOM=cache.map(normEcom); }
@@ -14123,7 +14126,8 @@ details.fm-more[open]{padding-bottom:6px;}
   };
   async function ecomSync(card){
     var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
-    try{ var _r=await postToSheet({target:'ecom', action:'upsert', keyValue:card.id, row:{id:card.id,title:card.title,brand:card.brand,owner:card.owner,graphic:card.graphic||'',followers:card.followers||'',status:card.status,submitDate:card.submitDate||'',submitTime:card.submitTime||'',drafts:JSON.stringify(card.drafts||[]),finalDate:card.finalDate||'',tags:card.tags||'',note:card.note,checklist:JSON.stringify(card.checklist||[]),pos:(card.pos!=null?String(card.pos):''),doneAt:card.doneAt||'',updatedAt:card.updatedAt||TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); if(_r && _r.ok===false && typeof toast==='function'){ toast('❌ ฐานข้อมูลไม่รับการบันทึกการ์ด E-com: '+(_r.error||'ไม่ทราบสาเหตุ')+' — เก็บในเครื่องไว้ก่อน (ทีมยังไม่เห็น)','err'); } return _r; }catch(e){}
+    try{ var _em=(typeof sbEmail==='function')?sbEmail():'', _st=(typeof nowStamp==='function')?nowStamp():''; card.updatedAt=_st; var _sv=(window.__srvIds||{}).ecom; if(!card.createdBy && _sv && !_sv[card.id]){ card.createdBy=_em; card.createdAt=_st; } }catch(e){}
+    try{ var _r=await postToSheet({target:'ecom', action:'upsert', keyValue:card.id, row:Object.assign({id:card.id,title:card.title,brand:card.brand,owner:card.owner,graphic:card.graphic||'',followers:card.followers||'',status:card.status,submitDate:card.submitDate||'',submitTime:card.submitTime||'',drafts:JSON.stringify(card.drafts||[]),finalDate:card.finalDate||'',tags:card.tags||'',note:card.note,checklist:JSON.stringify(card.checklist||[]),pos:(card.pos!=null?String(card.pos):''),doneAt:card.doneAt||'',updatedAt:card.updatedAt||TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}, card.createdBy?{createdBy:card.createdBy,createdAt:card.createdAt||''}:{})}); if(_r && _r.ok===false && typeof toast==='function'){ toast('❌ ฐานข้อมูลไม่รับการบันทึกการ์ด E-com: '+(_r.error||'ไม่ทราบสาเหตุ')+' — เก็บในเครื่องไว้ก่อน (ทีมยังไม่เห็น)','err'); } return _r; }catch(e){}
   }
   function ecomUpsertLocal(card){ try{ if(window.liveMarkPending) window.liveMarkPending(card.id); }catch(e){} var i=ECOM.findIndex(function(x){return x.id===card.id;}); if(i>-1) ECOM[i]=card; else ECOM.push(card); ecomSaveLocal(ECOM); }
 
@@ -14469,7 +14473,7 @@ details.fm-more[open]{padding-bottom:6px;}
     owner:(r.owner||'').trim(), graphic:(r.graphic||'').trim(), followers:(r.followers||'').trim(), images:gfxParseImages(r.images),
     submitDate:r.submitDate||'', submitTime:r.submitTime||'', tags:r.tags||'', note:r.note||'',
     checklist:gfxParseChecklist(r.checklist), revisions:gfxParseRevisions(r.revisions),
-    srcContent:(r.srcContent||'').trim(), srcEcom:(r.srcEcom||'').trim(), pos:(r.pos!=null&&r.pos!==''?(parseInt(r.pos,10)||0):null), doneAt:r.doneAt||'', updatedAt:r.updatedAt||'', updatedBy:r.updatedBy||'',
+    srcContent:(r.srcContent||'').trim(), srcEcom:(r.srcEcom||'').trim(), createdBy:(r.createdBy||'').trim(), createdAt:(r.createdAt||'').trim(), pos:(r.pos!=null&&r.pos!==''?(parseInt(r.pos,10)||0):null), doneAt:r.doneAt||'', updatedAt:r.updatedAt||'', updatedBy:r.updatedBy||'',
     ecom:(r.ecom===true||r.ecom===1||/^(1|true|y)$/i.test(String(r.ecom==null?'':r.ecom).trim()))?'1':'' }; }   // ecom=1 = นับเป็นงาน E-commerce (สร้างจาก/ถูกย้ายมาคอลัมน์ Brief AW E-commerce) — ติดตัวการ์ดตลอด แม้ย้ายไปคอลัมน์อื่น
 
   function gfxPeople(){ return (GFX_PEOPLE && GFX_PEOPLE.length)?GFX_PEOPLE:GFX_PEOPLE_DEFAULT.slice(); }
@@ -14500,7 +14504,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var cache=lget(CARD_LKEY,[]);
     try{
       var rows=(await sbSelect('graphic_cards')).map(normGfx).filter(function(r){return r.id;});
-      var byId={}; rows.forEach(function(r){byId[r.id]=r;});
+      var byId={}; rows.forEach(function(r){byId[r.id]=r;}); (window.__srvIds=window.__srvIds||{}).gfx=byId;   // ใบที่มีในฐานข้อมูลแล้ว (ที่ไม่อยู่ในนี้ = สร้างใหม่ → บันทึกผู้สร้าง)
       cache.forEach(function(c){ if(c.id && !byId[c.id] && (typeof window.livePendingRecent!=='function' || window.livePendingRecent(c.id))) rows.push(normGfx(c)); });   // เก็บเฉพาะการ์ดที่เพิ่งสร้าง/แก้เองและยังไม่ขึ้นฐานข้อมูล — ใบที่คนอื่นลบไปแล้วต้องหายด้วย
       GFX=rows; gfxSaveCardsLocal();
     }catch(e){ GFX=cache.map(normGfx); }
@@ -14520,11 +14524,12 @@ details.fm-more[open]{padding-bottom:6px;}
   };
   async function gfxSyncCard(card){
     var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
-    try{ var _r=await postToSheet({target:'graphiccards',action:'upsert',keyValue:card.id,row:{
+    try{ var _em=(typeof sbEmail==='function')?sbEmail():'', _st=(typeof nowStamp==='function')?nowStamp():''; card.updatedAt=_st; var _sv=(window.__srvIds||{}).gfx; if(!card.createdBy && _sv && !_sv[card.id]){ card.createdBy=_em; card.createdAt=_st; } }catch(e){}
+    try{ var _r=await postToSheet({target:'graphiccards',action:'upsert',keyValue:card.id,row:Object.assign({
       id:card.id, person:card.person, col:card.col, title:card.title, brand:card.brand, owner:card.owner||'', graphic:card.graphic||'', followers:card.followers||'',
       submitDate:card.submitDate||'', submitTime:card.submitTime||'', tags:card.tags||'', note:card.note||'',
       checklist:JSON.stringify(card.checklist||[]), revisions:JSON.stringify(card.revisions||[]), images:JSON.stringify(card.images||[]),
-      srcContent:card.srcContent||'', srcEcom:card.srcEcom||'', ecom:card.ecom||'', pos:(card.pos!=null?String(card.pos):''), doneAt:card.doneAt||'', updatedAt:card.updatedAt||TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') }}); if(_r && _r.ok===false){ TOAST('❌ ฐานข้อมูลไม่รับการบันทึกการ์ดกราฟฟิก: '+(_r.error||'ไม่ทราบสาเหตุ')+' — เก็บในเครื่องไว้ก่อน (ทีมยังไม่เห็น)','err'); } return _r; }catch(e){}
+      srcContent:card.srcContent||'', srcEcom:card.srcEcom||'', ecom:card.ecom||'', pos:(card.pos!=null?String(card.pos):''), doneAt:card.doneAt||'', updatedAt:card.updatedAt||TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') }, card.createdBy?{createdBy:card.createdBy,createdAt:card.createdAt||''}:{})}); if(_r && _r.ok===false){ TOAST('❌ ฐานข้อมูลไม่รับการบันทึกการ์ดกราฟฟิก: '+(_r.error||'ไม่ทราบสาเหตุ')+' — เก็บในเครื่องไว้ก่อน (ทีมยังไม่เห็น)','err'); } return _r; }catch(e){}
   }
   async function gfxSavePeople(){ lset(PPL_LKEY, gfxPeople()); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'people',row:{k:'people',v:JSON.stringify(gfxPeople()),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
   async function gfxSaveCols(p){ lset(COLS_LKEY, GFX_COLS); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'cols::'+p,row:{k:'cols::'+p,v:JSON.stringify(GFX_COLS[p]||[]),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
@@ -16835,31 +16840,86 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   setTimeout(check,20000);
 })();
 </script>
+<script id="card-meta-2026-10-07">
+/* การ์ด: ปุ่ม "คัดลอกลิงก์" (ลิงก์เปิดการ์ดใบนั้นตรงๆ) + แถว "สร้างโดย / แก้ไขโดย" อัตโนมัติจากบัญชีที่ล็อกอิน
+   ใช้กับการ์ด Content · E-com · Graphic (ใช้โมดัลเดียวกัน) · ลิงก์ = #v=<หน้า>&...&c=<id> (อ่านโดย restore-view) */
+(function(){
+  var TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function find(id){ if(!id) return null; var x=null;
+    try{ x=(window.CONTENT_CAL||[]).find(function(c){ return c.id===id; }); if(x) return {k:'content',c:x}; }catch(e){}
+    try{ if(typeof window.ecomGetCard==='function'){ x=window.ecomGetCard(id); if(x) return {k:'ecom',c:x}; } }catch(e){}
+    try{ if(typeof window.gfxGetCard==='function'){ x=window.gfxGetCard(id); if(x) return {k:'gfx',c:x}; } }catch(e){}
+    return null; }
+  window.ccFindCard=find;
+  function nickOf(v){ v=String(v==null?'':v).trim(); if(!v) return ''; var m=window.QT_EMAIL_MAP_PUB||{}; if(m[v.toLowerCase()]) return m[v.toLowerCase()]; return v.indexOf('@')>0?v.split('@')[0]:v; }
+  function fmt(s){ s=String(s||'').trim(); var m=/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(s); if(!m) return s;
+    var o=(+m[3])+' '+TH[(+m[2])-1]+' '+((+m[1])+543); if(m[4]) o+=' เวลา '+m[4]+':'+m[5]+' น.'; return o; }
+  function who(v,at,label){ var n=nickOf(v); if(!n) return '';
+    return '<span class="ccm-lb">'+label+'</span>'+(window.pplAv?window.pplAv(n,24):'')+'<b class="ccm-nm">'+(window.pplName?window.pplName(n):esc(n))+'</b>'+(at?'<span class="ccm-at">เมื่อ '+esc(fmt(at))+'</span>':''); }
+  window.ccCardMetaHtml=function(id){ var f=find(id); if(!f) return ''; var c=f.c;
+    var cr=who(c.createdBy,c.createdAt,'#สร้างโดย')||'<span class="ccm-lb">#สร้างโดย</span><span class="ccm-unk" title="การ์ดใบนี้สร้างก่อนที่ระบบจะเริ่มบันทึกผู้สร้าง">ไม่ทราบ (สร้างก่อนเริ่มบันทึก)</span>';
+    var up=who(c.updatedBy,c.updatedAt,'แก้ไขโดย');
+    return '<div class="ccm-by">'+cr+(up?'<span class="ccm-sep">·</span>'+up:'')+'</div>'; };
+  function inject(){ try{ var id=window.ccCurrentCard&&window.ccCurrentCard(), body=document.getElementById('cc-card-body'); if(!id||!body) return;
+    var old=body.querySelector('.ccm-wrap'); if(old&&old.parentNode) old.parentNode.removeChild(old);
+    var h=window.ccCardMetaHtml(id); if(h) body.insertAdjacentHTML('afterbegin','<div class="ccm-wrap">'+h+'</div>'); }catch(e){} }
+  /* ลิงก์เปิดการ์ด: ระบุหน้าที่ถูกต้องตามชนิดการ์ด (Content → Pipeline · E-com · Graphic → บอร์ดของคนนั้น) */
+  window.ccCardLink=function(id){ var f=find(id), v='content', s='', p='';
+    if(f){ if(f.k==='ecom') v='ecom'; else if(f.k==='gfx'){ v='graphic'; p=f.c.person||''; } else s='pipeline'; }
+    var q=new URLSearchParams(); q.set('v',v); if(s) q.set('s',s); if(p) q.set('p',p); q.set('c',id);
+    return location.origin+location.pathname+'#'+q.toString(); };
+  window.ccCopyCardLink=function(){ var id=window.ccCurrentCard&&window.ccCurrentCard(); if(!id) return; var url=window.ccCardLink(id), btn=document.getElementById('cc-copylink');
+    function done(){ if(btn){ var t=btn.getAttribute('data-t')||btn.textContent; btn.setAttribute('data-t',t); btn.textContent='✓ คัดลอกแล้ว'; btn.classList.add('ok'); setTimeout(function(){ btn.textContent=t; btn.classList.remove('ok'); },1800); } if(typeof toast==='function') toast('คัดลอกลิงก์การ์ดแล้ว 🔗 ส่งให้เพื่อนกดเปิดได้เลย','ok'); }
+    function fb(){ try{ var ta=document.createElement('textarea'); ta.value=url; ta.style.cssText='position:fixed;left:-9999px;top:0;'; document.body.appendChild(ta); ta.select(); var ok=document.execCommand('copy'); document.body.removeChild(ta); if(ok){ done(); return; } }catch(e){} try{ window.prompt('คัดลอกลิงก์นี้ (Ctrl/Cmd + C)',url); }catch(e){} }
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(done,fb); } else fb(); };
+  /* ครอบ renderCardModal / openCardModal / closeCardModal */
+  var r0=window.renderCardModal; if(typeof r0==='function'&&!r0.__ccm){ window.renderCardModal=function(){ var r=r0.apply(this,arguments); inject(); return r; }; window.renderCardModal.__ccm=1; }
+  function saveSoon(){ try{ if(typeof window.rvSave==='function') setTimeout(window.rvSave,60); }catch(e){} }
+  var o0=window.openCardModal; if(typeof o0==='function'&&!o0.__ccm){ window.openCardModal=function(){ var r=o0.apply(this,arguments); saveSoon(); return r; }; window.openCardModal.__ccm=1; }
+  var c0=window.closeCardModal; if(typeof c0==='function'&&!c0.__ccm){ window.closeCardModal=function(){ var r=c0.apply(this,arguments); saveSoon(); return r; }; window.closeCardModal.__ccm=1; }
+  var st=document.createElement('style'); st.id='ccm-css'; st.textContent=
+    '.ccm-wrap{padding:10px 16px 8px;border-bottom:1px solid var(--line,#E7ECF5);background:#fff;}'
+    +'.ccm-by{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font-size:12.5px;color:var(--ink-soft,#6b7794);}'
+    +'.ccm-lb{font-weight:600;color:var(--ink-soft,#6b7794);}.ccm-nm{color:var(--ink,#1F2A36);font-weight:700;}.ccm-sep{opacity:.5;margin:0 2px;}'
+    +'.ccm-unk{color:#9aa4b5;font-style:italic;}.ccm-at{white-space:nowrap;}'
+    +'.cc-copylink{flex:0 0 auto;margin-left:auto;margin-right:10px;border:1px solid #D9E2F2;background:#fff;color:#2F6DA8;border-radius:999px;padding:6px 13px;font:700 12.5px "Sarabun",sans-serif;cursor:pointer;white-space:nowrap;}'
+    +'.cc-copylink:hover{background:#EAF3FB;}.cc-copylink.ok{background:#E6F6EC;color:#1E7C4B;border-color:#BFE6CE;}'
+    +'#cc-card-overlay .modal-header{display:flex;align-items:center;}';
+  document.head.appendChild(st);
+})();
+</script>
 <script id="restore-view-2026-10-06">
 /* จำหน้าที่เปิดอยู่ — กดรีเฟรชแล้วอยู่หน้าเดิม (ไม่เด้งไปเมนูแรก)
    • เก็บไว้ใน URL ส่วนท้าย (#v=...) → รีเฟรชได้ · เปิดลิงก์เดิมซ้ำได้ · ส่งลิงก์หน้านั้นให้เพื่อนได้
    • จำเมนูหลัก + เมนูย่อยของ Content / Graphic Team (รวมคนที่เปิดอยู่) / NPD Team */
 (function(){
   function parse(){
-    try{ var h=String(location.hash||'').replace(/^#/,''); if(!h) return null; var q=new URLSearchParams(h); var v=q.get('v'); if(!v) return null; return {v:v, s:q.get('s')||'', p:q.get('p')||''}; }catch(e){ return null; }
+    try{ var h=String(location.hash||'').replace(/^#/,''); if(!h) return null; var q=new URLSearchParams(h); var v=q.get('v'); if(!v) return null; return {v:v, s:q.get('s')||'', p:q.get('p')||'', c:q.get('c')||''}; }catch(e){ return null; }
   }
   function current(){
     var t=document.querySelector('#nav .tab.active'); if(!t) return null;
-    var st={v:t.getAttribute('data-view')||'', s:'', p:''}; if(!st.v) return null;
+    var st={v:t.getAttribute('data-view')||'', s:'', p:'', c:''}; if(!st.v) return null;
     try{
       if(st.v==='content'){ var b=document.querySelector('[id^="cc-nav-"].subnav-active'); if(b) st.s=b.id.replace('cc-nav-',''); }
       else if(st.v==='graphic' && typeof window.gfxViewState==='function'){ var g=window.gfxViewState(); st.p=g.p||''; st.s=g.p?(g.s||''):''; }
       else if(st.v==='team'){ var a=document.querySelector('.npd-navitem.active'); if(a && /^subnav-/.test(a.id)) st.s=a.id.replace('subnav-',''); }
     }catch(e){}
+    try{ var ov=document.getElementById('cc-card-overlay'); if(ov && ov.classList.contains('open') && typeof window.ccCurrentCard==='function') st.c=window.ccCurrentCard()||''; }catch(e){}   // การ์ดที่เปิดอยู่ → อยู่ใน URL (ก็อปลิงก์/รีเฟรชแล้วเปิดการ์ดเดิม)
     return st;
   }
   function save(){
     var st=current(); if(!st) return;
-    var q=new URLSearchParams(); q.set('v',st.v); if(st.s) q.set('s',st.s); if(st.p) q.set('p',st.p);
+    var q=new URLSearchParams(); q.set('v',st.v); if(st.s) q.set('s',st.s); if(st.p) q.set('p',st.p); if(st.c) q.set('c',st.c);
     var h='#'+q.toString();
     if(location.hash!==h){ try{ history.replaceState(null,'',location.pathname+location.search+h); }catch(e){} }
   }
   var restored=false;
+  /* เปิดการ์ดจากลิงก์ (#...&c=<id>): รอข้อมูลโหลดแล้วเปิดโมดัล */
+  function openLinkedCard(id){ if(!id) return; var tries=0;
+    (function go(){ var f=(typeof window.ccFindCard==='function')?window.ccFindCard(id):null;
+      if(f && typeof window.openCardModal==='function'){ window.openCardModal(id); return; }
+      if(++tries<70) setTimeout(go,500); else if(typeof toast==='function') toast('ไม่พบการ์ดนี้ (อาจถูกลบไปแล้ว)','info'); })(); }
   function clearEarly(){ var e=document.getElementById('rv-early-css'); if(e) e.textContent=''; }
   function applySub(st){
     try{
@@ -16875,13 +16935,13 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     var t=document.querySelector('#nav .tab[data-view="'+st.v+'"]');
     if(!t){ clearEarly(); return; }
     if(!t.classList.contains('active')) t.click();
-    applySub(st); clearEarly();                       // สลับหน้าจริง + เมนูย่อยทันที แล้วค่อยถอดตัวช่วยภาพแรก
+    applySub(st); clearEarly(); openLinkedCard(st.c);                       // สลับหน้าจริง + เมนูย่อยทันที แล้วค่อยถอดตัวช่วยภาพแรก
     setTimeout(function(){ var c=current(); if(c && (c.s!==st.s || c.p!==st.p)) applySub(st); save(); },400);   // ถ้าเมนูย่อยยังไม่ตรง (ข้อมูลเพิ่งมา) ลองอีกครั้ง
   }
   // เปลี่ยนหน้า/เมนูย่อยเมื่อไหร่ → อัปเดต URL (รอให้เมนูทำงานเสร็จก่อนค่อยอ่านสถานะ)
   document.addEventListener('click',function(){ setTimeout(save,250); },true);
   window.addEventListener('pagehide',save);
-  window.restoreViewNow=restore;
+  window.restoreViewNow=restore; window.rvSave=save;
   // โหลดหน้าแล้วคืนหน้าเดิมทันที (รันก่อนโค้ด “หน้าแรก = CIL Team” ซึ่งจะข้ามเมื่อมี # อยู่)
   function init(){ restore(); setTimeout(save,900); }   // ไม่มี # (เข้าครั้งแรก) → จดหน้าแรกไว้ด้วย
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,0); }); else setTimeout(init,0);   // ไม่รอ load (ฟอนต์/รูปช้า) → สลับหน้าให้เร็วที่สุด
