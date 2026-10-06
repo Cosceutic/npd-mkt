@@ -13907,7 +13907,87 @@ details.fm-more[open]{padding-bottom:6px;}
   var ECOM_LOCAL_KEY='npd_ecom_v1';
   function ecomLocal(){ try{ return JSON.parse(localStorage.getItem(ECOM_LOCAL_KEY))||[]; }catch(e){ return []; } }
   function ecomSaveLocal(a){ try{ localStorage.setItem(ECOM_LOCAL_KEY, JSON.stringify(a)); }catch(e){} }
-  function ecomStat(s){ if(ECOM_STATUS[s]) return s; if(ECOM_STATUS_MIGRATE[s]) return ECOM_STATUS_MIGRATE[s]; return 'checklist'; }
+  /* ===== คอลัมน์ของบอร์ด E-com: เพิ่ม · แก้ชื่อ · เลือกสีหัวคอลัมน์ · ตั้งเป็นคอลัมน์ "เสร็จแล้ว" · เลื่อน · ลบ ได้เอง
+     เก็บที่ตาราง graphic_config (k='ecom::cols') ใช้ร่วมทั้งทีม + สำรองในเครื่อง ===== */
+  var ECOM_COLS_LKEY='npd_ecom_cols_v1', ECOM_COLS_K='ecom::cols', ecomColsDirtyAt=0;
+  var ECOM_HDR_PALETTE=['#3F6DB5','#26A69A','#E9557F','#EB5FA0','#9B7EF8','#F2994A','#E0A100','#5B8FF9','#3CA5A5','#6B7A99'];
+  function ecomDefaultCols(){ return [ {key:'checklist',title:'📄 Check List',color:'#7cb6e4',hc:'',done:false}, {key:'onprocess',title:'🎬 On Process',color:'#ffb454',hc:'',done:false}, {key:'done',title:'✅ Done',color:'#26a69a',hc:'',done:true} ]; }
+  var ECOM_COLS=ecomDefaultCols();
+  var HEX6=/^#[0-9a-f]{6}$/i;
+  function ecomCleanCols(a){ if(!Array.isArray(a)) return null; var out=[], seen={}; a.forEach(function(c){ if(!c||!c.key||seen[c.key]) return; var t=String(c.title||'').trim(); if(!t) return; seen[c.key]=1; out.push({key:String(c.key),title:t,color:HEX6.test(c.color||'')?c.color:'#7cb6e4',hc:HEX6.test(c.hc||'')?c.hc:'',done:!!c.done}); }); return out.length?out:null; }
+  function ecomApplyCols(cols){ ECOM_COLS=cols; ECOM_STATUS_ORDER=cols.map(function(c){return c.key;}); ECOM_STATUS={}; cols.forEach(function(c){ ECOM_STATUS[c.key]={t:c.title,c:c.color,hc:c.hc||'',done:!!c.done}; }); if(!ECOM_STATUS[ecomPreset]) ecomPreset=ECOM_STATUS_ORDER[0]; }
+  function ecomFirst(){ return ECOM_STATUS_ORDER[0]; }
+  function ecomColOf(x){ return ECOM_STATUS[x.status]?x.status:ecomFirst(); }
+  function ecomIsDone(k){ return !!(ECOM_STATUS[k] && ECOM_STATUS[k].done); }
+  function ecomTextOn(hex){ var r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16); return ((0.299*r+0.587*g+0.114*b)>170)?'#1f2937':'#ffffff'; }
+  var _l=null; try{ _l=ecomCleanCols(JSON.parse(localStorage.getItem(ECOM_COLS_LKEY))); }catch(e){}
+  ecomApplyCols(_l||ECOM_COLS);
+  async function ecomSaveCols(){
+    ecomColsDirtyAt=Date.now();
+    try{ localStorage.setItem(ECOM_COLS_LKEY, JSON.stringify(ECOM_COLS)); }catch(e){}
+    var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
+    try{ var r=await postToSheet({target:'graphicconfig',action:'upsert',keyValue:ECOM_COLS_K,row:{k:ECOM_COLS_K,v:JSON.stringify(ECOM_COLS),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}});
+      if(r && r.ok===false && typeof toast==='function') toast('❌ ฐานข้อมูลไม่รับการบันทึกคอลัมน์: '+(r.error||'ไม่ทราบสาเหตุ')+' — เก็บในเครื่องไว้ก่อน (ทีมยังไม่เห็น)','err'); }catch(e){}
+  }
+  async function ecomLoadCols(){
+    if(Date.now()-ecomColsDirtyAt<10000) return;   // เพิ่งแก้เอง → รอให้ฐานข้อมูลตามทัน กันค่าเก่าทับ
+    try{ var rows=await sbSelect('graphic_config','k=eq.'+encodeURIComponent(ECOM_COLS_K));
+      if(rows.length){ var c=ecomCleanCols(JSON.parse(rows[0].v||'[]')); if(c){ ecomApplyCols(c); try{ localStorage.setItem(ECOM_COLS_LKEY, JSON.stringify(c)); }catch(e){} } } }catch(e){}
+  }
+  function ecomColIdx(key){ for(var i=0;i<ECOM_COLS.length;i++){ if(ECOM_COLS[i].key===key) return i; } return -1; }
+  function ecomColsCopy(){ return ECOM_COLS.map(function(c){ return Object.assign({},c); }); }
+  window.ecomAddCol=function(){ if(!ecomCanEdit()) return; var t=prompt('ชื่อคอลัมน์ใหม่:',''); if(t==null) return; t=String(t).trim(); if(!t) return;
+    var col=ECOM_HDR_PALETTE[ECOM_COLS.length%ECOM_HDR_PALETTE.length]; var cols=ecomColsCopy(); cols.push({key:'col'+Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:t,color:col,hc:col,done:false});
+    ecomApplyCols(cols); ecomSaveCols(); ecomReRender(); };
+  window.ecomRenameCol=function(key){ if(!ecomCanEdit()) return; var i=ecomColIdx(key); if(i<0) return; var t=prompt('แก้ชื่อคอลัมน์:',ECOM_COLS[i].title||''); if(t==null) return; t=String(t).trim(); if(!t) return;
+    var cols=ecomColsCopy(); cols[i].title=t; ecomApplyCols(cols); ecomSaveCols(); ecomReRender(); };
+  window.ecomSetColColor=function(key,hex){ if(!ecomCanEdit()||!HEX6.test(hex||'')) return; var i=ecomColIdx(key); if(i<0) return; var cols=ecomColsCopy(); cols[i].color=hex; cols[i].hc=hex; ecomApplyCols(cols); ecomSaveCols(); ecomReRender(); };
+  window.ecomResetColColor=function(key){ if(!ecomCanEdit()) return; var i=ecomColIdx(key); if(i<0) return; var d=ecomDefaultCols().find(function(c){return c.key===key;}); var cols=ecomColsCopy(); cols[i].hc=''; if(d) cols[i].color=d.color; ecomApplyCols(cols); ecomSaveCols(); ecomReRender(); };
+  window.ecomToggleDoneCol=function(key){ if(!ecomCanEdit()) return; var i=ecomColIdx(key); if(i<0) return; var cols=ecomColsCopy(); cols[i].done=!cols[i].done; ecomApplyCols(cols); ecomSaveCols();
+    ECOM.forEach(function(x){ if(x.status!==key) return; if(cols[i].done){ if(!x.doneAt){ x.doneAt=nowStamp(); ecomUpsertLocal(x); ecomSync(x); } } else if(x.doneAt){ x.doneAt=''; ecomUpsertLocal(x); ecomSync(x); } });
+    ecomReRender(); if(typeof toast==='function') toast(cols[i].done?('“'+cols[i].title+'” = คอลัมน์เสร็จแล้ว'):('ยกเลิกสถานะเสร็จของ “'+cols[i].title+'”'),'ok'); };
+  window.ecomMoveCol=function(key,dir){ if(!ecomCanEdit()) return; var i=ecomColIdx(key), j=i+dir; if(i<0||j<0||j>=ECOM_COLS.length) return; var cols=ecomColsCopy(); var t=cols[i]; cols[i]=cols[j]; cols[j]=t; ecomApplyCols(cols); ecomSaveCols(); ecomReRender(); };
+  window.ecomDelCol=function(key){ if(!ecomCanEdit()) return; if(ECOM_COLS.length<=1){ if(typeof toast==='function') toast('ต้องมีอย่างน้อย 1 คอลัมน์','info'); return; }
+    var i=ecomColIdx(key); if(i<0) return; var inCol=ECOM.filter(function(x){return ecomColOf(x)===key;});
+    var cols=ecomColsCopy().filter(function(c){return c.key!==key;}); var target=cols[0];
+    if(!confirm('ลบคอลัมน์ “'+ECOM_COLS[i].title+'”?'+(inCol.length?(' การ์ด '+inCol.length+' ใบจะย้ายไปคอลัมน์ “'+target.title+'”'):''))) return;
+    ecomApplyCols(cols);
+    inCol.forEach(function(x){ x.status=target.key; if(target.done){ if(!x.doneAt) x.doneAt=nowStamp(); } else { x.doneAt=''; } x.updatedAt=TS(); ecomUpsertLocal(x); ecomSync(x); });
+    ecomSaveCols(); ecomReRender(); };
+  /* เมนู ⋮ ของหัวคอลัมน์ (หน้าตาเดียวกับบอร์ดกราฟฟิก + แถวเลือกสี) */
+  window.ecomColMenuClose=function(){ var m=document.getElementById('ecom-colmenu'); if(m && m.parentNode) m.parentNode.removeChild(m); };
+  window.ecomColMenu=function(ev,key){
+    if(ev){ ev.stopPropagation(); ev.preventDefault(); }
+    if(!ecomCanEdit()) return;
+    var old=document.getElementById('ecom-colmenu'); if(old){ var same=old.getAttribute('data-key')===key; window.ecomColMenuClose(); if(same) return; }
+    var idx=ecomColIdx(key); if(idx<0) return; var c=ECOM_COLS[idx]; var k=AJ(key);
+    var cur=c.hc||'#3F6DB5';
+    var sw=ECOM_HDR_PALETTE.map(function(h){ return '<span role="button" tabindex="0" title="'+h+'" onclick="ecomColMenuClose();ecomSetColColor(\''+k+'\',\''+h+'\')" style="display:inline-block;width:22px;height:22px;border-radius:50%;background:'+h+';cursor:pointer;margin:2px;box-shadow:'+(h.toLowerCase()===cur.toLowerCase()?'0 0 0 2px #fff,0 0 0 4px '+h:'none')+';"></span>'; }).join('');
+    var items=[
+      ['✏️','แก้ชื่อคอลัมน์','ecomRenameCol(\''+k+'\')',''],
+      [c.done?'✅':'○', c.done?'เป็นคอลัมน์เสร็จแล้ว (กดเพื่อยกเลิก)':'ตั้งเป็นคอลัมน์เสร็จแล้ว','ecomToggleDoneCol(\''+k+'\')',''],
+      ['◀','เลื่อนคอลัมน์ไปทางซ้าย','ecomMoveCol(\''+k+'\',-1)', idx<=0?'off':''],
+      ['▶','เลื่อนคอลัมน์ไปทางขวา','ecomMoveCol(\''+k+'\',1)', idx>=ECOM_COLS.length-1?'off':''],
+      ['🗑️','ลบคอลัมน์','ecomDelCol(\''+k+'\')','danger']
+    ];
+    var m=document.createElement('div'); m.id='ecom-colmenu'; m.className='gfx-colmenu'; m.setAttribute('role','menu'); m.setAttribute('data-key',key);
+    var btn=function(it){ return '<button type="button" role="menuitem" class="'+it[3]+'"'+(it[3]==='off'?' disabled':'')+' onclick="ecomColMenuClose();'+it[2]+'"><span class="mi">'+it[0]+'</span><span>'+it[1]+'</span></button>'; };
+    m.innerHTML='<div class="gfx-colmenu-h">'+E(c.title)+'</div>'+btn(items[0])
+      +'<div style="padding:6px 10px 4px;"><div style="font-size:12px;color:var(--ink-soft,#6b7794);margin-bottom:4px;">🎨 สีหัวคอลัมน์</div>'+sw
+      +'<div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12.5px;"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;">เลือกสีเอง <input type="color" value="'+cur+'" onchange="ecomColMenuClose();ecomSetColColor(\''+k+'\',this.value)" style="width:34px;height:24px;padding:0;border:none;background:none;cursor:pointer;"></label>'
+      +(c.hc?'<a href="#" onclick="ecomColMenuClose();ecomResetColColor(\''+k+'\');return false;" style="margin-left:auto;color:#2F6DA8;font-weight:600;">คืนสีเดิม</a>':'')+'</div></div>'
+      +items.slice(1).map(btn).join('');
+    document.body.appendChild(m);
+    var b=ev&&(ev.currentTarget||ev.target); var r=b&&b.getBoundingClientRect?b.getBoundingClientRect():{right:window.innerWidth-20,bottom:60,top:40};
+    var w=m.offsetWidth, h=m.offsetHeight; var left=Math.max(8, Math.min(r.right-w, window.innerWidth-w-8)); var top=r.bottom+6; if(top+h>window.innerHeight-8) top=Math.max(8, r.top-h-6);
+    m.style.left=left+'px'; m.style.top=top+'px';
+  };
+  if(!window.__ecomColMenuBound){ window.__ecomColMenuBound=true;
+    document.addEventListener('click',function(e){ var m=document.getElementById('ecom-colmenu'); if(m && !m.contains(e.target)) window.ecomColMenuClose(); });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape') window.ecomColMenuClose(); });
+    window.addEventListener('resize',function(){ window.ecomColMenuClose(); });
+    window.addEventListener('scroll',function(){ window.ecomColMenuClose(); },true); }
+  function ecomStat(s){ if(ECOM_STATUS[s]) return s; if(ECOM_STATUS_MIGRATE[s]) return ECOM_STATUS_MIGRATE[s]; if(/^col/.test(String(s||''))) return s; return ECOM_STATUS_ORDER[0]; }
   function ecomParseDrafts(s){ if(Array.isArray(s)) return s.filter(function(x){return typeof x==='string'&&x;}); try{ var a=JSON.parse(s||'[]'); return Array.isArray(a)?a.filter(function(x){return typeof x==='string'&&x;}):[]; }catch(e){ return String(s||'').split(';').map(function(t){return t.trim();}).filter(Boolean); } }
   function ecomOrd(n){ return n+(['','st','nd','rd'][n]||'th'); }
   // สีแท็ก (มีสีหลากหลาย) — ต้องนิยามในโมดูลนี้เอง เพราะ tagColor() ของหน้า Content อยู่คนละ IIFE เข้าถึงไม่ได้ → ก่อนหน้านี้ตกไปใช้สีเทา default
@@ -13932,6 +14012,7 @@ details.fm-more[open]{padding-bottom:6px;}
   window.ecomCardTitle=function(id){ var c=window.ecomGetCard(id); return c?(c.title||'การ์ด'):'การ์ด'; };
 
   async function loadEcom(){
+    await ecomLoadCols();
     var cache=ecomLocal();
     try{
       var rows=(await sbSelect('ecom_content')).map(normEcom).filter(function(r){return r.id;});
@@ -13943,7 +14024,7 @@ details.fm-more[open]{padding-bottom:6px;}
   }
   window.ecomLive={
     loaded:function(){ return !!document.querySelector('#ecom-host .cc-pl-board'); },
-    sig:function(){ return JSON.stringify((ECOM||[]).map(function(c){ return [c.id,c.status,c.title,c.owner,c.graphic,c.followers,c.submitDate,c.submitTime,c.finalDate,c.pos,c.doneAt,c.tags,c.brand,(c.checklist||[]).length,(c.drafts||[]).length]; })); },
+    sig:function(){ return JSON.stringify((ECOM||[]).map(function(c){ return [c.id,c.status,c.title,c.owner,c.graphic,c.followers,c.submitDate,c.submitTime,c.finalDate,c.pos,c.doneAt,c.tags,c.brand,(c.checklist||[]).length,(c.drafts||[]).length]; }))+JSON.stringify(ECOM_COLS); },
     reload:function(){ return loadEcom(); }
   };
   async function ecomSync(card){
@@ -14018,12 +14099,12 @@ details.fm-more[open]{padding-bottom:6px;}
     var items=ECOM.filter(function(x){ return ecomBrand==='all' || (x.brand||'other')===ecomBrand; });
     if(ecomOwnerSel.size) items=items.filter(ecomOwnerMatch);
     var byStatus={}; ECOM_STATUS_ORDER.forEach(function(s){byStatus[s]=[];});
-    items.forEach(function(x){ var s=ECOM_STATUS[x.status]?x.status:'briefsrc'; byStatus[s].push(x); });
+    items.forEach(function(x){ byStatus[ecomColOf(x)].push(x); });
     Object.keys(byStatus).forEach(function(s){ byStatus[s].sort(function(a,b){ var pa=(a.pos==null?1e9:a.pos), pb=(b.pos==null?1e9:b.pos); return pa-pb; }); });
     host.innerHTML='<div class="cc-pl-board">'+ECOM_STATUS_ORDER.map(function(s){
       var st=ECOM_STATUS[s]; var sp=(window.chkSplit?window.chkSplit(byStatus[s]):{open:byStatus[s],done:[]}); var list=sp.open;   // การ์ดที่ติ๊กเช็คแล้ว → เก็บไว้ล่างสุดของคอลัมน์
       var cards;
-      if(s==='done'){
+      if(st.done){
         var recent=[], arch=[];
         list.forEach(function(x){ if(x.doneAt && ecomDaysSince(x.doneAt)>7) arch.push(x); else recent.push(x); });
         cards=recent.map(function(x){ return ecomCard(x,s,canEd); }).join('');
@@ -14038,9 +14119,11 @@ details.fm-more[open]{padding-bottom:6px;}
       if(window.chkFoldHtml) cards+=window.chkFoldHtml('ecom',s,list.length,sp.done.map(function(x){ return ecomCard(x,s,canEd); }));
       var addC=canEd?'<button class="cc-pl-add" onclick="ecomAddIn(\''+s+'\')">➕ เพิ่มการ์ด</button>':'';
       return '<div class="cc-pl-col" data-status="'+s+'"'+(canEd?' ondragover="ecomDragOver(event)" ondragleave="ecomDragLeave(event)" ondrop="ecomDrop(event,\''+s+'\')"':'')+'>'
-        +'<div class="cc-pl-colhead"><span class="cc-pl-dot" style="background:'+st.c+'"></span><span class="cc-pl-colname">'+E(st.t)+'</span><span class="cc-pl-colcount">'+list.length+'</span></div>'
+        +(function(){ var hc=st.hc||'', fg=hc?ecomTextOn(hc):''; var dark=(fg==='#1f2937');
+          return '<div class="cc-pl-colhead"'+(hc?' style="background:'+hc+';color:'+fg+';"':'')+'><span class="cc-pl-dot" style="background:'+st.c+'"></span><span class="cc-pl-colname"'+(hc?' style="color:'+fg+'"':'')+'>'+E(st.t)+'</span><span class="cc-pl-colcount"'+(dark?' style="background:rgba(0,0,0,.12);color:#1f2937;"':'')+'>'+list.length+'</span>'
+            +(canEd?'<button type="button" class="gfx-colmore" title="จัดการคอลัมน์ (ชื่อ · สี · เลื่อน · ลบ)" aria-label="จัดการคอลัมน์" aria-haspopup="menu"'+(dark?' style="color:#1f2937"':'')+' onclick="ecomColMenu(event,\''+AJ(s)+'\')">⋮</button>':'')+'</div>'; })()
         +'<div class="cc-pl-cards">'+cards+'</div>'+addC+'</div>';
-    }).join('')+'</div>';
+    }).join('')+(canEd?'<div class="cc-pl-col" style="background:transparent;border:2px dashed var(--line,#CBD5E8);box-shadow:none;min-width:200px;flex:0 0 200px;display:flex;align-items:flex-start;justify-content:center;padding-top:14px;"><button type="button" onclick="ecomAddCol()" style="border:none;background:#fff;border-radius:10px;padding:9px 16px;font-size:13.5px;font-weight:700;color:#3F6DB5;cursor:pointer;box-shadow:0 2px 8px rgba(60,100,190,.15);">➕ เพิ่มคอลัมน์</button></div>':'')+'</div>';
   };
   function ecomFmtDDMM(iso){ if(!iso) return ''; var d=new Date(iso+'T00:00:00'); if(isNaN(d)) return iso; var M=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']; return d.getDate()+' '+M[d.getMonth()]; }
   function ecomCard(x,s,canEd){
@@ -14065,10 +14148,10 @@ details.fm-more[open]{padding-bottom:6px;}
       +((dateStr||draftStr||cmn||chkStr||doneStr)?'<div class="cc-pl-meta">'+dateStr+draftStr+chkStr+cmn+doneStr+'</div>':'')
       +actions+'</div>';
   }
-  window.ecomMove=function(id,ns){ if(!ecomCanEdit()||!ECOM_STATUS[ns]) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||c.status===ns) return; c.status=ns; if(ns==='done'){ if(!c.doneAt) c.doneAt=nowStamp(); } else { c.doneAt=''; } c.updatedAt=TS(); ecomUpsertLocal(c); ecomReRender(); if(typeof toast==='function') toast('ย้ายไป “'+ECOM_STATUS[ns].t+'” แล้ว','ok'); ecomSync(c); try{ if(typeof ntEcomMoved==='function') ntEcomMoved(c, ECOM_STATUS[ns].t); }catch(e){} };
+  window.ecomMove=function(id,ns){ if(!ecomCanEdit()||!ECOM_STATUS[ns]) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||c.status===ns) return; c.status=ns; if(ecomIsDone(ns)){ if(!c.doneAt) c.doneAt=nowStamp(); } else { c.doneAt=''; } c.updatedAt=TS(); ecomUpsertLocal(c); ecomReRender(); if(typeof toast==='function') toast('ย้ายไป “'+ECOM_STATUS[ns].t+'” แล้ว','ok'); ecomSync(c); try{ if(typeof ntEcomMoved==='function') ntEcomMoved(c, ECOM_STATUS[ns].t); }catch(e){} };
   window.ecomDel=function(id){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;}); if(!confirm('ลบการ์ด “'+((c&&c.title)||'')+'” ?')) return; ECOM=ECOM.filter(function(x){return x.id!==id;}); ecomSaveLocal(ECOM); ecomReRender(); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(cfg.url){ try{ postToSheet({target:'ecom',action:'delete',keyValue:id}); }catch(e){} } if(typeof toast==='function') toast('ลบแล้ว','ok'); };
-  window.ecomCopy=function(id){ if(!ecomCanEdit()){ if(typeof toast==='function') toast('เข้าสู่ระบบ (สิทธิ์ Content) ก่อน','info'); return; } var src=ECOM.find(function(x){return x.id===id;}); if(!src) return; var nid='ec'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); var card=Object.assign({}, src, {id:nid, title:(src.title||'')+' (copy)', doneAt:(src.status==='done'?nowStamp():''), pos:null, checklist:(Array.isArray(src.checklist)?src.checklist.map(function(it){return {text:it.text,done:it.done};}):[]), updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'')}); ecomUpsertLocal(card); ecomReRender(); if(typeof toast==='function') toast('คัดลอกการ์ดแล้ว 📋','ok'); ecomSync(card); };
-  window.ecomAddIn=function(s){ if(!ecomCanEdit()){ if(typeof toast==='function') toast('เข้าสู่ระบบ (สิทธิ์ Content) ก่อนจึงจะเพิ่มได้','info'); return; } ecomPreset=s||'checklist'; ecomEditId=null; openEcomEditor(null); };
+  window.ecomCopy=function(id){ if(!ecomCanEdit()){ if(typeof toast==='function') toast('เข้าสู่ระบบ (สิทธิ์ Content) ก่อน','info'); return; } var src=ECOM.find(function(x){return x.id===id;}); if(!src) return; var nid='ec'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); var card=Object.assign({}, src, {id:nid, title:(src.title||'')+' (copy)', doneAt:(ecomIsDone(src.status)?nowStamp():''), pos:null, checklist:(Array.isArray(src.checklist)?src.checklist.map(function(it){return {text:it.text,done:it.done};}):[]), updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'')}); ecomUpsertLocal(card); ecomReRender(); if(typeof toast==='function') toast('คัดลอกการ์ดแล้ว 📋','ok'); ecomSync(card); };
+  window.ecomAddIn=function(s){ if(!ecomCanEdit()){ if(typeof toast==='function') toast('เข้าสู่ระบบ (สิทธิ์ Content) ก่อนจึงจะเพิ่มได้','info'); return; } ecomPreset=s||ecomFirst(); ecomEditId=null; openEcomEditor(null); };
   window.ecomSyncAw=function(id){
     var c=window.ecomGetCard(id); if(!c) return;
     window.gfxSyncAwFromEcom(c,function(n){ if(typeof toast==='function') toast(n?('เพิ่มรายการ “ภาพ AW” ไปการ์ดกราฟฟิก '+n+' ข้อ'):'รายการ “ภาพ AW” ครบแล้ว ไม่มีข้อใหม่','ok'); var cov=document.getElementById('cc-card-overlay'); if(cov && cov.classList.contains('open') && typeof renderCardModal==='function') renderCardModal(); });
@@ -14086,7 +14169,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var LB=function(t){ return '<label style="font-size:12px;font-weight:600;color:var(--ink-soft);">'+t+'</label>'; };
     var INP='style="width:100%;padding:8px 11px;border:1px solid var(--line,#E7ECF5);border-radius:9px;"';
     var brandOpts=ECOM_BRANDS.filter(function(b){return b[0]!=='all';}).map(function(b){return '<option value="'+b[0]+'"'+((c.brand||'godmami')===b[0]?' selected':'')+'>'+E(b[1])+'</option>';}).join('');
-    var statusOpts=ECOM_STATUS_ORDER.map(function(k){return '<option value="'+k+'"'+((c.status||'checklist')===k?' selected':'')+'>'+E(ECOM_STATUS[k].t)+'</option>';}).join('');
+    var statusOpts=ECOM_STATUS_ORDER.map(function(k){return '<option value="'+k+'"'+(((ECOM_STATUS[c.status]?c.status:ecomFirst())===k)?' selected':'')+'>'+E(ECOM_STATUS[k].t)+'</option>';}).join('');
     var picOpts=ecomOwnerNames().map(function(n){return '<option value="'+E(n)+'"></option>';}).join('');
     var grOpts=ecomGraphicNames().map(function(n){return '<option value="'+E(n)+'"></option>';}).join('');
     var tagOpts=ecomTagList().map(function(t){return '<option value="'+E(t)+'"></option>';}).join('');
@@ -14106,7 +14189,7 @@ details.fm-more[open]{padding-bottom:6px;}
           '<div class="fm-g3"><div><label>วันที่ส่งงาน</label><input type="date" id="ecom-f-submitDate" value="'+E(c.submitDate)+'"></div><div><label>เวลา</label><input type="time" id="ecom-f-submitTime" value="'+E(c.submitTime)+'"></div><div><label>🎯 วันที่ Final</label><input type="date" id="ecom-f-finalDate" value="'+E(c.finalDate)+'"></div></div>'
           +fmRow('📝 รอบ Draft (ส่งตรวจ)','<div id="ecom-drafts"></div><button type="button" onclick="ecomAddDraft()" style="margin-top:5px;border:1px dashed var(--line,#E7ECF5);background:#fff;border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;">＋ เพิ่มรอบ Draft</button>'))
         +fmSec(4,'สถานะและแบรนด์',
-          fmRow('สถานะ (คอลัมน์)', fmChips('ecom-f-status', ECOM_STATUS_ORDER.map(function(k){return [k,ECOM_STATUS[k].t,ECOM_STATUS[k].c];}), c.status||'checklist', {}))
+          fmRow('สถานะ (คอลัมน์)', fmChips('ecom-f-status', ECOM_STATUS_ORDER.map(function(k){return [k,ECOM_STATUS[k].t,ECOM_STATUS[k].c];}), (ECOM_STATUS[c.status]?c.status:ecomFirst()), {}))
           +fmRow('แบรนด์', fmChips('ecom-f-brand', ECOM_BRANDS.filter(function(b){return b[0]!=='all';}).map(function(b){return [b[0],b[1]];}), c.brand||'godmami', {})))
         +fmMore('ข้อมูลเสริม', fmRow('🏷️ แท็ก', tgHtml('ecom-f-tags', c.tags||'', ecomTagList(), '')), !!c.tags)
       +'</div>'
@@ -14127,8 +14210,8 @@ details.fm-more[open]{padding-bottom:6px;}
     var id=ecomEditId||('ec'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
     var tags=g('ecom-f-tags'); ecomRememberTags(tags);
     var prev=ECOM.find(function(x){return x.id===id;})||{};
-    var card={id:id, title:title, brand:g('ecom-f-brand')||'godmami', owner:g('ecom-f-owner'), followers:g('ecom-f-followers'), graphic:g('ecom-f-graphic'), status:g('ecom-f-status')||'checklist', submitDate:g('ecom-f-submitDate'), submitTime:g('ecom-f-submitTime'), drafts:ecomDraftsWork.filter(function(d){return d;}), finalDate:g('ecom-f-finalDate'), tags:tags, note:g('ecom-f-note'), checklist:(Array.isArray(prev.checklist)?prev.checklist:[]), doneAt:prev.doneAt||'', updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'')};
-    if(card.status==='done'){ if(!card.doneAt) card.doneAt=nowStamp(); } else { card.doneAt=''; }
+    var card={id:id, title:title, brand:g('ecom-f-brand')||'godmami', owner:g('ecom-f-owner'), followers:g('ecom-f-followers'), graphic:g('ecom-f-graphic'), status:g('ecom-f-status')||ecomFirst(), submitDate:g('ecom-f-submitDate'), submitTime:g('ecom-f-submitTime'), drafts:ecomDraftsWork.filter(function(d){return d;}), finalDate:g('ecom-f-finalDate'), tags:tags, note:g('ecom-f-note'), checklist:(Array.isArray(prev.checklist)?prev.checklist:[]), doneAt:prev.doneAt||'', updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'')};
+    if(ecomIsDone(card.status)){ if(!card.doneAt) card.doneAt=nowStamp(); } else { card.doneAt=''; }
     ecomUpsertLocal(card);
     document.getElementById('ecom-editor-overlay').classList.remove('open');
     ecomReRender();
@@ -14152,7 +14235,7 @@ details.fm-more[open]{padding-bottom:6px;}
   // รายละเอียดการ์ด (ฝั่งซ้ายของ modal ที่ใช้ร่วมกับ Content) — โชว์แบบอ่าน + ปุ่มแก้ไข
   window.ecomCardDetailHtml=function(id){
     var x=window.ecomGetCard(id); if(!x) return '';
-    var st=ECOM_STATUS[x.status]||ECOM_STATUS.checklist;
+    var st=ECOM_STATUS[ecomColOf(x)];
     var row=function(lb,val){ return val?'<div class="cc-cd-row"><b>'+lb+'</b><span>'+val+'</span></div>':''; };
     var dfmt=function(iso){ return iso?ecomFmtDDMM(iso):''; };
     var tags=(x.tags?String(x.tags).split(',').map(function(t){return t.trim();}).filter(Boolean).map(function(t){return '<span class="cc-tag" style="--tg:'+ecomTagColor(t)+'">'+E(t)+'</span>';}).join(''):'');
@@ -14215,7 +14298,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var dragged=ECOM.find(function(x){return x.id===draggedId;}); var target=ECOM.find(function(x){return x.id===targetId;});
     if(!dragged||!target) return;
     var changed=[];
-    if(dragged.status!==target.status){ dragged.status=target.status; if(ECOM_STATUS[dragged.status]&&ECOM_STATUS[dragged.status].done!==undefined){} if(dragged.status==='done'){ if(!dragged.doneAt) dragged.doneAt=nowStamp(); } else { dragged.doneAt=''; } changed.push(dragged);
+    if(dragged.status!==target.status){ dragged.status=target.status; if(ECOM_STATUS[dragged.status]&&ECOM_STATUS[dragged.status].done!==undefined){} if(ecomIsDone(dragged.status)){ if(!dragged.doneAt) dragged.doneAt=nowStamp(); } else { dragged.doneAt=''; } changed.push(dragged);
       try{ if(typeof ntEcomMoved==='function' && ECOM_STATUS[dragged.status]) ntEcomMoved(dragged, ECOM_STATUS[dragged.status].t); }catch(e){} }
     var colCards=ECOM.filter(function(x){return x.status===target.status && x.id!==draggedId;});
     colCards.sort(function(a,b){ var pa=(a.pos==null?1e9:a.pos), pb=(b.pos==null?1e9:b.pos); return pa-pb; });
