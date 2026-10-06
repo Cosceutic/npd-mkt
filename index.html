@@ -11802,8 +11802,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   window.ccRefreshActive=function(){ try{ var v=document.getElementById('view-content'); if(v && v.classList.contains('active')) renderCalActive(); }catch(e){} };
   // ตัวช่วยให้ระบบอัปเดตสดใช้ (live-sync): ลายเซ็นข้อมูล / โหลดใหม่ / วาดใหม่
   window.ccLive={
-    sig:function(){ return JSON.stringify((window.CONTENT_CAL||[]).map(function(x){ return [x.id,x.status,x.date,x.due,x.title,x.pos,x.owner,x.reviewer,x.followers,x.gfxPic,x.doneAt,x.time,x.workType,x.pillar,x.format,x.product,x.channel,x.tags,x.note,x.drafts,x.reviseCount,x.extendCount,x.brand]; }))+'#'+(typeof SHEET_ROWS_CM!=='undefined'?SHEET_ROWS_CM.length:0); },
-    reload:async function(withComments){ await window.loadContentCalFromSheet(); if(withComments && typeof window.loadCommentsFromSheet==='function') await window.loadCommentsFromSheet(); },
+    sig:function(){ return JSON.stringify((window.CONTENT_CAL||[]).map(function(x){ return [x.id,x.status,x.date,x.due,x.title,x.pos,x.owner,x.reviewer,x.followers,x.gfxPic,x.doneAt,x.time,x.workType,x.pillar,x.format,x.product,x.channel,x.tags,x.note,x.drafts,x.reviseCount,x.extendCount,x.brand]; }).concat([CC_HDR]))+'#'+(typeof SHEET_ROWS_CM!=='undefined'?SHEET_ROWS_CM.length:0); },
+    reload:async function(withComments){ try{ await window.ccHdrLoad(); }catch(e){} await window.loadContentCalFromSheet(); if(withComments && typeof window.loadCommentsFromSheet==='function') await window.loadCommentsFromSheet(); },
     render:function(){ try{ renderCalActive(); }catch(e){} }
   };
   function plOwnerHas(owner, name){ return String(owner||'').split(/[,\/、]/).map(function(s){return s.trim();}).indexOf(name)>=0; }
@@ -11821,6 +11821,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   }
   window.renderPipeline=function(){
     var host=document.getElementById('cc-pl-host'); if(!host) return;
+    if(!ccHdrAsked){ ccHdrAsked=true; setTimeout(function(){ ccHdrLoad(); },50); }
     var addBtn=document.getElementById('cc-pl-add'); if(addBtn) addBtn.style.display=unlocked()?'':'none';
     renderPlPicBar();
     var items=(window.CONTENT_CAL||[]).filter(function(x){ return ciBrand==='all' || (x.brand||'other')===ciBrand; });
@@ -11835,10 +11836,37 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       if(window.chkFoldHtml) cards+=window.chkFoldHtml('pl',s,sp.open.length,sp.done.map(function(x){ return plCard(x,s,canEdit); }));
       var addC = canEdit ? '<button class="cc-pl-add" onclick="plAddIn(\''+s+'\')">➕ เพิ่มการ์ด</button>' : '';
       return '<div class="cc-pl-col" data-status="'+s+'"'+(canEdit?' ondragover="plDragOver(event)" ondragleave="plDragLeave(event)" ondrop="plDrop(event,\''+s+'\')"':'')+'>'
-        +'<div class="cc-pl-colhead"><span class="cc-pl-dot" style="background:'+st.c+'"></span><span class="cc-pl-colname">'+e2(st.t)+'</span><span class="cc-pl-colcount">'+sp.open.length+'</span></div>'
+        +(function(){ var hs=window.hdrStyle?window.hdrStyle(CC_HDR[s]):{head:'',name:'',count:'',more:''};
+          return '<div class="cc-pl-colhead"'+hs.head+'><span class="cc-pl-dot" style="background:'+st.c+'"></span><span class="cc-pl-colname"'+hs.name+'>'+e2(st.t)+'</span><span class="cc-pl-colcount"'+hs.count+'>'+sp.open.length+'</span>'
+            +(canEdit?'<button type="button" class="gfx-colmore" title="เปลี่ยนสีหัวคอลัมน์" aria-label="เปลี่ยนสีหัวคอลัมน์" aria-haspopup="menu"'+hs.more+' onclick="ccHdrMenu(event,\''+s+'\')">⋮</button>':'')+'</div>'; })()
         +'<div class="cc-pl-cards">'+cards+'</div>'+addC+'</div>';
     }).join('')+'</div>';
   };
+  /* สีหัวคอลัมน์ของ Content Pipeline (ตั้งเองได้ · ทั้งทีมเห็นเหมือนกัน · เก็บที่ graphic_config k='content::hdr') */
+  var CC_HDR={}, CC_HDR_LKEY='npd_cc_hdr_v1', CC_HDR_K='content::hdr', ccHdrDirtyAt=0, ccHdrUnsynced=false, ccHdrAsked=false;
+  try{ var _h=JSON.parse(localStorage.getItem(CC_HDR_LKEY)||'{}'); if(_h && typeof _h==='object') CC_HDR=_h; }catch(e){}
+  function ccHdrClean(o){ var r={}; if(o&&typeof o==='object'){ Object.keys(o).forEach(function(k){ if(CAL_STATUS[k] && window.hdrOk && window.hdrOk(o[k])) r[k]=o[k]; }); } return r; }
+  async function ccHdrLoad(){
+    if(Date.now()-ccHdrDirtyAt<10000 || ccHdrUnsynced) return;
+    try{
+      var rows=await sbSelect('graphic_config','k=eq.'+encodeURIComponent(CC_HDR_K)); var row=null;
+      for(var i=0;i<rows.length;i++){ if(rows[i].k===CC_HDR_K){ row=rows[i]; break; } }   // เลือกเฉพาะแถวที่ชื่อตรง
+      var o={}; if(row){ try{ o=ccHdrClean(JSON.parse(row.v||'{}')); }catch(e){} }
+      var changed=JSON.stringify(o)!==JSON.stringify(CC_HDR); CC_HDR=o; try{ localStorage.setItem(CC_HDR_LKEY,JSON.stringify(o)); }catch(e){}
+      if(changed) renderCalActive();
+    }catch(e){}
+  }
+  window.ccHdrLoad=ccHdrLoad;
+  async function ccHdrSave(){
+    ccHdrDirtyAt=Date.now(); try{ localStorage.setItem(CC_HDR_LKEY,JSON.stringify(CC_HDR)); }catch(e){}
+    var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
+    try{ var r=await postToSheet({target:'graphicconfig',action:'upsert',keyValue:CC_HDR_K,row:{k:CC_HDR_K,v:JSON.stringify(CC_HDR),updatedAt:(typeof todayStr==='function'?todayStr():''),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}});
+      ccHdrUnsynced=!!(r&&r.ok===false);
+      if(r&&r.ok===false&&typeof toast==='function') toast('❌ ฐานข้อมูลไม่รับการบันทึกสีหัวคอลัมน์: '+(r.error||'ไม่ทราบสาเหตุ')+' — เก็บในเครื่องไว้ก่อน (ทีมยังไม่เห็น)','err'); }catch(e){ ccHdrUnsynced=true; }
+  }
+  window.ccHdrSet=function(s,hex){ if(!unlocked()||!CAL_STATUS[s]||!(window.hdrOk&&window.hdrOk(hex))) return; CC_HDR[s]=hex; ccHdrSave(); try{ renderPipeline(); }catch(e){} };
+  window.ccHdrReset=function(s){ if(!unlocked()||!CAL_STATUS[s]) return; delete CC_HDR[s]; ccHdrSave(); try{ renderPipeline(); }catch(e){} };
+  window.ccHdrMenu=function(ev,s){ if(!unlocked()||!window.hdrMenu) return; window.hdrMenu(ev,s,CAL_STATUS[s].t,CC_HDR[s]||'#3F6DB5','ccHdrSet','ccHdrReset'); };
   function plCard(x,s,canEdit){
     var st=CAL_STATUS[s];
     var tags=pillarTag(x.pillar)+fmtTag(x.format)+calChanChips(x.channel);
@@ -14864,7 +14892,8 @@ details.fm-more[open]{padding-bottom:6px;}
       var tools='';   // เครื่องมือคอลัมน์ย้ายไปอยู่ในเมนู ⋮ ที่หัวคอลัมน์ (gfxColMenu)
       var addC=canEd?'<button class="cc-pl-add" onclick="gfxAddIn(\''+AJ(c.key)+'\')">➕ เพิ่มการ์ด</button>':'';
       return '<div class="cc-pl-col" data-status="'+E(c.key)+'"'+(canEd?' ondragover="gfxDragOver(event)" ondragleave="gfxDragLeave(event)" ondrop="gfxDrop(event,\''+AJ(c.key)+'\')"':'')+'>'
-        +'<div class="cc-pl-colhead"><span class="cc-pl-dot" style="background:'+(c.color||'#7cb6e4')+'"></span><span class="cc-pl-colname">'+E(c.title)+(c.nocount?' <span style="font-size:9.5px;font-weight:700;color:#9aa4b5;background:#eef1f7;border-radius:5px;padding:0 5px;">ไม่นับ</span>':'')+'</span><span class="cc-pl-colcount">'+sp.open.length+'</span>'+(canEd?'<button type="button" class="gfx-colmore" title="จัดการคอลัมน์" aria-label="จัดการคอลัมน์" aria-haspopup="menu" onclick="gfxColMenu(event,\''+AJ(c.key)+'\')">⋮</button>':'')+'</div>'
+        +(function(){ var hs=window.hdrStyle?window.hdrStyle(c.hc):{head:'',name:'',count:'',more:''};
+          return '<div class="cc-pl-colhead"'+hs.head+'><span class="cc-pl-dot" style="background:'+(c.color||'#7cb6e4')+'"></span><span class="cc-pl-colname"'+hs.name+'>'+E(c.title)+(c.nocount?' <span style="font-size:9.5px;font-weight:700;color:#9aa4b5;background:#eef1f7;border-radius:5px;padding:0 5px;">ไม่นับ</span>':'')+'</span><span class="cc-pl-colcount"'+hs.count+'>'+sp.open.length+'</span>'+(canEd?'<button type="button" class="gfx-colmore" title="จัดการคอลัมน์ (ชื่อ · สี · เลื่อน · ลบ)" aria-label="จัดการคอลัมน์" aria-haspopup="menu"'+hs.more+' onclick="gfxColMenu(event,\''+AJ(c.key)+'\')">⋮</button>':'')+'</div>'; })()
         +tools+'<div class="cc-pl-cards">'+cardsHtml+'</div>'+addC+'</div>';
     }).join('')+(canEd?'<div class="cc-pl-col" style="background:transparent;border:none;box-shadow:none;min-width:150px;"><button class="cc-pl-add" style="border-style:dashed;height:44px;" onclick="gfxAddCol()">➕ เพิ่มคอลัมน์</button></div>':'')+'</div>';
     main.innerHTML=filterBar+board;
@@ -15067,6 +15096,8 @@ details.fm-more[open]{padding-bottom:6px;}
   window.gfxAddCol=function(){ if(!gfxCanEdit()) return; var t=prompt('ชื่อคอลัมน์ใหม่:',''); if(t==null) return; t=String(t).trim(); if(!t) return; var cols=gfxEnsureCols(gfxPerson); cols.push({key:gfxUid('col'),title:t,color:COL_PALETTE[cols.length%COL_PALETTE.length],done:false}); gfxSaveCols(gfxPerson); gfxReRender(); };
   window.gfxRenameCol=function(key){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); var c=cols.find(function(x){return x.key===key;}); if(!c) return; var t=prompt('แก้ชื่อคอลัมน์:',c.title||''); if(t==null) return; t=String(t).trim(); if(!t) return; c.title=t; gfxSaveCols(gfxPerson); gfxReRender(); };
   window.gfxColorCol=function(key){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); var c=cols.find(function(x){return x.key===key;}); if(!c) return; var idx=COL_PALETTE.indexOf(c.color); c.color=COL_PALETTE[(idx+1)%COL_PALETTE.length]; gfxSaveCols(gfxPerson); gfxReRender(); };
+  window.gfxSetColColor=function(key,hex){ if(!gfxCanEdit()||!(window.hdrOk&&window.hdrOk(hex))) return; var cols=gfxEnsureCols(gfxPerson); var c=cols.find(function(x){return x.key===key;}); if(!c) return; c.color=hex; c.hc=hex; gfxSaveCols(gfxPerson); gfxReRender(); };
+  window.gfxResetColColor=function(key){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); var c=cols.find(function(x){return x.key===key;}); if(!c) return; c.hc=''; gfxSaveCols(gfxPerson); gfxReRender(); };
   window.gfxToggleDoneCol=function(key){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); var c=cols.find(function(x){return x.key===key;}); if(!c) return; c.done=!c.done; gfxSaveCols(gfxPerson);
     gfxCardsOf(gfxPerson).forEach(function(x){ if(x.col===key){ if(c.done){ if(!x.doneAt){ x.doneAt=TS(); gfxUpsertLocal(x); gfxSyncCard(x); } } else if(x.doneAt){ x.doneAt=''; gfxUpsertLocal(x); gfxSyncCard(x); } } });
     gfxReRender(); TOAST(c.done?('“'+c.title+'” = คอลัมน์เสร็จแล้ว'):('ยกเลิกสถานะเสร็จของ “'+c.title+'”'),'ok'); };
@@ -15084,7 +15115,6 @@ details.fm-more[open]{padding-bottom:6px;}
     var k=AJ(key);
     var items=[
       ['✏️','แก้ชื่อคอลัมน์','gfxRenameCol(\''+k+'\')',''],
-      ['🎨','เปลี่ยนสีจุดหน้าชื่อ','gfxColorCol(\''+k+'\')',''],
       [c.done?'✅':'○', c.done?'เป็นคอลัมน์เสร็จแล้ว (กดเพื่อยกเลิก)':'ตั้งเป็นคอลัมน์เสร็จแล้ว','gfxToggleDoneCol(\''+k+'\')',''],
       [c.nocount?'🚫':'#', c.nocount?'ไม่นับเป็นงาน (กดเพื่อให้นับ)':'นับเป็นงาน (กดเพื่อไม่นับ)','gfxToggleNoCountCol(\''+k+'\')',''],
       ['◀','เลื่อนคอลัมน์ไปทางซ้าย','gfxMoveCol(\''+k+'\',-1)', idx<=0?'off':''],
@@ -15092,9 +15122,8 @@ details.fm-more[open]{padding-bottom:6px;}
       ['🗑️','ลบคอลัมน์','gfxDelCol(\''+k+'\')','danger']
     ];
     var m=document.createElement('div'); m.id='gfx-colmenu'; m.className='gfx-colmenu'; m.setAttribute('role','menu'); m.setAttribute('data-key',key);
-    m.innerHTML='<div class="gfx-colmenu-h">'+E(c.title)+'</div>'+items.map(function(it){
-      return '<button type="button" role="menuitem" class="'+it[3]+'"'+(it[3]==='off'?' disabled':'')+' onclick="gfxColMenuClose();'+it[2]+'"><span class="mi">'+it[0]+'</span><span>'+it[1]+'</span></button>';
-    }).join('');
+    var btnHtml=function(it){ return '<button type="button" role="menuitem" class="'+it[3]+'"'+(it[3]==='off'?' disabled':'')+' onclick="gfxColMenuClose();'+it[2]+'"><span class="mi">'+it[0]+'</span><span>'+it[1]+'</span></button>'; };
+    m.innerHTML='<div class="gfx-colmenu-h">'+E(c.title)+'</div>'+btnHtml(items[0])+(window.hdrSwatchBlock?window.hdrSwatchBlock('gfxSetColColor','gfxResetColColor',key,c.hc||'#3F6DB5','gfxColMenuClose'):'')+items.slice(1).map(btnHtml).join('');
     document.body.appendChild(m);
     var btn=ev&&ev.currentTarget||ev&&ev.target; var r=btn&&btn.getBoundingClientRect?btn.getBoundingClientRect():{right:window.innerWidth-20,bottom:60,top:40};
     var w=m.offsetWidth, h=m.offsetHeight;
@@ -16541,6 +16570,45 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   var m=document.querySelector('main');
   if(m && window.MutationObserver) new MutationObserver(sched).observe(m,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   sched();
+})();
+</script>
+<script id="colcolor-shared-2026-10-06">
+/* เลือกสีหัวคอลัมน์ (10 สีให้กด + เลือกสีเอง + คืนสีเดิม) — ใช้ร่วมกันทุกบอร์ด: Graphic Team · Content Pipeline (E-com มีของตัวเองแบบเดียวกัน) */
+(function(){
+  var PAL=['#3F6DB5','#26A69A','#E9557F','#EB5FA0','#9B7EF8','#F2994A','#E0A100','#5B8FF9','#3CA5A5','#6B7A99'], HEX6=/^#[0-9a-f]{6}$/i;
+  function textOn(hex){ var r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16); return ((0.299*r+0.587*g+0.114*b)>170)?'#1f2937':'#ffffff'; }
+  window.hdrOk=function(h){ return HEX6.test(h||''); };
+  window.hdrPalette=PAL;
+  /* คืนค่า attribute สำหรับหัวคอลัมน์ที่ตั้งสีเอง (ว่าง = ใช้สีมาตรฐาน) */
+  window.hdrStyle=function(hc){
+    if(!HEX6.test(hc||'')) return {head:'',name:'',count:'',more:''};
+    var fg=textOn(hc), dark=(fg==='#1f2937');
+    return {head:' style="background:'+hc+';color:'+fg+';"', name:' style="color:'+fg+'"', count:dark?' style="background:rgba(0,0,0,.12);color:#1f2937;"':'', more:dark?' style="color:#1f2937"':''};
+  };
+  /* บล็อกเลือกสี: setFn(key,hex) · resetFn(key) เป็นชื่อฟังก์ชัน global */
+  window.hdrSwatchBlock=function(setFn,resetFn,key,cur,closeFn){
+    var k=String(key).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); cur=HEX6.test(cur||'')?cur:'#3F6DB5'; var cl=closeFn?(closeFn+'();'):'';
+    var sw=PAL.map(function(h){ return '<span role="button" tabindex="0" title="'+h+'" onclick="'+cl+setFn+'(\''+k+'\',\''+h+'\')" style="display:inline-block;width:22px;height:22px;border-radius:50%;background:'+h+';cursor:pointer;margin:2px;box-shadow:'+(h.toLowerCase()===cur.toLowerCase()?'0 0 0 2px #fff,0 0 0 4px '+h:'none')+';"></span>'; }).join('');
+    return '<div style="padding:6px 10px 4px;"><div style="font-size:12px;color:var(--ink-soft,#6b7794);margin-bottom:4px;">🎨 สีหัวคอลัมน์</div>'+sw
+      +'<div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12.5px;"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;">เลือกสีเอง <input type="color" value="'+cur+'" onchange="'+cl+setFn+'(\''+k+'\',this.value)" style="width:34px;height:24px;padding:0;border:none;background:none;cursor:pointer;"></label>'
+      +'<a href="#" onclick="'+cl+resetFn+'(\''+k+'\');return false;" style="margin-left:auto;color:#2F6DA8;font-weight:600;">คืนสีเดิม</a></div></div>';
+  };
+  /* เมนู ⋮ เล็กๆ ที่มีแต่ตัวเลือกสี (ใช้กับ Content Pipeline) */
+  window.hdrMenuClose=function(){ var m=document.getElementById('hdr-colmenu'); if(m&&m.parentNode) m.parentNode.removeChild(m); };
+  window.hdrMenu=function(ev,key,title,cur,setFn,resetFn){
+    if(ev){ ev.stopPropagation(); ev.preventDefault(); }
+    var old=document.getElementById('hdr-colmenu'); if(old){ var same=old.getAttribute('data-key')===key; window.hdrMenuClose(); if(same) return; }
+    var m=document.createElement('div'); m.id='hdr-colmenu'; m.className='gfx-colmenu'; m.setAttribute('role','menu'); m.setAttribute('data-key',key);
+    m.innerHTML='<div class="gfx-colmenu-h">'+String(title||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</div>'+window.hdrSwatchBlock(setFn,resetFn,key,cur,'hdrMenuClose');
+    document.body.appendChild(m);
+    var b=ev&&(ev.currentTarget||ev.target), r=b&&b.getBoundingClientRect?b.getBoundingClientRect():{right:window.innerWidth-20,bottom:60,top:40}, w=m.offsetWidth, h=m.offsetHeight;
+    var left=Math.max(8,Math.min(r.right-w,window.innerWidth-w-8)), top=r.bottom+6; if(top+h>window.innerHeight-8) top=Math.max(8,r.top-h-6);
+    m.style.left=left+'px'; m.style.top=top+'px';
+  };
+  if(!window.__hdrMenuBound){ window.__hdrMenuBound=true;
+    document.addEventListener('click',function(e){ var m=document.getElementById('hdr-colmenu'); if(m && !m.contains(e.target)) window.hdrMenuClose(); });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape') window.hdrMenuClose(); });
+    window.addEventListener('resize',window.hdrMenuClose); window.addEventListener('scroll',window.hdrMenuClose,true); }
 })();
 </script>
 <script id="version-watch-2026-10-06">
