@@ -16841,7 +16841,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     {k:'spot',ic:'🔍',t:'จับผิดภาพ',d:'หาจุดที่ต่างกัน 5 จุดให้ไวที่สุด — โจทย์ประจำวัน 3 รอบ สะสมแต้มให้ทีม',on:true,score:true,mode:'sum',unit:'แต้ม',daily:true}];
   var screen='hub', tab='friend', bot={diff:'hard',side:'X'}, fmtPick=1, S=null, chan=null, conn='', presence={};
   var ALL={xo:{},num:{},snk:{},spot:{}}, scoresAt=0, inv=null, outInv=null, lb={}, rec={}, series={w:0,l:0,d:0};
-  var sound=true, oppGone=null, botT=null, invT=null, scT=null, flashT=null, origTitle='';
+  var errAt=0, sound=true, oppGone=null, botT=null, invT=null, scT=null, flashT=null, origTitle='';
   try{ sound=localStorage.getItem('gm_sound')!=='0'; }catch(e){}
   function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function js(t){ return String(t).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
@@ -17018,10 +17018,16 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
       conn='...'; var ch=SB_CLIENT.channel(TOPIC,{config:{broadcast:{self:false},presence:{key:(typeof sbEmail==='function'?sbEmail():me())}}}); chan=ch;
       ch.on('presence',{event:'sync'},readPresence);
       ch.on('broadcast',{event:'xo'},function(m){ onMsg((m&&m.payload)||m); });
-      ch.subscribe(function(s){ if(chan!==ch) return; if(s==='SUBSCRIBED'){ conn='ok'; track(); } else if(s==='CHANNEL_ERROR'||s==='TIMED_OUT'||s==='CLOSED'){ conn='err'; } refresh(); });
+      ch.subscribe(function(s){ if(chan!==ch) return; if(s==='SUBSCRIBED'){ conn='ok'; errAt=0; track(); } else if(s==='CHANNEL_ERROR'||s==='TIMED_OUT'||s==='CLOSED'){ conn='err'; if(!errAt) errAt=Date.now(); } refresh(); });
       refresh();
     }catch(e){ conn='err'; chan=null; refresh(); } }
   function disconnect(){ try{ if(chan&&typeof SB_CLIENT!=='undefined'&&SB_CLIENT){ var c=chan; chan=null; conn=''; presence={}; SB_CLIENT.removeChannel(c); } }catch(e){} chan=null; conn=''; presence={}; }
+  /* ตรวจสุขภาพการเชื่อมต่อ: เครื่องหลับ/เน็ตสะดุดแล้วช่องหลุด → สร้างช่องใหม่ให้เอง (ไม่ปล่อยค้าง) */
+  function health(){ if(!me()) return; if(!chan){ connect(); return; }
+    var cs=chan.state; if(cs===undefined||cs==='joined'){ if(conn!=='ok'){ conn='ok'; errAt=0; track(); refresh(); } return; }
+    if(conn==='ok'){ conn='err'; refresh(); } if(!errAt) errAt=Date.now();
+    if(Date.now()-errAt>4500){ errAt=0; disconnect(); connect(); } }
+  window.gmReconnect=function(){ errAt=0; disconnect(); connect(); refresh(); };
   function readPresence(){ try{ var st=chan.presenceState(), o={}; Object.keys(st).forEach(function(k){ var metas=st[k]||[]; var m=metas[metas.length-1]; if(m&&m.n) o[m.n]={st:m.st||'lobby',key:k}; }); presence=o; }catch(e){ presence={}; }
     if(S&&S.mode==='pvp'&&!S.sOver){ if(!presence[S.opp]){ if(!oppGone) oppGone=setTimeout(function(){ oppGone=null; if(S&&S.mode==='pvp'&&!S.sOver&&!presence[S.opp]) forfeitWin('คู่แข่งหลุดจากห้องเกม'); },14000); } else if(oppGone){ clearTimeout(oppGone); oppGone=null; } }
     refresh(); }
@@ -17107,7 +17113,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     return '<div class="gm-opt"><div class="gm-ol">รูปแบบแมตช์</div><div class="gm-segs">'+seg(1,'แมตช์เดียว')+seg(3,'Best of 3')+'</div>'+(fmtPick===3?'<div class="gm-hint">ชนะก่อน 2 ยก · ผลัดกันเดินก่อนทุกยก · เสมอไม่นับแต้ม (สูงสุด 5 ยก)</div>':'')+'</div>'; }
   function lobbyHtml(){
     if(!me()) return '<div class="gm-empty"><span class="e">🔑</span><span><b>เข้าสู่ระบบเพื่อเล่นกับเพื่อนร่วมทีม</b><small>ล็อกอินแล้วท้ากันแบบเรียลไทม์ได้ · หรือสลับไปแท็บ “เล่นกับบอท” ซ้อมมือก่อนก็ได้</small></span></div><button type="button" class="gm-btn pri" onclick="sbShowLoginModal()">🔑 เข้าสู่ระบบ</button>';
-    var h=''; if(conn==='err') h+='<div class="gm-warn">เชื่อมต่อห้องเกมไม่ได้ตอนนี้ — ลองสลับหน้าแล้วกลับมาใหม่ · เล่นกับบอทได้ตามปกติ</div>'; else if(conn!=='ok') h+='<div class="gm-warn soft">⏳ กำลังเข้าห้องเกม…</div>';
+    var h=''; if(conn!=='ok'){ return (conn==='err'?'<div class="gm-warn">การเชื่อมต่อห้องเกมของคุณหลุด (เครื่องหลับหรือเน็ตสะดุด) — กำลังเชื่อมต่อใหม่ให้อัตโนมัติ… <button type="button" class="gm-btn sm" onclick="gmReconnect()">🔄 เชื่อมต่อใหม่ตอนนี้</button><br><small>ระหว่างนี้เล่นกับบอทได้ตามปกติ · ไม่เกี่ยวกับว่าเพื่อนอยู่เมนูไหน</small></div>':'<div class="gm-warn soft">⏳ กำลังเข้าห้องเกม…</div>')+fmtSeg(); }
     if(outInv) h+='<div class="gm-inv out"><div class="t">⏳ รอ <b>'+nm(outInv.to)+'</b> ตอบรับ…</div><div class="b"><button type="button" class="gm-btn" onclick="gmCancelInv()">ยกเลิก</button></div></div>';
     h+=fmtSeg();
     var names=Object.keys(presence).filter(function(n){ return n!==me(); }).sort(function(a,b){ var o={lobby:0,away:1,play:2}; return (o[presence[a].st]||0)-(o[presence[b].st]||0)||(a<b?-1:1); });
@@ -17115,7 +17121,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     h+='<div class="gm-lh"><b>ผู้เล่นที่ออนไลน์</b><small>'+(conn==='ok'?(names.length+1)+' คน':'')+'</small></div>';
     if(!names.length) h+='<div class="gm-empty"><span class="e">🪑</span><span><b>ตอนนี้มีแค่คุณออนไลน์</b><small>พอเพื่อนล็อกอินและเปิดเว็บนี้ ชื่อจะโผล่ที่นี่ — ท้าได้แม้เขาอยู่เมนูอื่น (คำท้าจะเด้งให้เห็นเลย)</small></span></div>';
     else h+='<div class="gm-list">'+names.map(function(n){ var p=presence[n], stT=p.st==='play'?'กำลังเล่นอยู่':(p.st==='away'?'ออนไลน์อยู่เมนูอื่น — ท้าได้ คำท้าจะเด้ง':'อยู่ในห้องเกม — ว่าง');
-      var can=!busy&&p.st!=='play'&&conn==='ok'; return '<div class="gm-row"><span class="gm-pav">'+av(n,38)+'</span><span class="gm-rn"><b>'+nm(n)+'</b><small class="'+(p.st==='play'?'busy':'free')+'">'+stT+'</small></span><button type="button" class="gm-btn pri sm" onclick="gmChallenge(\''+js(n)+'\')"'+(can?'':' disabled')+'>⚔️ ท้าเล่น</button></div>'; }).join('')+'</div>';
+      var can=!busy&&p.st!=='play'&&conn==='ok'; return '<div class="gm-row"><span class="gm-pav">'+av(n,38)+'</span><span class="gm-rn"><b>'+nm(n)+'</b><small class="'+(p.st==='play'?'busy':'free')+'">'+stT+'</small></span><button type="button" class="gm-btn pri sm" onclick="gmChallenge(\''+js(n)+'\')"'+(can?'':' disabled title="'+(p.st==='play'?'เขากำลังเล่นอยู่':'คุณกำลังมีเกม/คำท้าค้างอยู่')+'"')+'>⚔️ ท้าเล่น</button></div>'; }).join('')+'</div>';
     return h; }
   function botHtml(){ var seg=function(k,v,l,cur){ return '<button type="button" class="gm-seg'+(cur===v?' on':'')+'" onclick="gmSet(\''+k+'\',\''+v+'\')">'+l+'</button>'; };
     return '<div class="gm-opt"><div class="gm-ol">ความเก่งของบอท</div><div class="gm-segs">'+seg('diff','easy','🙂 ง่าย',bot.diff)+seg('diff','mid','😏 กลาง',bot.diff)+seg('diff','hard','🔥 ยาก',bot.diff)+'</div>'
@@ -17277,14 +17283,15 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function onLeave(){ if(SNK.run) snkPause(); musicStop(); track(); }
   function wire(){ var t=document.querySelector('#nav .tab[data-view="game"]'); if(t) t.addEventListener('click',function(){ setTimeout(onEnter,30); });
     document.addEventListener('click',function(e){ var tb=e.target&&e.target.closest?e.target.closest('#nav .tab'):null; if(tb&&tb.getAttribute('data-view')!=='game') setTimeout(function(){ if(!viewActive()) onLeave(); },120); },true);
-    document.addEventListener('visibilitychange',function(){ if(document.hidden){ if(screen==='snk'&&SNK.run) snkPause(); musicStop(); } else if(viewActive()) musicPlay(curKey()); track(); });
+    document.addEventListener('visibilitychange',function(){ if(document.hidden){ if(screen==='snk'&&SNK.run) snkPause(); musicStop(); } else { if(viewActive()) musicPlay(curKey()); health(); } track(); });
+    window.addEventListener('online',function(){ errAt=0; if(chan) disconnect(); health(); });
     document.addEventListener('click',function(){ if(AC&&AC.state==='suspended'&&AC.resume) AC.resume(); if(viewActive()&&musicOn&&!MU.timer) musicPlay(curKey()); },true);   // เบราว์เซอร์ต้องมีการคลิกก่อนถึงจะเล่นเสียงได้
     document.addEventListener('keydown',function(e){ if(!viewActive()) return; var tg=e.target; if(tg&&(/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName)||tg.isContentEditable)) return; if(e.ctrlKey||e.metaKey||e.altKey) return;
       if(screen==='snk'){ var mp={ArrowUp:'U',ArrowDown:'D',ArrowLeft:'L',ArrowRight:'R',w:'U',s:'D',a:'L',d:'R',W:'U',S:'D',A:'L',D:'R'}[e.key]; if(mp){ e.preventDefault(); window.gmSnkDir(mp); } else if(e.key===' '){ e.preventDefault(); if(SNK.run) snkPause(); } }
       else if(screen==='num'&&N&&!N.done){ if(/^[0-9]$/.test(e.key)) window.gmNumKey(e.key); else if(e.key==='Backspace') window.gmNumDel(); else if(e.key==='Enter') window.gmNumOk(); } });
     window.addEventListener('pagehide',function(){ try{ if(S&&S.mode==='pvp'&&!S.sOver) send({t:'lv',id:S.id,from:me(),to:S.opp}); }catch(e){} });
     var lastMe=me();   // ล็อกอิน/ออกจากระบบทีหลัง → เชื่อม/ตัดห้องเกมให้เอง
-    setInterval(function(){ var m=me(); if(m!==lastMe){ lastMe=m; if(!m&&chan) disconnect(); refresh(); } if(m&&!chan) connect(); },2500);
+    setInterval(function(){ var m=me(); if(m!==lastMe){ lastMe=m; if(!m&&chan) disconnect(); refresh(); } health(); },2500);
     setTimeout(function(){ if(me()) connect(); loadAll(false); },1200);
     if(viewActive()) onEnter(); else render(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wire); else wire();
