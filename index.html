@@ -13909,7 +13909,7 @@ details.fm-more[open]{padding-bottom:6px;}
   function ecomSaveLocal(a){ try{ localStorage.setItem(ECOM_LOCAL_KEY, JSON.stringify(a)); }catch(e){} }
   /* ===== คอลัมน์ของบอร์ด E-com: เพิ่ม · แก้ชื่อ · เลือกสีหัวคอลัมน์ · ตั้งเป็นคอลัมน์ "เสร็จแล้ว" · เลื่อน · ลบ ได้เอง
      เก็บที่ตาราง graphic_config (k='ecom::cols') ใช้ร่วมทั้งทีม + สำรองในเครื่อง ===== */
-  var ECOM_COLS_LKEY='npd_ecom_cols_v1', ECOM_COLS_K='ecom::cols', ecomColsDirtyAt=0;
+  var ECOM_COLS_LKEY='npd_ecom_cols_v1', ECOM_COLS_K='ecom::cols', ecomColsDirtyAt=0, ecomColsUnsynced=false;
   var ECOM_HDR_PALETTE=['#3F6DB5','#26A69A','#E9557F','#EB5FA0','#9B7EF8','#F2994A','#E0A100','#5B8FF9','#3CA5A5','#6B7A99'];
   function ecomDefaultCols(){ return [ {key:'checklist',title:'📄 Check List',color:'#7cb6e4',hc:'',done:false}, {key:'onprocess',title:'🎬 On Process',color:'#ffb454',hc:'',done:false}, {key:'done',title:'✅ Done',color:'#26a69a',hc:'',done:true} ]; }
   var ECOM_COLS=ecomDefaultCols();
@@ -13927,12 +13927,18 @@ details.fm-more[open]{padding-bottom:6px;}
     try{ localStorage.setItem(ECOM_COLS_LKEY, JSON.stringify(ECOM_COLS)); }catch(e){}
     var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
     try{ var r=await postToSheet({target:'graphicconfig',action:'upsert',keyValue:ECOM_COLS_K,row:{k:ECOM_COLS_K,v:JSON.stringify(ECOM_COLS),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}});
-      if(r && r.ok===false && typeof toast==='function') toast('❌ ฐานข้อมูลไม่รับการบันทึกคอลัมน์: '+(r.error||'ไม่ทราบสาเหตุ')+' — เก็บในเครื่องไว้ก่อน (ทีมยังไม่เห็น)','err'); }catch(e){}
+      ecomColsUnsynced=!!(r && r.ok===false);
+      if(r && r.ok===false && typeof toast==='function') toast('❌ ฐานข้อมูลไม่รับการบันทึกคอลัมน์: '+(r.error||'ไม่ทราบสาเหตุ')+' — เก็บในเครื่องไว้ก่อน (ทีมยังไม่เห็น)','err'); }catch(e){ ecomColsUnsynced=true; }
   }
   async function ecomLoadCols(){
-    if(Date.now()-ecomColsDirtyAt<10000) return;   // เพิ่งแก้เอง → รอให้ฐานข้อมูลตามทัน กันค่าเก่าทับ
-    try{ var rows=await sbSelect('graphic_config','k=eq.'+encodeURIComponent(ECOM_COLS_K));
-      if(rows.length){ var c=ecomCleanCols(JSON.parse(rows[0].v||'[]')); if(c){ ecomApplyCols(c); try{ localStorage.setItem(ECOM_COLS_LKEY, JSON.stringify(c)); }catch(e){} } } }catch(e){}
+    if(Date.now()-ecomColsDirtyAt<10000 || ecomColsUnsynced) return;   // เพิ่งแก้เอง / ยังไม่ขึ้นฐานข้อมูล → อย่าให้ค่าเก่าทับ
+    try{
+      var rows=await sbSelect('graphic_config','k=eq.'+encodeURIComponent(ECOM_COLS_K));
+      var row=null; for(var i=0;i<rows.length;i++){ if(rows[i].k===ECOM_COLS_K){ row=rows[i]; break; } }   // เลือกเฉพาะแถวที่ชื่อตรง (ห้ามหยิบแถวแรกที่เจอ — เคยหยิบคอลัมน์ของบอร์ดกราฟฟิกมาใส่ผิด)
+      var c=null; if(row){ try{ c=ecomCleanCols(JSON.parse(row.v||'[]')); }catch(e){} }
+      if(c){ ecomApplyCols(c); try{ localStorage.setItem(ECOM_COLS_LKEY, JSON.stringify(c)); }catch(e){} }
+      else { ecomApplyCols(ecomDefaultCols()); try{ localStorage.removeItem(ECOM_COLS_LKEY); }catch(e){} }   // ฐานข้อมูลไม่มีค่า → ใช้ชุดเริ่มต้น 3 คอลัมน์
+    }catch(e){}   // เชื่อมต่อไม่ได้ → คงค่าเดิมในเครื่อง
   }
   function ecomColIdx(key){ for(var i=0;i<ECOM_COLS.length;i++){ if(ECOM_COLS[i].key===key) return i; } return -1; }
   function ecomColsCopy(){ return ECOM_COLS.map(function(c){ return Object.assign({},c); }); }
