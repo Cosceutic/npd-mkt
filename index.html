@@ -879,6 +879,19 @@ nav{ background:rgba(255,255,255,.15); backdrop-filter:blur(10px); -webkit-backd
 
 @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
 </style>
+<style id="rv-early-css"></style>
+<script>
+/* แสดงหน้าที่จำไว้ตั้งแต่ภาพแรก (กันหน้าปฏิทินโผล่ก่อนแล้วค่อยสลับตอนรีเฟรช) — ถอดออกทันทีที่ระบบสลับหน้าจริงเสร็จ */
+(function(){ try{
+  var hh=String(location.hash||'').replace(/^#/,''); var v=hh?new URLSearchParams(hh).get('v'):'office';   // ไม่มี # (เข้าครั้งแรก) = หน้าแรก CIL Team
+  if(!v || ['office','calendar','catalog','team','content','ecom','graphic'].indexOf(v)<0) return;
+  document.getElementById('rv-early-css').textContent=
+    '.view.active:not(#view-'+v+'){display:none !important;} #view-'+v+'{display:block !important;} '+
+    '#nav .tab.active:not([data-view="'+v+'"]){background:transparent !important;color:rgba(255,255,255,.9) !important;box-shadow:none !important;} '+
+    '#nav .tab[data-view="'+v+'"]{background:#fff !important;color:#5B6FB8 !important;box-shadow:0 5px 14px -5px rgba(40,54,110,.5) !important;}';
+  setTimeout(function(){ var e=document.getElementById('rv-early-css'); if(e) e.textContent=''; },8000);   // กันพลาด: ไม่ค้างเกิน 8 วินาที
+}catch(e){} })();
+</script>
 </head>
 <body>
 
@@ -2661,7 +2674,8 @@ async function loadProductsFromSheet(){
   try{
     SHEET_ROWS = (await sbSelect('products')).filter(r=>r.name);
     const now = new Date();
-    badge.textContent = 'Live from Supabase · Loaded ' + formatDate(now);
+    badge.textContent = '● อัปเดต ' + now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});   // เหมือนที่ระบบซิงก์อัตโนมัติแสดง (ไม่โชว์ข้อความวันที่แล้วค่อยเปลี่ยนเป็นเวลา)
+    badge.title = 'Live from Supabase · ' + formatDate(now) + ' (ระบบโหลดข้อมูลใหม่ให้เองเป็นระยะ)';
   }catch(err){
     console.error(err);
     SHEET_ROWS = [];
@@ -13904,7 +13918,7 @@ details.fm-more[open]{padding-bottom:6px;}
   var GRAPHIC_PRESET=['เมษา','น้ำฝน','ไอซ์'];
   var ECOM_TAGS_KEY='npd_ecom_tags';
   var ECOM=[], ecomBrand='all', ecomOwnerSel=new Set(), ecomDragId=null, ecomEditId=null, ecomPreset='checklist', ecomShowDoneArchive=false;
-  var ECOM_LOCAL_KEY='npd_ecom_v1';
+  var ECOM_LOCAL_KEY='npd_ecom_v1', ecomFirstDone=false;
   function ecomLocal(){ try{ return JSON.parse(localStorage.getItem(ECOM_LOCAL_KEY))||[]; }catch(e){ return []; } }
   function ecomSaveLocal(a){ try{ localStorage.setItem(ECOM_LOCAL_KEY, JSON.stringify(a)); }catch(e){} }
   /* ===== คอลัมน์ของบอร์ด E-com: เพิ่ม · แก้ชื่อ · เลือกสีหัวคอลัมน์ · ตั้งเป็นคอลัมน์ "เสร็จแล้ว" · เลื่อน · ลบ ได้เอง
@@ -14062,6 +14076,7 @@ details.fm-more[open]{padding-bottom:6px;}
       cache.forEach(function(c){ if(c.id && !byId[c.id] && (typeof window.livePendingRecent!=='function' || window.livePendingRecent(c.id))) rows.push(normEcom(c)); });   // เก็บเฉพาะการ์ดที่เพิ่งสร้าง/แก้เองและยังไม่ซิงค์ — ใบที่คนอื่นลบไปแล้วต้องหายด้วย
       ECOM=rows; ecomSaveLocal(ECOM);
     }catch(e){ ECOM=cache.map(normEcom); }
+    ecomFirstDone=true;
     return ECOM;
   }
   window.ecomLive={
@@ -14154,9 +14169,9 @@ details.fm-more[open]{padding-bottom:6px;}
           cards+='<button type="button" onclick="ecomToggleArchive()" style="width:100%;margin:6px 0 2px;border:1px dashed var(--line,#E7ECF5);background:#fff;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:600;color:var(--ink-soft);cursor:pointer;">🗄️ '+(ecomShowDoneArchive?'ซ่อน':'ดู')+'ที่จบแล้ว &gt;7 วัน ('+arch.length+')</button>';
           if(ecomShowDoneArchive) cards+=arch.map(function(x){ return ecomCard(x,s,canEd); }).join('');
         }
-        if(!cards) cards='<div class="cc-pl-empty">— ว่าง —</div>';
+        if(!cards) cards='<div class="cc-pl-empty">'+(ecomFirstDone?'— ว่าง —':'กำลังโหลด…')+'</div>';
       } else {
-        cards=list.map(function(x){ return ecomCard(x,s,canEd); }).join('')||'<div class="cc-pl-empty">— ว่าง —</div>';
+        cards=list.map(function(x){ return ecomCard(x,s,canEd); }).join('')||'<div class="cc-pl-empty">'+(ecomFirstDone?'— ว่าง —':'กำลังโหลด…')+'</div>';
       }
       if(window.chkFoldHtml) cards+=window.chkFoldHtml('ecom',s,list.length,sp.done.map(function(x){ return ecomCard(x,s,canEd); }));
       var addC=canEd?'<button class="cc-pl-add" onclick="ecomAddIn(\''+s+'\')">➕ เพิ่มการ์ด</button>':'';
@@ -15795,7 +15810,7 @@ details.fm-more[open]{padding-bottom:6px;}
 (function(){
   var TOPIC='npd-presence'; try{ TOPIC=localStorage.getItem('cil_topic_test')||TOPIC; }catch(e){}
   var AVT={green:'ว่าง · คุยได้', yellow:'พอคุยได้', red:'ไม่ว่าง'}, AVO={green:0,yellow:1,'':2,red:3};
-  var pres={ready:false, byName:{}, others:0}, chan=null, tracked='', filter='all', started=false, lastSb=null, offOpen=false;
+  var pres={ready:false, byName:{}, others:0, t0:Date.now()}, chan=null, tracked='', filter='all', started=false, lastSb=null, offOpen=false;
   try{ offOpen=localStorage.getItem('cil_off_open')==='1'; }catch(e){}
   function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function myEmail(){ try{ return (typeof sbLoggedIn==='function' && sbLoggedIn())?(sbEmail()||''):''; }catch(e){ return ''; } }
@@ -15901,6 +15916,7 @@ details.fm-more[open]{padding-bottom:6px;}
         sec+='<section class="cil-sec"><div class="cil-none">ทุกคนออนไลน์อยู่ 🎉</div></section>';
       }
     }
+    if(!pres.ready && Date.now()-pres.t0<6000){ host.innerHTML=meHtml+'<div class="cil-none" style="margin-top:16px;">⏳ กำลังตรวจสอบว่าใครออนไลน์อยู่…</div>'; return; }   // ยังไม่รู้สถานะออนไลน์ → ไม่โชว์ “ออฟไลน์ทุกคน” ที่ไม่จริง
     host.innerHTML=meHtml+filt+conn+sec;
   }
   function avOf(m){ return m.face?'<img src="'+esc(m.face)+'" alt="">':'<span class="in">'+esc(m.label.slice(0,1))+'</span>'; }
@@ -15980,6 +15996,7 @@ details.fm-more[open]{padding-bottom:6px;}
   started=true;
   sbInit().then(function(){ setTimeout(start,1500); }).catch(function(){});
   setInterval(ensure,5000);
+  setTimeout(function(){ if(!pres.ready) changed(); },6200);   // เชื่อมต่อไม่ได้ภายใน 6 วิ → แสดงรายชื่อตามที่รู้ (ไม่ค้างโหลด)
   document.addEventListener('visibilitychange',function(){ sync(false); });
   window.addEventListener('beforeunload',function(){ try{ if(chan) chan.untrack(); }catch(e){} });
   // หน้าแรกของเว็บ = CIL Team
@@ -16390,19 +16407,23 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     if(location.hash!==h){ try{ history.replaceState(null,'',location.pathname+location.search+h); }catch(e){} }
   }
   var restored=false;
+  function clearEarly(){ var e=document.getElementById('rv-early-css'); if(e) e.textContent=''; }
+  function applySub(st){
+    try{
+      if(st.v==='content' && st.s && typeof window.switchContentSub==='function') window.switchContentSub(st.s);
+      else if(st.v==='graphic' && st.p){ if(typeof window.gfxOpenPerson==='function'){ window.gfxOpenPerson(st.p); if(st.s && st.s!=='board' && typeof window.gfxSetSub==='function') window.gfxSetSub(st.s); } }
+      else if(st.v==='team' && st.s && typeof window.switchTeamSubview==='function') window.switchTeamSubview(st.s);
+    }catch(e){}
+  }
   function restore(){
     if(restored) return; restored=true;
-    var st=parse(); if(!st) return;
-    var t=document.querySelector('#nav .tab[data-view="'+st.v+'"]'); if(!t) return;
+    var st=parse();
+    if(!st){ var o=document.querySelector('#nav .tab[data-view="office"]'), cur=document.querySelector('#nav .tab.active'); if(o && cur && cur.getAttribute('data-view')==='calendar' && !(location.hash&&location.hash.length>1)) o.click(); clearEarly(); return; }
+    var t=document.querySelector('#nav .tab[data-view="'+st.v+'"]');
+    if(!t){ clearEarly(); return; }
     if(!t.classList.contains('active')) t.click();
-    setTimeout(function(){
-      try{
-        if(st.v==='content' && st.s && typeof window.switchContentSub==='function') window.switchContentSub(st.s);
-        else if(st.v==='graphic' && st.p){ if(typeof window.gfxOpenPerson==='function'){ window.gfxOpenPerson(st.p); if(st.s && st.s!=='board' && typeof window.gfxSetSub==='function') window.gfxSetSub(st.s); } }
-        else if(st.v==='team' && st.s && typeof window.switchTeamSubview==='function') window.switchTeamSubview(st.s);
-      }catch(e){}
-      save();
-    },350);
+    applySub(st); clearEarly();                       // สลับหน้าจริง + เมนูย่อยทันที แล้วค่อยถอดตัวช่วยภาพแรก
+    setTimeout(function(){ var c=current(); if(c && (c.s!==st.s || c.p!==st.p)) applySub(st); save(); },400);   // ถ้าเมนูย่อยยังไม่ตรง (ข้อมูลเพิ่งมา) ลองอีกครั้ง
   }
   // เปลี่ยนหน้า/เมนูย่อยเมื่อไหร่ → อัปเดต URL (รอให้เมนูทำงานเสร็จก่อนค่อยอ่านสถานะ)
   document.addEventListener('click',function(){ setTimeout(save,250); },true);
@@ -16410,7 +16431,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   window.restoreViewNow=restore;
   // โหลดหน้าแล้วคืนหน้าเดิมทันที (รันก่อนโค้ด “หน้าแรก = CIL Team” ซึ่งจะข้ามเมื่อมี # อยู่)
   function init(){ restore(); setTimeout(save,900); }   // ไม่มี # (เข้าครั้งแรก) → จดหน้าแรกไว้ด้วย
-  if(document.readyState==='complete') setTimeout(init,0); else window.addEventListener('load',function(){ setTimeout(init,0); });
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,0); }); else setTimeout(init,0);   // ไม่รอ load (ฟอนต์/รูปช้า) → สลับหน้าให้เร็วที่สุด
 })();
 </script>
 </body>
