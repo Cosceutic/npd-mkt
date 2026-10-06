@@ -16836,9 +16836,9 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   var LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
   var GAMES=[
     {k:'xo',ic:'❌⭕',t:'XO',d:'ต่อแถวให้ครบ 3 ช่องก่อนใคร — ท้าเพื่อนแบบเรียลไทม์ (แมตช์เดียว / Best of 3) หรือซ้อมกับบอท',on:true,score:false},
-    {k:'num',ic:'🔢',t:'ทายตัวเลข',d:'ถอดรหัสเลข 4 หลักที่ไม่ซ้ำกันใน 10 ครั้ง — โจทย์ประจำวัน ทั้งทีมได้โจทย์เดียวกัน ยิ่งทายน้อยครั้งยิ่งได้แต้มเยอะ',on:true,score:true,mode:'sum',unit:'แต้ม',daily:true},
+    {k:'num',ic:'🔢',t:'ทายตัวเลข',d:'ถอดรหัสเลข 4 หลักที่ไม่ซ้ำกันใน 10 ครั้ง — โจทย์ประจำวัน (นับคะแนนทีมวันละครั้ง) ยิ่งทายน้อยครั้งยิ่งได้แต้มเยอะ · เล่นฟรีเพิ่มได้ไม่จำกัด',on:true,score:true,mode:'sum',unit:'แต้ม',daily:true},
     {k:'snk',ic:'🐍',t:'เกมงู',d:'กินแอปเปิลให้ตัวยาวที่สุดโดยไม่ชนกำแพงหรือตัวเอง — ทำสถิติสูงสุดของสัปดาห์ให้ทีม',on:true,score:true,mode:'best',unit:'แต้ม',daily:false},
-    {k:'spot',ic:'🔍',t:'จับผิดภาพ',d:'หาจุดที่ต่างกัน 5 จุดให้ไวที่สุด — โจทย์ประจำวัน 3 รอบ สะสมแต้มให้ทีม',on:true,score:true,mode:'sum',unit:'แต้ม',daily:true}];
+    {k:'spot',ic:'🔍',t:'จับผิดภาพ',d:'หาจุดที่ต่างกัน 5 จุดให้ไวที่สุด — โจทย์ประจำวัน 3 รอบ (นับคะแนนทีมวันละครั้ง) · เล่นฟรีเพิ่มได้ไม่จำกัด',on:true,score:true,mode:'sum',unit:'แต้ม',daily:true}];
   var screen='hub', tab='friend', bot={diff:'hard',side:'X'}, fmtPick=1, S=null, chan=null, conn='', presence={};
   var ALL={xo:{},num:{},snk:{},spot:{}}, scoresAt=0, inv=null, outInv=null, lb={}, rec={}, series={w:0,l:0,d:0};
   var errAt=0, sound=true, oppGone=null, botT=null, invT=null, scT=null, flashT=null, origTitle='';
@@ -16856,7 +16856,8 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function pad(n){ return n<10?'0'+n:''+n; }
   function dayKey(d){ d=d||new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
   function weekKey(d){ d=d||new Date(); var t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())), day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day+3); var y=t.getUTCFullYear(), j=new Date(Date.UTC(y,0,4)); var w=1+Math.round(((t-j)/86400000-3+((j.getUTCDay()+6)%7))/7); return y+'-W'+pad(w); }
-  window.gmUtil={dayKey:dayKey,weekKey:weekKey};
+  function lastWk(){ return weekKey(new Date(Date.now()-7*86400000)); }
+  window.gmUtil={dayKey:dayKey,weekKey:weekKey,lastWeekKey:lastWk};
 
   /* ---------- สุ่มแบบกำหนด seed (ทุกคนได้โจทย์ประจำวันเดียวกัน) ---------- */
   function rng(seed){ var s=String(seed), h=1779033703^s.length; for(var i=0;i<s.length;i++){ h=Math.imul(h^s.charCodeAt(i),3432918353); h=(h<<13)|(h>>>19); }
@@ -16997,16 +16998,17 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     if(res==='w'){ cur.w++; cur.s++; cur.b=Math.max(cur.b,cur.s); } else if(res==='l'){ cur.l++; cur.s=0; } else cur.d++; await putOwn('xo',cur); }
   /* เกมคะแนน: mode 'sum' = สะสมรายสัปดาห์ · 'best' = สถิติสูงสุดของสัปดาห์ */
   async function recordScore(g,sc,day){ var n=me(), G=gameOf(g); if(!n||!G) return; var cur=await fetchOwn(g), wk=weekKey();
-    if(cur.wk!==wk){ cur.wk=wk; cur.ws=0; }
+    if(cur.wk!==wk){ if(cur.wk){ cur.pwk=cur.wk; cur.pws=+cur.ws||0; } cur.wk=wk; cur.ws=0; }   // เก็บคะแนนสัปดาห์ก่อนไว้ให้ “ผู้ชนะสัปดาห์ที่แล้ว”
     cur.ws=G.mode==='sum'?(+cur.ws||0)+sc:Math.max(+cur.ws||0,sc); cur.b=Math.max(+cur.b||0,sc); cur.p=(+cur.p||0)+1; cur.t=(+cur.t||0)+sc;
     if(day){ cur.ld=day; cur.lp=sc; } await putOwn(g,cur); }
   function wv(r){ return (r&&r.wk===weekKey())?(+r.ws||0):0; }
+  function wvPrev(r,lw){ if(!r) return 0; lw=lw||lastWk(); return r.wk===lw?(+r.ws||0):(r.pwk===lw?(+r.pws||0):0); }
   function playedToday(g){ var r=ALL[g][me()]; return !!(r&&r.ld===dayKey()); }
   function teamWeek(g){ var t=0,c=0; Object.keys(ALL[g]).forEach(function(n){ var v=wv(ALL[g][n]); if(v>0){ t+=v; c++; } }); return {total:t,players:c}; }
   function rankScore(g,kind){ var G=gameOf(g); return Object.keys(ALL[g]).map(function(n){ var r=ALL[g][n]; return {n:n,r:r,v:kind==='wk'?wv(r):(G.mode==='sum'?(+r.t||0):(+r.b||0))}; }).filter(function(x){ return x.v>0; }).sort(function(a,b){ return (b.v-a.v)||(a.n<b.n?-1:1); }); }
   function rankXo(){ return Object.keys(ALL.xo).map(function(n){ var s=ALL.xo[n], g=(+s.w||0)+(+s.l||0)+(+s.d||0); return {n:n,s:s,g:g,rate:g?(+s.w||0)/g:0}; }).filter(function(x){ return x.g>0; })
     .sort(function(a,b){ return ((+b.s.w||0)-(+a.s.w||0))||(b.rate-a.rate)||((+a.s.l||0)-(+b.s.l||0))||(a.n<b.n?-1:1); }); }
-  window.gmScore={weekKey:weekKey,wv:wv,teamWeek:teamWeek};
+  window.gmScore={weekKey:weekKey,wv:wv,wvPrev:wvPrev,teamWeek:teamWeek};
 
   /* ---------- Realtime (เชื่อมไว้ตลอดเมื่อล็อกอิน → คำท้าเด้งได้ทุกเมนู) ---------- */
   function myStatus(){ return (S&&S.mode==='pvp'&&!S.sOver)?'play':(viewActive()&&!document.hidden?'lobby':'away'); }
@@ -17108,11 +17110,11 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
       if(S.mode==='bot') b+='<button type="button" class="gm-btn pri" onclick="gmAgain()">'+lbl+'</button>';
       else if(!S.oppLeft) b+='<button type="button" class="gm-btn pri" onclick="gmAgain()"'+(S.reMe?' disabled':'')+'>'+(S.reMe?'⏳ รอ '+esc(dn(S.opp))+' ตอบรับ…':(S.oppRe?lbl+' — '+esc(dn(S.opp))+' พร้อมแล้ว':lbl+' (สลับฝั่ง)'))+'</button>'; }
     b+='<button type="button" class="gm-btn" onclick="gmQuit()">'+(S.over&&S.sOver?'กลับห้องรอ':'ออกจากเกม')+'</button>'; return '<div class="gm-ctl">'+b+'</div>'; }
-  function scoreLine(){ if(!S) return ''; if(S.mode==='bot') return '<div class="gm-series">ซ้อมกับบอท (ในหน้านี้): ชนะ <b>'+series.w+'</b> · เสมอ <b>'+series.d+'</b> · แพ้ <b>'+series.l+'</b> <small>(ไม่นับคะแนนทีม)</small></div>'; return '<div class="gm-series"><small>เล่นกับเพื่อน — นับเข้าตารางคะแนนทีม 🏆 ('+(S.fmt===3?'ซีรีส์ Best of 3 นับเป็น 1 แมตช์':'แมตช์เดียว')+')</small></div>'; }
+  function scoreLine(){ if(!S) return ''; if(S.mode==='bot') return '<div class="gm-series">เล่นกับบอท (ในหน้านี้): ชนะ <b>'+series.w+'</b> · เสมอ <b>'+series.d+'</b> · แพ้ <b>'+series.l+'</b> <small>(ไม่นับคะแนนทีม)</small></div>'; return '<div class="gm-series"><small>เล่นกับเพื่อน — นับเข้าตารางคะแนนทีม 🏆 ('+(S.fmt===3?'ซีรีส์ Best of 3 นับเป็น 1 แมตช์':'แมตช์เดียว')+')</small></div>'; }
   function fmtSeg(){ var seg=function(v,l){ return '<button type="button" class="gm-seg'+(fmtPick===v?' on':'')+'" onclick="gmFmt('+v+')">'+l+'</button>'; };
     return '<div class="gm-opt"><div class="gm-ol">รูปแบบแมตช์</div><div class="gm-segs">'+seg(1,'แมตช์เดียว')+seg(3,'Best of 3')+'</div>'+(fmtPick===3?'<div class="gm-hint">ชนะก่อน 2 ยก · ผลัดกันเดินก่อนทุกยก · เสมอไม่นับแต้ม (สูงสุด 5 ยก)</div>':'')+'</div>'; }
   function lobbyHtml(){
-    if(!me()) return '<div class="gm-empty"><span class="e">🔑</span><span><b>เข้าสู่ระบบเพื่อเล่นกับเพื่อนร่วมทีม</b><small>ล็อกอินแล้วท้ากันแบบเรียลไทม์ได้ · หรือสลับไปแท็บ “เล่นกับบอท” ซ้อมมือก่อนก็ได้</small></span></div><button type="button" class="gm-btn pri" onclick="sbShowLoginModal()">🔑 เข้าสู่ระบบ</button>';
+    if(!me()) return '<div class="gm-empty"><span class="e">🔑</span><span><b>เข้าสู่ระบบเพื่อเล่นกับเพื่อนร่วมทีม</b><small>ล็อกอินแล้วท้ากันแบบเรียลไทม์ได้ · หรือสลับไปแท็บ “เล่นกับบอท” ก่อนก็ได้</small></span></div><button type="button" class="gm-btn pri" onclick="sbShowLoginModal()">🔑 เข้าสู่ระบบ</button>';
     var h=''; if(conn!=='ok'){ return (conn==='err'?'<div class="gm-warn">การเชื่อมต่อห้องเกมของคุณหลุด (เครื่องหลับหรือเน็ตสะดุด) — กำลังเชื่อมต่อใหม่ให้อัตโนมัติ… <button type="button" class="gm-btn sm" onclick="gmReconnect()">🔄 เชื่อมต่อใหม่ตอนนี้</button><br><small>ระหว่างนี้เล่นกับบอทได้ตามปกติ · ไม่เกี่ยวกับว่าเพื่อนอยู่เมนูไหน</small></div>':'<div class="gm-warn soft">⏳ กำลังเข้าห้องเกม…</div>')+fmtSeg(); }
     if(outInv) h+='<div class="gm-inv out"><div class="t">⏳ รอ <b>'+nm(outInv.to)+'</b> ตอบรับ…</div><div class="b"><button type="button" class="gm-btn" onclick="gmCancelInv()">ยกเลิก</button></div></div>';
     h+=fmtSeg();
@@ -17131,7 +17133,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function xoRankHtml(){ var r=rankXo(); var h='<div class="gm-lh"><b>🏆 ตารางคะแนนทีม</b><small>เฉพาะแมตช์กับเพื่อน</small></div>';
     if(!r.length) return h+'<div class="gm-empty"><span class="e">🥇</span><span><b>ยังไม่มีใครลงสนาม</b><small>ชนะเพื่อนในทีมเป็นคนแรก แล้วชื่อคุณจะขึ้นอันดับ 1</small></span></div>';
     var medal=['🥇','🥈','🥉'];
-    return h+'<div class="gm-rank">'+r.slice(0,10).map(function(x,i){ var mine=x.n===me(), s=x.s; return '<div class="gm-rk'+(mine?' me':'')+'"><span class="no">'+(medal[i]||(i+1))+'</span><span class="gm-pav">'+av(x.n,32)+'</span><span class="gm-rn"><b>'+nm(x.n)+(mine?' <em>คุณ</em>':'')+'</b><small>ชนะ '+(+s.w||0)+' · เสมอ '+(+s.d||0)+' · แพ้ '+(+s.l||0)+((+s.s||0)>1?' · 🔥 ติดกัน '+s.s:'')+'</small></span><span class="pct">'+Math.round(x.rate*100)+'%</span></div>'; }).join('')+'</div>'; }
+    return h+howBox(HOW.xo)+'<div class="gm-rank">'+r.slice(0,10).map(function(x,i){ var mine=x.n===me(), s=x.s; return '<div class="gm-rk'+(mine?' me':'')+'"><span class="no">'+(medal[i]||(i+1))+'</span><span class="gm-pav">'+av(x.n,32)+'</span><span class="gm-rn"><b>'+nm(x.n)+(mine?' <em>คุณ</em>':'')+'</b><small>ชนะ '+(+s.w||0)+' · เสมอ '+(+s.d||0)+' · แพ้ '+(+s.l||0)+((+s.s||0)>1?' · 🔥 ติดกัน '+s.s:'')+'</small></span><span class="pct">'+Math.round(x.rate*100)+'%</span></div>'; }).join('')+'</div>'; }
   function backBar(){ return '<div class="gm-bar"><button type="button" class="gm-back" onclick="gmHome()">← Game Zone</button>'+audBar()+'</div>'; }
   function xoHtml(){
     var left='<div class="gm-card gm-play"><div class="gm-vs">'+(S?playerCard(me()||'ฉัน',S.me,!S.over&&turnOf(S.board)===S.me,'me')+vsMid()+playerCard(S.opp,other(S.me),!S.over&&turnOf(S.board)!==S.me,'opp'):'<div class="gm-vsidle">❌ <b>XO</b> ⭕</div>')+'</div>'+statusHtml()+boardHtml()+scoreLine()+controlsHtml()+'</div>';
@@ -17139,6 +17141,10 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
       +'<div class="gm-tabbody">'+(tab==='friend'?lobbyHtml():botHtml())+'</div></div><div class="gm-card gm-side">'+xoRankHtml()+'</div>';
     return backBar()+'<div class="gm-xo"><div class="gm-col">'+left+'</div><div class="gm-col">'+right+'</div></div>'; }
 
+  /* ---------- กล่องบอกโหมด (ใช้ร่วม ทายตัวเลข/จับผิดภาพ): โจทย์ประจำวัน = นับคะแนนทีม · เล่นฟรี = ไม่นับ ---------- */
+  function modeBanner(daily,g){ var pl=!!me()&&playedToday(g), rs=ALL[g][me()]||{};
+    if(daily) return '<div class="gm-mode d"><b>🗓️ โจทย์ประจำวัน — นับคะแนนให้ทีม</b><small>ทุกคนในทีมได้โจทย์เดียวกัน · เล่นได้วันละ 1 รอบ'+(me()?'':' · <a href="#" onclick="sbShowLoginModal();return false;">ล็อกอินเพื่อบันทึกคะแนน</a>')+'</small></div>';
+    return '<div class="gm-mode"><b>🎮 เล่นฟรี — ไม่นับคะแนนทีม</b><small>'+(pl?'วันนี้คุณทำคะแนนให้ทีมไปแล้ว +'+(+rs.lp||0)+' แต้ม ✓ ตอนนี้เล่นเพื่อความสนุก · โจทย์ประจำวันใหม่มาพรุ่งนี้':'เล่นกี่รอบก็ได้ โจทย์สุ่มใหม่ทุกครั้ง ไม่มีผลกับคะแนน')+'</small></div>'; }
   /* ---------- ทายตัวเลข ---------- */
   var N=null;
   function numKey(){ return 'gm_num_'+dayKey()+'_'+(me()||'anon'); }
@@ -17150,17 +17156,17 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
         if(!N.done&&N.guesses.length>=10){ N.done=true; N.win=false; N.pts=0; } N.saved=!!sv.saved; } }catch(e){} }
     numDraw(); }
   function numDraw(){ var m=document.getElementById('gm-main'); if(!m||!N) return; var rs=ALL.num[me()]||{}, today=playedToday('num');
-    var badge=N.daily?'<span class="gm-badge d">🗓️ โจทย์ประจำวัน · นับคะแนนทีม'+(me()?'':' (ล็อกอินเพื่อบันทึก)')+'</span>':'<span class="gm-badge">🎲 ซ้อมมือ · ไม่นับคะแนน</span>';
+    var badge=modeBanner(N.daily,'num');
     var slots=''; for(var i=0;i<4;i++){ slots+='<span class="gm-slot'+(N.cur[i]!==undefined?' f':'')+'">'+(N.cur[i]!==undefined?N.cur[i]:'')+'</span>'; }
     var pad=''; ['1','2','3','4','5','6','7','8','9'].forEach(function(d){ pad+='<button type="button" class="gm-key" onclick="gmNumKey(\''+d+'\')">'+d+'</button>'; }); pad+='<button type="button" class="gm-key fn" onclick="gmNumDel()" aria-label="ลบ">⌫</button><button type="button" class="gm-key" onclick="gmNumKey(\'0\')">0</button><button type="button" class="gm-key ok" onclick="gmNumOk()">ตกลง</button>';
     var hist=N.guesses.slice().reverse().map(function(g,i){ var n=N.guesses.length-i; return '<div class="gm-gr"><span class="no">'+n+'</span><span class="dg">'+g.g.split('').map(function(c){ return '<i>'+c+'</i>'; }).join('')+'</span><span class="fb"><b class="bu" title="เลขถูกและตรงตำแหน่ง">🎯 '+g.b+'</b><b class="cw" title="เลขถูกแต่ผิดตำแหน่ง">🔄 '+g.c+'</b></span></div>'; }).join('');
     var res=''; if(N.done){ res='<div class="gm-st '+(N.win?'w':'l')+'">'+(N.win?'🎉 ถอดรหัสได้ใน '+N.guesses.length+' ครั้ง'+(N.daily?' · +'+N.pts+' แต้มให้ทีม':''):'😵 หมด 10 ครั้งแล้ว — รหัสคือ <b>'+N.secret+'</b>')+'</div>'; }
-    var info=(!N.daily&&today)?'<div class="gm-hint c">วันนี้คุณเล่นโจทย์ประจำวันไปแล้ว ได้ '+(+rs.lp||0)+' แต้ม — พรุ่งนี้มีโจทย์ใหม่!</div>':'';
+    var info='';
     m.innerHTML='<div class="gm-nm">'+badge+'<div class="gm-nm-hint">ทาย <b>เลข 4 หลักที่ไม่ซ้ำกัน</b> · 🎯 = ถูกตัวและตรงตำแหน่ง · 🔄 = ถูกตัวแต่ผิดตำแหน่ง</div>'
       +'<div class="gm-nm-info">ครั้งที่ <b>'+Math.min(N.guesses.length+(N.done?0:1),10)+'</b>/10</div>'+info
       +(N.done?res:'<div class="gm-slots">'+slots+'</div><div class="gm-nm-msg">'+(N.msg?esc(N.msg):'&nbsp;')+'</div><div class="gm-pad">'+pad+'</div>')
       +(hist?'<div class="gm-hist">'+hist+'</div>':'')
-      +'<div class="gm-ctl">'+(N.done?'<button type="button" class="gm-btn pri" onclick="gmNumNew(false)">🎲 ซ้อมมืออีกรอบ</button>':'<button type="button" class="gm-btn" onclick="gmNumNew(false)">🎲 เปลี่ยนเป็นโจทย์ซ้อมมือ</button>')+'</div></div>'; }
+      +'<div class="gm-ctl">'+(N.done?'<button type="button" class="gm-btn pri" onclick="gmNumNew(false)">'+(N.daily?'🎮 เล่นฟรีต่อ (ไม่นับคะแนน)':'🔄 เล่นอีกรอบ (โจทย์ใหม่)')+'</button>':(N.daily?'':'<button type="button" class="gm-btn" onclick="gmNumNew(false)">🔄 เปลี่ยนโจทย์ใหม่</button>'))+'</div></div>'; }
   window.gmNumNew=function(daily){ numStart(daily); };
   window.gmNumKey=function(d){ if(!N||N.done) return; if(N.cur.length>=4) return; if(N.cur.indexOf(d)>=0){ N.msg='เลขห้ามซ้ำกัน'; sfx('bad'); numDraw(); return; } N.cur+=d; N.msg=''; sfx('move'); numDraw(); };
   window.gmNumDel=function(){ if(!N||N.done) return; N.cur=N.cur.slice(0,-1); N.msg=''; numDraw(); };
@@ -17215,7 +17221,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     var rings=sc.diffs.map(function(i){ var o=sc.left[i], f=found.indexOf(i)>=0; if(!f&&!miss) return ''; return '<circle cx="'+o.x.toFixed(1)+'" cy="'+o.y.toFixed(1)+'" r="26" class="'+(f?'gm-ring ok':'gm-ring miss')+'"/>'; }).join('');
     return '<svg class="gm-sp-svg'+(SPT.flash?' bad':'')+'" viewBox="0 0 '+SP_W+' '+SP_H+'" onclick="gmSpotClick(event)" role="img" aria-label="ภาพ'+(side==='L'?'ซ้าย':'ขวา')+'"><rect width="'+SP_W+'" height="'+SP_H+'" rx="14" fill="#f6f9ff"/>'+objs.map(function(o){ return o?shapeSvg(o):''; }).join('')+rings+'</svg>'; }
   function spotDraw(){ var m=document.getElementById('gm-main'); if(!m||!SPT) return; var today=playedToday('spot'), rs=ALL.spot[me()]||{};
-    var badge=SPT.daily?'<span class="gm-badge d">🗓️ โจทย์ประจำวัน · นับคะแนนทีม'+(me()?'':' (ล็อกอินเพื่อบันทึก)')+'</span>':'<span class="gm-badge">🎲 ซ้อมมือ · ไม่นับคะแนน</span>';
+    var badge=modeBanner(SPT.daily,'spot');
     var end=SPT.phase==='end', last=SPT.round>=SPT.rounds, r=SPT.results[SPT.results.length-1];
     var res=''; if(end&&r){ res='<div class="gm-st '+(r.all?'w':'d')+'">'+(r.all?'🎉 เจอครบ 5 จุด!':'⏱️ เจอ '+r.found+' จาก 5 จุด')+' · ยกนี้ได้ <b>'+r.pts+'</b> แต้ม <small>(เหลือ '+Math.ceil(r.left)+' วิ · ผิด '+r.wrong+')</small></div>'; }
     if(end&&last){ res+='<div class="gm-st w sum">รวมทั้งหมด <b>'+SPT.total+'</b> แต้ม'+(SPT.daily?' → เข้าคะแนนรวมทีมแล้ว':'')+'</div>'; }
@@ -17223,9 +17229,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
       +'<div class="gm-tbar"><i id="gm-sp-bar" style="width:'+(SPT.left/45*100)+'%"></i><b id="gm-sp-t">'+Math.ceil(SPT.left)+'</b></div>'
       +'<div class="gm-sp-pair">'+spotPanel('L')+spotPanel('R')+'</div>'
       +(!end?'<div class="gm-hint c">แตะตรงจุดที่ต่างกัน (แตะที่ภาพซ้ายหรือขวาก็ได้) · ผิดโดนหัก 25 แต้ม · ต่างกันได้ทั้ง สี รูปร่าง ขนาด หรือหายไป</div>':res)
-      +((!today&&!SPT.daily&&!end)?'':'')
-      +'<div class="gm-ctl">'+(end?(last?'<button type="button" class="gm-btn pri" onclick="gmSpotNew()">🎲 ซ้อมมืออีกรอบ</button>':'<button type="button" class="gm-btn pri" onclick="gmSpotNext()">▶ ยกต่อไป</button>'):'<button type="button" class="gm-btn" onclick="gmSpotNew()">🎲 เปลี่ยนเป็นโจทย์ซ้อมมือ</button>')+'</div>'
-      +((!SPT.daily&&today)?'<div class="gm-hint c">วันนี้คุณเล่นโจทย์ประจำวันไปแล้ว ได้ '+(+rs.lp||0)+' แต้ม — พรุ่งนี้มีโจทย์ใหม่!</div>':'')+'</div>'; }
+      +'<div class="gm-ctl">'+(end?(last?'<button type="button" class="gm-btn pri" onclick="gmSpotNew()">'+(SPT.daily?'🎮 เล่นฟรีต่อ (ไม่นับคะแนน)':'🔄 เล่นอีกรอบ (โจทย์ใหม่)')+'</button>':'<button type="button" class="gm-btn pri" onclick="gmSpotNext()">▶ ยกต่อไป</button>'):(SPT.daily?'':'<button type="button" class="gm-btn" onclick="gmSpotNew()">🔄 เปลี่ยนโจทย์ใหม่</button>'))+'</div></div>'; }
   window.gmSpotNew=function(){ spotStart(false); };
   window.gmSpotNext=function(){ if(SPT&&SPT.phase==='end'&&SPT.round<SPT.rounds) spotRound(SPT.round+1); };
   window.gmSpotClick=function(ev){ if(!SPT||SPT.phase!=='play') return; var svg=ev.currentTarget, rc=svg.getBoundingClientRect(); if(!rc.width) return;
@@ -17242,6 +17246,17 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   /* ---------- ฮับ + โครงหน้า + แผงอันดับ ---------- */
   function head(){ return '<div class="gm-head"><div class="gm-logo">🎮</div><div><h1>Game Zone</h1><p>พักสมองกับเกมเล็กๆ ของทีม CIL — แข่งกับเพื่อนแบบเรียลไทม์ หรือสะสมคะแนนให้ทีมทุกวัน</p></div></div>'; }
   function medalOf(i){ return ['🥇','🥈','🥉'][i]||String(i+1); }
+  /* ---------- คำอธิบาย “คะแนนนับยังไง” + ผู้ชนะสัปดาห์ที่แล้ว ---------- */
+  var HOW={
+    num:['<b>ทายตัวเลข:</b> ทายถูกในครั้งที่ n ได้ 110 − 10×n แต้ม (ครั้งแรก = 100 · ครั้งที่ 10 = 10 · ทายไม่ถูกใน 10 ครั้ง = 0)','นับเฉพาะ “โจทย์ประจำวัน” วันละ 1 รอบ · แต้มรายสัปดาห์ = ผลรวมของแต่ละวัน · เล่นฟรีไม่นับ'],
+    snk:['<b>เกมงู:</b> กินแอปเปิล 1 ลูก = 10 แต้ม','นับ “คะแนนสูงสุด” ของคุณในสัปดาห์นั้น (ไม่รวมสะสมทุกรอบ — เล่นเยอะไม่ได้เปรียบ ต้องเก่งขึ้นเอา)'],
+    spot:['<b>จับผิดภาพ:</b> แต่ละยก เจอ 1 จุด = 100 แต้ม · เจอครบ 5 จุดได้โบนัส “เวลาที่เหลือ × 3” · แตะผิดหัก 25 แต้ม','โจทย์ประจำวัน 3 ยก วันละ 1 รอบ · แต้มรายสัปดาห์ = ผลรวมของแต่ละวัน · เล่นฟรีไม่นับ'],
+    xo:['<b>XO:</b> ไม่มีแต้ม — นับ ชนะ/เสมอ/แพ้ ของแมตช์ที่เล่นกับเพื่อน แล้วจัดอันดับตามจำนวนที่ชนะ (เท่ากันดูอัตราชนะ)','Best of 3 นับเป็น 1 แมตช์ · เล่นกับบอทไม่นับ']};
+  var HOW_TEAM=['<b>คะแนนรวมทีม</b> = รวมแต้มรายสัปดาห์ของทุกคนในเกมทายตัวเลข เกมงู และจับผิดภาพ','เริ่มนับใหม่ทุกวันจันทร์ · ผลสัปดาห์ก่อนหน้าไปโชว์ที่ “ผู้ชนะสัปดาห์ที่แล้ว” หน้า Game Zone','ตอนนี้เป็นการแข่งเพื่อความสนุกและอันดับ — ยังไม่มีรางวัลอย่างเป็นทางการ (ทีมตกลงกันเองได้ เช่น รางวัลเล็กๆ ให้ผู้ชนะประจำสัปดาห์)'];
+  function howBox(list,title){ return '<details class="gm-how"><summary>'+(title||'📖 คะแนนนับยังไง?')+'</summary><ul>'+list.map(function(x){ return '<li>'+x+'</li>'; }).join('')+'</ul></details>'; }
+  function lastWeekHtml(){ var lw=lastWk(), rows=[], tot=0;
+    ['num','snk','spot'].forEach(function(g){ var G=gameOf(g), best=null; Object.keys(ALL[g]).forEach(function(n){ var v=wvPrev(ALL[g][n],lw); tot+=v; if(v>0&&(!best||v>best.v)) best={n:n,v:v}; }); if(best) rows.push('<span class="c"><i>'+G.ic+'</i> '+av(best.n,26)+' <b>'+nm(best.n)+'</b> <small>'+best.v+' '+G.unit+'</small></span>'); });
+    if(!rows.length) return ''; return '<div class="gm-lastwk"><div class="k">🏆 ผู้ชนะสัปดาห์ที่แล้ว <small>('+lw+' · ทีมรวม '+tot+' แต้ม)</small></div><div class="r">'+rows.join('')+'</div></div>'; }
   function hubHtml(){
     var tot=0, ppl={}; ['num','snk','spot'].forEach(function(g){ tot+=teamWeek(g).total; Object.keys(ALL[g]).forEach(function(n){ if(wv(ALL[g][n])>0) ppl[n]=1; }); });
     var banner='<div class="gm-hubteam"><div><div class="k">⭐ คะแนนรวมทีม · สัปดาห์นี้ <small>('+weekKey()+')</small></div><div class="v">'+tot+' <small>แต้ม</small></div></div><div class="s">'+Object.keys(ppl).length+' คนร่วมทำคะแนนแล้ว<br>เล่นเกมให้ทีมกันเยอะๆ นะ 💪</div></div>';
@@ -17250,14 +17265,14 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
         if(g.daily) stat+='<div class="dl'+(me()&&playedToday(g.k)?' done':'')+'">'+(me()&&playedToday(g.k)?'✓ วันนี้เล่นโจทย์ประจำวันแล้ว +'+((ALL[g.k][me()]||{}).lp||0):'🗓️ โจทย์ประจำวันรออยู่ — ทั้งทีมได้โจทย์เดียวกัน'+(me()?'':' (ล็อกอินเพื่อบันทึกคะแนน)'))+'</div>'; }
       else { var rx=rankXo()[0]; stat='<div class="st">'+(rx?'<span>'+medalOf(0)+' '+nm(rx.n)+' ชนะ <b>'+(+rx.s.w||0)+'</b></span>':'<span>ยังไม่มีใครลงสนาม</span>')+'</div>'; }
       return '<div class="gm-gc" onclick="gmOpen(\''+g.k+'\')" onkeydown="if(event.key===\'Enter\')gmOpen(\''+g.k+'\')" role="button" tabindex="0"><div class="ic">'+g.ic+'</div><div class="tx"><h3>'+esc(g.t)+'</h3><p>'+esc(g.d)+'</p>'+stat+'</div><span class="go">เล่นเลย →</span></div>'; }).join('');
-    return '<div class="gm-bar"><span></span>'+audBar()+'</div>'+banner+'<div class="gm-hub">'+cards+'</div>'; }
+    return '<div class="gm-bar"><span></span>'+audBar()+'</div>'+banner+lastWeekHtml()+howBox(HOW_TEAM.concat(['<b>เกมที่นับคะแนน</b> — กดเข้าเกมแต่ละเกมเพื่อดูวิธีนับของเกมนั้น']))+'<div class="gm-hub">'+cards+'</div>'; }
   function shellHtml(){ return backBar()+'<div class="gm-xo"><div class="gm-col"><div class="gm-card gm-play"><div id="gm-main" class="gm-mainbox"></div></div></div><div class="gm-col"><div class="gm-card gm-side" id="gm-side"></div></div></div>'; }
   function sideHtml(G){ var kind=lb[G.k]||'wk', rows=rankScore(G.k,kind), tw=teamWeek(G.k);
     var team='<div class="gm-team"><div class="k">⭐ คะแนนรวมทีม · สัปดาห์นี้</div><div class="v">'+tw.total+' <small>'+G.unit+'</small></div><div class="s">'+tw.players+' คนร่วมทำคะแนน'+(G.mode==='best'?' · นับสถิติสูงสุดของแต่ละคน':' · สะสมจากโจทย์ประจำวัน')+'</div></div>';
     var tabs='<div class="gm-tabs sm"><button type="button" class="'+(kind==='wk'?'on':'')+'" onclick="gmLb(\'wk\')">สัปดาห์นี้</button><button type="button" class="'+(kind==='all'?'on':'')+'" onclick="gmLb(\'all\')">'+(G.mode==='sum'?'สะสมตลอดกาล':'สถิติสูงสุด')+'</button></div>';
     var list=rows.length?'<div class="gm-rank">'+rows.slice(0,10).map(function(x,i){ var mine=x.n===me(); return '<div class="gm-rk'+(mine?' me':'')+'"><span class="no">'+medalOf(i)+'</span><span class="gm-pav">'+av(x.n,32)+'</span><span class="gm-rn"><b>'+nm(x.n)+(mine?' <em>คุณ</em>':'')+'</b><small>เล่นแล้ว '+(+x.r.p||0)+' ครั้ง'+(kind==='wk'?' · สถิติสูงสุด '+(+x.r.b||0):'')+'</small></span><span class="pct">'+x.v+'</span></div>'; }).join('')+'</div>'
       :'<div class="gm-empty"><span class="e">🥇</span><span><b>ยังไม่มีใครลงคะแนน'+(kind==='wk'?'ในสัปดาห์นี้':'')+'</b><small>เป็นคนแรกที่ทำคะแนนให้ทีมเลย!</small></span></div>';
-    return team+'<div class="gm-lh"><b>🏆 อันดับ</b></div>'+tabs+list; }
+    return team+howBox((HOW[G.k]||[]).concat(['คะแนนรวมทีมนับรวมทุกเกม และเริ่มนับใหม่ทุกวันจันทร์']))+'<div class="gm-lh"><b>🏆 อันดับ</b></div>'+tabs+list; }
   function renderSide(){ var el=document.getElementById('gm-side'), G=gameOf(screen); if(!el||!G||!G.score) return; el.innerHTML=sideHtml(G); }
   function render(){ var r=root(); if(!r) return;
     if(screen==='hub'){ r.removeAttribute('data-g'); r.innerHTML=head()+hubHtml(); return; }
@@ -17344,6 +17359,9 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     +'.gm-warn{background:#fff1f1;color:#b3263e;border-radius:12px;padding:9px 12px;font-size:13px;margin-bottom:10px;}.gm-warn.soft{background:#f3f6fc;color:var(--g-ink2);}'
     +'.gm-inv{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#f3f6fc;border:1.5px solid var(--g-line);border-radius:16px;padding:12px 14px;margin-bottom:12px;}.gm-inv .b{display:flex;gap:8px;}'
     +'.gm-opt{margin-bottom:14px;}.gm-ol{font-weight:700;font-size:13px;margin-bottom:7px;}.gm-segs{display:flex;gap:6px;flex-wrap:wrap;}.gm-seg{flex:1;min-width:92px;border:1.5px solid var(--g-line);background:#fff;border-radius:14px;padding:10px 8px;font:600 13.5px "Sarabun",sans-serif;color:var(--g-ink2);cursor:pointer;}.gm-seg.on{background:#37415a;border-color:#37415a;color:#fff;}.gm-hint{font-size:12.5px;color:var(--g-ink2);margin-top:7px;}.gm-hint.c{text-align:center;}'
+    +'.gm-how{margin:0 0 14px;background:#f8faff;border:1px solid var(--g-line);border-radius:14px;padding:9px 14px;font-size:13px;color:var(--g-ink2);}.gm-how summary{cursor:pointer;font-weight:700;color:var(--g-ink);}.gm-how ul{margin:8px 0 2px 18px;padding:0;line-height:1.75;}.gm-how b{color:var(--g-ink);}'
+    +'.gm-lastwk{background:#fff;border:1px solid var(--g-line);border-radius:18px;padding:12px 16px;margin-bottom:14px;}.gm-lastwk .k{font-weight:700;font-size:13.5px;margin-bottom:8px;}.gm-lastwk .k small{font-weight:500;color:var(--g-ink2);}.gm-lastwk .r{display:flex;flex-wrap:wrap;gap:8px;}.gm-lastwk .c{display:inline-flex;align-items:center;gap:7px;background:#f3f6fc;border-radius:999px;padding:4px 14px 4px 8px;font-size:13px;}.gm-lastwk .c i{font-style:normal;font-size:16px;}.gm-lastwk .c small{color:var(--g-ink2);}'
+    +'.gm-mode{width:100%;box-sizing:border-box;background:#f3f6fc;border:1px solid var(--g-line);border-radius:16px;padding:10px 16px;text-align:center;line-height:1.5;}.gm-mode b{display:block;font-size:14px;color:var(--g-ink);}.gm-mode small{display:block;font-size:12.5px;color:var(--g-ink2);}.gm-mode.d{background:#fff6dc;border-color:#ffe0a0;}.gm-mode.d b{color:#8a5d00;}.gm-mode a{color:#2F6DA8;font-weight:700;}'
     +'.gm-badge{display:inline-block;background:#eef2fb;color:var(--g-ink2);border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:700;}.gm-badge.d{background:#fff1cf;color:#9a6a00;}'
     +'.gm-nm,.gm-sp,.gm-sn{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;}.gm-nm-hint{font-size:13px;color:var(--g-ink2);text-align:center;line-height:1.6;}.gm-nm-info{font-size:13.5px;color:var(--g-ink2);}.gm-nm-info b{color:var(--g-ink);}'
     +'.gm-slots{display:flex;gap:10px;margin-top:2px;}.gm-slot{width:56px;height:64px;border-radius:16px;background:#f1f5fd;border:2px solid var(--g-line);display:flex;align-items:center;justify-content:center;font:500 30px "Mitr",sans-serif;color:var(--g-ink);}.gm-slot.f{background:#fff;border-color:#bcd2ff;}'
