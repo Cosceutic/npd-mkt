@@ -15472,6 +15472,30 @@ details.fm-more[open]{padding-bottom:6px;}
     }catch(e){}
   }
 
+
+  /* ---------- ตัวเลขแจ้งเตือนบนไอคอนแท็บ (favicon) — เห็นได้ที่แถบแท็บแม้เครื่องไม่ยอมเด้งป๊อปอัป ---------- */
+  var favBase=null, favLast=-1;
+  function faviconBadge(c){
+    try{
+      if(c===favLast) return; favLast=c;
+      var link=document.querySelector('link[rel~="icon"]'); if(!link) return;
+      if(!favBase) favBase={href:link.href, type:link.type||''};
+      if(!c){ if(favBase.href && link.href!==favBase.href){ link.href=favBase.href; if(favBase.type) link.type=favBase.type; } return; }
+      var img=new Image();
+      img.onload=function(){
+        try{
+          var cv=document.createElement('canvas'); cv.width=cv.height=64; var x=cv.getContext('2d');
+          x.drawImage(img,0,0,64,64);
+          x.fillStyle='#E53935'; x.beginPath(); x.arc(46,18,17,0,Math.PI*2); x.fill();
+          x.lineWidth=3; x.strokeStyle='#fff'; x.stroke();
+          x.fillStyle='#fff'; x.font='bold 24px sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(c>9?'9+':String(c),46,19);
+          link.type='image/png'; link.href=cv.toDataURL('image/png');
+        }catch(e){}
+      };
+      img.src=favBase.href;
+    }catch(e){}
+  }
+
   /* ---------- กระพริบชื่อแท็บตอนไม่ได้เปิดหน้านี้อยู่ (ไม่ต้องขออนุญาตอะไร) ---------- */
   var blinkT=null;
   function titleNow(){ var c=unread(); return (c?('('+(c>99?'99+':c)+') '):'')+BASE_TITLE; }
@@ -15634,6 +15658,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var b=document.getElementById('nt-badge'), c=unread();
     if(b){ b.textContent=c>99?'99+':String(c); b.style.display=c?'flex':'none'; }
     try{ document.title=(c?('('+(c>99?'99+':c)+') '):'')+BASE_TITLE; }catch(e){}
+    faviconBadge(c);
     var p=document.getElementById('nt-panel'); if(p && p.classList.contains('open')) renderPanel();
   }
   function renderPanel(){
