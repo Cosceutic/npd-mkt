@@ -15418,7 +15418,8 @@ details.fm-more[open]{padding-bottom:6px;}
     if(deskPerm()!=='granted'){ window.ntDeskToggle(); return; }
     try{ if(!deskOn()){ localStorage.setItem(DESK_KEY,'on'); render(); } }catch(e){}
     if(typeof toast==='function') toast('ส่งแจ้งเตือนทดสอบแล้ว — ถ้าไม่ขึ้นที่มุมจอ ให้สลับไปแท็บอื่นแล้วกดทดสอบซ้ำ','info');
-    deskShow('🔔 ทดสอบแจ้งเตือนมุมจอ','ถ้าเห็นข้อความนี้ที่มุมจอ แปลว่าใช้งานได้แล้ว','npd-test',null,function(ok){
+    deskShow('🔔 ทดสอบแจ้งเตือนมุมจอ','ถ้าเห็นข้อความนี้ที่มุมจอ แปลว่าใช้งานได้แล้ว','npd-test-'+Date.now(),null,function(ok){
+      lastTest=ok?'ok':'fail'; deskReport(true);
       if(!ok && typeof toast==='function') toast('เบราว์เซอร์ส่งแล้ว แต่เครื่องไม่แสดง · '+SYS_HELP,'err'); });
   };
   function deskHint(){
@@ -15443,13 +15444,64 @@ details.fm-more[open]{padding-bottom:6px;}
       window.Notification.requestPermission().then(function(r){
         if(r==='granted'){ try{ localStorage.setItem(DESK_KEY,'on'); }catch(e){} deskShow('🔔 เปิดแจ้งเตือนมุมจอแล้ว','จากนี้ถ้ามีคนแท็ก/คอมเมนต์/ย้ายงานของคุณ จะเด้งที่มุมจอแม้อยู่แท็บอื่น','npd-test',null); if(typeof toast==='function') toast('เปิดแจ้งเตือนมุมจอแล้ว ✅','ok'); }
         else if(typeof toast==='function') toast('ยังไม่ได้อนุญาตการแจ้งเตือน — เปิดไม่ได้','info');
-        render();
+        render(); deskReport(true);
       });
       return;
     }
     var on=deskOn(); try{ localStorage.setItem(DESK_KEY,on?'off':'on'); }catch(e){}
     if(!on) deskShow('🔔 เปิดแจ้งเตือนมุมจอแล้ว','ทดสอบ: ข้อความนี้คือหน้าตาแจ้งเตือนที่จะเด้งที่มุมจอ','npd-test',null);
-    render();
+    render(); deskReport(true);
+  };
+
+  /* ---------- ทะเบียนสถานะแจ้งเตือนมุมจอของแต่ละคน (ให้ดูได้ที่หน้า CIL Team ว่าใครเปิด/ไม่เปิด) ---------- */
+  var lastTest='', lastRep='';
+  function uaShort(){
+    try{ var u=navigator.userAgent||''; var b=/Edg\//.test(u)?'Edge':(/OPR\//.test(u)?'Opera':(/Chrome\//.test(u)?'Chrome':(/Firefox\//.test(u)?'Firefox':(/Safari\//.test(u)?'Safari':'?'))));
+      var o=/Windows/.test(u)?'Windows':(/Mac OS X/.test(u)&&!/iPhone|iPad/.test(u)?'macOS':(/Android/.test(u)?'Android':(/iPhone|iPad/.test(u)?'iOS':'?'))); return b+' · '+o; }catch(e){ return '?'; }
+  }
+  function deskReport(force){
+    try{
+      if(!loggedIn()) return; var nick=emap()[String(myEmail()).toLowerCase()]; if(!nick) return;
+      var st={p:deskPerm(), on:deskOn(), t:lastTest, ua:uaShort(), at:nowStamp()};
+      var sig=[st.p,st.on,st.t,st.ua].join('|'), today=st.at.slice(0,10);
+      var prev=''; try{ prev=localStorage.getItem('npd_nt_rep_v1')||''; }catch(e){}
+      if(!force && (sig===lastRep || prev===sig+'|'+today)){ lastRep=sig; return; }
+      lastRep=sig; try{ localStorage.setItem('npd_nt_rep_v1',sig+'|'+today); }catch(e){}
+      postToSheet({target:'graphicconfig',action:'upsert',keyValue:'ntdesk::'+nick,row:{k:'ntdesk::'+nick,v:JSON.stringify(st),updatedAt:today,updatedBy:myEmail()}});
+    }catch(e){}
+  }
+  try{ if(navigator.permissions && navigator.permissions.query) navigator.permissions.query({name:'notifications'}).then(function(ps){ ps.onchange=function(){ deskReport(true); try{ render(); }catch(e){} }; }).catch(function(){}); }catch(e){}
+
+  /* ---------- ตรวจเครื่องนี้ (ผลเป็นข้อๆ) ---------- */
+  window.ntDiagClose=function(){ var ov=document.getElementById('nt-diag-overlay'); if(ov) ov.classList.remove('open'); };
+  window.ntDiag=function(){
+    var ov=document.getElementById('nt-diag-overlay');
+    if(!ov){ ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='nt-diag-overlay'; ov.style.zIndex='96'; ov.addEventListener('click',function(e){ if(e.target===ov) window.ntDiagClose(); }); document.body.appendChild(ov); }
+    var perm=deskPerm(), sup=deskSupported(), onFlag=deskOn();
+    var testState=(perm==='granted')?'run':'skip';
+    function ic(k){ return k==='ok'?'<span style="color:#1f9d6b;font-weight:700;">✓</span>':(k==='bad'?'<span style="color:#d33;font-weight:700;">✗</span>':(k==='wait'?'<span style="color:#b36b00;">⏳</span>':'<span style="color:#9aa4b5;">–</span>')); }
+    function row(k,label,detail){ return '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #EEF1F7;"><div style="width:20px;text-align:center;">'+ic(k)+'</div><div style="flex:1;font-size:13.5px;"><b>'+label+'</b>'+(detail?'<div style="color:#6b7794;font-size:12.5px;margin-top:2px;line-height:1.5;">'+detail+'</div>':'')+'</div></div>'; }
+    function paint(testRes){
+      var permTxt=perm==='granted'?'อนุญาตแล้ว':(perm==='denied'?'ถูกบล็อก':(perm==='default'?'ยังไม่ได้อนุญาต':'ไม่รองรับ'));
+      var rows=row(sup?'ok':'bad','เบราว์เซอร์รองรับแจ้งเตือน',uaShort())
+        +row(perm==='granted'?'ok':'bad','สิทธิ์ของเว็บนี้: '+permTxt, perm==='denied'?'กดไอคอนข้างช่อง URL → การแจ้งเตือน → อนุญาต แล้วรีเฟรชหน้านี้':(perm==='default'?'กดปุ่ม “ขออนุญาต” ด้านล่าง':''))
+        +row(perm!=='granted'?'skip':(onFlag?'ok':'bad'),'สวิตช์ในเว็บ (🖥️ มุมจอ)', perm!=='granted'?'':(onFlag?'เปิดอยู่':'ปิดอยู่ — เปิดที่ท้ายแผงกระดิ่ง'))
+        +row(testRes==='ok'?'ok':(testRes==='fail'?'bad':(testRes==='run'?'wait':'skip')),'ผลทดสอบส่งป๊อปอัป',
+          testRes==='ok'?'Chrome ยืนยันว่าแสดงป๊อปอัปแล้ว — ถ้าคุณไม่เห็นที่มุมจอ แปลว่า macOS ซ่อนไว้ (ดูที่ศูนย์แจ้งเตือนมุมขวาบน หรือโหมดโฟกัสเปิดอยู่)':(testRes==='fail'?'Chrome ส่งแล้วแต่ไม่ยืนยันว่าแสดง → ถูกบังที่ระดับเครื่อง':(testRes==='run'?'กำลังส่งป๊อปอัปทดสอบ…':'ต้องอนุญาตก่อนถึงจะทดสอบได้')));
+      var help='';
+      if(testRes==='fail'||testRes==='ok'){ help='<div style="margin-top:12px;background:#FFF8E6;border:1px solid #F3E2A9;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.65;"><b>ถ้าไม่เห็นป๊อปอัปที่มุมจอ ให้เช็กบน Mac:</b><br>1) การตั้งค่าระบบ → การแจ้งเตือน → <b>Google Chrome</b> และ <b>Google Chrome Helper (Alerts)</b> (ถ้ามี) ต้องเปิด “อนุญาตการแจ้งเตือน” · รูปแบบ “แบนเนอร์/การแจ้งเตือน”<br>2) ศูนย์ควบคุม → ปิดโหมด <b>โฟกัส / ห้ามรบกวน</b><br>3) ใน Chrome พิมพ์ <code>chrome://settings/content/notifications</code> → เว็บนี้ต้องอยู่ในรายการ “อนุญาต”<br>4) ถ้าแชร์จอ/ต่อจอภายนอกอยู่ macOS อาจซ่อนแจ้งเตือน</div>'; }
+      var btns='<button type="button" onclick="ntDiagClose()" style="background:#fff;border:1px solid #dfe4ee;color:#5b6472;border-radius:9px;padding:8px 16px;font-weight:600;cursor:pointer;">ปิด</button>'
+        +(perm==='default'?'<button type="button" onclick="ntDiagClose();ntDeskToggle()" style="background:#2F6DA8;border:none;color:#fff;border-radius:9px;padding:8px 18px;font-weight:700;cursor:pointer;">ขออนุญาต</button>':'')
+        +(perm==='granted'?'<button type="button" onclick="ntDiag()" style="background:#F9C4DA;border:none;color:#5b6472;border-radius:9px;padding:8px 18px;font-weight:700;cursor:pointer;">ตรวจซ้ำ</button>':'');
+      ov.innerHTML='<div class="modal-box" role="dialog" aria-modal="true" style="max-width:480px;width:94vw;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:16px 18px 11px;border-bottom:1px solid var(--line,#E7ECF5);"><div style="font-family:\'Anuphan\',\'Prompt\',sans-serif;font-weight:700;font-size:16px;">🔎 ตรวจแจ้งเตือนมุมจอของเครื่องนี้</div><span onclick="ntDiagClose()" aria-label="ปิด" style="cursor:pointer;font-size:20px;color:#9aa4b5;">✕</span></div>'
+        +'<div style="padding:6px 18px 4px;">'+rows+help+'</div>'
+        +'<div style="display:flex;justify-content:flex-end;gap:8px;padding:11px 18px 16px;border-top:1px solid var(--line,#E7ECF5);margin-top:8px;">'+btns+'</div></div>';
+    }
+    paint(testState); ov.classList.add('open');
+    if(testState==='run'){
+      deskShow('🔔 ทดสอบแจ้งเตือนมุมจอ','ถ้าเห็นข้อความนี้ที่มุมจอ แปลว่าใช้งานได้','npd-diag-'+Date.now(),null,function(ok){ lastTest=ok?'ok':'fail'; deskReport(true); if(ov.classList.contains('open')) paint(ok?'ok':'fail'); });
+    }
   };
   function deskLabel(){ var p=deskPerm(); if(p==='unsupported') return ''; if(p==='denied') return '🖥️ มุมจอ: ถูกบล็อก'; if(p==='default') return '🖥️ เปิดแจ้งเตือนมุมจอ'; return deskOn()?'🖥️ มุมจอ: เปิด':'🖥️ มุมจอ: ปิด'; }
 
@@ -15616,7 +15668,7 @@ details.fm-more[open]{padding-bottom:6px;}
       NT=rows;
       if(!ntFirstLoad && fresh.length) alertNew(fresh);
       ntFirstLoad=false; ntLoadedOnce=true;
-      render(); dueScan(); setTimeout(askMaybe,2500); ntRealtime();
+      render(); dueScan(); setTimeout(askMaybe,2500); setTimeout(function(){ deskReport(false); },3500); ntRealtime();
     }catch(e){
       var msg=String((e&&(e.message||e.code))||e);
       ntBroken=/does not exist|PGRST205|42P01|404|schema cache/i.test(msg)?'missing':'error';
@@ -15680,7 +15732,7 @@ details.fm-more[open]{padding-bottom:6px;}
         +'<div class="nt-time">'+E(ago(n.createdAt))+'</div>'+(n.readAt?'':'<span class="nt-dot"></span>')+'</div>';
     });
     var dpm=deskPerm(), dhelp=(dpm==='denied')?'เบราว์เซอร์บล็อกไว้ — กดไอคอนข้างช่อง URL → การแจ้งเตือน → อนุญาต แล้วรีเฟรชหน้านี้':((dpm==='granted'&&deskOn())?'เด้งที่มุมจอแม้อยู่แท็บอื่น · ต้องเปิดเว็บนี้ค้างไว้ในเบราว์เซอร์':'เปิดเพื่อให้เด้งที่มุมจอแม้อยู่แท็บอื่น');
-    html+='</div>'+((loggedIn()&&deskLabel())?('<div class="nt-dk"><button type="button" onclick="ntDeskToggle()" title="แจ้งเตือนที่มุมจอ ตอนไม่ได้เปิดหน้านี้อยู่">'+deskLabel()+'</button>'+(dpm==='granted'?'<button type="button" onclick="ntDeskTest()" title="ส่งแจ้งเตือนทดสอบ">🧪 ทดสอบ</button>':'')+'<small>'+dhelp+'</small></div>'):'')
+    html+='</div>'+((loggedIn()&&deskLabel())?('<div class="nt-dk"><button type="button" onclick="ntDeskToggle()" title="แจ้งเตือนที่มุมจอ ตอนไม่ได้เปิดหน้านี้อยู่">'+deskLabel()+'</button>'+'<button type="button" onclick="ntDiag()" title="ตรวจว่าเครื่องนี้เด้งแจ้งเตือนได้ไหม">🔎 ตรวจเครื่องนี้</button>'+(dpm==='granted'?'<button type="button" onclick="ntDeskTest()" title="ส่งแจ้งเตือนทดสอบ">🧪 ทดสอบ</button>':'')+'<small>'+dhelp+'</small></div>'):'')
       +'<div class="nt-pf"><button type="button" onclick="ntMarkAll()">✓ อ่านทั้งหมด</button>'
       +'<span class="nt-snd"><button type="button" onclick="ntSoundToggle()" title="เปิด/ปิดเสียง">'+(on?'🔊 เสียง: เปิด':'🔇 เสียง: ปิด')+'</button>'
       +'<button type="button" title="ฟังเสียง Content" onclick="ntSoundTest(\'content\')" style="background:#FFB7CF;">C</button>'
@@ -15884,6 +15936,11 @@ details.fm-more[open]{padding-bottom:6px;}
 #view-office .cil-nb{ border:none; background:none; padding:4px 6px; border-radius:8px; font:500 14px "Sarabun",sans-serif; color:var(--ofc-ink); cursor:pointer; }
 #view-office .cil-nb:hover,#view-office .cil-nb:focus-visible{ background:#EEF2FA; outline:none; }
 #view-office .cil-nb:not(:last-child)::after{ content:'·'; color:#b3bccd; margin-left:8px; }
+#view-office .cil-dgrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:4px 22px; padding:10px 8px 2px; }
+#view-office .cil-dr{ display:flex; align-items:center; gap:8px; font-size:13.5px; padding:3px 0; }
+#view-office .cil-dr i{ font-style:normal; width:18px; text-align:center; flex:0 0 18px; }
+#view-office .cil-dr small{ color:var(--ofc-ink2); font-size:12px; }
+#view-office .cil-dnote{ color:var(--ofc-ink2); font-size:12.5px; padding:8px 8px 2px; line-height:1.5; }
 #view-office .cil-pill{ display:inline-flex; align-items:center; gap:6px; width:max-content; max-width:100%; padding:2px 10px; border-radius:999px; font-size:12.5px; font-weight:700; line-height:1.35; }
 #view-office .cil-pill i{ width:8px; height:8px; border-radius:50%; flex:0 0 8px; background:currentColor; }
 #view-office .cil-pill.green{ background:#E4F6EC; color:#16683F; } #view-office .cil-pill.yellow{ background:#FFF3D3; color:#8A5B00; } #view-office .cil-pill.red{ background:#FDE7E4; color:#B3382C; }
@@ -15913,6 +15970,8 @@ details.fm-more[open]{padding-bottom:6px;}
 (function(){
   var TOPIC='npd-presence'; try{ TOPIC=localStorage.getItem('cil_topic_test')||TOPIC; }catch(e){}
   var AVT={green:'ว่าง · คุยได้', yellow:'พอคุยได้', red:'ไม่ว่าง'}, AVO={green:0,yellow:1,'':2,red:3};
+  var deskReg=null, deskRegAt=0, deskOpen=false;
+  try{ deskOpen=localStorage.getItem('cil_desk_open')==='1'; }catch(e){}
   var pres={ready:false, byName:{}, others:0, t0:Date.now()}, chan=null, tracked='', filter='all', started=false, lastSb=null, offOpen=false;
   try{ offOpen=localStorage.getItem('cil_off_open')==='1'; }catch(e){}
   function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -16019,9 +16078,46 @@ details.fm-more[open]{padding-bottom:6px;}
         sec+='<section class="cil-sec"><div class="cil-none">ทุกคนออนไลน์อยู่ 🎉</div></section>';
       }
     }
+    sec+=deskSection(all); loadDeskReg();
     if(!pres.ready && Date.now()-pres.t0<6000){ host.innerHTML=meHtml+'<div class="cil-none" style="margin-top:16px;">⏳ กำลังตรวจสอบว่าใครออนไลน์อยู่…</div>'; return; }   // ยังไม่รู้สถานะออนไลน์ → ไม่โชว์ “ออฟไลน์ทุกคน” ที่ไม่จริง
     host.innerHTML=meHtml+filt+conn+sec;
   }
+
+  /* ---------- สถานะแจ้งเตือนมุมจอของทีม (ใครเปิด/ไม่เปิด) ---------- */
+  async function loadDeskReg(){
+    if(Date.now()-deskRegAt<60000) return; deskRegAt=Date.now();
+    try{
+      var rows=await sbSelect('graphic_config','k=like.'+encodeURIComponent('ntdesk::*')); var reg={};
+      rows.forEach(function(r){ if(String(r.k).indexOf('ntdesk::')===0){ try{ reg[String(r.k).slice(8)]=JSON.parse(r.v||'{}'); }catch(e){} } });
+      deskReg=reg; changed();
+    }catch(e){ if(!deskReg) deskReg={}; }
+  }
+  function deskClass(rec){
+    if(!rec || !rec.p) return {k:'unk', ic:'❔', t:'ยังไม่ทราบ — ยังไม่ได้เปิดเว็บเวอร์ชันใหม่'};
+    if(rec.p==='granted' && rec.on && rec.t==='fail') return {k:'warn', ic:'⚠️', t:'เปิดแล้ว แต่ทดสอบแล้วเครื่องไม่แสดง'};
+    if(rec.p==='granted' && rec.on) return {k:'on', ic:'✅', t:'เปิดแล้ว'};
+    if(rec.p==='granted') return {k:'off', ic:'⚪', t:'ปิดเองในเว็บ'};
+    if(rec.p==='default') return {k:'no', ic:'⚪', t:'ยังไม่ได้อนุญาต'};
+    if(rec.p==='denied') return {k:'blocked', ic:'🚫', t:'เบราว์เซอร์บล็อกไว้'};
+    return {k:'unk', ic:'❔', t:'เบราว์เซอร์ไม่รองรับ'};
+  }
+  function deskSection(all){
+    if(!deskReg) return '';
+    var acc=all.filter(function(m){ return emailOfName(m.n); });
+    if(!acc.length) return '';
+    var rows=acc.map(function(m){ return {m:m, c:deskClass(deskReg[m.n]), r:deskReg[m.n]}; });
+    var on=rows.filter(function(x){ return x.c.k==='on'; }).length;
+    var order={on:0,warn:1,off:2,no:3,blocked:4,unk:5};
+    rows.sort(function(a,b){ return (order[a.c.k]-order[b.c.k]) || (a.m.ord-b.m.ord); });
+    var bar='<button type="button" class="cil-offbar'+(deskOpen?' open':'')+'" aria-expanded="'+(deskOpen?'true':'false')+'" onclick="cilToggleDesk()"><span class="t">🔔 แจ้งเตือนมุมจอ</span><span class="n">เปิดแล้ว '+on+' จาก '+rows.length+' คน</span><span class="chev" aria-hidden="true">▾</span></button>';
+    var body='';
+    if(deskOpen){
+      body='<div class="cil-dgrid">'+rows.map(function(x){ var ua=(x.r&&x.r.ua&&x.c.k==='on')?(' <small>· '+esc(x.r.ua)+'</small>'):''; return '<div class="cil-dr"><i>'+x.c.ic+'</i><span><b>'+esc(x.m.label)+'</b> <small>'+esc(x.c.t)+'</small>'+ua+'</span></div>'; }).join('')+'</div>'
+        +'<div class="cil-dnote">ใครที่ยังไม่เปิด: เปิดเว็บ → กดกระดิ่ง → “🖥️ เปิดแจ้งเตือนมุมจอ” (ข้อมูลนี้อัปเดตเมื่อเจ้าตัวเปิดเว็บเวอร์ชันล่าสุด)</div>';
+    }
+    return '<section class="cil-sec cil-offsec">'+bar+body+'</section>';
+  }
+  window.cilToggleDesk=function(){ deskOpen=!deskOpen; try{ localStorage.setItem('cil_desk_open',deskOpen?'1':'0'); }catch(e){} render(); };
   function avOf(m){ return m.face?'<img src="'+esc(m.face)+'" alt="">':'<span class="in">'+esc(m.label.slice(0,1))+'</span>'; }
   function openAttr(m){ return 'onclick="cilOpen(\''+String(m.n).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')"'; }
   function chipOn(m){
