@@ -16649,18 +16649,45 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   }
   window.pplLoad=load;
   /* ---------- หน้าต่างตั้งค่าโปรไฟล์ของฉัน ---------- */
+  var FR=200;   // ขนาดกรอบปรับรูป (px) · canvas ภายในวาด 2 เท่าให้คม
   function closeDlg(){ var o=document.getElementById('ppl-ov'); if(o&&o.parentNode) o.parentNode.removeChild(o); work=null; }
   function pvHtml(){ var f=work.img||baseFace(work.key), d=(document.getElementById('ppl-name')||{}).value||work.name||work.key;
-    return '<span class="ppl-av" data-keep="1" style="width:96px;height:96px;font-size:40px;background-color:'+colorOf(work.key)+';box-shadow:0 0 0 3px #fff,0 0 0 5px #D9E2F2;'+((f&&URL_OK.test(f))?'background-image:url(&quot;'+f+'&quot;);color:transparent;':'')+'">'+esc(initOf(d))+'</span>'; }
-  function renderPv(){ var h=document.getElementById('ppl-pv'); if(h) h.innerHTML=pvHtml(); var del=document.getElementById('ppl-del'); if(del) del.style.display=work.img?'':'none'; }
+    return '<span class="ppl-av" data-keep="1" style="width:120px;height:120px;font-size:48px;background-color:'+colorOf(work.key)+';box-shadow:0 0 0 3px #fff,0 0 0 5px #D9E2F2;'+((f&&URL_OK.test(f))?'background-image:url(&quot;'+f+'&quot;);color:transparent;':'')+'">'+esc(initOf(d))+'</span>'; }
+  /* ---- ตัวปรับรูป: ลากเลื่อน · ซูม · ปุ่มลูกศร ---- */
+  function fitImg(){ var iw=work.src.naturalWidth||work.src.width, ih=work.src.naturalHeight||work.src.height; work.iw=iw; work.ih=ih;
+    var sC=Math.min(FR/iw,FR/ih), sV=Math.max(FR/iw,FR/ih); work.sMin=sC; work.sMax=sV*4; work.s=sV; work.cx=0; work.cy=0; }
+  function clampPan(){ var mx=work.iw*work.s/2+FR/2-24, my=work.ih*work.s/2+FR/2-24; work.cx=Math.max(-mx,Math.min(mx,work.cx)); work.cy=Math.max(-my,Math.min(my,work.cy)); }
+  function setScale(v){ v=Math.max(work.sMin,Math.min(work.sMax,v)); var r=v/work.s; work.cx*=r; work.cy*=r; work.s=v; clampPan(); }
+  function paint(ctx,size){ var k=size/FR; ctx.fillStyle='#fff'; ctx.fillRect(0,0,size,size); ctx.imageSmoothingEnabled=true; try{ ctx.imageSmoothingQuality='high'; }catch(e){}
+    var w=work.iw*work.s*k, h=work.ih*work.s*k; ctx.drawImage(work.src,size/2+work.cx*k-w/2,size/2+work.cy*k-h/2,w,h); }
+  function redraw(){ var cv=document.getElementById('ppl-cv'); if(!cv||!work||!work.src) return; paint(cv.getContext('2d'),cv.width);
+    var z=document.getElementById('ppl-zr'); if(z){ var t=Math.log(work.s/work.sMin)/Math.log(work.sMax/work.sMin); z.value=String(Math.round(Math.max(0,Math.min(1,t))*1000)); } }
+  function buildEditor(h){
+    h.innerHTML='<div class="ppl-circle"><canvas id="ppl-cv" width="'+(FR*2)+'" height="'+(FR*2)+'"></canvas></div>'
+      +'<div class="ppl-zoom"><button type="button" class="ppl-btn sm" title="ย่อ" onclick="pplZoomBy(-1)">−</button><input type="range" id="ppl-zr" min="0" max="1000" value="0" oninput="pplZoomSet(this.value)" aria-label="ซูมรูป"><button type="button" class="ppl-btn sm" title="ขยาย" onclick="pplZoomBy(1)">+</button></div>'
+      +'<div class="ppl-nudge"><button type="button" class="ppl-btn sm" title="เลื่อนซ้าย" onclick="pplNudge(-8,0)">◀</button><button type="button" class="ppl-btn sm" title="เลื่อนขึ้น" onclick="pplNudge(0,-8)">▲</button><button type="button" class="ppl-btn sm" title="เลื่อนลง" onclick="pplNudge(0,8)">▼</button><button type="button" class="ppl-btn sm" title="เลื่อนขวา" onclick="pplNudge(8,0)">▶</button><button type="button" class="ppl-btn sm" title="กลับไปตำแหน่งเริ่มต้น" onclick="pplFitReset()">↺ รีเซ็ต</button></div>';
+    var cv=document.getElementById('ppl-cv'), ptrs={}, last=0;
+    cv.addEventListener('pointerdown',function(e){ try{ cv.setPointerCapture(e.pointerId); }catch(x){} ptrs[e.pointerId]={x:e.clientX,y:e.clientY}; last=0; cv.classList.add('drag'); });
+    cv.addEventListener('pointermove',function(e){ var p=ptrs[e.pointerId]; if(!p||!work||!work.src) return; var ids=Object.keys(ptrs), rc=cv.getBoundingClientRect(), sc=rc.width?FR/rc.width:1;
+      if(ids.length===1){ work.cx+=(e.clientX-p.x)*sc; work.cy+=(e.clientY-p.y)*sc; clampPan(); }
+      ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
+      if(ids.length===2){ var a=ptrs[ids[0]], b=ptrs[ids[1]], d=Math.hypot(a.x-b.x,a.y-b.y); if(last) setScale(work.s*d/last); last=d; }
+      redraw(); });
+    function up(e){ delete ptrs[e.pointerId]; last=0; if(!Object.keys(ptrs).length) cv.classList.remove('drag'); }
+    cv.addEventListener('pointerup',up); cv.addEventListener('pointercancel',up);
+    cv.addEventListener('wheel',function(e){ e.preventDefault(); if(!work||!work.src) return; setScale(work.s*Math.exp(-e.deltaY*0.0015)); redraw(); },{passive:false});
+  }
+  function renderPv(){ var h=document.getElementById('ppl-pv'); if(!h||!work) return; var del=document.getElementById('ppl-del');
+    if(work.src){ if(!document.getElementById('ppl-cv')) buildEditor(h); redraw(); } else { h.innerHTML=pvHtml(); }
+    if(del) del.style.display=(work.img||work.src)?'':'none'; }
   window.pplOpenMine=function(){
     if(typeof sbLoggedIn!=='function'||!sbLoggedIn()){ if(typeof toast==='function') toast('เข้าสู่ระบบก่อน','info'); return; }
-    closeDlg(); var key=myKey(), p=P[norm(key)]||{}; work={key:key,name:p.name||'',img:p.img||''};
+    closeDlg(); var key=myKey(), p=P[norm(key)]||{}; work={key:key,name:p.name||'',img:p.img||'',src:null};
     var ov=document.createElement('div'); ov.id='ppl-ov'; ov.className='ppl-ov';
     ov.innerHTML='<div class="ppl-box" role="dialog" aria-label="ตั้งค่าโปรไฟล์">'
       +'<div class="ppl-h">👤 โปรไฟล์ของฉัน</div>'
       +'<div class="ppl-sub">รูปและชื่อนี้จะแสดงในทุกเมนู — ออฟฟิศ · การ์ด (มุมขวาล่าง) · คอมเมนต์ · ปุ่มล็อกอิน</div>'
-      +'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin:12px 0 4px;"><div id="ppl-pv"></div>'
+      +'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin:12px 0 4px;"><div id="ppl-pv" class="ppl-pv"></div>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;"><button type="button" class="ppl-btn pri" onclick="document.getElementById(\'ppl-file\').click()">📷 อัปโหลดรูป</button><button type="button" id="ppl-del" class="ppl-btn" onclick="pplDelImg()">ลบรูปที่อัปโหลด</button></div>'
       +'<input type="file" id="ppl-file" accept="image/*" style="display:none" onchange="pplPick(this)"><div id="ppl-msg" class="ppl-msg"></div></div>'
       +'<label class="ppl-lb">ชื่อที่แสดง</label><input id="ppl-name" class="ppl-in" maxlength="24" placeholder="'+esc(key)+'" value="'+esc(work.name)+'" oninput="pplRenderPv()">'
@@ -16671,24 +16698,29 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   };
   window.pplClose=closeDlg;
   window.pplRenderPv=renderPv;
-  window.pplDelImg=function(){ if(!work) return; work.img=''; renderPv(); };
+  window.pplDelImg=function(){ if(!work) return; work.img=''; work.src=null; msg(''); renderPv(); };
+  window.pplZoomBy=function(d){ if(!work||!work.src) return; setScale(work.s*(d>0?1.12:1/1.12)); redraw(); };
+  window.pplZoomSet=function(v){ if(!work||!work.src) return; var t=Math.max(0,Math.min(1,(+v)/1000)); setScale(work.sMin*Math.pow(work.sMax/work.sMin,t)); redraw(); };
+  window.pplNudge=function(dx,dy){ if(!work||!work.src) return; work.cx+=dx; work.cy+=dy; clampPan(); redraw(); };
+  window.pplFitReset=function(){ if(!work||!work.src) return; fitImg(); redraw(); };
   function msg(t){ var m=document.getElementById('ppl-msg'); if(m) m.textContent=t||''; }
   window.pplPick=function(inp){
     var f=inp.files&&inp.files[0]; inp.value=''; if(!f||!work) return;
     if(!/^image\//.test(f.type)){ msg('เลือกไฟล์รูปภาพ (JPG / PNG)'); return; }
     var r=new FileReader();
     r.onload=function(){ var im=new Image();
-      im.onload=function(){ if(!work) return; var S=160, c=document.createElement('canvas'); c.width=c.height=S; var g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,S,S);
-        var side=Math.min(im.width,im.height), sx=(im.width-side)/2, sy=(im.height-side)/2; g.drawImage(im,sx,sy,side,side,0,0,S,S);
-        var q=0.86, d=c.toDataURL('image/jpeg',q); while(d.length>45000&&q>0.4){ q-=0.1; d=c.toDataURL('image/jpeg',q); }
-        work.img=d; msg('ตัดรูปเป็นสี่เหลี่ยมจัตุรัสจากตรงกลางให้แล้ว'); renderPv(); };
+      im.onload=function(){ if(!work) return; work.src=im; fitImg(); msg('ลากรูปเพื่อเลื่อน · ใช้แถบ ＋ − หรือลูกกลิ้งเมาส์เพื่อซูม'); renderPv(); };
       im.onerror=function(){ msg('เปิดรูปนี้ไม่ได้ ลองใช้ไฟล์ JPG หรือ PNG'); };
       im.src=String(r.result); };
     r.onerror=function(){ msg('อ่านไฟล์ไม่ได้'); };
     r.readAsDataURL(f);
   };
+  /* ส่งออกเป็น JPEG 160px จากสิ่งที่เห็นในกรอบ (วาดที่ 400px ก่อนแล้วย่อลง เพื่อให้คม) */
+  function exportImg(){ try{ var cv=document.getElementById('ppl-cv'); if(!cv||!work||!work.src) return '';
+    paint(cv.getContext('2d'),cv.width); var S=160, c=document.createElement('canvas'); c.width=c.height=S; var g=c.getContext('2d'); g.imageSmoothingEnabled=true; try{ g.imageSmoothingQuality='high'; }catch(e){} g.drawImage(cv,0,0,S,S);
+    var q=0.88, d=c.toDataURL('image/jpeg',q); while(d.length>45000&&q>0.4){ q-=0.1; d=c.toDataURL('image/jpeg',q); } return d; }catch(e){ return ''; } }
   window.pplSave=async function(){
-    if(!work) return; var key=work.key, nm=String((document.getElementById('ppl-name')||{}).value||'').trim().slice(0,24), img=work.img||'';
+    if(!work) return; if(work.src){ var ex=exportImg(); if(ex) work.img=ex; } var key=work.key, nm=String((document.getElementById('ppl-name')||{}).value||'').trim().slice(0,24), img=work.img||'';
     if(!nm&&!img) delete P[norm(key)]; else P[norm(key)]={k:key,name:nm,img:img};
     dirtyAt=Date.now(); persist(); SIG=JSON.stringify(P); closeDlg(); changed();
     if(typeof toast==='function') toast('บันทึกโปรไฟล์แล้ว 🎉','ok');
@@ -16714,7 +16746,12 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     +'.ppl-hint{font-size:11.5px;color:#6b7794;margin-top:5px;line-height:1.5;}.ppl-msg{font-size:11.5px;color:#1E7C4B;min-height:15px;text-align:center;}'
     +'.ppl-act{display:flex;gap:8px;margin-top:16px;}.ppl-act .ppl-btn{flex:1;}'
     +'.ppl-btn{border:1px solid #D9E2F2;background:#fff;border-radius:9px;padding:9px 14px;font:600 13px "Sarabun",sans-serif;cursor:pointer;color:#1F2A36;}.ppl-btn:hover{background:#F3F6FC;}'
-    +'.ppl-btn.pri{background:linear-gradient(120deg,#7cb6e4,#5aa0d8);color:#fff;border-color:transparent;}';
+    +'.ppl-btn.pri{background:linear-gradient(120deg,#7cb6e4,#5aa0d8);color:#fff;border-color:transparent;}'
+    +'.ppl-box{max-height:94vh;overflow:auto;}.ppl-pv{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;}'
+    +'.ppl-circle{width:200px;height:200px;border-radius:50%;overflow:hidden;box-shadow:0 0 0 3px #fff,0 0 0 5px #D9E2F2;background:#fff;}'
+    +'.ppl-circle canvas{width:200px;height:200px;display:block;cursor:grab;touch-action:none;}.ppl-circle canvas.drag{cursor:grabbing;}'
+    +'.ppl-zoom{display:flex;align-items:center;gap:8px;width:100%;max-width:260px;}.ppl-zoom input[type=range]{flex:1;min-width:0;accent-color:#5aa0d8;}'
+    +'.ppl-nudge{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}.ppl-btn.sm{padding:6px 11px;font-size:12.5px;line-height:1;}';
     document.head.appendChild(s); })();
   rebuild(); try{ if(typeof sbRenderAuthBtn==='function') sbRenderAuthBtn(); }catch(e){}
   setTimeout(load,700); setInterval(function(){ if(!document.hidden) load(); },90000);
