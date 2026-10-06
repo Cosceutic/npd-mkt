@@ -16879,13 +16879,13 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   var o0=window.openCardModal; if(typeof o0==='function'&&!o0.__ccm){ window.openCardModal=function(){ var r=o0.apply(this,arguments); saveSoon(); return r; }; window.openCardModal.__ccm=1; }
   var c0=window.closeCardModal; if(typeof c0==='function'&&!c0.__ccm){ window.closeCardModal=function(){ var r=c0.apply(this,arguments); saveSoon(); return r; }; window.closeCardModal.__ccm=1; }
   var st=document.createElement('style'); st.id='ccm-css'; st.textContent=
-    '.ccm-wrap{padding:10px 16px 8px;border-bottom:1px solid var(--line,#E7ECF5);background:#fff;}'
+    '.ccm-wrap{padding:10px 20px;border-bottom:1px solid var(--line,#E7ECF5);background:#F8FAFD;}'
     +'.ccm-by{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font-size:12.5px;color:var(--ink-soft,#6b7794);}'
     +'.ccm-lb{font-weight:600;color:var(--ink-soft,#6b7794);}.ccm-nm{color:var(--ink,#1F2A36);font-weight:700;}.ccm-sep{opacity:.5;margin:0 2px;}'
     +'.ccm-unk{color:#9aa4b5;font-style:italic;}.ccm-at{white-space:nowrap;}'
-    +'.cc-copylink{flex:0 0 auto;margin-left:auto;margin-right:10px;border:1px solid #D9E2F2;background:#fff;color:#2F6DA8;border-radius:999px;padding:6px 13px;font:700 12.5px "Sarabun",sans-serif;cursor:pointer;white-space:nowrap;}'
+    +'.cc-copylink{flex:0 0 auto;margin:0;border:1px solid #D9E2F2;background:#fff;color:#2F6DA8;border-radius:999px;padding:6px 13px;font:700 12.5px "Sarabun",sans-serif;cursor:pointer;white-space:nowrap;}'
     +'.cc-copylink:hover{background:#EAF3FB;}.cc-copylink.ok{background:#E6F6EC;color:#1E7C4B;border-color:#BFE6CE;}'
-    +'#cc-card-overlay .modal-header{display:flex;align-items:center;}';
+    +'#cc-card-overlay .modal-header{display:flex;align-items:center;gap:10px;}#cc-card-overlay .modal-header .mh-name{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;}#cc-card-overlay .modal-header .modal-close{margin-left:0;flex:0 0 auto;}'
   document.head.appendChild(st);
 })();
 </script>
