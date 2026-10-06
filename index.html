@@ -15566,7 +15566,7 @@ details.fm-more[open]{padding-bottom:6px;}
     try{
       if(!loggedIn() || !deskSupported() || deskPerm()!=='default' || (!force && !askOld()) || document.getElementById('nt-ask')) return;
       var el=document.createElement('div'); el.id='nt-ask'; el.setAttribute('role','dialog');
-      el.style.cssText='position:fixed;right:18px;bottom:18px;z-index:9998;max-width:340px;background:#fff;border:1px solid #E7ECF5;border-radius:16px;padding:14px 16px;box-shadow:0 18px 40px -14px rgba(40,54,110,.45);font-family:Sarabun,sans-serif;';
+      el.style.cssText='position:fixed;right:18px;bottom:76px;z-index:9998;max-width:340px;background:#fff;border:1px solid #E7ECF5;border-radius:16px;padding:14px 16px;box-shadow:0 18px 40px -14px rgba(40,54,110,.45);font-family:Sarabun,sans-serif;';
       el.innerHTML='<div style="font-weight:700;font-size:14.5px;margin-bottom:4px;">'+(force?'🔔 มีแจ้งเตือนเข้ามาตอนคุณอยู่แท็บอื่น':'🔔 ให้เด้งเตือนตอนอยู่แท็บอื่นไหม?')+'</div>'
         +'<div style="font-size:13px;color:#6b7794;line-height:1.5;margin-bottom:10px;">ถ้ามีคนแท็ก คอมเมนต์ หรือย้ายงานของคุณ จะเด้งที่มุมจอทันที แม้กำลังเปิดเว็บอื่นอยู่ (ต้องเปิดแท็บเว็บนี้ค้างไว้)</div>'
         +'<div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" id="nt-ask-no" style="border:1px solid #dfe4ee;background:#fff;color:#5b6472;border-radius:9px;padding:7px 14px;font-weight:600;cursor:pointer;">ไว้ทีหลัง</button><button type="button" id="nt-ask-yes" style="border:none;background:#2F6DA8;color:#fff;border-radius:9px;padding:7px 16px;font-weight:700;cursor:pointer;">เปิดแจ้งเตือน</button></div>';
@@ -16917,7 +16917,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
 
   /* ---------- เสียง / ฉลอง / เตือน ---------- */
   /* ---------- เสียงเอฟเฟกต์ + เพลงประกอบ (สังเคราะห์ด้วย WebAudio ในเบราว์เซอร์ — ไม่ต้องมีไฟล์เสียง) ---------- */
-  var AC=null, busM=null, busS=null, musicOn=true, musicVol=0.55, noiseBuf=null, MU={key:'',T:null,bars:null,step:0,next:0,tempo:1,timer:null}, TRK={};
+  var AC=null, busM=null, busS=null, musicOn=true, musicVol=0.4, noiseBuf=null, MU={key:'',T:null,bars:null,step:0,next:0,tempo:1,timer:null}, TRK={};
   try{ musicOn=localStorage.getItem('gm_music')!=='0'; var _mv=parseFloat(localStorage.getItem('gm_vol')); if(_mv>=0&&_mv<=1) musicVol=_mv; }catch(e){}
   function ac(){ try{ if(!AC){ var C=window.AudioContext||window.webkitAudioContext; if(!C) return null; AC=new C(); var cp=AC.createDynamicsCompressor(); cp.connect(AC.destination);
         busM=AC.createGain(); busM.gain.value=musicVol*0.5; busM.connect(cp); busS=AC.createGain(); busS.gain.value=0.9; busS.connect(cp); }
@@ -16966,7 +16966,8 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     MU.step++; MU.next+=spd; }
   function musicPump(){ if(!MU.T||!AC) return; var lim=AC.currentTime+0.14; if(MU.next<AC.currentTime-0.4) MU.next=AC.currentTime+0.05; var n=0; while(MU.next<lim&&n++<32) musicStep(); }
   function musicStop(){ try{ if(MU.timer){ clearInterval(MU.timer); MU.timer=null; } MU.key=''; MU.T=null; if(AC&&busM){ busM.gain.cancelScheduledValues(AC.currentTime); busM.gain.setTargetAtTime(0,AC.currentTime,.1); } }catch(e){} }
-  function musicPlay(key){ if(!key) return; MU.want=key; if(!musicOn) return; if(MU.key===key&&MU.timer) return; var a=ac(); if(!a) return;
+  /* เพลงเล่นเฉพาะตอนเปิดเมนู Game และแท็บอยู่หน้าจอเท่านั้น */
+  function musicPlay(key){ if(!key) return; MU.want=key; if(!musicOn) return; if(!viewActive()||document.hidden) return; if(MU.key===key&&MU.timer) return; var a=ac(); if(!a) return;
     try{ if(MU.timer){ clearInterval(MU.timer); MU.timer=null; } var tr=buildTrack(key); MU.key=key; MU.T=tr.T; MU.bars=tr.bars; MU.step=0; MU.tempo=1; MU.next=a.currentTime+0.12;
       busM.gain.cancelScheduledValues(a.currentTime); busM.gain.setValueAtTime(0.0001,a.currentTime); busM.gain.linearRampToValueAtTime(musicVol*0.5,a.currentTime+0.5); MU.timer=setInterval(musicPump,30); musicPump(); }catch(e){} }
   function musicTempo(x){ if(MU.T) MU.tempo=Math.max(.6,Math.min(1.7,x)); }
@@ -17335,7 +17336,8 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
       else if(screen==='num'&&N&&!N.done){ if(/^[0-9]$/.test(e.key)) window.gmNumKey(e.key); else if(e.key==='Backspace') window.gmNumDel(); else if(e.key==='Enter') window.gmNumOk(); } });
     window.addEventListener('pagehide',function(){ try{ if(S&&S.mode==='pvp'&&!S.sOver) send({t:'lv',id:S.id,from:me(),to:S.opp}); }catch(e){} });
     var lastMe=me();   // ล็อกอิน/ออกจากระบบทีหลัง → เชื่อม/ตัดห้องเกมให้เอง
-    setInterval(function(){ var m=me(); if(m!==lastMe){ lastMe=m; if(!m&&chan) disconnect(); refresh(); } health(); },2500);
+    setInterval(function(){ if(MU.timer&&(!viewActive()||document.hidden)) musicStop();   // ตัวเฝ้า: ถ้าเพลงยังเล่นทั้งที่ไม่ได้อยู่หน้า Game ให้หยุดเอง
+      var m=me(); if(m!==lastMe){ lastMe=m; if(!m&&chan) disconnect(); refresh(); } health(); },2500);
     setTimeout(function(){ if(me()) connect(); loadAll(false); },1200);
     if(viewActive()) onEnter(); else render(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wire); else wire();
@@ -17512,8 +17514,8 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
 (function(){
   var DAYS=90, MAXLEN=400, PAGE=60, RECENT_DAYS=14, EMOJIS=['👍','❤️','😂','🙏','🎉'];
   var DEPTS=[{k:'mkt',t:'Marketing',ic:'✨'},{k:'gfx',t:'Graphic',ic:'🎨'},{k:'npd',t:'NPD',ic:'🧪'},{k:'sc',t:'Supply Chain & Data',ic:'🚚'}];
-  var S={thread:null,threadOk:true,reads:{},readsOk:true,typing:{},rdT:{},wrote:{},theme:{all:{p:'plain',ov:null},rooms:{}},tscope:'all',themeOpen:false,ready:false,missing:false,started:false,open:false,room:'team',pane:'list',msgs:{},more:{},loaded:{},rx:{},sum:{},lastRead:{},sound:true,ack:false,showPick:false,sending:false,draft:{},mention:null,online:false};
-  var chan=null, chanOk=false, liveChan=null, liveOk=false, rdChan=null, typT=null, lastTyAt=0, typOn=false, pollT=null, gcDone=false, retryAt=0, ctxA=null, cardInfo={}, lightbox=null;
+  var S={groups:{},groupsOk:true,gdlg:null,gman:false,gadd:false,thread:null,threadOk:true,reads:{},readsOk:true,typing:{},rdT:{},wrote:{},theme:{all:{p:'plain',ov:null},rooms:{}},tscope:'all',themeOpen:false,ready:false,missing:false,started:false,open:false,room:'team',pane:'list',msgs:{},more:{},loaded:{},rx:{},sum:{},lastRead:{},sound:true,ack:false,showPick:false,sending:false,draft:{},mention:null,online:false};
+  var grpChan=null, chan=null, chanOk=false, liveChan=null, liveOk=false, rdChan=null, typT=null, lastTyAt=0, typOn=false, pollT=null, gcDone=false, retryAt=0, ctxA=null, cardInfo={}, lightbox=null;
   function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function js(t){ return String(t).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
   function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:v; }catch(e){ return d; } }
@@ -17529,13 +17531,13 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function nmH(n){ try{ return window.pplName?window.pplName(n):esc(n); }catch(e){ return esc(n); } }
   function online(n){ try{ return !!(window.cilIsOnline&&window.cilIsOnline(n)); }catch(e){ return false; } }
   function dmRoom(a,b){ return 'dm:'+[String(a).toLowerCase(),String(b).toLowerCase()].sort().join('|'); }
-  function isDM(r){ return /^dm:/.test(r); } function isCard(r){ return /^card:/.test(r); }
+  function isGrp(r){ return /^grp:/.test(r); } function grpOf(r){ return S.groups[r]||null; } function isDM(r){ return /^dm:/.test(r); } function isCard(r){ return /^card:/.test(r); }
   function dmOther(r){ var me=myEmail(), p=String(r).slice(3).split('|'); return p[0]===me?p[1]:p[0]; }
   function deptOf(r){ var k=String(r).replace(/^dept:/,''); for(var i=0;i<DEPTS.length;i++) if(DEPTS[i].k===k) return DEPTS[i]; return null; }
   function cutoff(days){ return new Date(Date.now()-days*86400000).toISOString(); }
   function sb(){ try{ return (typeof SB_CLIENT!=='undefined'&&SB_CLIENT)?SB_CLIENT:null; }catch(e){ return null; } }
   function say(m,k){ try{ if(typeof toast==='function') toast(m,k||'info'); }catch(e){} }
-  function roomTitle(r){ if(r==='team') return 'ทั้งทีม CIL'; var d=deptOf(r); if(isDM(r)) return dn(nickOf(dmOther(r))); if(d&&/^dept:/.test(r)) return d.t; if(isCard(r)){ var c=cardRef(r); return c&&c.t?c.t:'การ์ด'; } return r; }
+  function roomTitle(r){ if(r==='team') return 'ทั้งทีม CIL'; if(isGrp(r)){ var g=grpOf(r); return g?g.title:'กลุ่ม'; } var d=deptOf(r); if(isDM(r)) return dn(nickOf(dmOther(r))); if(d&&/^dept:/.test(r)) return d.t; if(isCard(r)){ var c=cardRef(r); return c&&c.t?c.t:'การ์ด'; } return r; }
   function cardRef(r){ var id=String(r).slice(5), i=cardInfo[id]; if(i) return i; var sm=S.sum[r]; if(sm&&sm.card) return sm.card; var f=null; try{ f=window.ccFindCard&&window.ccFindCard(id); }catch(e){} if(f) return snap(f); return {id:id,t:'การ์ด',k:''}; }
   function snap(f){ var c=f.c||{}; return {id:c.id,k:f.k,t:String(c.title||'การ์ด').slice(0,80),p:c.person||''}; }
   function dkey(){ return S.room+(S.thread?'#'+S.thread:''); }
@@ -17581,6 +17583,11 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     if(r.error) return; mergeMsgs(room,r.data||[]); if(!msgById(room,rid)){ var rr=await q(function(c){ return c.from('chat_messages').select('*').eq('id',rid).limit(1); }); if(!rr.error&&(rr.data||[]).length) mergeMsgs(room,rr.data); } }
   async function ensureRoots(room){ var arr=S.msgs[room]||[], miss={}; arr.forEach(function(m){ if(m.thread&&!msgById(room,m.thread)) miss[m.thread]=1; }); var ids=Object.keys(miss); if(!ids.length) return;
     var r=await q(function(c){ return c.from('chat_messages').select('*').in('id',ids.slice(0,30)); }); if(!r.error) mergeMsgs(room,r.data||[]); }
+  async function loadGroups(){ if(!S.groupsOk) return; var r=await q(function(c){ return c.from('chat_groups').select('*').limit(200); });
+    if(r.error){ if(isMissingErr(r.error)) S.groupsOk=false; return; } var next={}; (r.data||[]).forEach(function(g){ next[g.id]={id:g.id,title:g.title,members:(g.members||[]).map(function(e){ return String(e).toLowerCase(); }),owner:String(g.owner||'').toLowerCase(),updatedAt:g.updatedAt}; });
+    var wasIn=S.room&&isGrp(S.room)&&S.groups[S.room]; S.groups=next;
+    if(S.open&&S.room&&isGrp(S.room)&&!next[S.room]){ say('คุณไม่ได้อยู่ในกลุ่มนี้แล้ว','info'); window.chatOpen('team'); return; }
+    if(wasIn&&S.open) renderHead(); if(S.open){ renderRail(); renderGman(); } renderFab(); }
   async function loadReadsFor(room){ if(!S.readsOk) return; var r=await q(function(c){ return c.from('chat_reads').select('*').eq('room',room).limit(300); });
     if(r.error){ if(isMissingErr(r.error)) S.readsOk=false; return; } var m=S.reads[room]||(S.reads[room]={}); (r.data||[]).forEach(function(x){ var e=String(x.email||'').toLowerCase(), v=Date.parse(x.lastRead)||0; if(v>(m[e]||0)) m[e]=v; }); }
   async function loadMyReads(){ if(!S.readsOk) return; var me=myEmail(); var r=await q(function(c){ return c.from('chat_reads').select('*').eq('email',me).limit(500); });
@@ -17604,12 +17611,13 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     if(S.loaded[m.room]||S.msgs[m.room]) mergeMsgs(m.room,[row]); bumpSum(m);
     if(!known&&m.sender!==me){ var viewing=S.open&&S.room===m.room&&!document.hidden;
       if(viewing){ markRead(m.room); } else { (S.sum[m.room]||(S.sum[m.room]={unread:0})).unread=(S.sum[m.room].unread||0)+1; }
-      var dm=isDM(m.room), men=mentionsMe(m.body);
-      if(!viewing&&(dm||men)){ if(!quiet){ ping(); } notifyDesk((dm?dn(nickOf(m.sender)):dn(nickOf(m.sender))+' · '+roomTitle(m.room)),m.body||'🖼️ รูปภาพ',m.room); } }
+      var dm=isDM(m.room)||isGrp(m.room), men=mentionsMe(m.body);
+      if(!viewing&&(dm||men)){ if(!quiet){ ping(); } notifyDesk((isDM(m.room)?dn(nickOf(m.sender)):dn(nickOf(m.sender))+' · '+roomTitle(m.room)),m.body||'🖼️ รูปภาพ',m.room); } }
     return m; }
   function afterIngest(){ try{ if(S.open&&S.room) ensureRoots(S.room).then(function(){ if(S.open) renderMsgs(false); }); }catch(e){} renderFab(); if(S.open){ renderRail(); if(S.room) renderMsgs(true); } }
   async function send(){
     var ta=document.getElementById('ch-ta'); if(!ta||S.sending) return; var room=S.room, me=myEmail(); if(!me||!room) return;
+    if(isGrp(room)&&!grpOf(room)){ say('คุณไม่ได้อยู่ในกลุ่มนี้แล้ว','info'); return; }
     var text=ta.value.trim(), img=S.pendingImg||'', card='';
     if(!text&&!img) return; if(text.length>MAXLEN){ say('ข้อความยาวเกิน '+MAXLEN+' ตัวอักษร — แชทนี้เน้นคุยสั้นๆ','info'); return; }
     var lm=/https?:\/\/[^\s]+[#&?]c=([A-Za-z0-9_-]{6,})[^\s]*/.exec(text);
@@ -17626,7 +17634,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     var names=mentionedNames(text); if(th&&!isDM(room)){ var rt=msgById(room,th); if(rt&&rt.sender!==me){ var rn=nickOf(rt.sender); if(names.indexOf(rn)<0&&typeof window.ntEmit==='function'){ try{ window.ntEmit({kind:'comment',board:'chat',names:[rn],refId:room,title:roomTitle(room),body:'ตอบกลับเธรดของคุณ: '+text.slice(0,100)}); }catch(e){} } } }
     if(names.length&&typeof window.ntEmit==='function'){ try{ window.ntEmit({kind:'mention',board:'chat',names:names,refId:room,title:roomTitle(room),body:text.slice(0,120)}); }catch(e){} } }
   window.chatRetry=function(id){ var room=S.room, arr=S.msgs[room]||[], m=arr.filter(function(x){ return x.id===id; })[0]; if(!m) return; arr.splice(arr.indexOf(m),1); var ta=document.getElementById('ch-ta'); if(ta&&!ta.value) ta.value=m.body||''; S.pendingImg=m.img||S.pendingImg; renderMsgs(true); renderImgChip(); if(ta){ ta.focus(); autoGrow(ta); } };
-  function mentionedNames(text){ var out=[], m=emap(), seen={}; Object.keys(m).forEach(function(e){ var n=m[e]; if(seen[n]||e===myEmail()) return; if(String(text).indexOf('@'+n)>=0||String(text).indexOf('@'+dn(n))>=0){ seen[n]=1; out.push(n); } }); return out; }
+  function mentionedNames(text){ var out=[], m=emap(), seen={}, g=isGrp(S.room)?grpOf(S.room):null; Object.keys(m).forEach(function(e){ var n=m[e]; if(seen[n]||e===myEmail()||(g&&g.members.indexOf(e)<0)) return; if(String(text).indexOf('@'+n)>=0||String(text).indexOf('@'+dn(n))>=0){ seen[n]=1; out.push(n); } }); return out; }
   window.chatDel=function(id){ var room=S.room; var mm0=msgById(room,id); if(mm0&&!mm0.thread&&repliesOf(room,id).length){ say('ข้อความนี้มีการตอบกลับ ลบไม่ได้ (ลบคำตอบทีละข้อความแทนได้)','info'); return; } if(typeof confirm==='function'&&!confirm('ลบข้อความนี้?')) return; var arr=S.msgs[room]||[]; var m=arr.filter(function(x){ return x.id===id; })[0]; if(!m||m.sender!==myEmail()) return; if(!m.thread&&repliesOf(room,id).length){ say('ข้อความนี้มีการตอบกลับ ลบไม่ได้ (ลบคำตอบทีละข้อความแทนได้)','info'); return; } arr.splice(arr.indexOf(m),1); renderMsgs(false);
     q(function(c){ return c.from('chat_messages').delete().eq('id',id); }).then(function(r){ if(r.error) say('ลบไม่สำเร็จ','err'); }); };
   window.chatReact=function(id,emoji){ var me=myEmail(), room=S.room, mm=S.rx[id]||(S.rx[id]={}), l=mm[emoji]||[], has=l.indexOf(me)>=0, rid=id+'|'+me+'|'+emoji;
@@ -17644,35 +17652,41 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function connectLive(){ var c=sb(); if(!c||liveChan) return; try{ var lc=c.channel('npd-chat-live',{config:{broadcast:{self:false}}}); liveChan=lc;
       lc.on('broadcast',{event:'ty'},function(m){ onTyping((m&&m.payload)||m); });
       lc.subscribe(function(st){ if(st==='SUBSCRIBED') liveOk=true; else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'||st==='CLOSED'){ liveOk=false; try{ c.removeChannel(lc); }catch(e){} if(liveChan===lc) liveChan=null; } }); }catch(e){ liveChan=null; liveOk=false; } }
+  function subscribeGroups(){ var c=sb(); if(!c||grpChan||!S.groupsOk) return; try{ var gc=c.channel('npd-chat-groups'); grpChan=gc; var h=function(){ clearTimeout(S.gT); S.gT=setTimeout(function(){ loadGroups(); },250); };
+      ['INSERT','UPDATE','DELETE'].forEach(function(ev){ gc.on('postgres_changes',{event:ev,schema:'public',table:'chat_groups'},h); });
+      gc.subscribe(function(st){ if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'||st==='CLOSED'){ try{ c.removeChannel(gc); }catch(e){} if(grpChan===gc) grpChan=null; } }); }catch(e){ grpChan=null; } }
   function subscribeReads(){ var c=sb(); if(!c||rdChan||!S.readsOk) return; try{ var rc=c.channel('npd-chat-reads'); rdChan=rc; var h=function(p){ var x=p.new||p.record; if(!x||!x.room) return; var e=String(x.email||'').toLowerCase(), v=Date.parse(x.lastRead)||0, m=S.reads[x.room]||(S.reads[x.room]={}); if(v>(m[e]||0)){ m[e]=v; if(S.open&&S.room===x.room) renderMsgs(false); } };
       rc.on('postgres_changes',{event:'INSERT',schema:'public',table:'chat_reads'},h); rc.on('postgres_changes',{event:'UPDATE',schema:'public',table:'chat_reads'},h);
       rc.subscribe(function(st){ if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'||st==='CLOSED'){ try{ c.removeChannel(rc); }catch(e){} if(rdChan===rc) rdChan=null; } }); }catch(e){ rdChan=null; } }
+  function hsh(t){ var h=5381; t=String(t); for(var i=0;i<t.length;i++) h=((h<<5)+h+t.charCodeAt(i))>>>0; return 'h'+h.toString(36); }
+  function tyKey(r){ return isGrp(r)?hsh(r):r; }
+  function tyRoom(k){ if(!/^h[a-z0-9]+$/.test(k)) return k; for(var r in S.groups){ if(hsh(r)===k) return r; } return ''; }
   function sendTyping(on){ if(!liveChan||!liveOk||!S.room) return; var now=Date.now();
     if(on){ if(now-lastTyAt<2500) return; lastTyAt=now; typOn=true; } else { if(!typOn) return; typOn=false; lastTyAt=0; }
-    try{ liveChan.send({type:'broadcast',event:'ty',payload:{r:S.room,f:myEmail(),n:myNick(),x:on?1:0}}); }catch(e){} }
-  function onTyping(p){ if(!p||!p.r||!p.f) return; var me=myEmail(), f=String(p.f).toLowerCase(); if(f===me) return; if(isDM(p.r)&&String(p.r).slice(3).split('|').indexOf(me)<0) return;
+    try{ liveChan.send({type:'broadcast',event:'ty',payload:{r:tyKey(S.room),f:myEmail(),n:myNick(),x:on?1:0}}); }catch(e){} }
+  function onTyping(p){ if(!p||!p.r||!p.f) return; var me=myEmail(), f=String(p.f).toLowerCase(); if(f===me) return; p={r:tyRoom(String(p.r)),f:p.f,n:p.n,x:p.x}; if(!p.r) return; if(isDM(p.r)&&String(p.r).slice(3).split('|').indexOf(me)<0) return; if(isGrp(p.r)&&!(S.groups[p.r]&&S.groups[p.r].members.indexOf(f)>=0)) return;
     var m=S.typing[p.r]||(S.typing[p.r]={}); if(p.x){ m[f]={n:p.n||nickOf(f),until:Date.now()+4500}; } else delete m[f]; if(S.open&&S.room===p.r) renderTyping(); }
   function sweepTyping(){ var ch=false, now=Date.now(); Object.keys(S.typing).forEach(function(r){ Object.keys(S.typing[r]).forEach(function(e){ if(S.typing[r][e].until<now){ delete S.typing[r][e]; if(S.open&&S.room===r) ch=true; } }); }); if(ch) renderTyping(); }
   function renderTyping(){ var el=document.getElementById('ch-typing'); if(!el) return; var m=S.typing[S.room]||{}, names=Object.keys(m).map(function(e){ return dn(m[e].n); });
     if(!names.length){ el.innerHTML=''; el.style.display='none'; return; } el.style.display='flex';
     var t=names.length===1?esc(names[0])+' กำลังพิมพ์':(names.length===2?esc(names[0])+', '+esc(names[1])+' กำลังพิมพ์':'หลายคนกำลังพิมพ์'); el.innerHTML='<i></i><i></i><i></i><span>'+t+'…</span>'; var ms=document.getElementById('ch-msgs'); if(ms&&(ms.scrollHeight-ms.scrollTop-ms.clientHeight)<160) ms.scrollTop=ms.scrollHeight; }
-  function teardown(){ try{ if(chan&&sb()) sb().removeChannel(chan); if(liveChan&&sb()) sb().removeChannel(liveChan); if(rdChan&&sb()) sb().removeChannel(rdChan); }catch(e){} chan=null; chanOk=false; liveChan=null; liveOk=false; rdChan=null; clearInterval(pollT); clearInterval(typT); pollT=null; typT=null; S.reads={}; S.typing={}; S.wrote={}; S.started=false; S.ready=false; S.open=false; S.msgs={}; S.sum={}; S.loaded={}; S.rx={}; var r=document.getElementById('ch-root'); if(r) r.style.display='none'; }
+  function teardown(){ try{ if(chan&&sb()) sb().removeChannel(chan); if(liveChan&&sb()) sb().removeChannel(liveChan); if(rdChan&&sb()) sb().removeChannel(rdChan); if(grpChan&&sb()) sb().removeChannel(grpChan); }catch(e){} chan=null; chanOk=false; liveChan=null; liveOk=false; rdChan=null; grpChan=null; S.groups={}; clearInterval(pollT); clearInterval(typT); pollT=null; typT=null; S.reads={}; S.typing={}; S.wrote={}; S.started=false; S.ready=false; S.open=false; S.msgs={}; S.sum={}; S.loaded={}; S.rx={}; var r=document.getElementById('ch-root'); if(r) r.style.display='none'; }
   async function gc(){ if(gcDone) return; gcDone=true; var day=new Date().toISOString().slice(0,10); if(lsGet('chat_gc','')===day) return; lsSet('chat_gc',day); await q(function(c){ return c.rpc('chat_cleanup'); }); }
   async function start(){ if(S.started||Date.now()<retryAt) return; S.started=true; try{ if(typeof sbInit==='function') await sbInit(); }catch(e){}
     if(!lsGet('chat_first','')) lsSet('chat_first',String(Date.now())); try{ S.lastRead=JSON.parse(lsGet('chat_lr_'+myEmail(),'{}'))||{}; }catch(e){ S.lastRead={}; } S.sound=lsGet('chat_sound','1')!=='0'; S.ack=lsGet('chat_ack_v1','')==='1';
     try{ cardInfo=JSON.parse(lsGet('chat_cardinfo','{}'))||{}; }catch(e){ cardInfo={}; }
     try{ var th=JSON.parse(lsGet('chat_theme_v1','null')); if(th&&th.all) S.theme={all:th.all,rooms:th.rooms||{}}; }catch(e){}
-    await loadMyReads(); var ok=await loadRecent(); if(!ok){ S.started=false; renderFab(); return; } ensureDom(); renderFab(); subscribe(); connectLive(); subscribeReads(); gc(); clearInterval(typT); typT=setInterval(sweepTyping,1000); if(S.want){ var w=S.want; S.want=null; window.chatOpen(w); }
-    clearInterval(pollT); pollT=setInterval(function(){ if(!S.ready) return; if(S.open&&S.room&&!document.hidden){ var b=totalUnread(); pollRoom(S.room).then(function(){ }); } else { var b2=totalUnread(); loadRecent().then(function(){ if(totalUnread()!==b2) afterIngest(); }); } },chanOk?30000:12000); }
+    await loadMyReads(); await loadGroups(); var ok=await loadRecent(); if(!ok){ S.started=false; renderFab(); return; } ensureDom(); renderFab(); subscribe(); connectLive(); subscribeReads(); subscribeGroups(); gc(); clearInterval(typT); typT=setInterval(sweepTyping,1000); if(S.want){ var w=S.want; S.want=null; window.chatOpen(w); }
+    clearInterval(pollT); pollT=setInterval(function(){ if(!S.ready) return; loadGroups(); if(S.open&&S.room&&!document.hidden){ var b=totalUnread(); pollRoom(S.room).then(function(){ }); } else { var b2=totalUnread(); loadRecent().then(function(){ if(totalUnread()!==b2) afterIngest(); }); } },chanOk?30000:12000); }
 
   /* ---------- หน้าจอ ---------- */
   var IMG_OK=/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/;
   function ensureDom(){ if(document.getElementById('ch-root')) return; var r=document.createElement('div'); r.id='ch-root';
     r.innerHTML='<button type="button" id="ch-fab" class="ch-fab idle" onclick="chatToggle()" aria-label="เปิดแชททีม" title="แชททีม"><span class="ico">💬</span><b id="ch-badge" class="ch-badge"></b></button>'
       +'<div id="ch-panel" class="ch-panel" role="dialog" aria-label="แชททีม"><div class="ch-rail" id="ch-rail"></div>'
-      +'<div class="ch-main"><div class="ch-head" id="ch-head"></div><div class="ch-theme" id="ch-theme"></div><input type="file" id="ch-bgfile" accept="image/*" style="display:none"><div class="ch-msgs" id="ch-msgs"></div><div class="ch-typing" id="ch-typing" style="display:none"></div><div class="ch-note">🕒 ข้อความเก็บไว้ 90 วันแล้วลบอัตโนมัติ · เน้นคุยสั้นๆ</div>'
+      +'<div class="ch-main"><div class="ch-head" id="ch-head"></div><div class="ch-theme" id="ch-theme"></div><div class="ch-theme ch-gman" id="ch-gman"></div><input type="file" id="ch-bgfile" accept="image/*" style="display:none"><div class="ch-msgs" id="ch-msgs"></div><div class="ch-typing" id="ch-typing" style="display:none"></div><div class="ch-note">🕒 ข้อความเก็บไว้ 90 วันแล้วลบอัตโนมัติ · เน้นคุยสั้นๆ</div>'
       +'<div class="ch-comp"><div class="ch-ctx" id="ch-ctx" style="display:none"></div><div id="ch-imgchip"></div><div class="ch-row"><button type="button" class="ch-ib" onclick="chatPickImg()" title="แนบรูป" aria-label="แนบรูป">🖼️</button><textarea id="ch-ta" rows="1" placeholder="พิมพ์ข้อความ…  (@ แท็กคน)" aria-label="ข้อความ"></textarea><button type="button" id="ch-send" class="ch-send" onclick="chatSend()" aria-label="ส่ง">➤</button></div><div class="ch-cnt" id="ch-cnt"></div><input type="file" id="ch-file" accept="image/*" style="display:none"><div id="ch-ment" class="ch-ment"></div></div></div>'
-      +'<div id="ch-ack" class="ch-ack"></div></div>';
+      +'<div id="ch-ack" class="ch-ack"></div><div id="ch-gdlg" class="ch-ack"></div></div>';
     document.body.appendChild(r); var ta=document.getElementById('ch-ta'), fi=document.getElementById('ch-file');
     if(ta){ ta.addEventListener('input',function(){ autoGrow(ta); S.draft[dkey()]=ta.value; sendTyping(ta.value.trim()?1:0); detectMention(); var n=ta.value.length; var c=document.getElementById('ch-cnt'); if(c) c.textContent=n>MAXLEN-60?(n+'/'+MAXLEN):''; });
       ta.addEventListener('keydown',function(e){ if(S.mention&&S.mention.list.length){ if(e.key==='ArrowDown'){ e.preventDefault(); S.mention.i=(S.mention.i+1)%S.mention.list.length; renderMention(); return; } if(e.key==='ArrowUp'){ e.preventDefault(); S.mention.i=(S.mention.i+S.mention.list.length-1)%S.mention.list.length; renderMention(); return; } if(e.key==='Enter'||e.key==='Tab'){ e.preventDefault(); chatMention(S.mention.i); return; } if(e.key==='Escape'){ S.mention=null; renderMention(); return; } }
@@ -17682,12 +17696,14 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&S.open&&!lightbox&&!(S.mention&&S.mention.list.length)){ if(S.themeOpen){ window.chatThemeToggle(); return; } if(S.thread){ window.chatThreadClose(); return; } chatClose(); } }); }
   function autoGrow(ta){ try{ ta.style.height='auto'; ta.style.height=Math.min(110,ta.scrollHeight)+'px'; }catch(e){} }
   function renderFab(){ var root=document.getElementById('ch-root'), f=document.getElementById('ch-fab'), b=document.getElementById('ch-badge'); if(!root||!f) return;
-    var show=S.ready&&logged(); root.style.display=show?'block':'none'; try{ var cb=document.getElementById('cc-chatbtn'); if(cb) cb.style.display=show?'':'none'; }catch(e){} if(!show) return; var u=totalUnread();
+    var show=S.ready&&logged(); root.style.display=show?'block':'none'; try{ document.body.classList.toggle('ch-on',show); }catch(e){} try{ var cb=document.getElementById('cc-chatbtn'); if(cb) cb.style.display=show?'':'none'; }catch(e){} if(!show) return; var u=totalUnread();
     f.classList.toggle('idle',!u&&!S.open); f.classList.toggle('has',u>0); f.style.display=S.open?'none':'flex'; if(b) b.textContent=u?(u>99?'99+':String(u)):''; f.setAttribute('aria-label',u?('แชททีม มี '+u+' ข้อความที่ยังไม่อ่าน'):'เปิดแชททีม'); }
   function railRow(room,ic,title){ var u=unreadOf(room); return '<button type="button" class="ch-room'+(room===S.room?' on':'')+'" onclick="chatOpen(\''+js(room)+'\')"><span class="ic">'+ic+'</span><span class="nm">'+esc(title)+'</span>'+(u?'<span class="u">'+(u>99?'99+':u)+'</span>':'')+'</button>'; }
   function railList(prefix){ var seen={}; return Object.keys(S.sum).concat(Object.keys(S.msgs)).filter(function(r){ if(seen[r]||r.indexOf(prefix)!==0) return false; seen[r]=1; var s=S.sum[r]; return !!(s&&s.ts)||(S.msgs[r]&&S.msgs[r].length); }).sort(function(a,b){ return ((S.sum[b]||{}).ts||0)-((S.sum[a]||{}).ts||0); }); }
   function renderRail(){ var el=document.getElementById('ch-rail'); if(!el) return; var me=myEmail(), h='<div class="ch-rh"><b>💬 แชททีม</b><button type="button" class="ch-x" onclick="chatClose()" aria-label="ปิดแชท">✕</button></div>';
     h+='<div class="ch-sec">ห้อง</div>'+railRow('team','📣','ทั้งทีม CIL')+DEPTS.map(function(d){ return railRow('dept:'+d.k,d.ic,d.t); }).join('');
+    if(S.groupsOk){ var gl=Object.keys(S.groups).sort(function(a,b){ return ((S.sum[b]||{}).ts||Date.parse(S.groups[b].updatedAt)||0)-((S.sum[a]||{}).ts||Date.parse(S.groups[a].updatedAt)||0); });
+      h+='<div class="ch-sec">กลุ่มของฉัน</div>'+gl.map(function(r){ return railRow(r,'👥',roomTitle(r)); }).join('')+'<button type="button" class="ch-room ch-new" onclick="chatGroupNew()"><span class="ic">＋</span><span class="nm">สร้างกลุ่มใหม่</span></button>'; }
     var cards=railList('card:').slice(0,6); if(cards.length) h+='<div class="ch-sec">การ์ดที่คุยอยู่</div>'+cards.map(function(r){ return railRow(r,'🗂️',roomTitle(r)); }).join('');
     var dms=railList('dm:').slice(0,8); h+='<div class="ch-sec">ข้อความส่วนตัว</div>'+dms.map(function(r){ var o=nickOf(dmOther(r)), u=unreadOf(r); return '<button type="button" class="ch-room'+(r===S.room?' on':'')+'" onclick="chatOpen(\''+js(r)+'\')"><span class="avw">'+av(o,28)+(online(o)?'<i class="dot"></i>':'')+'</span><span class="nm">'+esc(dn(o))+'</span>'+(u?'<span class="u">'+(u>99?'99+':u)+'</span>':'')+'</button>'; }).join('');
     h+='<button type="button" class="ch-room ch-new" onclick="chatPickToggle()"><span class="ic">＋</span><span class="nm">เริ่มแชทกับ…</span></button>';
@@ -17697,9 +17713,10 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function renderHead(){ var el=document.getElementById('ch-head'); if(!el) return; var r=S.room, sub='', ic='';
     if(r==='team'){ ic='📣'; var n=0; Object.keys(emap()).forEach(function(e){ if(online(emap()[e])) n++; }); sub='ทุกคนในทีมอ่านได้ · ออนไลน์ '+n+' คน'; }
     else if(isDM(r)){ var o=nickOf(dmOther(r)); ic='<span class="avw">'+av(o,32)+(online(o)?'<i class="dot"></i>':'')+'</span>'; sub=(online(o)?'ออนไลน์ตอนนี้':'ออฟไลน์')+' · เห็นเฉพาะคุณสองคน 🔒'; }
+    else if(isGrp(r)){ var gg=grpOf(r); ic='👥'; sub=gg?(gg.members.length+' คน · '+gg.members.slice(0,3).map(function(e){ return dn(nickOf(e)); }).join(', ')+(gg.members.length>3?'…':'')+' · เห็นเฉพาะสมาชิก 🔒'):'กลุ่มส่วนตัว'; }
     else if(isCard(r)){ ic='🗂️'; sub='ห้องคุยด่วนเรื่องการ์ดนี้ · ทุกคนในทีมเข้าอ่านได้'; }
     else { var d=deptOf(r); ic=d?d.ic:'💬'; sub='ห้องฝ่าย · ทุกคนในทีมอ่านได้'; }
-    var open=isCard(r)?'<button type="button" class="ch-open" onclick="chatOpenCardRoom()">เปิดการ์ด ↗</button>':'';
+    var open=isCard(r)?'<button type="button" class="ch-open" onclick="chatOpenCardRoom()">เปิดการ์ด ↗</button>':(isGrp(r)?'<button type="button" class="ch-ib sm" onclick="chatGroupManage()" title="จัดการกลุ่ม" aria-label="จัดการกลุ่ม">⚙️</button>':'');
     el.innerHTML='<button type="button" class="ch-back" onclick="chatBack()" aria-label="กลับไปรายการห้อง">‹</button><span class="hic">'+ic+'</span><div class="ht"><b>'+esc(roomTitle(r))+'</b><small>'+esc(sub)+'</small></div>'+open+'<button type="button" class="ch-ib sm" onclick="chatThemeToggle()" title="แต่งธีมห้องแชท" aria-label="แต่งธีมห้องแชท">🎨</button><button type="button" class="ch-ib sm" onclick="chatSound()" title="เสียงเตือน (แชทส่วนตัว/แท็ก)" aria-label="เสียงเตือน">'+(S.sound?'🔔':'🔕')+'</button><button type="button" class="ch-x" onclick="chatClose()" aria-label="ปิดแชท">✕</button>'; }
   function fmtBody(t){ var h=esc(t).replace(/(https?:\/\/[^\s<]+)/g,function(u){ var clean=u.replace(/&amp;/g,'&'); return '<a href="'+u+'" target="_blank" rel="noopener">'+(clean.length>38?esc(clean.slice(0,36))+'…':esc(clean))+'</a>'; }).replace(/\n/g,'<br>'); try{ if(window.ntHL) h=window.ntHL(h); }catch(e){} return h; }
   var KIC={content:'✨',ecom:'🛒',gfx:'🎨'};
@@ -17745,7 +17762,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   window.chatClose=function(){ sendTyping(0); S.themeOpen=false; S.open=false; var p=document.getElementById('ch-panel'); if(p) p.classList.remove('open'); S.mention=null; renderMention(); renderFab(); };
   window.chatBack=function(){ S.pane='list'; var p=document.getElementById('ch-panel'); if(p) p.setAttribute('data-pane','list'); };
   window.chatOpen=async function(room){ if(!logged()){ say('เข้าสู่ระบบก่อนใช้แชท','info'); return; } if(!S.ready){ if(!S.missing) S.want=room||'team'; return; } ensureDom(); room=room||'team'; S.room=room; S.thread=null; S.open=true; S.pane='chat'; S.showPick=false; S.pickFor=null;
-    var p=document.getElementById('ch-panel'); p.classList.add('open'); p.setAttribute('data-pane','chat'); renderAck(); renderRail(); renderHead(); renderMsgs(true); renderFab(); renderTyping(); applyTheme(); S.themeOpen=false; renderTheme(); syncComposer();
+    var p=document.getElementById('ch-panel'); p.classList.add('open'); p.setAttribute('data-pane','chat'); renderAck(); renderRail(); renderHead(); renderMsgs(true); renderFab(); renderTyping(); applyTheme(); S.themeOpen=false; renderTheme(); S.gman=false; renderGman(); syncComposer();
     var ta=document.getElementById('ch-ta'); if(ta){ ta.value=S.draft[dkey()]||''; autoGrow(ta); if(S.ack&&window.innerWidth>700) ta.focus(); } renderImgChip();
     if(!S.loaded[room]){ await loadRoom(room,false); if(S.room!==room) return; }
     markRead(room); renderRail(); renderHead(); renderMsgs(true); renderFab(); };
@@ -17762,7 +17779,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
         var q=.78, d=c.toDataURL('image/jpeg',q); while(d.length>110000&&q>.3){ q-=.1; d=c.toDataURL('image/jpeg',q); } if(d.length>130000){ say('รูปใหญ่เกินไป ลองรูปที่เล็กลง','info'); return; } S.pendingImg=d; renderImgChip(); }; im.onerror=function(){ say('เปิดรูปนี้ไม่ได้','info'); }; im.src=String(rd.result); }; rd.readAsDataURL(f); }
   /* @แท็กคน */
   function detectMention(){ var ta=document.getElementById('ch-ta'); if(!ta) return; var pos=ta.selectionStart==null?ta.value.length:ta.selectionStart, before=ta.value.slice(0,pos), m=/(^|\s)@([^\s@]*)$/.exec(before); if(!m){ S.mention=null; renderMention(); return; }
-    var qy=m[2].toLowerCase(), seen={}, me=myNick(), list=[]; Object.keys(emap()).forEach(function(e){ var n=emap()[e]; if(seen[n]||n===me) return; seen[n]=1; if(!qy||n.toLowerCase().indexOf(qy)===0||dn(n).toLowerCase().indexOf(qy)===0) list.push(n); }); list.sort(function(a,b){ return (online(b)-online(a))||a.localeCompare(b,'th'); });
+    var qy=m[2].toLowerCase(), seen={}, me=myNick(), list=[], gg=isGrp(S.room)?grpOf(S.room):null; Object.keys(emap()).forEach(function(e){ var n=emap()[e]; if(seen[n]||n===me||(gg&&gg.members.indexOf(e)<0)) return; seen[n]=1; if(!qy||n.toLowerCase().indexOf(qy)===0||dn(n).toLowerCase().indexOf(qy)===0) list.push(n); }); list.sort(function(a,b){ return (online(b)-online(a))||a.localeCompare(b,'th'); });
     S.mention=list.length?{list:list.slice(0,6),i:0,start:pos-m[2].length-1,end:pos}:null; renderMention(); }
   function renderMention(){ var el=document.getElementById('ch-ment'); if(!el) return; if(!S.mention||!S.mention.list.length){ el.innerHTML=''; el.style.display='none'; return; } el.style.display='block';
     el.innerHTML=S.mention.list.map(function(n,i){ return '<button type="button" class="'+(i===S.mention.i?'on':'')+'" onmousedown="event.preventDefault();chatMention('+i+')">'+av(n,22)+'<span>'+esc(dn(n))+'</span>'+(online(n)?'<i class="dot2"></i>':'')+'</button>'; }).join(''); }
@@ -17803,6 +17820,43 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   window.chatThemeImg=function(){ var fi=document.getElementById('ch-bgfile'); if(fi) fi.click(); };
   window.chatThemeSetImg=function(d){ if(!IMG_OK.test(d)||d.length>260000){ say('รูปใหญ่เกินไป ลองรูปที่เล็กลง','info'); return false; } var t=themeTarget(), key=bgKey(S.tscope==='room'?'room':'all',S.room); lsSet(key,d); if(lsGet(key,'')!==d){ say('พื้นที่เก็บในเครื่องเต็ม — ลองรูปที่เล็กลง หรือลบภาพพื้นหลังเก่า','err'); return false; } if(t.ov==null) t.ov=.5; saveTheme(); applyTheme(); renderTheme(); return true; };
   function pickBg(f){ if(!/^image\//.test(f.type)){ say('เลือกไฟล์รูปภาพ','info'); return; } var rd=new FileReader(); rd.onload=function(){ var im=new Image(); im.onload=function(){ var M=1000, k=Math.min(1,M/Math.max(im.width,im.height)), c=document.createElement('canvas'); c.width=Math.max(1,Math.round(im.width*k)); c.height=Math.max(1,Math.round(im.height*k)); var g=c.getContext('2d'); g.drawImage(im,0,0,c.width,c.height); var q=.66, d=c.toDataURL('image/jpeg',q); while(d.length>200000&&q>.25){ q-=.08; d=c.toDataURL('image/jpeg',q); } window.chatThemeSetImg(d); }; im.onerror=function(){ say('เปิดรูปนี้ไม่ได้','info'); }; im.src=String(rd.result); }; rd.readAsDataURL(f); }
+  /* ---------- กลุ่มแชท (เห็นเฉพาะสมาชิก) ---------- */
+  function people(excl){ var me=myEmail(), ex={}; (excl||[]).forEach(function(e){ ex[e]=1; }); return Object.keys(emap()).filter(function(e){ return e!==me&&!ex[e]; }).map(function(e){ return {e:e,n:emap()[e]}; }).sort(function(a,b){ return (online(b.n)-online(a.n))||a.n.localeCompare(b.n,'th'); }); }
+  function gSelCount(d){ return Object.keys(d.sel).filter(function(e){ return d.sel[e]; }).length; }
+  function renderGdlg(){ var el=document.getElementById('ch-gdlg'); if(!el) return; var d=S.gdlg; if(!d){ el.style.display='none'; el.innerHTML=''; return; } el.style.display='flex';
+    var qy=(d.q||'').toLowerCase(), list=people().filter(function(p){ return !qy||dn(p.n).toLowerCase().indexOf(qy)>=0||p.n.toLowerCase().indexOf(qy)>=0; }), n=gSelCount(d);
+    el.innerHTML='<div class="box gbox"><h3>👥 สร้างกลุ่มใหม่</h3><label class="gl" for="ch-gname">ชื่อกลุ่ม</label><input id="ch-gname" class="gin" maxlength="40" placeholder="เช่น ทีมเปิดตัว Halloween" value="'+esc(d.name||'')+'" oninput="chatGroupName(this.value)">'
+      +'<label class="gl" for="ch-gq">เลือกสมาชิก <small>(เลือกแล้ว '+n+' คน · กลุ่มนี้เห็นเฉพาะคนที่เลือก คนอื่นจะไม่รู้ว่ามีกลุ่มนี้)</small></label><input id="ch-gq" class="gin" placeholder="ค้นหาชื่อ…" value="'+esc(d.q||'')+'" oninput="chatGroupQ(this.value)">'
+      +'<div class="gl-list">'+list.map(function(p){ var on=!!d.sel[p.e]; return '<button type="button" class="gp'+(on?' on':'')+'" onclick="chatGroupToggle(\''+js(p.e)+'\')" aria-pressed="'+(on?'true':'false')+'"><span class="avw">'+av(p.n,28)+(online(p.n)?'<i class="dot"></i>':'')+'</span><span class="nm">'+esc(dn(p.n))+'</span><span class="ck">'+(on?'✓':'')+'</span></button>'; }).join('')+(list.length?'':'<div class="ch-empty"><small>ไม่พบชื่อนี้</small></div>')+'</div>'
+      +'<div class="gact"><button type="button" class="ch-x wide" onclick="chatGroupCancel()">ยกเลิก</button><button type="button" id="ch-gok" class="ch-send big" '+((d.name||'').trim()&&n>=1&&!d.busy?'':'disabled')+' onclick="chatGroupCreate()">'+(d.busy?'กำลังสร้าง…':'สร้างกลุ่ม')+'</button></div></div>'; }
+  function renderGdlgBtn(){ var d=S.gdlg, b=document.getElementById('ch-gok'); if(!d||!b) return; b.disabled=!((d.name||'').trim()&&gSelCount(d)>=1&&!d.busy); }
+  window.chatGroupNew=function(){ S.gdlg={name:'',q:'',sel:{},busy:false}; renderGdlg(); setTimeout(function(){ var i=document.getElementById('ch-gname'); if(i&&i.focus) i.focus(); },30); };
+  window.chatGroupCancel=function(){ S.gdlg=null; renderGdlg(); };
+  window.chatGroupName=function(v){ if(S.gdlg){ S.gdlg.name=v; renderGdlgBtn(); } };
+  window.chatGroupQ=function(v){ if(!S.gdlg) return; S.gdlg.q=v; var cur=document.getElementById('ch-gq'), pos=cur&&cur.selectionStart; renderGdlg(); var k2=document.getElementById('ch-gq'); if(k2){ k2.focus(); try{ k2.setSelectionRange(pos,pos); }catch(e){} } };
+  window.chatGroupToggle=function(e){ if(!S.gdlg) return; var nv=document.getElementById('ch-gname'); if(nv) S.gdlg.name=nv.value; S.gdlg.sel[e]=!S.gdlg.sel[e]; renderGdlg(); };
+  window.chatGroupCreate=async function(){ var d=S.gdlg; if(!d||d.busy) return; var me=myEmail(), title=(d.name||'').trim().slice(0,40), mem=Object.keys(d.sel).filter(function(e){ return d.sel[e]; }); if(!title||!mem.length) return; if(mem.length>39){ say('กลุ่มมีสมาชิกได้ไม่เกิน 40 คน','info'); return; }
+    d.busy=true; renderGdlg(); var id='grp:g'+Date.now().toString(36)+Math.random().toString(36).slice(2,7), members=[me].concat(mem.map(function(e){ return e.toLowerCase(); }));
+    var r=await q(function(c){ return c.from('chat_groups').insert({id:id,title:title,members:members,owner:me}); });
+    if(r.error){ d.busy=false; renderGdlg(); say(isMissingErr(r.error)?'ต้องอัปเดตฐานข้อมูลแชทก่อนถึงจะสร้างกลุ่มได้ (แจ้งผู้ดูแล)':'สร้างกลุ่มไม่สำเร็จ ลองใหม่อีกครั้ง','err'); return; }
+    S.groups[id]={id:id,title:title,members:members,owner:me,updatedAt:new Date().toISOString()}; S.gdlg=null; renderGdlg();
+    try{ if(typeof window.ntEmit==='function') window.ntEmit({kind:'assign',board:'chat',names:mem.map(nickOf),refId:id,title:'กลุ่ม '+title,body:'คุณถูกเพิ่มเข้ากลุ่มแชท'}); }catch(e){}
+    say('สร้างกลุ่ม “'+title+'” แล้ว 🎉','ok'); window.chatOpen(id); };
+  function renderGman(){ var el=document.getElementById('ch-gman'); if(!el) return; if(!S.gman||!isGrp(S.room)||!grpOf(S.room)){ el.style.display='none'; el.innerHTML=''; return; } var g=grpOf(S.room), me=myEmail(), own=g.owner===me; el.style.display='block';
+    var rows=g.members.map(function(e){ var n=nickOf(e); return '<div class="gm-r"><span class="avw">'+av(n,26)+(online(n)?'<i class="dot"></i>':'')+'</span><span class="nm">'+esc(dn(n))+(e===g.owner?' <em>เจ้าของ</em>':'')+(e===me?' <em>คุณ</em>':'')+'</span>'+(own&&e!==me?'<button type="button" class="ch-x" onclick="chatGroupRemove(\''+js(e)+'\')" title="เอาออกจากกลุ่ม" aria-label="เอา '+esc(dn(n))+' ออกจากกลุ่ม">✕</button>':'')+'</div>'; }).join('');
+    var addList=own&&S.gadd?'<div class="gl-list sm">'+people(g.members).map(function(p){ return '<button type="button" class="gp" onclick="chatGroupAdd(\''+js(p.e)+'\')"><span class="avw">'+av(p.n,26)+'</span><span class="nm">'+esc(dn(p.n))+'</span><span class="ck">＋</span></button>'; }).join('')+'</div>':'';
+    el.innerHTML='<div class="th-h"><b>👥 จัดการกลุ่ม</b><button type="button" class="ch-x" onclick="chatGroupManage()" aria-label="ปิด">✕</button></div>'
+      +(own?'<div class="th-row"><input id="ch-gren" class="gin" maxlength="40" value="'+esc(g.title)+'" aria-label="ชื่อกลุ่ม"><button type="button" class="th-b" onclick="chatGroupRename()">บันทึกชื่อ</button></div>':'<div class="th-note">กลุ่ม: <b>'+esc(g.title)+'</b></div>')
+      +'<div class="gm-list">'+rows+'</div>'+(own?'<div class="th-row"><button type="button" class="th-b" onclick="chatGroupAddToggle()">＋ เพิ่มสมาชิก</button></div>'+addList:'')
+      +'<div class="th-row"><button type="button" class="th-b danger" onclick="chatGroupLeave()">ออกจากกลุ่ม</button></div><div class="th-note">คนที่ไม่อยู่ในกลุ่มมองไม่เห็นกลุ่มนี้เลย · สมาชิกใหม่จะเห็นข้อความย้อนหลัง (ภายใน 90 วัน)</div>'; }
+  window.chatGroupManage=function(){ S.gman=!S.gman; S.gadd=false; if(S.gman&&S.themeOpen){ S.themeOpen=false; renderTheme(); } renderGman(); };
+  window.chatGroupAddToggle=function(){ S.gadd=!S.gadd; renderGman(); };
+  async function saveGroup(g,patch){ var upd=Object.assign({updatedAt:new Date().toISOString()},patch); var r=await q(function(c){ return c.from('chat_groups').update(upd).eq('id',g.id); }); if(r.error){ say('บันทึกไม่สำเร็จ — เฉพาะเจ้าของกลุ่มแก้ไขได้','err'); return false; } Object.assign(g,patch); renderHead(); renderRail(); renderGman(); return true; }
+  window.chatGroupRename=function(){ var g=grpOf(S.room), i=document.getElementById('ch-gren'); if(!g||!i) return; var t=i.value.trim().slice(0,40); if(!t){ say('ใส่ชื่อกลุ่มก่อน','info'); return; } saveGroup(g,{title:t}); };
+  window.chatGroupAdd=async function(e){ var g=grpOf(S.room); if(!g||g.owner!==myEmail()||g.members.indexOf(e)>=0) return; if(g.members.length>=40){ say('กลุ่มเต็มแล้ว (40 คน)','info'); return; } var ok=await saveGroup(g,{members:g.members.concat([e])}); if(ok){ try{ if(typeof window.ntEmit==='function') window.ntEmit({kind:'assign',board:'chat',names:[nickOf(e)],refId:g.id,title:'กลุ่ม '+g.title,body:'คุณถูกเพิ่มเข้ากลุ่มแชท'}); }catch(x){} } };
+  window.chatGroupRemove=function(e){ var g=grpOf(S.room); if(!g||g.owner!==myEmail()||e===myEmail()) return; if(typeof confirm==='function'&&!confirm('เอา '+dn(nickOf(e))+' ออกจากกลุ่ม?')) return; saveGroup(g,{members:g.members.filter(function(m){ return m!==e; })}); };
+  window.chatGroupLeave=async function(){ var g=grpOf(S.room); if(!g) return; if(typeof confirm==='function'&&!confirm('ออกจากกลุ่ม “'+g.title+'” ? (ต้องให้เจ้าของเพิ่มกลับถึงจะเข้าได้อีก)')) return;
+    var r=await q(function(c){ return c.rpc('chat_group_leave',{gid:g.id}); }); if(r.error){ say('ออกจากกลุ่มไม่สำเร็จ','err'); return; } delete S.groups[g.id]; S.gman=false; say('ออกจากกลุ่มแล้ว','ok'); window.chatOpen('team'); };
   window.chatState=function(){ return S; };
 
   /* ---------- CSS (โทนพาสเทลคลีน) ---------- */
@@ -17836,6 +17890,10 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     +'.ch-thc{display:inline-flex;align-items:center;gap:7px;border:none;background:transparent;color:#4F5FE0;border-radius:10px;padding:2px 6px;margin-top:2px;cursor:pointer;font:700 12px "Sarabun",sans-serif;}.ch-thc:hover{background:var(--c-soft);}.ch-thc .avs{display:inline-flex;}.ch-thc .avs .ppl-av{margin-left:-5px;}.ch-thc small{color:var(--c-ink2);font-weight:600;}'
     +'.ch-thh{display:flex;align-items:center;gap:10px;position:sticky;top:-12px;background:var(--c-card);margin:-12px -14px 8px;padding:8px 14px;border-bottom:1px solid var(--c-line);z-index:1;}.ch-thh button{border:none;background:var(--c-soft);border-radius:10px;padding:4px 10px;font:700 13px "Sarabun",sans-serif;color:var(--c-ink);cursor:pointer;}.ch-thh b{font:500 14px "Mitr",sans-serif;}'
     +'.ch-ctx{align-items:center;justify-content:space-between;gap:8px;background:var(--c-soft);border-radius:10px;padding:4px 10px;margin-bottom:6px;font-size:12px;color:var(--c-ink2);}.ch-ctx span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.ch-ctx b{color:var(--c-ink);}.ch-ctx button{border:none;background:transparent;cursor:pointer;color:var(--c-ink2);}'
+    +'.gbox{width:100%;max-width:400px;text-align:left;}.gbox h3{text-align:center;}.gl{display:block;font:700 12.5px "Sarabun",sans-serif;margin:10px 0 4px;color:var(--c-ink);}.gl small{font-weight:500;color:var(--c-ink2);}.gin{width:100%;box-sizing:border-box;border:none;background:var(--c-soft);border-radius:12px;padding:9px 12px;font:400 14px "Sarabun",sans-serif;color:var(--c-ink);outline:none;}.gin:focus{box-shadow:0 0 0 2px #C9D6FA;}'
+    +'.gl-list{max-height:210px;overflow:auto;display:flex;flex-direction:column;gap:2px;margin-top:6px;}.gl-list.sm{max-height:130px;}.gp{display:flex;align-items:center;gap:9px;border:none;background:transparent;border-radius:12px;padding:6px 9px;cursor:pointer;font:600 14px "Sarabun",sans-serif;color:var(--c-ink);text-align:left;width:100%;}.gp:hover{background:var(--c-soft);}.gp.on{background:var(--c-mine);}.gp .nm{flex:1;}.gp .ck{font-weight:800;color:#2FA878;width:18px;text-align:center;}.avw{position:relative;display:inline-flex;flex:none;}'
+    +'.gact{display:flex;gap:10px;margin-top:12px;justify-content:flex-end;align-items:center;}.gact .ch-send.big{margin-top:0;}.gact .ch-send:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;}.ch-x.wide{width:auto;padding:0 14px;height:36px;font-size:13px;}'
+    +'.ch-gman{width:300px;}.gm-list{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow:auto;margin:4px 0;}.gm-r{display:flex;align-items:center;gap:9px;padding:3px 2px;font:600 13.5px "Sarabun",sans-serif;}.gm-r .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.gm-r em{font-style:normal;font-size:10.5px;background:#E4EAFF;color:#3F4FC8;border-radius:6px;padding:0 6px;margin-left:4px;}.ch-theme .th-b.danger{color:#C0334F;background:#FFE9EE;}'
     +'.ch-rc{font-weight:700;color:#A7A3C4;}.ch-rc.on{color:#2FA878;}'
     +'.ch-note{font-size:11px;color:#A7A3C4;text-align:center;padding:3px 10px 0;}.ch-comp{padding:6px 12px 12px;position:relative;}.ch-row{display:flex;gap:8px;align-items:flex-end;}'
     +'#ch-ta{flex:1;min-width:0;resize:none;border:none;background:var(--c-soft);border-radius:16px;padding:10px 14px;font:400 14.5px/1.45 "Sarabun",sans-serif;color:var(--c-ink);outline:none;max-height:110px;box-sizing:border-box;}#ch-ta:focus{box-shadow:0 0 0 2px #C9D6FA;}'
@@ -17844,6 +17902,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     +'.ch-ment{display:none;position:absolute;left:12px;bottom:60px;background:var(--c-card);border-radius:14px;box-shadow:0 14px 28px -12px rgba(70,60,140,.6);padding:5px;min-width:190px;z-index:3;}.ch-ment button{display:flex;align-items:center;gap:8px;width:100%;border:none;background:transparent;border-radius:10px;padding:6px 9px;font:700 13.5px "Sarabun",sans-serif;cursor:pointer;color:var(--c-ink);text-align:left;}.ch-ment button.on,.ch-ment button:hover{background:var(--c-soft);}'
     +'.ch-ack{display:none;position:absolute;inset:0;z-index:5;background:rgba(246,243,252,.96);align-items:center;justify-content:center;padding:18px;}.ch-ack .box{background:var(--c-card);border-radius:22px;padding:20px 22px;max-width:420px;box-shadow:0 20px 40px -22px rgba(70,60,140,.55);text-align:center;}.ch-ack .e{font-size:32px;}.ch-ack h3{margin:4px 0 8px;font:500 18px "Mitr",sans-serif;}.ch-ack ul{text-align:left;font-size:13.5px;line-height:1.7;margin:0;padding-left:18px;color:var(--c-ink);}'
     +'.ch-light{position:fixed;inset:0;z-index:100050;background:rgba(20,20,40,.82);display:flex;align-items:center;justify-content:center;cursor:zoom-out;}.ch-light img{max-width:92vw;max-height:90vh;border-radius:14px;}'
+    +'body.ch-on #back-to-top{right:18px;bottom:76px;}@media (max-width:640px){body.ch-on #back-to-top{right:14px;bottom:72px;}.ch-fab{right:14px;bottom:14px;}}'
     +'#ch-root.ch-night{--c-card:#1E2150;--c-ink:#ECEBFF;--c-ink2:#AEB2EA;--c-line:rgba(255,255,255,.12);--c-soft:#2B2F63;--c-mine:#3D4DA0;}#ch-root.ch-night .ch-ack{background:rgba(24,26,60,.96);}#ch-root.ch-night .ch-m .tx a{color:#A9C0FF;}#ch-root.ch-night .ch-open{color:#A9C0FF;}#ch-root.ch-night .ch-card small{color:#A9C0FF;}#ch-root.ch-night .ch-panel{box-shadow:0 30px 60px -26px rgba(0,0,0,.7),0 0 0 1.5px #3A3E80;}'
     +'.ch-theme{display:none;position:absolute;right:12px;top:54px;z-index:4;width:300px;max-width:calc(100% - 24px);background:var(--c-card);border-radius:18px;box-shadow:0 22px 44px -18px rgba(60,50,130,.6),0 0 0 1.5px var(--c-line);padding:12px 14px;}'
     +'.ch-theme .th-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}.ch-theme .th-h b{font:500 15px "Mitr",sans-serif;}.ch-theme .th-sc{display:flex;gap:4px;background:var(--c-soft);border-radius:999px;padding:3px;margin-bottom:10px;}.ch-theme .th-sc button{flex:1;border:none;background:transparent;border-radius:999px;padding:5px 6px;font:700 12.5px "Sarabun",sans-serif;color:var(--c-ink2);cursor:pointer;}.ch-theme .th-sc button.on{background:var(--c-card);color:var(--c-ink);box-shadow:0 2px 6px -2px rgba(0,0,0,.25);}'
