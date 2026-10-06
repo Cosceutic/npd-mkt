@@ -13942,11 +13942,47 @@ details.fm-more[open]{padding-bottom:6px;}
   }
   function ecomColIdx(key){ for(var i=0;i<ECOM_COLS.length;i++){ if(ECOM_COLS[i].key===key) return i; } return -1; }
   function ecomColsCopy(){ return ECOM_COLS.map(function(c){ return Object.assign({},c); }); }
-  window.ecomAddCol=function(){ if(!ecomCanEdit()) return; var t=prompt('ชื่อคอลัมน์ใหม่:',''); if(t==null) return; t=String(t).trim(); if(!t) return;
-    var col=ECOM_HDR_PALETTE[ECOM_COLS.length%ECOM_HDR_PALETTE.length]; var cols=ecomColsCopy(); cols.push({key:'col'+Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:t,color:col,hc:col,done:false});
-    ecomApplyCols(cols); ecomSaveCols(); ecomReRender(); };
-  window.ecomRenameCol=function(key){ if(!ecomCanEdit()) return; var i=ecomColIdx(key); if(i<0) return; var t=prompt('แก้ชื่อคอลัมน์:',ECOM_COLS[i].title||''); if(t==null) return; t=String(t).trim(); if(!t) return;
-    var cols=ecomColsCopy(); cols[i].title=t; ecomApplyCols(cols); ecomSaveCols(); ecomReRender(); };
+  /* ===== หน้าต่างถาม/ยืนยันในหน้าเว็บ (หน้าตาเดียวกับหน้าต่างแก้ไขการ์ด) แทน prompt()/confirm() ของเบราว์เซอร์ ===== */
+  var ecomDlgResolve=null, ecomDlgValidate=null;
+  function ecomDlgClose(val){ var ov=document.getElementById('ecom-dlg-overlay'); if(ov) ov.classList.remove('open'); var r=ecomDlgResolve; ecomDlgResolve=null; ecomDlgValidate=null; if(r) r(val); }
+  window.ecomDlgCancel=function(){ ecomDlgClose(null); };
+  window.ecomDlgOk=function(){
+    var inp=document.getElementById('ecom-dlg-input'); var v=inp?String(inp.value||'').trim():true;
+    if(inp && ecomDlgValidate){ var msg=ecomDlgValidate(v); if(msg){ var er=document.getElementById('ecom-dlg-err'); if(er){ er.textContent=msg; er.style.display=''; } inp.focus(); return; } }
+    ecomDlgClose(v);
+  };
+  // o = {title, label?, value?, placeholder?, message? (HTML ที่ escape แล้ว), okText?, danger?, validate?(v)→ข้อความผิดพลาด|''}
+  function ecomDialog(o){
+    return new Promise(function(resolve){
+      if(ecomDlgResolve) ecomDlgClose(null);
+      var ov=document.getElementById('ecom-dlg-overlay');
+      if(!ov){ ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='ecom-dlg-overlay'; ov.style.zIndex='95'; ov.addEventListener('click',function(e){ if(e.target===ov) window.ecomDlgCancel(); }); document.body.appendChild(ov); }
+      var hasInput=(o.label!=null);
+      ov.innerHTML='<div class="modal-box" role="dialog" aria-modal="true" aria-label="'+E(o.title||'')+'" style="max-width:440px;width:94vw;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:16px 18px 11px;border-bottom:1px solid var(--line,#E7ECF5);"><div style="font-family:\'Anuphan\',\'Prompt\',sans-serif;font-weight:700;font-size:16px;">'+E(o.title||'')+'</div><span onclick="ecomDlgCancel()" aria-label="ปิด" style="cursor:pointer;font-size:20px;color:#9aa4b5;">✕</span></div>'
+        +'<div style="padding:14px 18px;">'
+          +(o.message?'<div style="font-size:14px;line-height:1.6;color:var(--ink,#2b3445);'+(hasInput?'margin-bottom:12px;':'')+'">'+o.message+'</div>':'')
+          +(hasInput?('<label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">'+E(o.label)+'</label><input type="text" id="ecom-dlg-input" value="'+E(o.value||'')+'" placeholder="'+E(o.placeholder||'')+'" maxlength="'+(o.max||120)+'" autocomplete="off" style="width:100%;padding:9px 12px;border:1px solid var(--line,#E7ECF5);border-radius:10px;font-size:14px;"><div id="ecom-dlg-err" style="display:none;color:#d33;font-size:12.5px;margin-top:6px;"></div>'):'')
+        +'</div>'
+        +'<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:11px 18px 16px;border-top:1px solid var(--line,#E7ECF5);">'
+          +'<button type="button" onclick="ecomDlgCancel()" style="background:#fff;border:1px solid #dfe4ee;color:#5b6472;border-radius:9px;padding:8px 16px;font-weight:600;cursor:pointer;">ยกเลิก</button>'
+          +'<button type="button" id="ecom-dlg-ok" onclick="ecomDlgOk()" style="'+(o.danger?'background:#fff;border:1px solid #f3c6c6;color:#d33;':'background:#F9C4DA;border:none;color:#5b6472;')+'border-radius:9px;padding:8px 18px;font-weight:700;cursor:pointer;">'+E(o.okText||'ตกลง')+'</button>'
+        +'</div></div>';
+      ecomDlgResolve=resolve; ecomDlgValidate=o.validate||null; ov.classList.add('open');
+      var inp=document.getElementById('ecom-dlg-input');
+      if(inp){ inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); window.ecomDlgOk(); } }); inp.addEventListener('input',function(){ var er=document.getElementById('ecom-dlg-err'); if(er) er.style.display='none'; }); setTimeout(function(){ inp.focus(); inp.select(); },60); }
+      else setTimeout(function(){ var b=document.getElementById('ecom-dlg-ok'); if(b) b.focus(); },60);
+    });
+  }
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && ecomDlgResolve) window.ecomDlgCancel(); });
+  function ecomNeedText(what){ return function(v){ return v?'':('กรอก'+what+'ก่อน'); }; }
+  window.ecomAddCol=function(){ if(!ecomCanEdit()) return;
+    ecomDialog({title:'➕ เพิ่มคอลัมน์',label:'ชื่อคอลัมน์',placeholder:'เช่น รอลูกค้าตอบ · ส่งแล้ว',okText:'เพิ่มคอลัมน์',validate:ecomNeedText('ชื่อคอลัมน์')}).then(function(t){ if(t==null) return;
+      var col=ECOM_HDR_PALETTE[ECOM_COLS.length%ECOM_HDR_PALETTE.length]; var cols=ecomColsCopy(); cols.push({key:'col'+Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:t,color:col,hc:col,done:false});
+      ecomApplyCols(cols); ecomSaveCols(); ecomReRender(); }); };
+  window.ecomRenameCol=function(key){ if(!ecomCanEdit()) return; var i=ecomColIdx(key); if(i<0) return;
+    ecomDialog({title:'✏️ แก้ชื่อคอลัมน์',label:'ชื่อคอลัมน์',value:ECOM_COLS[i].title||'',okText:'บันทึก',validate:ecomNeedText('ชื่อคอลัมน์')}).then(function(t){ if(t==null) return;
+      var j=ecomColIdx(key); if(j<0) return; var cols=ecomColsCopy(); cols[j].title=t; ecomApplyCols(cols); ecomSaveCols(); ecomReRender(); }); };
   window.ecomSetColColor=function(key,hex){ if(!ecomCanEdit()||!HEX6.test(hex||'')) return; var i=ecomColIdx(key); if(i<0) return; var cols=ecomColsCopy(); cols[i].color=hex; cols[i].hc=hex; ecomApplyCols(cols); ecomSaveCols(); ecomReRender(); };
   window.ecomResetColColor=function(key){ if(!ecomCanEdit()) return; var i=ecomColIdx(key); if(i<0) return; var d=ecomDefaultCols().find(function(c){return c.key===key;}); var cols=ecomColsCopy(); cols[i].hc=''; if(d) cols[i].color=d.color; ecomApplyCols(cols); ecomSaveCols(); ecomReRender(); };
   window.ecomToggleDoneCol=function(key){ if(!ecomCanEdit()) return; var i=ecomColIdx(key); if(i<0) return; var cols=ecomColsCopy(); cols[i].done=!cols[i].done; ecomApplyCols(cols); ecomSaveCols();
@@ -13956,10 +13992,10 @@ details.fm-more[open]{padding-bottom:6px;}
   window.ecomDelCol=function(key){ if(!ecomCanEdit()) return; if(ECOM_COLS.length<=1){ if(typeof toast==='function') toast('ต้องมีอย่างน้อย 1 คอลัมน์','info'); return; }
     var i=ecomColIdx(key); if(i<0) return; var inCol=ECOM.filter(function(x){return ecomColOf(x)===key;});
     var cols=ecomColsCopy().filter(function(c){return c.key!==key;}); var target=cols[0];
-    if(!confirm('ลบคอลัมน์ “'+ECOM_COLS[i].title+'”?'+(inCol.length?(' การ์ด '+inCol.length+' ใบจะย้ายไปคอลัมน์ “'+target.title+'”'):''))) return;
-    ecomApplyCols(cols);
-    inCol.forEach(function(x){ x.status=target.key; if(target.done){ if(!x.doneAt) x.doneAt=nowStamp(); } else { x.doneAt=''; } x.updatedAt=TS(); ecomUpsertLocal(x); ecomSync(x); });
-    ecomSaveCols(); ecomReRender(); };
+    ecomDialog({title:'🗑️ ลบคอลัมน์',message:'ลบคอลัมน์ <b>“'+E(ECOM_COLS[i].title)+'”</b> ?'+(inCol.length?('<br><span style="color:#b36b00;">การ์ด '+inCol.length+' ใบในคอลัมน์นี้จะย้ายไปคอลัมน์ “'+E(target.title)+'”</span>'):'<br><span style="color:var(--ink-soft);">คอลัมน์นี้ไม่มีการ์ด</span>'),okText:'ลบคอลัมน์',danger:true}).then(function(ok){ if(ok==null) return;
+      if(ecomColIdx(key)<0) return; ecomApplyCols(cols);
+      inCol.forEach(function(x){ x.status=target.key; if(target.done){ if(!x.doneAt) x.doneAt=nowStamp(); } else { x.doneAt=''; } x.updatedAt=TS(); ecomUpsertLocal(x); ecomSync(x); });
+      ecomSaveCols(); ecomReRender(); }); };
   /* เมนู ⋮ ของหัวคอลัมน์ (หน้าตาเดียวกับบอร์ดกราฟฟิก + แถวเลือกสี) */
   window.ecomColMenuClose=function(){ var m=document.getElementById('ecom-colmenu'); if(m && m.parentNode) m.parentNode.removeChild(m); };
   window.ecomColMenu=function(ev,key){
@@ -14155,7 +14191,9 @@ details.fm-more[open]{padding-bottom:6px;}
       +actions+'</div>';
   }
   window.ecomMove=function(id,ns){ if(!ecomCanEdit()||!ECOM_STATUS[ns]) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||c.status===ns) return; c.status=ns; if(ecomIsDone(ns)){ if(!c.doneAt) c.doneAt=nowStamp(); } else { c.doneAt=''; } c.updatedAt=TS(); ecomUpsertLocal(c); ecomReRender(); if(typeof toast==='function') toast('ย้ายไป “'+ECOM_STATUS[ns].t+'” แล้ว','ok'); ecomSync(c); try{ if(typeof ntEcomMoved==='function') ntEcomMoved(c, ECOM_STATUS[ns].t); }catch(e){} };
-  window.ecomDel=function(id){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;}); if(!confirm('ลบการ์ด “'+((c&&c.title)||'')+'” ?')) return; ECOM=ECOM.filter(function(x){return x.id!==id;}); ecomSaveLocal(ECOM); ecomReRender(); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(cfg.url){ try{ postToSheet({target:'ecom',action:'delete',keyValue:id}); }catch(e){} } if(typeof toast==='function') toast('ลบแล้ว','ok'); };
+  window.ecomDel=function(id){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;});
+    ecomDialog({title:'🗑️ ลบการ์ด',message:'ลบการ์ด <b>“'+E((c&&c.title)||'')+'”</b> ?<br><span style="color:var(--ink-soft);">ลบแล้วทั้งทีมจะไม่เห็นการ์ดนี้</span>',okText:'ลบการ์ด',danger:true}).then(function(ok){ if(ok==null) return;
+      ECOM=ECOM.filter(function(x){return x.id!==id;}); ecomSaveLocal(ECOM); ecomReRender(); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(cfg.url){ try{ postToSheet({target:'ecom',action:'delete',keyValue:id}); }catch(e){} } if(typeof toast==='function') toast('ลบแล้ว','ok'); }); };
   window.ecomCopy=function(id){ if(!ecomCanEdit()){ if(typeof toast==='function') toast('เข้าสู่ระบบ (สิทธิ์ Content) ก่อน','info'); return; } var src=ECOM.find(function(x){return x.id===id;}); if(!src) return; var nid='ec'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); var card=Object.assign({}, src, {id:nid, title:(src.title||'')+' (copy)', doneAt:(ecomIsDone(src.status)?nowStamp():''), pos:null, checklist:(Array.isArray(src.checklist)?src.checklist.map(function(it){return {text:it.text,done:it.done};}):[]), updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'')}); ecomUpsertLocal(card); ecomReRender(); if(typeof toast==='function') toast('คัดลอกการ์ดแล้ว 📋','ok'); ecomSync(card); };
   window.ecomAddIn=function(s){ if(!ecomCanEdit()){ if(typeof toast==='function') toast('เข้าสู่ระบบ (สิทธิ์ Content) ก่อนจึงจะเพิ่มได้','info'); return; } ecomPreset=s||ecomFirst(); ecomEditId=null; openEcomEditor(null); };
   window.ecomSyncAw=function(id){
@@ -14287,10 +14325,13 @@ details.fm-more[open]{padding-bottom:6px;}
   };
   // จัดการเช็คลิสต์ย่อยในการ์ด
   function ecomAfterChk(c){ c.updatedAt=TS(); ecomUpsertLocal(c); ecomSync(c); try{ renderEcomBoard(); }catch(e){} var cov=document.getElementById('cc-card-overlay'); if(cov && cov.classList.contains('open') && typeof renderCardModal==='function') renderCardModal(); }
-  window.ecomChkAdd=function(id){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c) return; var t=prompt('รายการที่ต้องทำ:',''); if(t==null) return; t=String(t).trim(); if(!t) return; if(!Array.isArray(c.checklist)) c.checklist=[]; c.checklist.push({text:t,done:false}); ecomAfterChk(c); try{ if(window.gfxSyncAwFromEcom) window.gfxSyncAwFromEcom(c); }catch(e){} };
+  window.ecomChkAdd=function(id){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c) return; 
+    ecomDialog({title:'➕ เพิ่มรายการที่ต้องทำ',label:'รายการที่ต้องทำ',placeholder:'เช่น ภาพ AW : ปกสินค้า สำหรับ MKP',okText:'เพิ่มรายการ',max:200,validate:ecomNeedText('รายการ')}).then(function(t){ if(t==null) return; if(!Array.isArray(c.checklist)) c.checklist=[]; c.checklist.push({text:t,done:false}); ecomAfterChk(c); try{ if(window.gfxSyncAwFromEcom) window.gfxSyncAwFromEcom(c); }catch(e){} }); };
   window.ecomChkToggle=function(id,i){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.checklist)||!c.checklist[i]) return; c.checklist[i].done=!c.checklist[i].done; ecomAfterChk(c); };
-  window.ecomChkEdit=function(id,i){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.checklist)||!c.checklist[i]) return; var t=prompt('แก้ไขรายการ:',c.checklist[i].text||''); if(t==null) return; t=String(t).trim(); if(!t) return; c.checklist[i].text=t; ecomAfterChk(c); try{ if(window.gfxSyncAwFromEcom) window.gfxSyncAwFromEcom(c); }catch(e){} };
-  window.ecomChkDel=function(id,i){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.checklist)||!c.checklist[i]) return; if(!confirm('ลบรายการ “'+(c.checklist[i].text||'')+'” ?')) return; c.checklist.splice(i,1); ecomAfterChk(c); };
+  window.ecomChkEdit=function(id,i){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.checklist)||!c.checklist[i]) return; 
+    ecomDialog({title:'✏️ แก้ไขรายการ',label:'รายการที่ต้องทำ',value:c.checklist[i].text||'',okText:'บันทึก',max:200,validate:ecomNeedText('รายการ')}).then(function(t){ if(t==null||!c.checklist[i]) return; c.checklist[i].text=t; ecomAfterChk(c); try{ if(window.gfxSyncAwFromEcom) window.gfxSyncAwFromEcom(c); }catch(e){} }); };
+  window.ecomChkDel=function(id,i){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.checklist)||!c.checklist[i]) return; 
+    ecomDialog({title:'🗑️ ลบรายการ',message:'ลบรายการ <b>“'+E(c.checklist[i].text||'')+'”</b> ?',okText:'ลบรายการ',danger:true}).then(function(ok){ if(ok==null||!c.checklist[i]) return; c.checklist.splice(i,1); ecomAfterChk(c); }); };
   window.ecomDragStart=function(ev,id){ ecomDragId=id; try{ ev.dataTransfer.setData('text/plain',id); ev.dataTransfer.effectAllowed='move'; }catch(e){} var c=ev.currentTarget; if(c) c.classList.add('dragging'); };
   window.ecomDragEnd=function(ev){ var c=ev.currentTarget; if(c) c.classList.remove('dragging'); ecomDragId=null; [].forEach.call(document.querySelectorAll('#ecom-host .cc-pl-col.dragover'),function(el){el.classList.remove('dragover');}); };
   window.ecomDragOver=function(ev){ ev.preventDefault(); try{ ev.dataTransfer.dropEffect='move'; }catch(e){} ev.currentTarget.classList.add('dragover'); };
