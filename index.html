@@ -10937,7 +10937,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function teamUnlocked(){ return (typeof isTeamUnlocked==='function') && isTeamUnlocked(); }
   function unlocked(){ return teamUnlocked() && (typeof canEditArea==='function') && canEditArea('content'); }
   // คอมเมนต์ในการ์ด: ทีม Content + บัญชีกราฟฟิก (กราฟฟิกแก้ Content ไม่ได้ แต่ต้องคุยงานในการ์ดได้)
-  function canComment(){ return unlocked() || (typeof isGraphicAccount==='function' && isGraphicAccount()) || (typeof isDataSupportAccount==='function' && isDataSupportAccount()); }   // เข้าสู่ระบบ + อยู่ในรายชื่อผู้แก้ Content
+  function canComment(){ return unlocked() || (typeof isGraphicAccount==='function' && isGraphicAccount()) || (typeof isDataSupportAccount==='function' && isDataSupportAccount()) || (typeof canEditArea==='function' && canEditArea('npd_process')); }   // เข้าสู่ระบบ + อยู่ในรายชื่อผู้แก้ Content
   window.ccUnlock=function(){
     if(typeof toast==='function') toast('กรุณาเข้าสู่ระบบ (ปุ่มมุมขวาล่าง) เพื่อแก้ไข · แก้แล้วทีมจะเห็นตรงกัน','info');
     if(typeof sbShowLoginModal==='function') sbShowLoginModal();
@@ -12164,7 +12164,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
         +'<button class="cc-cm-send" onclick="postComment()">ส่งคอมเมนต์</button>'
         +'</div></div>';
     } else {
-      composer='<div class="cc-cm-empty">เข้าสู่ระบบ (ปุ่มมุมขวาล่าง) เพื่อคอมเมนต์/แนบไฟล์</div>';
+      composer='<div class="cc-cm-empty">'+((typeof sbLoggedIn==='function'&&sbLoggedIn())?'บัญชีนี้ยังไม่มีสิทธิ์คอมเมนต์ในการ์ด — แจ้งแอดมินเพื่อเพิ่มสิทธิ์':'เข้าสู่ระบบ (ปุ่มมุมขวาล่าง) เพื่อคอมเมนต์/แนบไฟล์')+'</div>';
     }
     return '<div class="cc-cm-sec"><div class="cc-cm-h">💬 คอมเมนต์งาน ('+cms.length+')</div><div class="cc-cm-list">'+list+'</div>'+composer+'</div>';
   }
