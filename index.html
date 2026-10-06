@@ -15401,13 +15401,40 @@ details.fm-more[open]{padding-bottom:6px;}
   function deskSupported(){ try{ return typeof window.Notification!=='undefined'; }catch(e){ return false; } }
   function deskPerm(){ try{ return deskSupported()?window.Notification.permission:'unsupported'; }catch(e){ return 'unsupported'; } }
   function deskOn(){ try{ return localStorage.getItem(DESK_KEY)!=='off' && deskPerm()==='granted'; }catch(e){ return false; } }   // อนุญาตแล้ว = เปิดให้เลย (ปิดเองได้ที่แผงกระดิ่ง)
-  function deskShow(title,body,tag,id){
+  function deskShow(title,body,tag,id,cb){
     try{
       var ic=(document.querySelector('link[rel~="icon"]')||{}).href||'';
       var n=new window.Notification(title,{body:String(body||'').slice(0,160),tag:tag,icon:ic||undefined,silent:false});
+      var shown=false;
+      n.onshow=function(){ shown=true; };
+      n.onerror=function(){ if(cb){ cb(false); cb=null; } };
       n.onclick=function(){ try{ window.focus(); n.close(); if(id && typeof window.ntOpen==='function') window.ntOpen(id); }catch(e){} };
+      if(cb) setTimeout(function(){ if(cb){ cb(shown); cb=null; } },2500);   // 2.5 วิแล้วเบราว์เซอร์ยังไม่ยืนยันว่าแสดง = มักถูกบังที่ระดับเครื่อง (ห้ามรบกวน/ปิดแจ้งเตือน Chrome ในระบบ)
+    }catch(e){ if(cb){ cb(false,e); cb=null; } }
+  }
+  var missedAway=false, deskFailedAway=false;
+  var SYS_HELP='เช็ก: macOS การตั้งค่าระบบ → การแจ้งเตือน → Google Chrome (ต้องเปิดอยู่ · ไม่ใช่โหมดห้ามรบกวน/โฟกัส) · Windows: การตั้งค่า → ระบบ → การแจ้งเตือน';
+  window.ntDeskTest=function(){
+    if(deskPerm()!=='granted'){ window.ntDeskToggle(); return; }
+    try{ if(!deskOn()){ localStorage.setItem(DESK_KEY,'on'); render(); } }catch(e){}
+    if(typeof toast==='function') toast('ส่งแจ้งเตือนทดสอบแล้ว — ถ้าไม่ขึ้นที่มุมจอ ให้สลับไปแท็บอื่นแล้วกดทดสอบซ้ำ','info');
+    deskShow('🔔 ทดสอบแจ้งเตือนมุมจอ','ถ้าเห็นข้อความนี้ที่มุมจอ แปลว่าใช้งานได้แล้ว','npd-test',null,function(ok){
+      if(!ok && typeof toast==='function') toast('เบราว์เซอร์ส่งแล้ว แต่เครื่องไม่แสดง · '+SYS_HELP,'err'); });
+  };
+  function deskHint(){
+    try{
+      var p=deskPerm();
+      if(p==='default'){ askMaybe(true); }
+      else if(p==='denied'){ if(typeof toast==='function') toast('🔕 มีแจ้งเตือนเข้ามาตอนคุณอยู่แท็บอื่น แต่เบราว์เซอร์บล็อกการแจ้งเตือนของเว็บนี้ไว้ — กดไอคอนข้างช่อง URL → การแจ้งเตือน → อนุญาต แล้วรีเฟรช','info'); }
+      else if(p==='granted' && !deskOn()){ if(typeof toast==='function') toast('มีแจ้งเตือนเข้ามาตอนคุณอยู่แท็บอื่น แต่ปิดแจ้งเตือนมุมจอไว้ — เปิดได้ที่ท้ายแผงกระดิ่ง (🖥️ มุมจอ)','info'); }
     }catch(e){}
   }
+  function onReturn(){
+    if(document.hidden) return;
+    if(missedAway){ missedAway=false; setTimeout(deskHint,600); }
+    else if(deskFailedAway){ deskFailedAway=false; if(typeof toast==='function') toast('เบราว์เซอร์ส่งแจ้งเตือนมุมจอแล้ว แต่เครื่องไม่แสดง · '+SYS_HELP,'err'); }
+  }
+  window.addEventListener('focus',onReturn); document.addEventListener('visibilitychange',onReturn);
   window.ntDeskToggle=function(){
     if(!deskSupported()){ if(typeof toast==='function') toast('เบราว์เซอร์นี้ไม่รองรับแจ้งเตือนมุมจอ','err'); return; }
     var perm=deskPerm();
@@ -15431,12 +15458,12 @@ details.fm-more[open]{padding-bottom:6px;}
   var ASK_KEY='npd_nt_desk_asked_v1';
   function askOld(){ try{ var t=parseInt(localStorage.getItem(ASK_KEY)||'0',10); return !t || Date.now()-t>14*86400000; }catch(e){ return true; } }
   function askRemove(){ var el=document.getElementById('nt-ask'); if(el&&el.parentNode) el.parentNode.removeChild(el); }
-  function askMaybe(){
+  function askMaybe(force){
     try{
-      if(!loggedIn() || !deskSupported() || deskPerm()!=='default' || !askOld() || document.getElementById('nt-ask')) return;
+      if(!loggedIn() || !deskSupported() || deskPerm()!=='default' || (!force && !askOld()) || document.getElementById('nt-ask')) return;
       var el=document.createElement('div'); el.id='nt-ask'; el.setAttribute('role','dialog');
       el.style.cssText='position:fixed;right:18px;bottom:18px;z-index:9998;max-width:340px;background:#fff;border:1px solid #E7ECF5;border-radius:16px;padding:14px 16px;box-shadow:0 18px 40px -14px rgba(40,54,110,.45);font-family:Sarabun,sans-serif;';
-      el.innerHTML='<div style="font-weight:700;font-size:14.5px;margin-bottom:4px;">🔔 ให้เด้งเตือนตอนอยู่แท็บอื่นไหม?</div>'
+      el.innerHTML='<div style="font-weight:700;font-size:14.5px;margin-bottom:4px;">'+(force?'🔔 มีแจ้งเตือนเข้ามาตอนคุณอยู่แท็บอื่น':'🔔 ให้เด้งเตือนตอนอยู่แท็บอื่นไหม?')+'</div>'
         +'<div style="font-size:13px;color:#6b7794;line-height:1.5;margin-bottom:10px;">ถ้ามีคนแท็ก คอมเมนต์ หรือย้ายงานของคุณ จะเด้งที่มุมจอทันที แม้กำลังเปิดเว็บอื่นอยู่ (ต้องเปิดแท็บเว็บนี้ค้างไว้)</div>'
         +'<div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" id="nt-ask-no" style="border:1px solid #dfe4ee;background:#fff;color:#5b6472;border-radius:9px;padding:7px 14px;font-weight:600;cursor:pointer;">ไว้ทีหลัง</button><button type="button" id="nt-ask-yes" style="border:none;background:#2F6DA8;color:#fff;border-radius:9px;padding:7px 16px;font-weight:700;cursor:pointer;">เปิดแจ้งเตือน</button></div>';
       document.body.appendChild(el);
@@ -15580,8 +15607,9 @@ details.fm-more[open]{padding-bottom:6px;}
     var f=fresh[0]; var lab=(BOARDS[f.board]||BOARDS.content).t;
     var away=(document.hidden || !document.hasFocus());
     if(away){ blinkStart((fresh.length>1?(fresh.length+' แจ้งเตือนใหม่'):((f.fromName?f.fromName+' · ':'')+(f.title||lab)))); }
+    if(away && !deskOn()) missedAway=true;
     if(deskOn() && away){
-      fresh.slice(0,3).forEach(function(n){ var bd=BOARDS[n.board]||BOARDS.content; deskShow('🔔 '+bd.t+' · '+(n.fromName||'ระบบ'), (n.title||'')+(n.body?(' — '+n.body):''), 'npd-'+n.id, n.id); });
+      fresh.slice(0,3).forEach(function(n,i){ var bd=BOARDS[n.board]||BOARDS.content; deskShow('🔔 '+bd.t+' · '+(n.fromName||'ระบบ'), (n.title||'')+(n.body?(' — '+n.body):''), 'npd-'+n.id, n.id, i===0?function(ok){ if(!ok) deskFailedAway=true; }:null); });
       if(fresh.length>3) deskShow('🔔 มีแจ้งเตือนใหม่อีก '+(fresh.length-3)+' รายการ','เปิดเว็บเพื่อดูทั้งหมด','npd-more',null);
     }
     if(typeof toast==='function') toast('🔔 '+(fresh.length>1?(fresh.length+' แจ้งเตือนใหม่'):((f.fromName?f.fromName+' · ':'')+lab+': '+(f.title||'')+' — '+(f.body||''))).slice(0,140),'info');
@@ -15626,7 +15654,8 @@ details.fm-more[open]{padding-bottom:6px;}
         +'<b>'+E(n.fromName||'ระบบ')+'</b> · '+E(n.title||'')+'<div class="nt-sub">'+E(n.body||'')+'</div></div>'
         +'<div class="nt-time">'+E(ago(n.createdAt))+'</div>'+(n.readAt?'':'<span class="nt-dot"></span>')+'</div>';
     });
-    html+='</div>'+((loggedIn()&&deskLabel())?('<div class="nt-dk"><button type="button" onclick="ntDeskToggle()" title="แจ้งเตือนที่มุมจอ ตอนไม่ได้เปิดหน้านี้อยู่">'+deskLabel()+'</button><small>'+(deskPerm()==='granted'&&deskOn()?'เด้งที่มุมจอแม้อยู่แท็บอื่น · ต้องเปิดเว็บนี้ค้างไว้ในเบราว์เซอร์':'เปิดเพื่อให้เด้งที่มุมจอแม้อยู่แท็บอื่น')+'</small></div>'):'')
+    var dpm=deskPerm(), dhelp=(dpm==='denied')?'เบราว์เซอร์บล็อกไว้ — กดไอคอนข้างช่อง URL → การแจ้งเตือน → อนุญาต แล้วรีเฟรชหน้านี้':((dpm==='granted'&&deskOn())?'เด้งที่มุมจอแม้อยู่แท็บอื่น · ต้องเปิดเว็บนี้ค้างไว้ในเบราว์เซอร์':'เปิดเพื่อให้เด้งที่มุมจอแม้อยู่แท็บอื่น');
+    html+='</div>'+((loggedIn()&&deskLabel())?('<div class="nt-dk"><button type="button" onclick="ntDeskToggle()" title="แจ้งเตือนที่มุมจอ ตอนไม่ได้เปิดหน้านี้อยู่">'+deskLabel()+'</button>'+(dpm==='granted'?'<button type="button" onclick="ntDeskTest()" title="ส่งแจ้งเตือนทดสอบ">🧪 ทดสอบ</button>':'')+'<small>'+dhelp+'</small></div>'):'')
       +'<div class="nt-pf"><button type="button" onclick="ntMarkAll()">✓ อ่านทั้งหมด</button>'
       +'<span class="nt-snd"><button type="button" onclick="ntSoundToggle()" title="เปิด/ปิดเสียง">'+(on?'🔊 เสียง: เปิด':'🔇 เสียง: ปิด')+'</button>'
       +'<button type="button" title="ฟังเสียง Content" onclick="ntSoundTest(\'content\')" style="background:#FFB7CF;">C</button>'
