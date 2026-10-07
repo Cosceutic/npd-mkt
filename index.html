@@ -974,6 +974,61 @@ html.ccz-lock{overflow:hidden;}
 .cc-pl-board{cursor:grab;}
 .cc-pl-board .cc-pl-colhead:not(.col-grab){cursor:default;}
 html.bp-panning,html.bp-panning *{cursor:grabbing !important;user-select:none !important;-webkit-user-select:none !important;}
+/* ===== หน้าต่างการ์ด: กว้างขึ้น · ช่องคอมเมนต์สูงขึ้น (กล่องพิมพ์ย่อเมื่อไม่ได้พิมพ์) · แท็บไฟล์แบบตาราง ===== */
+#cc-card-overlay .modal-box{max-width:min(1400px,96vw) !important;}
+@media (min-width:761px){
+  #cc-card-body .cc-card-left{flex:1 1 38%;}
+  #cc-card-body .cc-card-right{flex:1 1 62%;position:relative;}
+  #cc-card-body .cc-cm-sec{padding:10px 16px 12px;}
+}
+#cc-card-body .cc-cm-tabs{margin:-2px 0 10px;}
+#cc-card-body .cc-cm-tabs button{padding:4px 2px 8px;}
+#cc-card-body .cc-cm-list{margin-bottom:8px;}
+#cc-card-body .cc-cm-box{padding:8px 10px;}
+#cc-card-body .cc-cm-sec .cc-cm-box textarea{min-height:58px !important;}
+#cc-card-body .cc-cm-sec .cc-cm-box:focus-within textarea,#cc-card-body .cc-cm-sec .cc-cm-box.has-text textarea{min-height:110px !important;}
+#cc-card-body .cc-cm-draftnote{margin-bottom:4px;padding:2px 8px;}
+#cc-card-body .cc-cm-toolbar{margin-top:6px;}
+@media (max-height:760px){ #cc-card-body .cc-cm-sec .cc-cm-box textarea{min-height:44px !important;} #cc-card-body .cc-cm-sec .cc-cm-box:focus-within textarea,#cc-card-body .cc-cm-sec .cc-cm-box.has-text textarea{min-height:84px !important;} }
+/* ไฟล์: แถวตาราง */
+#cc-card-body .cc-cm-fhint{font-size:11.5px;color:var(--ink-soft);margin-left:4px;align-self:center;}
+#cc-card-body .cc-cm-pvnote{font-size:12px;background:#EAF3FB;border:1px solid #CFE3F2;color:#2F6DA8;border-radius:9px;padding:6px 10px;margin:4px 0 8px;}
+#cc-card-body .cc-cm-pvnote a{font-weight:700;color:#2F6DA8;}
+#cc-card-body .cc-flist{display:flex;flex-direction:column;margin-top:4px;overflow-y:auto;min-height:0;flex:1 1 auto;}
+#cc-card-body .cc-frow{display:grid;grid-template-columns:60px minmax(0,1fr) auto;gap:12px;align-items:center;padding:9px 6px;border-bottom:1px solid var(--line);}
+#cc-card-body .cc-frow:hover{background:#F2F6FB;}
+#cc-card-body .cc-frow.pv{background:#F1F9F3;}
+#cc-card-body .cc-fth{display:flex;width:56px;height:56px;border-radius:9px;overflow:hidden;border:1px solid var(--line);background:#fff;align-items:center;justify-content:center;text-decoration:none;font-size:22px;}
+#cc-card-body .cc-fth img{width:100%;height:100%;object-fit:cover;display:block;}
+#cc-card-body .cc-fth.ico{background:#F6F8FC;}
+#cc-card-body .cc-fname{font-size:13.5px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#cc-card-body .cc-fsub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#cc-card-body .cc-facts{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+#cc-card-body .cc-fact{border:1px solid var(--line);background:#fff;border-radius:8px;min-width:30px;height:30px;padding:0 7px;font-size:14px;line-height:1;cursor:pointer;color:#5b6472;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;font-family:inherit;}
+#cc-card-body .cc-fact.txt{font-size:12px;font-weight:600;color:#2F6DA8;}
+#cc-card-body .cc-fact:hover{border-color:#9DBFDD;background:#F4F8FD;color:#2F6DA8;}
+#cc-card-body .cc-fact.cov{filter:grayscale(1);opacity:.55;}
+#cc-card-body .cc-fact.cov:hover{filter:none;opacity:1;}
+#cc-card-body .cc-fact.cov.on{filter:none;opacity:1;background:#E4F6E6;border-color:#8AD29A;}
+/* ไอคอนชนิดไฟล์ */
+.cc-fico{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:34px;padding:0 4px;border-radius:7px;color:#fff;font:800 12px 'Sarabun',sans-serif;letter-spacing:.2px;}
+.cc-fico.f-pdf{background:#DC3A2F;}.cc-fico.f-doc{background:#2B579A;font-size:16px;}.cc-fico.f-xls{background:#1D6F42;}.cc-fico.f-ppt{background:#D24726;font-size:16px;}.cc-fico.f-zip{background:#7A7F8C;}.cc-fico.f-txt{background:#5B6B80;}.cc-fico.f-oth{background:#8B96A8;font-size:10px;}
+#cc-card-body .cc-cm-filew{display:inline-flex;align-items:center;gap:4px;max-width:100%;}
+#cc-card-body .cc-cm-file .th{width:34px;height:34px;object-fit:cover;border-radius:5px;border:1px solid var(--line);}
+#cc-card-body .cc-cm-file.hasth{padding:4px 10px 4px 5px;}
+#cc-card-body .cc-cm-dl{border:1px solid var(--line);background:#fff;border-radius:8px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;text-decoration:none;color:#2F6DA8;}
+#cc-card-body .cc-cm-dl:hover{background:#EAF3FB;border-color:#9DBFDD;}
+#cc-card-body .cc-cm-file .ic .cc-fico{min-width:30px;height:30px;font-size:11px;}
+/* กรอบ Drop file here */
+.cc-drop-ov{position:absolute;inset:0;z-index:30;background:rgba(236,244,253,.94);border:3px dashed #5aa0d8;border-radius:12px;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.cc-drop-ov.deny{border-color:#D9822B;background:rgba(255,246,235,.95);}
+.cc-drop-in{text-align:center;color:#2F6DA8;}
+.cc-drop-ov.deny .cc-drop-in{color:#B8631A;}
+.cc-drop-ic{font-size:46px;line-height:1;}
+.cc-drop-t{font:700 24px 'Anuphan','Prompt',sans-serif;margin-top:6px;}
+.cc-drop-s{font-size:12.5px;margin-top:6px;opacity:.85;}
+.ccz-dl{color:#fff;background:rgba(255,255,255,.14);border-radius:999px;padding:6px 13px;text-decoration:none;font-size:12.5px;white-space:nowrap;}
+.ccz-dl:hover{background:rgba(255,255,255,.26);}
 </style>
 </head>
 <body>
@@ -11419,7 +11474,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   window.ccAddGfxPicToField=function(n){ var el=document.getElementById('cc-cf-gfxpic'); if(!el) return; var cur=el.value.split(',').map(function(s){return s.trim();}).filter(Boolean); if(cur.indexOf(n)<0){ cur.push(n); el.value=cur.join(', '); } };
   window.ccAddFollowerToField=function(n){ var el=document.getElementById('cc-cf-followers'); if(!el) return; var cur=el.value.split(',').map(function(s){return s.trim();}).filter(Boolean); if(cur.indexOf(n)<0){ cur.push(n); el.value=cur.join(', '); } };
   // latest attached image from a card's comments → shown on the card face (before opening)
-  function cardPreviewImage(cardId){ if(typeof commentsFor!=='function') return ''; var cs=commentsFor(cardId); for(var i=cs.length-1;i>=0;i--){ if(cs[i].images){ var f=cs[i].images.split(';').map(function(s){return s.trim();}).filter(function(s){ return s && !/\.(pdf|docx?|xlsx?|pptx?|csv|txt|zip|rar|7z|ai|psd|fig)$/i.test(s.split('#')[0].split('?')[0]); })[0]; if(f) return f; } } return ''; }
+  /* cardPreviewImage ย้ายไปอยู่กับระบบคอมเมนต์ (รองรับภาพตัวอย่างที่เลือกเอง/ปิด) */
   window.ccPreviewImage=cardPreviewImage;   // ใช้ร่วมกับการ์ดกราฟฟิก (รูปล่าสุดในคอมเมนต์)
   window.ccEnsureComments=function(cb){ if(!cmLoaded && typeof loadCommentsFromSheet==='function'){ cmLoaded=true; loadCommentsFromSheet().then(function(){ try{ cb&&cb(); }catch(e){} }).catch(function(){}); } };   // โหลดคอมเมนต์ครั้งแรก (บอร์ดกราฟฟิกใช้โชว์รูปตัวอย่าง + ตัวเลข 💬)
   function isoOf(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
@@ -11949,6 +12004,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function ccHdrClean(o){ var r={}; if(o&&typeof o==='object'){ Object.keys(o).forEach(function(k){ if(CAL_STATUS[k] && window.hdrOk && window.hdrOk(o[k])) r[k]=o[k]; }); } return r; }
   async function ccHdrLoad(){
     try{ ccOrdLoad(); }catch(e){}
+    try{ ccPrevLoad(); }catch(e){}
     if(Date.now()-ccHdrDirtyAt<10000 || ccHdrUnsynced) return;
     try{
       var rows=await sbSelect('graphic_config','k=eq.'+encodeURIComponent(CC_HDR_K)); var row=null;
@@ -12323,10 +12379,19 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   /* ===== คอมเมนต์ v2 (2026-10-07): แท็บ ความคิดเห็น/ไฟล์ · แนบ PDF · แก้ไขคอมเมนต์ · แถบจัดรูปแบบข้อความ ===== */
   var cmTab='c', cmEditId=null, cmEditDraft=null, cmHasEd=false, cmPrevOn=false;
   var CM_FILE_EXT=/\.(pdf|docx?|xlsx?|pptx?|csv|txt|zip|rar|7z|ai|psd|fig)$/i, CM_MAX_FILE=25*1024*1024;
+  var CM_PICK='image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.zip';
+  var CM_MIME={pdf:'application/pdf',doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xls:'application/vnd.ms-excel',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',ppt:'application/vnd.ms-powerpoint',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',csv:'text/csv',txt:'text/plain',zip:'application/zip'};
   function cmUrlPath(u){ return String(u||'').split('#')[0].split('?')[0]; }
   function cmIsFile(u){ return CM_FILE_EXT.test(cmUrlPath(u)); }
-  function cmFileName(u){ var h=String(u||'').split('#')[1]; if(h){ try{ return decodeURIComponent(h); }catch(e){} } var t=cmUrlPath(u); try{ t=decodeURIComponent(t); }catch(e){} t=t.split('/').pop()||t; return t.replace(/^\d{10,}_[a-z0-9]{1,8}_/i,''); }
-  function cmWithName(url,name){ return (url && name && String(url).indexOf('#')<0) ? (url+'#'+encodeURIComponent(name)) : url; }
+  function cmExt(n){ var m=String(n||'').toLowerCase().match(/\.([a-z0-9]+)$/); return m?m[1]:''; }
+  function cmBase(u){ return String(u||'').split('#')[0]; }
+  /* ไฟล์แนบเก็บเป็น URL + #ส่วนท้าย: แบบเก่า "#ชื่อไฟล์" · แบบใหม่ "#n=ชื่อไฟล์&t=URLภาพตัวอย่าง" (PDF ที่สร้างภาพหน้าแรกไว้แล้ว) */
+  function cmFrag(u){ var s=String(u||''), i=s.indexOf('#'); return i<0?'':s.slice(i+1); }
+  function cmFragParams(u){ var f=cmFrag(u); if(!f||f.indexOf('=')<0) return null; var o={}; f.split('&').forEach(function(p){ var i=p.indexOf('='); if(i>0){ var v=p.slice(i+1); try{ v=decodeURIComponent(v); }catch(e){} o[p.slice(0,i)]=v; } }); return o; }
+  function cmFileName(u){ var o=cmFragParams(u); if(o&&o.n) return o.n; var h=cmFrag(u); if(h&&!o){ try{ return decodeURIComponent(h); }catch(e){} } var t=cmUrlPath(u); try{ t=decodeURIComponent(t); }catch(e){} t=t.split('/').pop()||t; return t.replace(/^\d{10,}_[a-z0-9]{1,8}_/i,''); }
+  function cmThumbOf(u){ var o=cmFragParams(u); return (o&&o.t)||''; }
+  function cmWithName(url,name,thumb){ if(!url) return url; var b=cmBase(url); if(thumb) return b+'#n='+encodeURIComponent(name||'')+'&t='+encodeURIComponent(thumb); return name?(b+'#'+encodeURIComponent(name)):b; }
+  function cmPrevUrl(u){ return cmIsFile(u)?cmThumbOf(u):u; }   // URL รูปที่ใช้เป็นภาพตัวอย่างการ์ด (รูป = ตัวมันเอง · PDF = ภาพหน้าแรก)
   function cmSplit(raw){ return String(raw||'').split(';').map(function(s){return s.trim();}).filter(Boolean); }
   function cmPlain(t){ return String(t||'').replace(/\*\*|__|~~|==/g,''); }
   /* ---- จัดรูปแบบข้อความ: **หนา** *เอียง* __ขีดเส้นใต้__ ~~ขีดฆ่า~~ ==ไฮไลต์== · บรรทัดขึ้นต้น "- " หรือ "1. " = รายการ ---- */
@@ -12373,24 +12438,81 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   /* ---- แท็บ ---- */
   window.ccTab=function(t){ cmTab=(t==='f')?'f':'c'; cmEditId=null; cmEditDraft=null; renderCardModal(); };
   window.ccGoComment=function(id){ cmTab='c'; cmEditId=null; cmEditDraft=null; renderCardModal(); setTimeout(function(){ var el=document.getElementById('cmi-'+id); if(el){ try{ el.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){ el.scrollIntoView(); } el.classList.add('cc-cm-flash'); setTimeout(function(){ el.classList.remove('cc-cm-flash'); },1800); } },60); return false; };
+  /* ---- ดาวน์โหลดด้วยชื่อไฟล์เดิม: Supabase Storage รับ ?download=<ชื่อ> แล้วตอบ Content-Disposition (filename* UTF-8) → ชื่อไทยไม่กลายเป็น _____ ---- */
+  var CM_STORE=/\/storage\/v1\/object\/public\//;
+  function cmDlUrl(u,name){ var b=cmBase(u); if(!CM_STORE.test(b)) return b; name=name||cmFileName(u); return b+(b.indexOf('?')<0?'?':'&')+'download='+encodeURIComponent(name); }
+  window.ccDlUrl=cmDlUrl; window.ccFileName=cmFileName;
+  function cmIsPdf(u){ return cmExt(cmFileName(u))==='pdf'||/\.pdf$/i.test(cmUrlPath(u)); }
+  var CM_OFFICE=/^(docx?|xlsx?|pptx?)$/;
+  function cmFileIcon(ext){ ext=String(ext||'').toLowerCase(); var m={pdf:['pdf','PDF'],doc:['doc','W'],docx:['doc','W'],xls:['xls','X'],xlsx:['xls','X'],csv:['xls','CSV'],ppt:['ppt','P'],pptx:['ppt','P'],zip:['zip','ZIP'],rar:['zip','RAR'],'7z':['zip','7Z'],txt:['txt','TXT']}[ext]||['oth',(ext||'FILE').slice(0,4).toUpperCase()]; return '<span class="cc-fico f-'+m[0]+'">'+m[1]+'</span>'; }
   function cmCollectFiles(cms){ var out=[]; cms.forEach(function(c){ cmSplit(c.images).forEach(function(u){ out.push({u:u,kind:cmIsFile(u)?'file':'img',by:c.author,at:c.createdAt,cid:c.id}); }); cmSplit(c.links).forEach(function(u){ out.push({u:u,kind:'link',by:c.author,at:c.createdAt,cid:c.id}); }); }); return out.reverse(); }
-  function cmFileChip(u,extra){ var nm=cmFileName(u), ext=(nm.match(/\.([a-z0-9]+)$/i)||['',''])[1].toUpperCase()||'FILE';
-    return '<a class="cc-cm-file" href="'+e2(u)+'" target="_blank" rel="noopener" title="'+e2(nm)+' — เปิดไฟล์"><span class="ic">📄</span><span class="nm"><b>'+e2(ext)+'</b> '+e2(nm.length>34?nm.slice(0,31)+'…':nm)+'</span></a>'+(extra||''); }
-  /* รูปทั้งหมดของการ์ด (รูปในคอมเมนต์ + ไฟล์แนบของการ์ดกราฟฟิก) สำหรับตัวดูรูปเต็มจอ */
-  window.ccCardGallery=function(id){ var out=[], seen={}; function add(u,by,at){ u=String(u||'').trim(); if(!u||cmIsFile(u)||seen[u]) return; seen[u]=1; out.push({u:u,by:by||'',at:at||''}); }
-    try{ commentsFor(id).forEach(function(c){ cmSplit(c.images).forEach(function(u){ add(u,(window.pplName&&c.author)?window.pplName(c.author):c.author,c.createdAt); }); }); }catch(e){}
-    try{ var g=(typeof window.gfxGetCard==='function')?window.gfxGetCard(id):null; if(g&&Array.isArray(g.images)) g.images.forEach(function(u){ add(u,'ไฟล์แนบการ์ด',''); }); }catch(e){}
+  function cmFileChip(u,extra){
+    var nm=cmFileName(u), ext=cmExt(nm), th=cmThumbOf(u), pdf=cmIsPdf(u), base=cmBase(u);
+    var ic=th?('<img class="th" src="'+e2(th)+'" alt="" loading="lazy">'):('<span class="ic">'+cmFileIcon(ext)+'</span>');
+    var dl=CM_STORE.test(base)?('<a class="cc-cm-dl" href="'+e2(cmDlUrl(u,nm))+'" title="ดาวน์โหลด (ใช้ชื่อไฟล์เดิม)" aria-label="ดาวน์โหลด">⬇</a>'):'';
+    return '<span class="cc-cm-filew"><a class="cc-cm-file'+(th?' hasth':'')+'" href="'+e2(pdf?base:cmDlUrl(u,nm))+'"'+(pdf?' target="_blank" rel="noopener"':'')+' title="'+e2(nm)+(pdf?' — เปิดดู':' — ดาวน์โหลด')+'">'+ic+'<span class="nm"><b>'+e2((ext||'file').toUpperCase())+'</b> '+e2(nm.length>36?nm.slice(0,33)+'…':nm)+'</span></a>'+dl+'</span>'+(extra||'');
+  }
+  /* รูปทั้งหมดของการ์ด (รูปในคอมเมนต์ + หน้าแรกของ PDF + ไฟล์แนบของการ์ดกราฟฟิก) สำหรับตัวดูรูปเต็มจอ */
+  window.ccCardGallery=function(id){ var out=[], seen={}; function add(u,by,at,open,name){ u=String(u||'').trim(); if(!u||seen[u]) return; seen[u]=1; out.push({u:u,by:by||'',at:at||'',open:open||'',name:name||''}); }
+    try{ commentsFor(id).forEach(function(c){ var by=(window.pplName&&c.author)?window.pplName(c.author):c.author; cmSplit(c.images).forEach(function(u){ if(cmIsFile(u)){ var th=cmThumbOf(u); if(th) add(th,by,c.createdAt,cmBase(u),cmFileName(u)); } else add(u,by,c.createdAt,'',cmFileName(u)); }); }); }catch(e){}
+    try{ var g=(typeof window.gfxGetCard==='function')?window.gfxGetCard(id):null; if(g&&Array.isArray(g.images)) g.images.forEach(function(u){ if(!cmIsFile(u)) add(u,'ไฟล์แนบการ์ด','','',cmFileName(u)); }); }catch(e){}
     return out; };
   function cmRefreshBoards(){ renderCalActive(); try{ if(typeof window.ecomRefresh==='function') window.ecomRefresh(); }catch(e){} try{ if(typeof window.gfxRefresh==='function') window.gfxRefresh(); }catch(e){} }
   function cmFilesHtml(files){
-    var up=canComment()?'<div class="cc-cm-ftop"><label class="cc-cm-tool">➕ แนบไฟล์ (รูป / PDF)<input type="file" accept="image/*,application/pdf" multiple style="display:none;" onchange="ccFilesUpload(this)"></label><button type="button" class="cc-cm-tool" onclick="ccFilesAddLink()">🔗 แนบลิงก์</button></div><div class="cc-cm-status" id="cc-cm-fstatus"></div>':'';
+    var can=canComment(), root=cmRootId(cmModalCard), eff=cardPreviewImage(cmModalCard), mode=CARD_PREV[root];
+    var up=can?'<div class="cc-cm-ftop"><label class="cc-cm-tool">➕ แนบไฟล์<input type="file" accept="'+CM_PICK+'" multiple style="display:none;" onchange="ccFilesUpload(this)"></label><button type="button" class="cc-cm-tool" onclick="ccFilesAddLink()">🔗 แนบลิงก์</button><span class="cc-cm-fhint">หรือลากไฟล์มาวางตรงนี้ได้เลย · รูป · PDF · Word · Excel · PowerPoint · CSV · TXT · ZIP</span></div><div class="cc-cm-status" id="cc-cm-fstatus"></div>':'';
+    var note=(mode==='')?'<div class="cc-cm-pvnote">🚫 ปิดภาพตัวอย่างของการ์ดนี้อยู่ · <a href="#" onclick="ccAutoCover();return false;">ใช้อัตโนมัติ (รูปล่าสุด)</a></div>':((mode&&eff===mode)?'<div class="cc-cm-pvnote">🖼️ เลือกภาพตัวอย่างการ์ดเองไว้ · <a href="#" onclick="ccAutoCover();return false;">กลับเป็นอัตโนมัติ (รูปล่าสุด)</a></div>':'');
     if(!files.length) return up+'<div class="cc-cm-empty">ยังไม่มีไฟล์แนบ — ไฟล์ รูป และลิงก์ที่แนบในคอมเมนต์จะมารวมกันที่นี่</div>';
-    var meta=function(f){ return '<div class="cc-cm-fmeta">'+e2(f.by||'ไม่ระบุชื่อ')+' · '+e2(f.at||'')+' · <a href="#" onclick="return ccGoComment(\''+aj(f.cid)+'\')">ดูคอมเมนต์</a></div>'; };
-    return up+'<div class="cc-cm-flist">'+files.map(function(f){
-      if(f.kind==='img'){ var thumb=resolveDriveLink(f.u)||f.u, href=/^https?:/i.test(f.u)?f.u:thumb; return '<div class="cc-cm-frow img"><a class="cc-cm-img cc-zoom" data-zoom="'+e2(href)+'" href="'+e2(href)+'" target="_blank" rel="noopener" title="เปิดรูปเต็ม"><img src="'+e2(thumb)+'" loading="lazy" onerror="this.parentNode.classList.add(\'cc-cm-img-broken\');this.style.display=\'none\';"></a>'+meta(f)+'</div>'; }
-      if(f.kind==='file') return '<div class="cc-cm-frow">'+cmFileChip(f.u)+meta(f)+'</div>';
-      return '<div class="cc-cm-frow"><a class="lnk-btn" href="'+e2(f.u)+'" target="_blank" rel="noopener" title="'+e2(f.u)+'">🔗 '+e2(linkLabel(f.u))+' <small>↗ เปิดดู</small></a>'+meta(f)+'</div>'; }).join('')+'</div>';
+    var rows=files.map(function(f){
+      var nm,th,pu='',sub,acts='';
+      var store=CM_STORE.test(cmBase(f.u));
+      if(f.kind==='img'){ var thumb=resolveDriveLink(f.u)||f.u, href=/^https?:/i.test(f.u)?f.u:thumb; nm=cmFileName(f.u); pu=f.u; sub='รูปภาพ';
+        th='<a class="cc-fth cc-zoom" data-zoom="'+e2(href)+'" href="'+e2(href)+'" target="_blank" rel="noopener" title="เปิดรูปเต็ม"><img src="'+e2(thumb)+'" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.classList.add(\'ico\');this.parentNode.textContent=\'🖼️\';"></a>'; }
+      else if(f.kind==='file'){ nm=cmFileName(f.u); var ext=cmExt(nm), t=cmThumbOf(f.u), pdf=cmIsPdf(f.u); pu=t; sub=(ext||'file').toUpperCase()+(pdf&&!t?' · ยังไม่มีภาพตัวอย่าง':'');
+        th='<a class="cc-fth'+(t?'':' ico')+'" href="'+e2(pdf?cmBase(f.u):cmDlUrl(f.u,nm))+'"'+(pdf?' target="_blank" rel="noopener"':'')+' title="'+e2(nm)+'">'+(t?('<img src="'+e2(t)+'" loading="lazy">'):cmFileIcon(ext))+'</a>';
+        if(can&&pdf&&!t) acts+='<button type="button" class="cc-fact txt" data-cid="'+e2(f.cid)+'" data-u="'+e2(f.u)+'" onclick="ccMakeThumb(this)" title="สร้างภาพตัวอย่างจากหน้าแรกของ PDF">🖼 สร้างภาพตัวอย่าง</button>';
+        if(CM_OFFICE.test(ext)&&store) acts+='<a class="cc-fact" href="https://docs.google.com/viewer?url='+encodeURIComponent(cmBase(f.u))+'" target="_blank" rel="noopener" title="ดูตัวอย่างไฟล์ (ผ่าน Google Docs Viewer)">👁</a>'; }
+      else { nm=linkLabel(f.u); sub='ลิงก์'; th='<a class="cc-fth ico" href="'+e2(f.u)+'" target="_blank" rel="noopener" title="'+e2(f.u)+'">🔗</a>'; }
+      var on=(pu&&pu===eff);
+      if(can&&pu) acts='<button type="button" class="cc-fact cov'+(on?' on':'')+'" data-pu="'+e2(pu)+'" onclick="ccToggleCover(this)" title="'+(on?'ยกเลิกภาพตัวอย่าง':'ตั้งเป็นภาพตัวอย่างการ์ด')+'" aria-label="'+(on?'ยกเลิกภาพตัวอย่าง':'ตั้งเป็นภาพตัวอย่างการ์ด')+'">🖼</button>'+acts;
+      if(store&&f.kind!=='link') acts+='<a class="cc-fact" href="'+e2(cmDlUrl(f.u,nm))+'" title="ดาวน์โหลด (ใช้ชื่อไฟล์เดิม)" aria-label="ดาวน์โหลด">⬇</a>';
+      acts+='<a class="cc-fact" href="#" onclick="return ccGoComment(\''+aj(f.cid)+'\')" title="ดูคอมเมนต์ต้นทาง">💬</a>';
+      return '<div class="cc-frow'+(on?' pv':'')+'"><div class="cc-fthw">'+th+'</div><div class="cc-finfo"><div class="cc-fname" title="'+e2(nm)+'">'+e2(nm)+'</div><div class="cc-fsub">'+e2(f.by||'ไม่ระบุชื่อ')+' · '+e2(f.at||'')+' · '+e2(sub)+'</div></div><div class="cc-facts">'+acts+'</div></div>'; }).join('');
+    return up+note+'<div class="cc-flist">'+rows+'</div>';
   }
+  /* ===== ภาพตัวอย่างการ์ด (cover): อัตโนมัติ = รูปล่าสุดในคอมเมนต์ · เลือกเอง = รูป/PDF ที่กดตั้งไว้ · ปิด = ไม่แสดง — เก็บใน graphic_config คีย์ cardprev {รหัสห้อง: URL | ''} ทีมเห็นตรงกัน ===== */
+  var CARD_PREV={}, CARD_PREV_LKEY='npd_cardprev_v1', CARD_PREV_K='cardprev', cardPrevDirtyAt=0;
+  try{ var _cp=JSON.parse(localStorage.getItem(CARD_PREV_LKEY)||'{}'); if(_cp&&typeof _cp==='object'&&!Array.isArray(_cp)) CARD_PREV=_cp; }catch(e){}
+  function cardPreviewImage(cardId){
+    if(typeof commentsFor!=='function') return '';
+    var root=cmRootId(cardId), pv=CARD_PREV[root]; if(pv==='') return '';
+    var cs=commentsFor(cardId), auto='', ok=false;
+    for(var i=cs.length-1;i>=0;i--){ var arr=cmSplit(cs[i].images); for(var j=0;j<arr.length;j++){ var u=arr[j], pu=cmPrevUrl(u); if(pv&&pu===pv) ok=true; if(!auto&&!cmIsFile(u)) auto=u; } }
+    return (pv&&ok)?pv:auto;
+  }
+  window.ccPreviewImage=cardPreviewImage;   // ใช้ร่วมกับการ์ดกราฟฟิก/E-com (รูปในห้องคอมเมนต์เดียวกัน)
+  window.ccPreviewNone=function(id){ try{ return CARD_PREV[cmRootId(id)]===''; }catch(e){ return false; } };
+  async function ccPrevLoad(){
+    if(Date.now()-cardPrevDirtyAt<10000) return;
+    try{ var rows=await sbSelect('graphic_config','k=eq.'+encodeURIComponent(CARD_PREV_K)), row=null; for(var i=0;i<rows.length;i++){ if(rows[i].k===CARD_PREV_K){ row=rows[i]; break; } }
+      var o={}; if(row){ try{ o=JSON.parse(row.v||'{}'); }catch(e){} } if(!o||typeof o!=='object'||Array.isArray(o)) o={};
+      var changed=JSON.stringify(o)!==JSON.stringify(CARD_PREV); CARD_PREV=o; try{ localStorage.setItem(CARD_PREV_LKEY,JSON.stringify(o)); }catch(e){}
+      if(changed){ try{ cmRefreshBoards(); }catch(e){} } }catch(e){} }
+  async function ccPrevSave(root,val){      // val: URL | '' (ปิด) | null (กลับเป็นอัตโนมัติ)
+    var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
+    var base=null; try{ var rows=await sbSelect('graphic_config','k=eq.'+encodeURIComponent(CARD_PREV_K)); base={}; for(var i=0;i<rows.length;i++){ if(rows[i].k===CARD_PREV_K){ try{ base=JSON.parse(rows[i].v||'{}')||{}; }catch(e){} } } }catch(e){}   // ผสานกับค่าล่าสุดบนเซิร์ฟเวอร์ ไม่ทับที่คนอื่นตั้งไว้
+    if(!base||typeof base!=='object'||Array.isArray(base)) base=Object.assign({},CARD_PREV);
+    if(val===null) delete base[root]; else base[root]=val;
+    CARD_PREV=base; cardPrevDirtyAt=Date.now(); try{ localStorage.setItem(CARD_PREV_LKEY,JSON.stringify(base)); }catch(e){}
+    try{ var r=await postToSheet({target:'graphicconfig',action:'upsert',keyValue:CARD_PREV_K,row:{k:CARD_PREV_K,v:JSON.stringify(base),updatedAt:(typeof todayStr==='function'?todayStr():''),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}});
+      if(r&&r.ok===false&&typeof toast==='function') toast('❌ บันทึกภาพตัวอย่างไม่สำเร็จ: '+(r.error||'ไม่ทราบสาเหตุ')+' — เก็บในเครื่องไว้ก่อน (ทีมยังไม่เห็น)','err'); }catch(e){} }
+  window.ccToggleCover=function(btn){
+    if(!canComment()||!cmModalCard) return; var pu=btn.getAttribute('data-pu'); if(!pu) return;
+    var root=cmRootId(cmModalCard), eff=cardPreviewImage(cmModalCard), nv=(pu===eff)?'':pu;
+    CARD_PREV[root]=nv; cardPrevDirtyAt=Date.now(); renderCardModal(); cmRefreshBoards();
+    if(typeof toast==='function') toast(nv===''?'ยกเลิกภาพตัวอย่างการ์ดแล้ว':'ตั้งเป็นภาพตัวอย่างการ์ดแล้ว 🖼️','ok'); ccPrevSave(root,nv);
+  };
+  window.ccAutoCover=function(){ if(!canComment()||!cmModalCard) return; var root=cmRootId(cmModalCard); delete CARD_PREV[root]; cardPrevDirtyAt=Date.now(); renderCardModal(); cmRefreshBoards(); if(typeof toast==='function') toast('ใช้ภาพตัวอย่างอัตโนมัติ (รูปล่าสุด) แล้ว','ok'); ccPrevSave(root,null); };
   function cmPostRaw(text,images,links){
     var author=ccAutoAuthor()||ccLastAuthor()||'ไม่ระบุชื่อ';
     var c={ id:'cm'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), cardId:cmRootId(cmModalCard), author:author, text:text||'', images:(images||[]).join(' ; '), links:(links||[]).join(' ; '), createdAt:nowStamp() };
@@ -12400,38 +12522,70 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   }
   window.ccFilesAddLink=function(){ if(!canComment()) return; var u=window.prompt('วางลิงก์ที่ต้องการแนบ (เช่น Google Drive / Canva / เว็บ)','https://'); if(!u) return; u=u.trim(); if(!/^https?:\/\//i.test(u)){ if(typeof toast==='function') toast('ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://','err'); return; } cmPostRaw('',[],[u]); };
   /* ---- อัปไฟล์ (รูป/PDF) → Supabase Storage ผ่าน postReadable · คืน {urls,fail,err} · ชื่อไฟล์จริงเก็บไว้หลัง # ---- */
+  /* ---- ภาพตัวอย่างหน้าแรกของ PDF (pdf.js โหลดตอนต้องใช้เท่านั้น) ---- */
+  var CM_PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', CM_PDFJS_WORKER='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js', cmPdfP=null;
+  function cmTimeout(p,ms){ return Promise.race([p,new Promise(function(_,rej){ setTimeout(function(){ rej(new Error('หมดเวลา')); },ms); })]); }
+  function cmLoadPdfJs(){ if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib); if(cmPdfP) return cmPdfP;
+    cmPdfP=new Promise(function(res,rej){ var s=document.createElement('script'); s.src=CM_PDFJS; s.onload=function(){ try{ window.pdfjsLib.GlobalWorkerOptions.workerSrc=CM_PDFJS_WORKER; res(window.pdfjsLib); }catch(e){ cmPdfP=null; rej(e); } }; s.onerror=function(){ cmPdfP=null; rej(new Error('โหลดตัวอ่าน PDF ไม่ได้')); }; document.head.appendChild(s); }); return cmPdfP; }
+  async function cmPdfThumbFromBuffer(buf){
+    var lib=await cmLoadPdfJs(), pdf=await lib.getDocument({data:buf}).promise, page=await pdf.getPage(1), v0=page.getViewport({scale:1}), sc=Math.min(2.5,900/v0.width), vp=page.getViewport({scale:sc});
+    var cv=document.createElement('canvas'); cv.width=Math.round(vp.width); cv.height=Math.round(vp.height); var cx=cv.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,cv.width,cv.height);
+    await page.render({canvasContext:cx,viewport:vp}).promise; try{ pdf.destroy(); }catch(e){} return cv.toDataURL('image/jpeg',0.85);
+  }
+  async function cmUploadThumb(buf,nm){ var du=await cmTimeout(cmPdfThumbFromBuffer(buf),25000); var tr=await postReadable({action:'uploadImage',dataUrl:du,name:'thumb_'+String(nm||'pdf').replace(/\.pdf$/i,'')+'.jpg'}); return (tr&&tr.ok&&tr.url)?tr.url:''; }
+  window.ccMakeThumb=async function(btn){
+    if(!canComment()) return; var cid=btn.getAttribute('data-cid'), u=btn.getAttribute('data-u'); btn.disabled=true; btn.textContent='⏳ กำลังสร้าง…';
+    try{
+      var resp=await fetch(cmBase(u)); if(!resp.ok) throw new Error('โหลดไฟล์ไม่ได้ ('+resp.status+')'); var buf=new Uint8Array(await resp.arrayBuffer());
+      var th=await cmUploadThumb(buf,cmFileName(u)); if(!th) throw new Error('อัปภาพตัวอย่างไม่สำเร็จ');
+      var c=(window.CONTENT_COMMENTS||[]).find(function(z){return z.id===cid;}); if(!c) throw new Error('ไม่พบคอมเมนต์ต้นทาง');
+      var arr=cmSplit(c.images), i=arr.indexOf(u); if(i<0) throw new Error('ไม่พบไฟล์ในคอมเมนต์');
+      arr[i]=cmWithName(cmBase(u),cmFileName(u),th); var nc=Object.assign({},c,{images:arr.join(' ; ')});
+      var local=cmLocal().filter(function(z){return z.id!==nc.id;}); local.push(nc); cmSaveLocal(local); rebuildCM(); renderCardModal(); cmRefreshBoards();
+      if(typeof toast==='function') toast('สร้างภาพตัวอย่างแล้ว 🖼️','ok'); cmSync(nc,'upsert');
+    }catch(e){ btn.disabled=false; btn.textContent='🖼 สร้างภาพตัวอย่าง'; if(typeof toast==='function') toast('สร้างภาพตัวอย่างไม่สำเร็จ: '+((e&&e.message)||''),'err'); }
+  };
   async function cmUploadFiles(files,say){
     var res={urls:[],fail:0,err:'',noauth:false}, cfg=(typeof getWriteConfig==='function')?getWriteConfig():{};
     if(!cfg||!cfg.url){ res.noauth=true; say('❌ ยังไม่ได้เข้าสู่ระบบ — อัปไฟล์ไม่ได้ (แนบลิงก์แทนได้)','err'); return res; }
     for(var i=0;i<files.length;i++){
-      var f=files[i], nm=f.name||'file', isImg=/^image\//i.test(f.type||''), isPdf=/pdf$/i.test(f.type||'')||/\.pdf$/i.test(nm);
-      if(!isImg&&!isPdf){ res.fail++; res.err=res.err||'รองรับเฉพาะรูปและ PDF'; continue; }
+      var f=files[i], nm=f.name||'file', ext=cmExt(nm), isImg=/^image\//i.test(f.type||''), isFile=!isImg&&!!CM_MIME[ext], isPdf=isFile&&ext==='pdf';
+      if(!isImg&&!isFile){ res.fail++; res.err=res.err||'ชนิดไฟล์ไม่รองรับ (รองรับ รูป · PDF · Word · Excel · PowerPoint · CSV · TXT · ZIP)'; continue; }
       if(f.size>CM_MAX_FILE){ res.fail++; res.err=res.err||('“'+nm+'” ใหญ่เกิน 25MB'); continue; }
       say('⏳ กำลังอัป '+(i+1)+'/'+files.length+' · '+nm+'…');
       try{
         var du=await fileToUploadDataUrl(f);
-        if(isPdf) du=String(du).replace(/^data:(?:[^;,]*)?;base64,/,'data:application/pdf;base64,');
+        if(isFile) du=String(du).replace(/^data:(?:[^;,]*)?;base64,/,'data:'+CM_MIME[ext]+';base64,');
         var r=await postReadable({action:'uploadImage', dataUrl:du, name:nm});
-        if(r&&r.ok&&r.url) res.urls.push((isPdf||/[^a-zA-Z0-9._-]/.test(nm))?cmWithName(r.url,nm):r.url); else { res.fail++; res.err=res.err||(r&&r.error)||''; }
+        if(!(r&&r.ok&&r.url)){ res.fail++; res.err=res.err||(r&&r.error)||''; continue; }
+        var th=''; if(isPdf){ try{ say('⏳ สร้างภาพตัวอย่าง PDF · '+nm+'…'); th=await cmUploadThumb(new Uint8Array(await f.arrayBuffer()),nm); }catch(e){ th=''; } }   // ล้มเหลว = ไม่มีภาพตัวอย่าง ไฟล์ยังแนบได้
+        res.urls.push((isFile||/[^a-zA-Z0-9._-]/.test(nm))?cmWithName(r.url,nm,th):r.url);
       }catch(e){ res.fail++; res.err=res.err||(e&&e.message)||''; }
     }
     return res;
   }
-  window.ccAttachImage=async function(inputEl){
-    var files=inputEl.files?Array.prototype.slice.call(inputEl.files):[]; if(!files.length) return;
+  async function ccAttachList(files){
     var say=function(m,k){ var st=document.getElementById('cc-cm-status'); if(st){ st.textContent=m; st.style.color=(k==='err')?'var(--danger,#C0392B)':'var(--ink-soft)'; } };
-    var r=await cmUploadFiles(files,say); inputEl.value=''; if(r.noauth) return;
+    var r=await cmUploadFiles(files,say); if(r.noauth) return;
     r.urls.forEach(function(u){ ccDraft.images.push(u); });
     ccSaveDraft(); renderCardModal();
     say(r.urls.length===0?('❌ อัปไม่สำเร็จ ('+r.fail+')'+(r.err?' — '+r.err:'')+' · ลองใหม่ หรือแนบลิงก์แทน'):('✅ แนบแล้ว '+r.urls.length+' ไฟล์'+(r.fail?(' · ไม่สำเร็จ '+r.fail+(r.err?' ('+r.err+')':'')):'')), r.urls.length===0?'err':'');
-  };
-  window.ccFilesUpload=async function(inputEl){
-    var files=inputEl.files?Array.prototype.slice.call(inputEl.files):[]; if(!files.length||!canComment()) return;
-    var say=function(m,k){ var st=document.getElementById('cc-cm-fstatus'); if(st){ st.textContent=m; st.style.color=(k==='err')?'var(--danger,#C0392B)':'var(--ink-soft)'; } };
-    var r=await cmUploadFiles(files,say); inputEl.value=''; if(r.noauth) return;
+  }
+  async function ccFilesUploadList(files){
+    if(!canComment()) return; var say=function(m,k){ var st=document.getElementById('cc-cm-fstatus'); if(st){ st.textContent=m; st.style.color=(k==='err')?'var(--danger,#C0392B)':'var(--ink-soft)'; } };
+    var r=await cmUploadFiles(files,say); if(r.noauth) return;
     if(r.urls.length){ cmPostRaw('',r.urls,[]); if(r.fail) say('⚠️ อัปไม่สำเร็จ '+r.fail+' ไฟล์'+(r.err?' ('+r.err+')':''),'err'); }
     else say('❌ อัปไม่สำเร็จ ('+r.fail+')'+(r.err?' — '+r.err:''),'err');
+  }
+  window.ccAttachImage=function(inputEl){ var files=inputEl.files?Array.prototype.slice.call(inputEl.files):[]; inputEl.value=''; if(files.length) return ccAttachList(files); };
+  window.ccFilesUpload=function(inputEl){ var files=inputEl.files?Array.prototype.slice.call(inputEl.files):[]; inputEl.value=''; if(files.length) return ccFilesUploadList(files); };
+  /* ลากไฟล์มาวาง: แท็บไฟล์ = อัปแล้วโพสต์เป็นไฟล์แนบเลย · แท็บความคิดเห็น = แนบเข้าคอมเมนต์ที่กำลังเขียน */
+  window.ccDropFiles=function(files){
+    files=Array.prototype.slice.call(files||[]); if(!files.length||!cmModalCard) return false;
+    if(!canComment()){ if(typeof toast==='function') toast('ต้องเข้าสู่ระบบและมีสิทธิ์คอมเมนต์ถึงจะแนบไฟล์ได้','info'); return false; }
+    if(cmTab==='f') ccFilesUploadList(files); else ccAttachList(files); return true;
   };
+  window.ccCanDrop=function(){ return !!cmModalCard&&canComment(); };
   /* ---- แก้ไขคอมเมนต์ (เฉพาะเจ้าของคอมเมนต์) ---- */
   function cmMine(c){ if(!canComment()) return false; var me=String(ccAutoAuthor()||'').trim().toLowerCase(), a=String(c.author||'').trim().toLowerCase(); return !!a&&a===me; }
   window.ccEditStart=function(id){ var c=(window.CONTENT_COMMENTS||[]).find(function(z){return z.id===id;}); if(!c||!cmMine(c)) return; cmEditId=id; cmEditDraft={text:c.text||'',images:cmSplit(c.images),links:cmSplit(c.links)}; renderCardModal(); setTimeout(function(){ var ta=document.getElementById('cc-cm-edit-text'); if(ta){ ta.focus(); try{ ta.setSelectionRange(ta.value.length,ta.value.length); }catch(e){} ccAutoGrow(ta); } },30); };
@@ -12542,7 +12696,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       var draftLinks=ccDraft.links.map(function(u,i){ return '<span class="cc-cm-draftlink">🔗 '+e2(linkHost(u))+'<button class="rm" onclick="ccRemoveDraftLink('+i+')">✕</button></span>'; }).join('');
       var peopleOpts=CC_PEOPLE.map(function(n){return '<option value="'+e2(n)+'">';}).join('');
       var draftText=(ccLoadDraft(cmModalCard)||{}).text||'';
-      composer='<div class="cc-cm-box">'
+      composer='<div class="cc-cm-box'+(draftText?' has-text':'')+'">'
         +((draftText||ccDraft.images.length||ccDraft.links.length)?'<div class="cc-cm-draftnote">📝 ร่างที่ยังไม่ได้ส่ง (เก็บไว้ให้อัตโนมัติ)</div>':'')
         +cmFmtBar('cc-cm-text',true)+'<textarea id="cc-cm-text" oninput="ccSaveDraft();ccAutoGrow(this);ccPrevUpdate();if(window.ntMentionInput)ntMentionInput(this)" onfocus="ccAutoGrow(this)" onkeydown="if(window.ccFmtKey&&ccFmtKey(event,\'cc-cm-text\'))return;if(window.ntMentionKey)ntMentionKey(event)" onblur="if(window.ntMentionClose)setTimeout(ntMentionClose,160)" placeholder="พิมพ์คอมเมนต์คุยงาน… (พิมพ์ @ เพื่อแท็กคน · วางลิงก์ในข้อความก็ได้)">'+e2(draftText)+'</textarea><div id="cc-cm-prev" class="cc-cm-prev" style="display:'+(cmPrevOn?'block':'none')+'">'+((cmPrevOn&&draftText.trim())?('<div class="cc-cm-text">'+cmRich(draftText)+'</div>'):'')+'</div>'
         +((draftImgs||draftLinks)?'<div class="cc-cm-drafts">'+draftImgs+draftLinks+'</div>':'')
@@ -12551,7 +12705,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
         +(ccAutoAuthor()
           ? '<span class="cc-cm-as" title="ชื่อมาจากบัญชีที่ล็อกอิน (อัตโนมัติ)">💬 ในนาม <b>'+e2(ccAutoAuthor())+'</b></span><input type="hidden" id="cc-cm-author" value="'+e2(ccAutoAuthor())+'">'
           : '<input class="cc-cm-author" id="cc-cm-author" list="cc-cm-people" placeholder="ระบุชื่อคุณ" title="บัญชีนี้ยังไม่มีชื่อเล่นผูกไว้ — ระบุชื่อเอง" value="'+e2(ccLastAuthor())+'"><datalist id="cc-cm-people">'+peopleOpts+'</datalist>')
-        +'<label class="cc-cm-tool">📎 แนบรูป / PDF<input type="file" accept="image/*,application/pdf" multiple style="display:none;" onchange="ccAttachImage(this)"></label>'
+        +'<label class="cc-cm-tool">📎 แนบรูป / ไฟล์<input type="file" accept="'+CM_PICK+'" multiple style="display:none;" onchange="ccAttachImage(this)"></label>'
         +'<button class="cc-cm-tool" onclick="ccAddLink()">🔗 แนบลิงก์</button>'
         +'<button class="cc-cm-send" onclick="postComment()">ส่งคอมเมนต์</button>'
         +'</div></div>';
@@ -12583,7 +12737,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +'</div>';
   }
   function cmDraftTile(u,i,rmJs,tileJs){
-    var inner=cmIsFile(u)?('<span class="cc-cm-file sm" title="'+e2(cmFileName(u))+'"><span class="ic">📄</span><span class="nm">'+e2(cmFileName(u).slice(0,26))+'</span></span>')
+    var th=cmIsFile(u)?cmThumbOf(u):'';
+    var inner=cmIsFile(u)?('<span class="cc-cm-file sm" title="'+e2(cmFileName(u))+'">'+(th?('<img class="th" src="'+e2(th)+'" alt="">'):('<span class="ic">'+cmFileIcon(cmExt(cmFileName(u)))+'</span>'))+'<span class="nm">'+e2(cmFileName(u).slice(0,26))+'</span></span>')
       :('<a class="att-tile att-sm" href="'+e2(u)+'" target="_blank" rel="noopener"><img src="'+e2(resolveDriveLink(u)||u)+'" onerror="this.style.display=\'none\';this.parentNode.classList.add(\'att-broken\');"></a>');
     return '<div class="cc-cm-draft">'+inner+'<button type="button" class="rm" title="เอาออก" onclick="'+rmJs+'">✕</button></div>';
   }
@@ -14955,7 +15110,8 @@ details.fm-more[open]{padding-bottom:6px;}
     var inner;
     if(GFX_FILE_EXT.test(String(u))){
       var nm=gfxAttName(u); var ext=(nm.match(/\.([a-z0-9]+)$/i)||['',''])[1].toUpperCase();
-      inner='<a href="'+E(href)+'" target="_blank" rel="noopener" title="'+E(nm)+'" style="'+chipStyle+'"><span style="font-size:20px;line-height:1;">📄</span><b style="font-size:10px;">'+E(ext)+'</b><span style="max-height:2.5em;overflow:hidden;">'+E(nm.length>22?nm.slice(0,19)+'…':nm)+'</span></a>';
+      var dlh=(typeof window.ccDlUrl==='function')?window.ccDlUrl(String(u).split('#')[0],nm):''; var dlBtn=(dlh&&dlh!==String(u).split('#')[0])?'<a href="'+E(dlh)+'" title="ดาวน์โหลด (ใช้ชื่อไฟล์เดิม)" aria-label="ดาวน์โหลด" onclick="event.stopPropagation()" style="position:absolute;right:3px;bottom:3px;width:20px;height:20px;border-radius:6px;background:#fff;border:1px solid var(--line,#E7ECF5);display:flex;align-items:center;justify-content:center;font-size:11px;text-decoration:none;color:#2F6DA8;">⬇</a>':'';
+      inner='<a href="'+E(href)+'" target="_blank" rel="noopener" title="'+E(nm)+'" style="'+chipStyle+'"><span style="font-size:20px;line-height:1;">📄</span><b style="font-size:10px;">'+E(ext)+'</b><span style="max-height:2.5em;overflow:hidden;">'+E(nm.length>22?nm.slice(0,19)+'…':nm)+'</span></a>'+dlBtn;
     } else {
       inner='<a href="'+E(href)+'" target="_blank" rel="noopener" title="เปิดเต็ม" style="display:inline-block;"><img src="'+E(thumb)+'" loading="lazy" style="width:74px;height:74px;object-fit:cover;border-radius:8px;border:1px solid var(--line,#E7ECF5);" onerror="this.replaceWith(Object.assign(document.createElement(\'a\'),{href:\''+E(href)+'\',target:\'_blank\',className:\'gfx-filechip\',textContent:\'🔗 ไฟล์\',style:\'display:inline-flex;align-items:center;justify-content:center;width:74px;height:74px;border-radius:8px;border:1px solid var(--line,#E7ECF5);background:#f6f8fc;font-size:12px;color:#5b6472;text-decoration:none;\'}));"></a>';
     }
@@ -15227,7 +15383,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var moveOpts=gfxColsFor(x.person).map(function(k){return '<option value="'+E(k.key)+'"'+(k.key===c.key?' selected':'')+'>'+E(k.title)+'</option>';}).join('');
     // รูปตัวอย่างบนหน้าการ์ด เหมือนการ์ด Content: รูปล่าสุดในคอมเมนต์ (ห้องเดียวกับ Content) → ไม่มีก็ใช้รูปแรกในไฟล์แนบ
     var pv=''; try{ if(typeof window.ccPreviewImage==='function') pv=window.ccPreviewImage(x.id)||''; }catch(e){}
-    if(!pv){ (Array.isArray(x.images)?x.images:[]).some(function(u){ u=String(u||''); if(u && !GFX_FILE_EXT.test(u)){ pv=u; return true; } return false; }); }
+    if(!pv && !(typeof window.ccPreviewNone==='function' && window.ccPreviewNone(x.id))){ (Array.isArray(x.images)?x.images:[]).some(function(u){ u=String(u||''); if(u && !GFX_FILE_EXT.test(u)){ pv=u; return true; } return false; }); }
     var rdl=function(u){ return (typeof resolveDriveLink==='function'&&resolveDriveLink(u))||u; };
     var pvHtml=pv?('<a class="cc-pl-img cc-zoom" data-cid="'+E(x.id)+'" data-zoom="'+E(pv)+'" href="'+E(/^https?:/i.test(pv)?pv:rdl(pv))+'" target="_blank" rel="noopener" onclick="event.stopPropagation()"><img src="'+E(rdl(pv))+'" loading="lazy" onerror="this.closest(\'.cc-pl-img\').style.display=\'none\'"></a>'):'';
     var srcBadge=x.srcContent?'<span title="มาจากงาน Content — คลิกดูต้นทาง" onclick="event.stopPropagation();openCardModal(\''+AJ(x.srcContent)+'\')" style="background:#EAF3FB;color:#2F6DA8;border-radius:5px;padding:0 6px;font-size:9.5px;font-weight:700;cursor:pointer;">✨ Content ↗</span>':'';
@@ -18270,7 +18426,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function srcOf(u){ var r=(typeof window.resolveDriveLink==='function'?window.resolveDriveLink(u):'')||u; return big(r); }
   function build(){
     if(ov) return ov; ov=document.createElement('div'); ov.id='cc-zoom-ov'; ov.className='ccz'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label','ดูรูป');
-    ov.innerHTML='<div class="ccz-bar"><span class="ccz-cnt"></span><span class="ccz-by"></span><span class="ccz-sp"></span><a class="ccz-open" target="_blank" rel="noopener">เปิดต้นฉบับ ↗</a><button type="button" class="ccz-x" aria-label="ปิด">✕</button></div>'
+    ov.innerHTML='<div class="ccz-bar"><span class="ccz-cnt"></span><span class="ccz-by"></span><span class="ccz-sp"></span><a class="ccz-dl" rel="noopener" title="ดาวน์โหลด (ใช้ชื่อไฟล์เดิม)">⬇ ดาวน์โหลด</a><a class="ccz-open" target="_blank" rel="noopener">เปิดต้นฉบับ ↗</a><button type="button" class="ccz-x" aria-label="ปิด">✕</button></div>'
       +'<button type="button" class="ccz-nav prev" aria-label="รูปก่อนหน้า">‹</button><div class="ccz-stage"><img alt=""></div><button type="button" class="ccz-nav next" aria-label="รูปถัดไป">›</button><div class="ccz-hint">คลิกรูปเพื่อซูม · ← → เปลี่ยนรูป · Esc ปิด</div>';
     document.body.appendChild(ov);
     ov.querySelector('.ccz-x').onclick=close; ov.querySelector('.prev').onclick=function(e){ e.stopPropagation(); go(-1); }; ov.querySelector('.next').onclick=function(e){ e.stopPropagation(); go(1); };
@@ -18286,7 +18442,9 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     ov.classList.toggle('big',S.big); ov.classList.toggle('single',S.list.length<2);
     ov.querySelector('.ccz-cnt').textContent=S.list.length>1?((S.i+1)+' / '+S.list.length):'';
     ov.querySelector('.ccz-by').textContent=[it.by,it.at].filter(Boolean).join(' · ');
-    ov.querySelector('.ccz-open').setAttribute('href',String(it.u).split('#')[0]);
+    var tgt=it.open||String(it.u).split('#')[0], dl=(typeof window.ccDlUrl==='function')?window.ccDlUrl(tgt,it.name||''):tgt;
+    ov.querySelector('.ccz-open').setAttribute('href',tgt); ov.querySelector('.ccz-open').textContent=it.open?'เปิดไฟล์ PDF ↗':'เปิดต้นฉบับ ↗';
+    ov.querySelector('.ccz-dl').setAttribute('href',dl);
     var st=ov.querySelector('.ccz-stage'); st.scrollTop=0; st.scrollLeft=0;
   }
   function go(d){ if(S.list.length<2) return; S.i=(S.i+d+S.list.length)%S.list.length; S.big=false; paint(); }
@@ -18339,6 +18497,33 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   window.addEventListener('blur',end);
   document.addEventListener('click',function(e){ if(suppress){ e.stopPropagation(); e.preventDefault(); suppress=false; } },true);
   document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&st) end(); });
+})();
+</script>
+<script id="file-drop-2026-10-08">
+/* ลากไฟล์จากเครื่องมาวางในหน้าต่างการ์ด (นอกจากกดปุ่มแนบ) — ขึ้นกรอบ "Drop file here"
+   • แท็บ “ไฟล์” = อัปแล้วโพสต์เป็นไฟล์แนบทันที · แท็บ “ความคิดเห็น” = แนบเข้าคอมเมนต์ที่กำลังเขียน
+   • ทำงานเฉพาะตอนลากไฟล์จากเครื่อง (ไม่ยุ่งกับการลากการ์ด/คอลัมน์) · ถ้าไม่มีสิทธิ์จะบอกเหตุผล */
+(function(){
+  var ov=null, t=0;
+  function hasFiles(e){ var ty=e.dataTransfer&&e.dataTransfer.types; if(!ty) return false; for(var i=0;i<ty.length;i++){ if(ty[i]==='Files') return true; } return false; }
+  function modal(){ var o=document.getElementById('cc-card-overlay'); return (o&&o.classList.contains('open'))?o:null; }
+  function inModal(el){ var o=modal(); return !!(o&&el&&el.closest&&el.closest('#cc-card-overlay .modal-box')); }
+  function hide(){ clearTimeout(t); if(ov&&ov.parentNode) ov.parentNode.removeChild(ov); ov=null; }
+  function show(){
+    var pane=document.querySelector('#cc-card-body .cc-card-right')||document.getElementById('cc-card-body'); if(!pane) return;
+    var ok=(typeof window.ccCanDrop==='function')?window.ccCanDrop():false;
+    if(!ov||ov.parentNode!==pane){ hide(); ov=document.createElement('div'); ov.className='cc-drop-ov'; pane.appendChild(ov); }
+    ov.classList.toggle('deny',!ok);
+    ov.innerHTML='<div class="cc-drop-in"><div class="cc-drop-ic">'+(ok?'☁️':'🔒')+'</div><div class="cc-drop-t">'+(ok?'Drop file here':'แนบไฟล์ไม่ได้')+'</div><div class="cc-drop-s">'+(ok?'วางไฟล์เพื่ออัปโหลด · รูป · PDF · Word · Excel · PowerPoint · CSV · TXT · ZIP':'ต้องเข้าสู่ระบบและมีสิทธิ์คอมเมนต์ก่อน')+'</div></div>';
+    clearTimeout(t); t=setTimeout(hide,250);   // dragover ยิงต่อเนื่อง · หยุดยิง = ลากออกไปแล้ว
+  }
+  document.addEventListener('dragenter',function(e){ if(hasFiles(e)&&inModal(e.target)){ e.preventDefault(); show(); } },true);
+  document.addEventListener('dragover',function(e){ if(!hasFiles(e)||!inModal(e.target)) return; e.preventDefault(); try{ e.dataTransfer.dropEffect='copy'; }catch(x){} show(); },true);
+  document.addEventListener('drop',function(e){
+    if(!hasFiles(e)||!inModal(e.target)) return; e.preventDefault(); e.stopPropagation(); hide();
+    try{ if(typeof window.ccDropFiles==='function') window.ccDropFiles(e.dataTransfer.files); }catch(x){}
+  },true);
+  document.addEventListener('dragend',hide,true);
 })();
 </script>
 <script id="restore-view-2026-10-06">
