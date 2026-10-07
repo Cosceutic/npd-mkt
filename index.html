@@ -1037,6 +1037,9 @@ html.bp-panning,html.bp-panning *{cursor:grabbing !important;user-select:none !i
   #view-content .ccal-cell .ccal-chip:hover{background:color-mix(in srgb,var(--s) 30%,#fff);}
   #view-content .ccal-post-s.ccal-post-s{background:color-mix(in srgb,var(--s) 20%,#fff);color:color-mix(in srgb,var(--s) 42%,#17202e);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--s) 35%,#fff);}
 }
+
+#cc-card-body .cc-cd-loglist .cc-lg-t{display:inline-block;background:#EEF3FA;color:#4a5b78;border-radius:6px;padding:0 7px;font-size:11.5px;font-weight:600;margin-right:4px;white-space:nowrap;}
+#cc-card-body .cc-cd-loglist .cc-lg-n{color:var(--ink-soft);font-size:11.5px;}
 </style>
 </head>
 <body>
@@ -11417,14 +11420,14 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     }catch(e){}
     if(msg && typeof toast==='function') toast(msg,'err');
   }
-  async function calSync(item, action, prev){
+  async function calSync(item, action, prev, opts){
     var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{};
     if(!cfg||!cfg.url){ if(typeof toast==='function') toast('บันทึกในเครื่องแล้ว · ยังไม่ได้เข้าสู่ระบบ (ทีมยังไม่เห็น)','info'); return {ok:false}; }
     var isDel=(action==='delete'), res, t=0;
     try{
       if(isDel){ res=await postToSheet({target:'contentcal', action:'delete', keyValue:item.id}); }
       else{
-        try{ var _em=(typeof sbEmail==='function')?sbEmail():'', _st=(typeof nowStamp==='function')?nowStamp():''; item.updatedBy=_em; item.updatedAt=_st; if(!prev && !item.createdBy){ item.createdBy=_em; item.createdAt=_st; } }catch(e){}   // ผู้สร้าง/ผู้แก้ล่าสุด อัตโนมัติจากบัญชีที่ล็อกอิน
+        try{ var _em=(typeof sbEmail==='function')?sbEmail():'', _st=(typeof nowStamp==='function')?nowStamp():''; if(!(opts&&opts.quiet)){ item.updatedBy=_em; item.updatedAt=_st; } if(!prev && !item.createdBy){ item.createdBy=_em; item.createdAt=_st; } }catch(e){}   // ผู้สร้าง/ผู้แก้ล่าสุด อัตโนมัติจากบัญชีที่ล็อกอิน
         t=calStamp(item.id);
         res = prev ? await calPatch(item,prev) : await postToSheet({target:'contentcal', sheetName:'ContentCalendar', key:'id', create:CAL_HEADERS, action:'upsert', keyValue:item.id, row:calRowOf(item)});
       }
@@ -11455,6 +11458,28 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function appendLog(cur, line){ cur=(cur||'').trim(); return cur ? (cur+'\n'+logStamp()+' · '+line) : (logStamp()+' · '+line); }
   // ประวัติการย้ายสถานะ (ใคร/เมื่อไหร่) + ถามยืนยันก่อนย้ายเป็น “โพสต์แล้ว”
   function ccActorName(){ var em=(typeof sbEmail==='function')?sbEmail():''; var m=window.QT_EMAIL_MAP_PUB||{}; return m[em]||em||'ไม่ทราบชื่อ'; }
+  /* ===== ประวัติงาน: แสดงเวลาแบบไทย (วันนี้/เมื่อวาน · พ.ศ.) + รวมการสลับสถานะรัวๆ ในนาทีเดียวกันเป็นบรรทัดเดียว (แสดงผลเท่านั้น ข้อมูลเดิมไม่เปลี่ยน) ===== */
+  var LOG_TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  function ccLogWhen(stamp){
+    var m=/^(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d)$/.exec(stamp||''); if(!m) return e2(stamp||'');
+    var d=new Date(+m[1],+m[2]-1,+m[3]), n=new Date(), df=Math.round((new Date(n.getFullYear(),n.getMonth(),n.getDate())-d)/86400000);
+    var rel=df===0?'วันนี้':(df===1?'เมื่อวาน':'');
+    return (rel?rel+' · ':'')+(+m[3])+' '+LOG_TH[+m[2]-1]+' '+(+m[1]+543)+' · '+m[4]+':'+m[5]+' น.';
+  }
+  function ccLogItems(lines){
+    var ev=[];   // เรียงตามเวลาเก่า→ใหม่ (ตามที่เก็บ) แล้วรวมเฉพาะ "ย้ายสถานะ" ที่ต่อเนื่องกัน คนเดียวกัน นาทีเดียวกัน
+    lines.forEach(function(l){
+      var m=/^(\d{4}-\d\d-\d\d \d\d:\d\d) · ([\s\S]*)$/.exec(l), st=m?m[1]:'', tx=m?m[2]:l, mv=/^ย้ายสถานะ (.+?) → (.+?) โดย (.+)$/.exec(tx);
+      var last=ev[ev.length-1];
+      if(mv&&last&&last.mv&&last.st===st&&last.who===mv[3]&&last.chain[last.chain.length-1]===mv[1]){ last.chain.push(mv[2]); return; }
+      ev.push({st:st,tx:tx,mv:!!mv,who:mv?mv[3]:'',chain:mv?[mv[1],mv[2]]:null});
+    });
+    return ev.map(function(x){
+      var body;
+      if(x.mv){ var n=x.chain.length-1; body='ย้ายสถานะ '+e2(x.chain.join(' → '))+(n>1?' <span class="cc-lg-n" title="สลับสถานะหลายครั้งภายในนาทีเดียวกัน">('+n+' ครั้งในนาทีเดียว)</span>':'')+' โดย <b>'+e2(x.who)+'</b>'; }
+      else { var sys=/^ระบบเลื่อนสถานะ ([\s\S]*?) โดย (.+)$/.exec(x.tx); body=sys?('⚙️ ระบบเลื่อนสถานะ '+e2(sys[1])+' <span class="cc-lg-n">· ผ่านบัญชี <b>'+e2(sys[2])+'</b></span>'):e2(x.tx); }
+      return '<li><span class="cc-lg-t">'+ccLogWhen(x.st)+'</span> '+body+'</li>'; }).reverse().join('');
+  }
   function ccStatusLabel(k){ var st=CAL_STATUS[k]; return st?st.t:String(k||''); }
   function ccMoveLogLine(from,to){ return 'ย้ายสถานะ '+ccStatusLabel(from)+' → '+ccStatusLabel(to)+' โดย '+ccActorName(); }
   function ccConfirmPosted(title){ return window.confirm('ยืนยันย้าย “'+String(title||'การ์ดนี้')+'” ไปเป็น 🚀 โพสต์แล้ว ?\n\nกดตกลงเมื่อลงโพสต์จริงแล้วเท่านั้น\n(ระบบจะบันทึกชื่อและเวลาของคนที่กดไว้ในประวัติงาน)'); }
@@ -12247,8 +12272,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var ti=colCards.findIndex(function(x){return x.id===targetId;}); if(ti<0) ti=colCards.length; else if(after) ti++;
     colCards.splice(ti,0,dragged);
     var local=calLocal(); var changed=[];
-    colCards.forEach(function(x,i){ if(x.pos!==i){ var idx=local.findIndex(function(z){return z.id===x.id;}); var base=(idx>-1)?normCAL(local[idx]):Object.assign({},x); var bf=JSON.parse(JSON.stringify(base)); base.pos=i; base.updatedAt=(typeof todayStr==='function'?todayStr():''); if(idx>-1) local[idx]=base; else local.push(base); changed.push({b:base,bf:bf}); } });
-    if(changed.length){ calSaveLocal(local); rebuildCAL(); renderPipeline(); changed.forEach(function(c){ calSync(c.b,'upsert',c.bf); }); }   // เรียงลำดับ = ส่งเฉพาะช่อง pos (ไม่แตะสถานะ)
+    colCards.forEach(function(x,i){ if(x.pos!==i){ var idx=local.findIndex(function(z){return z.id===x.id;}); var base=(idx>-1)?normCAL(local[idx]):Object.assign({},x); var bf=JSON.parse(JSON.stringify(base)); base.pos=i; if(idx>-1) local[idx]=base; else local.push(base); changed.push({b:base,bf:bf}); } });
+    if(changed.length){ calSaveLocal(local); rebuildCAL(); renderPipeline(); changed.forEach(function(c){ calSync(c.b,'upsert',c.bf,{quiet:true}); }); }   // เรียงลำดับ = ส่งเฉพาะช่อง pos (ไม่แตะสถานะ · ไม่ตีตราว่าใครแก้ล่าสุด)
   }
 
   /* ============================================================
@@ -12673,7 +12698,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     rows+=addRow(ccNoteName(x), x.note?linkBtnsHtml(x.note):'');
     var logLines=(x.log||'').split('\n').filter(Boolean);
     var histTitle='📋 ประวัติงาน'+((x.reviseCount||x.extendCount)?(' — '+(x.reviseCount?('🔧 แก้ '+x.reviseCount+' ครั้ง'):'')+(x.reviseCount&&x.extendCount?' · ':'')+(x.extendCount?('⏱️ ขยายเวลา '+x.extendCount+' ครั้ง'):'')):'');
-    var histHtml=(logLines.length)?('<div class="cc-cd-hist"><div class="cc-cd-hist-h">'+histTitle+'</div><ul class="cc-cd-loglist">'+logLines.map(function(l){return '<li>'+e2(l)+'</li>';}).reverse().join('')+'</ul></div>'):'';
+    var histHtml=(logLines.length)?('<div class="cc-cd-hist"><div class="cc-cd-hist-h">'+histTitle+'</div><ul class="cc-cd-loglist">'+ccLogItems(logLines)+'</ul></div>'):'';
     var revs=Array.isArray(x.revisions)?x.revisions:[]; var legacyRev=Math.max(0,(x.reviseCount||0)-revs.length);
     var revBadge=function(src){ var r=CC_REV_SRC.find(function(z){return z[0]===src;}); return r?'<span style="background:'+r[2]+';color:#fff;border-radius:5px;padding:0 6px;font-size:9.5px;font-weight:700;">'+e2(r[1])+'</span>':''; };
     var revItems=revs.map(function(rv,i){ var dt=(rv.ts||'').slice(0,10); return '<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--line,#eef1f7);"><span style="color:#d98324;flex:0 0 auto;">🔧</span><div style="flex:1;font-size:13px;"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'+revBadge(rv.src)+'<span>'+e2(rv.reason)+'</span></div>'+((dt||rv.by)?'<div style="font-size:11px;color:#9aa4b5;">'+e2(dt)+(rv.by?' · '+e2(rv.by):'')+'</div>':'')+'</div>'+(unlocked()?'<button onclick="ccRevDel(\''+aj(id)+'\','+i+')" title="ลบ" style="background:none;border:none;cursor:pointer;font-size:13px;">🗑️</button>':'')+'</div>'; }).join('');
@@ -14562,10 +14587,10 @@ details.fm-more[open]{padding-bottom:6px;}
     sig:function(){ return JSON.stringify((ECOM||[]).map(function(c){ return [c.id,c.status,c.title,c.owner,c.graphic,c.followers,c.submitDate,c.submitTime,c.finalDate,c.pos,c.doneAt,c.tags,c.brand,(c.checklist||[]).length,(c.drafts||[]).length]; }))+JSON.stringify(ECOM_COLS); },
     reload:function(){ return loadEcom(); }
   };
-  async function ecomSync(card){
+  async function ecomSync(card,opts){
     var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
-    try{ var _em=(typeof sbEmail==='function')?sbEmail():'', _st=(typeof nowStamp==='function')?nowStamp():''; card.updatedAt=_st; var _sv=(window.__srvIds||{}).ecom; if(!card.createdBy && _sv && !_sv[card.id]){ card.createdBy=_em; card.createdAt=_st; } }catch(e){}
-    try{ var _r=await postToSheet({target:'ecom', action:'upsert', keyValue:card.id, row:Object.assign({id:card.id,title:card.title,brand:card.brand,owner:card.owner,graphic:card.graphic||'',followers:card.followers||'',status:card.status,submitDate:card.submitDate||'',submitTime:card.submitTime||'',drafts:JSON.stringify(card.drafts||[]),finalDate:card.finalDate||'',tags:card.tags||'',note:card.note,checklist:JSON.stringify(card.checklist||[]),pos:(card.pos!=null?String(card.pos):''),doneAt:card.doneAt||'',updatedAt:card.updatedAt||TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}, card.createdBy?{createdBy:card.createdBy,createdAt:card.createdAt||''}:{})}); if(_r && _r.ok===false && typeof toast==='function'){ toast('❌ ฐานข้อมูลไม่รับการบันทึกการ์ด E-com: '+(_r.error||'ไม่ทราบสาเหตุ')+' — เก็บในเครื่องไว้ก่อน (ทีมยังไม่เห็น)','err'); } return _r; }catch(e){}
+    try{ var _em=(typeof sbEmail==='function')?sbEmail():'', _st=(typeof nowStamp==='function')?nowStamp():''; if(!(opts&&opts.quiet)) card.updatedAt=_st; var _sv=(window.__srvIds||{}).ecom; if(!card.createdBy && _sv && !_sv[card.id]){ card.createdBy=_em; card.createdAt=_st; } }catch(e){}
+    try{ var _r=await postToSheet({target:'ecom', action:'upsert', keyValue:card.id, row:Object.assign({id:card.id,title:card.title,brand:card.brand,owner:card.owner,graphic:card.graphic||'',followers:card.followers||'',status:card.status,submitDate:card.submitDate||'',submitTime:card.submitTime||'',drafts:JSON.stringify(card.drafts||[]),finalDate:card.finalDate||'',tags:card.tags||'',note:card.note,checklist:JSON.stringify(card.checklist||[]),pos:(card.pos!=null?String(card.pos):''),doneAt:card.doneAt||'',updatedAt:card.updatedAt||TS(),updatedBy:((opts&&opts.quiet)?(card.updatedBy||''):(typeof sbEmail==='function'?sbEmail():''))}, card.createdBy?{createdBy:card.createdBy,createdAt:card.createdAt||''}:{})}); if(_r && _r.ok===false && typeof toast==='function'){ toast('❌ ฐานข้อมูลไม่รับการบันทึกการ์ด E-com: '+(_r.error||'ไม่ทราบสาเหตุ')+' — เก็บในเครื่องไว้ก่อน (ทีมยังไม่เห็น)','err'); } return _r; }catch(e){}
   }
   function ecomUpsertLocal(card){ try{ if(window.liveMarkPending) window.liveMarkPending(card.id); }catch(e){} var i=ECOM.findIndex(function(x){return x.id===card.id;}); if(i>-1) ECOM[i]=card; else ECOM.push(card); ecomSaveLocal(ECOM); }
 
@@ -14845,7 +14870,7 @@ details.fm-more[open]{padding-bottom:6px;}
     if(!ecomCanEdit()) return;
     var dragged=ECOM.find(function(x){return x.id===draggedId;}); var target=ECOM.find(function(x){return x.id===targetId;});
     if(!dragged||!target) return;
-    var changed=[];
+    var changed=[], statusChanged=(dragged.status!==target.status);
     if(dragged.status!==target.status){ dragged.status=target.status; if(ECOM_STATUS[dragged.status]&&ECOM_STATUS[dragged.status].done!==undefined){} if(ecomIsDone(dragged.status)){ if(!dragged.doneAt) dragged.doneAt=nowStamp(); } else { dragged.doneAt=''; } changed.push(dragged);
       try{ if(typeof ntEcomMoved==='function' && ECOM_STATUS[dragged.status]) ntEcomMoved(dragged, ECOM_STATUS[dragged.status].t); }catch(e){} }
     var colCards=ECOM.filter(function(x){return x.status===target.status && x.id!==draggedId;});
@@ -14853,7 +14878,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var ti=colCards.findIndex(function(x){return x.id===targetId;}); if(ti<0) ti=colCards.length; else if(after) ti=ti+1;
     colCards.splice(ti,0,dragged);
     colCards.forEach(function(x,i){ if(x.pos!==i){ x.pos=i; if(changed.indexOf(x)<0) changed.push(x); } });
-    changed.forEach(function(x){ x.updatedAt=TS(); ecomUpsertLocal(x); ecomSync(x); });
+    changed.forEach(function(x){ var real=(x===dragged&&statusChanged); if(real) x.updatedAt=TS(); ecomUpsertLocal(x); ecomSync(x,{quiet:!real}); });
     ecomReRender();
   }
 
@@ -14966,15 +14991,15 @@ details.fm-more[open]{padding-bottom:6px;}
     sig:function(){ return JSON.stringify((GFX||[]).map(function(c){ return [c.id,c.person,c.col,c.title,c.owner,c.followers,c.submitDate,c.submitTime,c.tags,c.pos,c.doneAt,c.brand,c.ecom,c.srcContent,c.srcEcom,c.note,(c.checklist||[]).length,(c.images||[]).length,(c.revisions||[]).length]; }))+JSON.stringify(GFX_COLS||{})+JSON.stringify(GFX_PEOPLE||[]); },
     reload:function(){ return loadGfx(); }
   };
-  async function gfxSyncCard(card){
+  async function gfxSyncCard(card,opts){
     var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
     try{ var _sv0=(window.__srvIds||{}).gfx, _s0=_sv0&&_sv0[card.id]; if(_s0){ if(!card.srcContent&&_s0.srcContent) card.srcContent=_s0.srcContent; if(!card.srcEcom&&_s0.srcEcom) card.srcEcom=_s0.srcEcom; } }catch(e){}   // ไม่มีปุ่มยกเลิกการผูก → ลิงก์ที่มีอยู่แล้วในฐานข้อมูลห้ามถูกเขียนทับด้วยค่าว่างเด็ดขาด
-    try{ var _em=(typeof sbEmail==='function')?sbEmail():'', _st=(typeof nowStamp==='function')?nowStamp():''; card.updatedAt=_st; var _sv=(window.__srvIds||{}).gfx; if(!card.createdBy && _sv && !_sv[card.id]){ card.createdBy=_em; card.createdAt=_st; } }catch(e){}
+    try{ var _em=(typeof sbEmail==='function')?sbEmail():'', _st=(typeof nowStamp==='function')?nowStamp():''; if(!(opts&&opts.quiet)) card.updatedAt=_st; var _sv=(window.__srvIds||{}).gfx; if(!card.createdBy && _sv && !_sv[card.id]){ card.createdBy=_em; card.createdAt=_st; } }catch(e){}
     try{ var _r=await postToSheet({target:'graphiccards',action:'upsert',keyValue:card.id,row:Object.assign({
       id:card.id, person:card.person, col:card.col, title:card.title, brand:card.brand, owner:card.owner||'', graphic:card.graphic||'', followers:card.followers||'',
       submitDate:card.submitDate||'', submitTime:card.submitTime||'', tags:card.tags||'', note:card.note||'',
       checklist:JSON.stringify(card.checklist||[]), revisions:JSON.stringify(card.revisions||[]), images:JSON.stringify(card.images||[]),
-      srcContent:card.srcContent||'', srcEcom:card.srcEcom||'', ecom:card.ecom||'', pos:(card.pos!=null?String(card.pos):''), doneAt:card.doneAt||'', updatedAt:card.updatedAt||TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') }, card.createdBy?{createdBy:card.createdBy,createdAt:card.createdAt||''}:{})}); if(_r && _r.ok===false){ TOAST('❌ ฐานข้อมูลไม่รับการบันทึกการ์ดกราฟฟิก: '+(_r.error||'ไม่ทราบสาเหตุ')+' — เก็บในเครื่องไว้ก่อน (ทีมยังไม่เห็น)','err'); } return _r; }catch(e){}
+      srcContent:card.srcContent||'', srcEcom:card.srcEcom||'', ecom:card.ecom||'', pos:(card.pos!=null?String(card.pos):''), doneAt:card.doneAt||'', updatedAt:card.updatedAt||TS(), updatedBy:((opts&&opts.quiet)?(card.updatedBy||''):(typeof sbEmail==='function'?sbEmail():'')) }, card.createdBy?{createdBy:card.createdBy,createdAt:card.createdAt||''}:{})}); if(_r && _r.ok===false){ TOAST('❌ ฐานข้อมูลไม่รับการบันทึกการ์ดกราฟฟิก: '+(_r.error||'ไม่ทราบสาเหตุ')+' — เก็บในเครื่องไว้ก่อน (ทีมยังไม่เห็น)','err'); } return _r; }catch(e){}
   }
   async function gfxSavePeople(){ lset(PPL_LKEY, gfxPeople()); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'people',row:{k:'people',v:JSON.stringify(gfxPeople()),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
   async function gfxSaveCols(p){ lset(COLS_LKEY, GFX_COLS); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return; try{ await postToSheet({target:'graphicconfig',action:'upsert',keyValue:'cols::'+p,row:{k:'cols::'+p,v:JSON.stringify(GFX_COLS[p]||[]),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}}); }catch(e){} }
@@ -15843,7 +15868,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var dragged=GFX.find(function(x){return x.id===draggedId;}); var target=GFX.find(function(x){return x.id===targetId;});
     if(!dragged||!target) return; var p=dragged.person; if(target.person!==p) return;
     if(!force && dragged.col!==target.col && gfxIsReviseCol(p,target.col) && !gfxIsReviseCol(p,dragged.col)){ gfxRevOpen(draggedId,{reorder:{target:targetId,after:!!after}}); return; }
-    var changed=[];
+    var changed=[], colChanged=(dragged.col!==target.col);
     if(dragged.col!==target.col){ dragged.col=target.col; if(gfxIsEcomBriefCol(p,dragged.col)) dragged.ecom='1'; if(gfxIsDoneCol(p,dragged.col)){ if(!dragged.doneAt) dragged.doneAt=nowStamp(); } else { dragged.doneAt=''; } changed.push(dragged);
       if(dragged.srcContent && typeof window.plSetStatus==='function'){ try{ if(gfxIsDoneCol(p,dragged.col)) window.plSetStatus(dragged.srcContent,'approved',['brief','production','review','revise'],'กราฟฟิกย้ายงานเข้า “เสร็จแล้ว”'); else window.plSetStatus(dragged.srcContent,'production',['approved'],'กราฟฟิกย้ายงานออกจาก “เสร็จแล้ว”'); }catch(e){} }
       try{ if(typeof ntGfxMoved==='function'){ var gd=gfxColDef(p,dragged.col); ntGfxMoved(dragged, gd?gd.title:'', gfxIsDoneCol(p,dragged.col)); } }catch(e){}
@@ -15854,7 +15879,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var ti=colCards.findIndex(function(x){return x.id===targetId;}); if(ti<0) ti=colCards.length; else if(after) ti=ti+1;
     colCards.splice(ti,0,dragged);
     colCards.forEach(function(x,i){ if(x.pos!==i){ x.pos=i; if(changed.indexOf(x)<0) changed.push(x); } });
-    changed.forEach(function(x){ x.updatedAt=TS(); gfxUpsertLocal(x); gfxSyncCard(x); });
+    changed.forEach(function(x){ var real=(x===dragged&&colChanged); if(real) x.updatedAt=TS(); gfxUpsertLocal(x); gfxSyncCard(x,{quiet:!real}); });   // เฉพาะใบที่ถูกย้ายคอลัมน์จริงที่ตีตรา “แก้ล่าสุด” · ใบที่แค่ถูกเลื่อนลำดับไม่ตีตรา
     gfxReRender();
   }
 
