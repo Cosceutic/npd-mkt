@@ -1029,6 +1029,14 @@ html.bp-panning,html.bp-panning *{cursor:grabbing !important;user-select:none !i
 .cc-drop-s{font-size:12.5px;margin-top:6px;opacity:.85;}
 .ccz-dl{color:#fff;background:rgba(255,255,255,.14);border-radius:999px;padding:6px 13px;text-decoration:none;font-size:12.5px;white-space:nowrap;}
 .ccz-dl:hover{background:rgba(255,255,255,.26);}
+/* ===== ปฏิทิน Content: โทน Pastel (พื้นอ่อนตามสีสถานะ + ตัวอักษรเข้มโทนเดียวกัน + แถบสีซ้ายมือ) · ความคมชัดตัวอักษรทุกสี ≥ 6.6:1 ===== */
+#view-content .ccal-cell .ccal-chip{background:#EEF1F8;color:#3d4660;}
+#view-content .ccal-post-s.ccal-post-s{background:#EEF1F8;color:#3d4660;}
+@supports (background:color-mix(in srgb,red 20%,white)){
+  #view-content .ccal-cell .ccal-chip{background:color-mix(in srgb,var(--s) 20%,#fff);color:color-mix(in srgb,var(--s) 42%,#17202e);box-shadow:inset 3px 0 0 color-mix(in srgb,var(--s) 70%,#fff);padding-left:8px;}
+  #view-content .ccal-cell .ccal-chip:hover{background:color-mix(in srgb,var(--s) 30%,#fff);}
+  #view-content .ccal-post-s.ccal-post-s{background:color-mix(in srgb,var(--s) 20%,#fff);color:color-mix(in srgb,var(--s) 42%,#17202e);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--s) 35%,#fff);}
+}
 </style>
 </head>
 <body>
