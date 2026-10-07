@@ -970,6 +970,10 @@ html.ccz-lock{overflow:hidden;}
 .ccz-hint{position:absolute;bottom:10px;left:0;right:0;text-align:center;color:#8E9ABB;font:500 12px 'Sarabun',sans-serif;pointer-events:none;}
 .cc-pl-img.cc-zoom{cursor:zoom-in;}
 @media (max-width:640px){.ccz-stage{inset:52px 6px 36px;}.ccz-nav{width:38px;height:56px;font-size:28px;}.ccz-hint{display:none;}}
+/* ===== Grab-to-Pan บอร์ด ===== */
+.cc-pl-board{cursor:grab;}
+.cc-pl-board .cc-pl-colhead:not(.col-grab){cursor:default;}
+html.bp-panning,html.bp-panning *{cursor:grabbing !important;user-select:none !important;-webkit-user-select:none !important;}
 </style>
 </head>
 <body>
@@ -18306,6 +18310,35 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     else if(e.key==='ArrowLeft'){ e.preventDefault(); go(-1); } else if(e.key==='ArrowRight'){ e.preventDefault(); go(1); }
   },true);
   window.ccZoomOpen=function(list,i){ S.list=(list||[]).map(function(u){ return typeof u==='string'?{u:u,by:'',at:''}:u; }); S.i=i||0; S.big=false; if(!S.list.length) return; build(); ov.classList.add('open'); document.documentElement.classList.add('ccz-lock'); paint(); };
+})();
+</script>
+<script id="board-pan-2026-10-07">
+/* Grab-to-Pan: กดค้างที่พื้นที่ว่างของบอร์ด (ช่องว่างระหว่างคอลัมน์ / พื้นที่ว่างในคอลัมน์ / ขวาสุดของบอร์ด) แล้วลากซ้าย-ขวา → บอร์ดเลื่อนตาม
+   • ใช้กับทุกบอร์ด Pipeline (Content · E-com · Graphic Team) · ไม่แย่งงานการ์ด/หัวคอลัมน์/ปุ่ม/ลิงก์/ช่องพิมพ์ — ลากการ์ด ลากหัวคอลัมน์ ทำงานเหมือนเดิม
+   • เมาส์/ปากกาเท่านั้น (จอสัมผัสเลื่อนด้วยนิ้วได้อยู่แล้ว) · ไม่เริ่มเลื่อนเมื่อกดที่แถบเลื่อน · ลากเสร็จแล้วไม่นับเป็นการคลิก */
+(function(){
+  var st=null, suppress=false, THRESH=4;
+  var SKIP='.cc-pl-card,.cc-pl-colhead,button,a,input,select,textarea,label,summary,[contenteditable],[draggable="true"],.cc-pl-add';
+  function end(){ if(!st) return; if(st.moved){ document.documentElement.classList.remove('bp-panning'); suppress=true; setTimeout(function(){ suppress=false; },0); try{ st.board.releasePointerCapture(st.id); }catch(x){} } st=null; }
+  document.addEventListener('pointerdown',function(e){
+    if(e.button!==0||e.pointerType==='touch') return;
+    var t=e.target; if(!t||!t.closest) return;
+    var board=t.closest('.cc-pl-board'); if(!board||t.closest(SKIP)) return;
+    if(t.clientWidth&&e.offsetX>=t.clientWidth) return; if(t.clientHeight&&e.offsetY>=t.clientHeight) return;   // กดที่แถบเลื่อน = ปล่อยให้เบราว์เซอร์จัดการ
+    if(board.scrollWidth<=board.clientWidth+1) return;                                                         // บอร์ดไม่ล้นจอ ไม่มีอะไรให้เลื่อน
+    st={board:board,x:e.clientX,left:board.scrollLeft,id:e.pointerId,moved:false};
+  },true);
+  document.addEventListener('pointermove',function(e){
+    if(!st) return; if(!(e.buttons&1)){ end(); return; }
+    var dx=e.clientX-st.x;
+    if(!st.moved){ if(Math.abs(dx)<THRESH) return; st.moved=true; document.documentElement.classList.add('bp-panning'); try{ st.board.setPointerCapture(st.id); }catch(x){} }
+    e.preventDefault(); st.board.scrollLeft=st.left-dx;
+  },true);
+  document.addEventListener('pointerup',end,true);
+  document.addEventListener('pointercancel',end,true);
+  window.addEventListener('blur',end);
+  document.addEventListener('click',function(e){ if(suppress){ e.stopPropagation(); e.preventDefault(); suppress=false; } },true);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&st) end(); });
 })();
 </script>
 <script id="restore-view-2026-10-06">
