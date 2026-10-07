@@ -17473,7 +17473,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
       conn='...'; var ch=SB_CLIENT.channel(TOPIC,{config:{broadcast:{self:false},presence:{key:(typeof sbEmail==='function'?sbEmail():me())}}}); chan=ch;
       ch.on('presence',{event:'sync'},readPresence);
       ch.on('broadcast',{event:'xo'},function(m){ onMsg((m&&m.payload)||m); });
-      ch.subscribe(function(s){ if(chan!==ch) return; if(s==='SUBSCRIBED'){ conn='ok'; errAt=0; track(); } else if(s==='CHANNEL_ERROR'||s==='TIMED_OUT'||s==='CLOSED'){ conn='err'; if(!errAt) errAt=Date.now(); } refresh(); });
+      ch.subscribe(function(s){ if(chan!==ch) return; if(s==='SUBSCRIBED'){ conn='ok'; errAt=0; track(); if(S&&S.mode==='pvp'&&!S.sOver) setTimeout(function(){ if(S&&S.mode==='pvp'&&chan===ch) send(hbMsg()); },300); } else if(s==='CHANNEL_ERROR'||s==='TIMED_OUT'||s==='CLOSED'){ conn='err'; if(!errAt) errAt=Date.now(); } refresh(); });
       refresh();
     }catch(e){ conn='err'; chan=null; refresh(); } }
   function disconnect(){ try{ if(chan&&typeof SB_CLIENT!=='undefined'&&SB_CLIENT){ var c=chan; chan=null; conn=''; presence={}; SB_CLIENT.removeChannel(c); } }catch(e){} chan=null; conn=''; presence={}; }
@@ -17486,6 +17486,29 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function readPresence(){ try{ var st=chan.presenceState(), o={}; Object.keys(st).forEach(function(k){ var metas=st[k]||[]; var m=metas[metas.length-1]; if(m&&m.n) o[m.n]={st:m.st||'lobby',key:k}; }); presence=o; }catch(e){ presence={}; }
     if(S&&S.mode==='pvp'&&!S.sOver){ if(!presence[S.opp]){ if(!oppGone) oppGone=setTimeout(function(){ oppGone=null; if(S&&S.mode==='pvp'&&!S.sOver&&!presence[S.opp]) forfeitWin('คู่แข่งหลุดจากห้องเกม'); },14000); } else if(oppGone){ clearTimeout(oppGone); oppGone=null; } }
     refresh(); }
+  /* ---------- ซิงค์กระดาน PvP (กันข้อความหาย → เกมค้างรอกันทั้งสองฝั่ง) ----------
+     broadcast ไม่รับประกันว่าถึง (ช่องหลุดชั่วครู่/เน็ตสะดุด/เครื่องหลับ) → ระหว่างเล่นทุก 2 วิส่ง "hb" บอกกระดานของตัวเอง
+     ฝั่งที่ตามหลังเติมให้ทัน · ฝั่งที่นำส่งกระดานให้ซ้ำ · สถานะ "กดเล่นอีกครั้ง" ก็ซิงค์ตามไปด้วย · เงียบเกิน 12 วิ = ขึ้นปุ่มซิงค์/ยกเลิกแมตช์ (ไม่นับผล) */
+  var hbT=0;
+  function cnt9(a){ var n=0; for(var i=0;i<a.length;i++){ if(a[i]&&a[i]!=='-') n++; } return n; }
+  function boardStr(){ return S.board.map(function(c){ return c||'-'; }).join(''); }
+  function hbMsg(){ return {t:'hb',id:S.id,from:me(),to:S.opp,b:boardStr(),r:S.round,s:S.ser,re:S.reMe?1:0}; }
+  function startHb(){ if(hbT) return;
+    hbT=setInterval(function(){ if(!S||S.mode!=='pvp'){ clearInterval(hbT); hbT=0; return; } if(S.oppLeft) return;
+      if(chan&&conn==='ok') send(hbMsg());
+      var st=!S.over&&((Date.now()-(S.lastHb||0)>12000)||(S.divergeAt&&Date.now()-S.divergeAt>6000)); if(st!==!!S.stale){ S.stale=st; refresh(); } },2000); }
+  function onHb(p){ S.lastHb=Date.now(); var wasStale=S.stale; S.stale=false;
+    if(p.r===S.round&&p.s===S.ser){
+      var theirs=cnt9(String(p.b||'')), mine=cnt9(S.board);
+      if(theirs>mine&&!S.over){ applyRemote({b:p.b,r:p.r,s:p.s}); S.divergeAt=(theirs>cnt9(S.board))?(S.divergeAt||Date.now()):0; }
+      else { S.divergeAt=0; if(theirs<mine&&Date.now()-(S.lastReply||0)>900){ S.lastReply=Date.now(); send({t:'mv',id:S.id,from:me(),to:S.opp,b:boardStr(),r:S.round,s:S.ser}); } }
+      if(p.re&&S.over&&!S.oppRe&&!S.oppLeft){ S.oppRe=true; tryRematch(); refresh(); } }
+    else if(S.over&&S.reMe&&!S.oppLeft){   // อีกฝั่งขึ้นยก/ซีรีส์ถัดไปแล้ว (ข้อความ "เล่นอีกครั้ง" ของเขาหายไป) → ถือว่าเขาพร้อมแล้ว
+      var nxt=S.sOver?(p.s===S.ser+1&&p.r===1):(p.s===S.ser&&p.r===S.round+1); if(nxt){ S.oppRe=true; tryRematch(); refresh(); } }
+    if(wasStale) refresh(); }
+  window.gmResync=function(){ if(!S||S.mode!=='pvp') return; if(conn!=='ok'){ window.gmReconnect(); return; } send(hbMsg()); say('ส่งสัญญาณซิงค์ให้อีกฝ่ายแล้ว','info'); };
+  function abortGame(why){ if(!S||S.sOver) return; S.over=true; S.sOver=true; S.res='x'; S.sRes='x'; S.msg=why; S.oppLeft=true; S.stale=false; track(); refresh(); }
+  window.gmAbort=function(){ if(!S||S.mode!=='pvp'||S.sOver) return; if(!confirm('ยกเลิกแมตช์นี้ — ไม่นับแพ้/ชนะให้ทั้งสองฝั่ง ใช่ไหม?')) return; send({t:'lv',id:S.id,from:me(),to:S.opp,nr:1}); abortGame('คุณยกเลิกแมตช์ (เชื่อมต่อสะดุด) — ไม่นับผล'); };
   function onMsg(p){ if(!p||!p.t) return; var m=me();
     if(p.t==='sc'){ clearTimeout(scT); scT=setTimeout(function(){ loadAll(true); },700); return; }
     if(!m||p.to!==m) return;
@@ -17496,14 +17519,15 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     else if(p.t==='acc'){ if(outInv&&outInv.id===p.id&&outInv.to===p.from){ var o=outInv; outInv=null; clearTimeout(invT); goGame('xo'); startPvp(o.id,o.to,'X',1,{fmt:o.fmt,ser:1}); } }
     else if(p.t==='dec'){ if(outInv&&outInv.id===p.id){ var to=outInv.to; outInv=null; clearTimeout(invT); say(dn(to)+(p.why==='busy'?' กำลังเล่นอยู่':' ขอผ่านรอบนี้'),'info'); refresh(); } }
     else if(p.t==='can'){ if(inv&&inv.id===p.id){ inv=null; renderPop(); refresh(); } }
-    else if(p.t==='mv'){ if(S&&S.mode==='pvp'&&S.id===p.id&&S.opp===p.from) applyRemote(p); }
-    else if(p.t==='rem'){ if(S&&S.mode==='pvp'&&S.opp===p.from&&S.over){ S.oppRe=true; tryRematch(); refresh(); } }
-    else if(p.t==='lv'){ if(S&&S.mode==='pvp'&&S.opp===p.from){ if(!S.sOver) forfeitWin(dn(p.from)+' ออกจากเกม'); else { S.oppLeft=true; refresh(); } } } }
+    else if(p.t==='mv'){ if(S&&S.mode==='pvp'&&S.id===p.id&&S.opp===p.from){ S.lastHb=Date.now(); S.stale=false; applyRemote(p); } }
+    else if(p.t==='hb'){ if(S&&S.mode==='pvp'&&S.id===p.id&&S.opp===p.from) onHb(p); }
+    else if(p.t==='rem'){ if(S&&S.mode==='pvp'&&S.opp===p.from&&S.over){ S.lastHb=Date.now(); S.oppRe=true; tryRematch(); refresh(); } }
+    else if(p.t==='lv'){ if(S&&S.mode==='pvp'&&S.opp===p.from){ if(p.nr&&!S.sOver) abortGame(dn(p.from)+' ยกเลิกแมตช์ (เชื่อมต่อสะดุด) — ไม่นับผล'); else if(!S.sOver) forfeitWin(dn(p.from)+' ออกจากเกม'); else { S.oppLeft=true; refresh(); } } } }
 
   /* ---------- XO: สถานะเกม (แมตช์เดียว / Best of 3) ---------- */
-  function newState(mode,o){ return Object.assign({mode:mode,board:Array(9).fill(''),me:'X',opp:'',over:false,winner:'',line:null,last:-1,fresh:-1,res:'',round:1,id:'',reMe:false,oppRe:false,oppLeft:false,msg:'',fmt:1,sw:{me:0,opp:0},ser:1,sOver:false,sRes:''},o||{}); }
+  function newState(mode,o){ return Object.assign({mode:mode,board:Array(9).fill(''),me:'X',opp:'',over:false,winner:'',line:null,last:-1,fresh:-1,res:'',round:1,id:'',reMe:false,oppRe:false,oppLeft:false,msg:'',fmt:1,sw:{me:0,opp:0},ser:1,sOver:false,sRes:'',lastHb:Date.now(),stale:false,divergeAt:0,lastReply:0},o||{}); }
   function startBot(carry){ clearTimeout(botT); carry=carry||{}; S=newState('bot',{me:carry.me||bot.side,opp:'น้องบอท',diff:bot.diff,fmt:carry.fmt||fmtPick,round:carry.round||1,sw:carry.sw||{me:0,opp:0},ser:carry.ser||1}); track(); refresh(); if(S.me==='O') botTurn(); }
-  function startPvp(id,opp,mySym,round,carry){ clearTimeout(botT); carry=carry||{}; S=newState('pvp',{me:mySym,opp:opp,id:id,round:round||1,fmt:carry.fmt||1,sw:carry.sw||{me:0,opp:0},ser:carry.ser||1}); oppGone=null; track(); refresh(); sfx('inv'); }
+  function startPvp(id,opp,mySym,round,carry){ clearTimeout(botT); carry=carry||{}; S=newState('pvp',{me:mySym,opp:opp,id:id,round:round||1,fmt:carry.fmt||1,sw:carry.sw||{me:0,opp:0},ser:carry.ser||1}); oppGone=null; startHb(); track(); refresh(); sfx('inv'); }
   function botTurn(){ clearTimeout(botT); if(!S||S.mode!=='bot'||S.over) return; botT=setTimeout(function(){ if(!S||S.mode!=='bot'||S.over) return; var i=botPick(S.board,other(S.me),S.diff); if(i<0) return; S.board[i]=other(S.me); S.last=i; S.fresh=i; sfx('move'); settle(); if(!S.over) refresh(); },S.diff==='hard'?650:500); }
   window.gmCell=function(i){ if(!S||S.over||S.board[i]) return; if(turnOf(S.board)!==S.me) return;
     S.board[i]=S.me; S.last=i; S.fresh=i; sfx('move');
@@ -17552,12 +17576,15 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function playerCard(name,sym,active,who){ var isBot=(S&&S.mode==='bot'&&who==='opp');
     return '<div class="gm-pl'+(active?' on':'')+'"><span class="gm-pav">'+(isBot?'<span class="gm-botav">🤖</span>':av(name,44))+'</span><span class="gm-pn"><b>'+(isBot?'น้องบอท':nm(name))+'</b><small>'+(who==='me'?'คุณ':(isBot?({easy:'ระดับง่าย',mid:'ระดับกลาง',hard:'ระดับยาก 🔥'}[S.diff]):'คู่แข่ง'))+'</small></span><span class="gm-sym '+(sym==='X'?'x':'o')+'">'+sym+'</span></div>'; }
   function vsMid(){ if(!S||S.fmt!==3) return '<span class="vs">VS</span>'; return '<span class="vs sc"><b>'+S.sw.me+'</b> – <b>'+S.sw.opp+'</b><small>Best of 3 · ยกที่ '+S.round+'</small></span>'; }
+  function syncWarn(){ if(!S||S.mode!=='pvp'||S.over) return ''; if(conn!=='ok') return '<div class="gm-warn">📡 การเชื่อมต่อห้องเกมหลุด — กำลังเชื่อมต่อใหม่ให้อัตโนมัติ… <button type="button" class="gm-btn sm" onclick="gmReconnect()">🔄 เชื่อมต่อใหม่ตอนนี้</button></div>';
+    if(S.stale) return '<div class="gm-warn">⚠️ '+(S.divergeAt?'กระดานของสองฝั่งไม่ตรงกัน':'ไม่ได้รับสัญญาณจาก '+esc(dn(S.opp))+' มาสักพัก (เน็ตสะดุด?)')+'<br><button type="button" class="gm-btn sm" onclick="gmResync()">🔄 ซิงค์ใหม่</button> <button type="button" class="gm-btn sm" onclick="gmAbort()">ยกเลิกแมตช์ (ไม่นับผล)</button></div>'; return ''; }
   function statusHtml(){ if(!S) return '<div class="gm-st idle">เลือกโหมดทางขวา แล้วเริ่มเล่นได้เลย 👉</div>';
+    if(S.over&&S.res==='x') return '<div class="gm-st d">⚠️ '+esc(S.msg||'แมตช์ถูกยกเลิก — ไม่นับผล')+'</div>';
     if(S.over){ var t, k=S.res; if(S.fmt===3&&S.sOver){ var sc=S.sw.me+'–'+S.sw.opp; t=S.sRes==='w'?'🏆 ชนะซีรีส์ '+sc+'!':(S.sRes==='l'?'😵 แพ้ซีรีส์ '+sc+' — เอาใหม่!':'🤝 ซีรีส์เสมอ '+sc); k=S.sRes; }
       else if(S.fmt===3){ t=(S.res==='w'?'🎉 ชนะยกนี้!':(S.res==='l'?'😅 แพ้ยกนี้':'🤝 ยกนี้เสมอ'))+' · ซีรีส์ '+S.sw.me+'–'+S.sw.opp; }
       else t=S.res==='w'?'🎉 คุณชนะ!':(S.res==='l'?'😵 แพ้แล้ว… เอาใหม่!':'🤝 เสมอกัน');
       if(S.msg) t+=' · '+esc(S.msg); return '<div class="gm-st '+k+'">'+t+'</div>'; }
-    var my=turnOf(S.board)===S.me; return '<div class="gm-st '+(my?'my':'wait')+'">'+(my?'ถึงตาคุณ — แตะช่องที่ว่าง':'รอ '+(S.mode==='bot'?'น้องบอท':esc(dn(S.opp)))+' เดิน…')+'</div>'; }
+    var my=turnOf(S.board)===S.me; return '<div class="gm-st '+(my?'my':'wait')+'">'+(my?'ถึงตาคุณ — แตะช่องที่ว่าง':'รอ '+(S.mode==='bot'?'น้องบอท':esc(dn(S.opp)))+' เดิน…')+'</div>'+syncWarn(); }
   function controlsHtml(){ if(!S) return ''; var b='';
     if(S.over){ var lbl=S.sOver?'🔄 เล่นอีกครั้ง':'▶ ยกต่อไป';
       if(S.mode==='bot') b+='<button type="button" class="gm-btn pri" onclick="gmAgain()">'+lbl+'</button>';
