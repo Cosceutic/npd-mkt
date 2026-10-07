@@ -15940,18 +15940,19 @@ details.fm-more[open]{padding-bottom:6px;}
 
   /* ---------- ใครเกี่ยวข้องกับการ์ดนี้ ---------- */
   function cardInfo(id){
-    var names=[]; function add(s){ flat([s]).forEach(function(n){ names.push(n); }); }
+    var names=[], nonRev=[], revs=[]; function add(s){ flat([s]).forEach(function(n){ names.push(n); nonRev.push(n); }); } function addRev(s){ flat([s]).forEach(function(n){ names.push(n); revs.push(n); }); }   // revs = ผู้ตรวจ (ได้แจ้งเตือนคอมเมนต์เฉพาะตอนถูกแท็ก)
+    function revOnly(){ var nr=nonRev.map(normName); return revs.map(normName).filter(function(n,i,a){ return nr.indexOf(n)<0 && a.indexOf(n)===i; }); }   // ผู้ตรวจที่ไม่ได้มีบทบาทอื่นในการ์ดนี้ (เจ้าของ/PIC/ผู้มอบหมาย/กราฟฟิก)
     var g=(typeof window.gfxGetCard==='function')?window.gfxGetCard(id):null;
     var ec=(typeof window.ecomGetCard==='function')?window.ecomGetCard(id):null;
     var cc=(window.CONTENT_CAL||[]).find(function(x){return x.id===id;});
     if(g){ add(g.person); add(g.owner); add(g.followers);
-      if(g.srcContent){ var src=(window.CONTENT_CAL||[]).find(function(x){return x.id===g.srcContent;}); if(src){ add(src.owner); add(src.reviewer); add(src.followers); add(src.gfxPic); } }
-      return {board:'graphic',title:g.title||'',names:names}; }
+      if(g.srcContent){ var src=(window.CONTENT_CAL||[]).find(function(x){return x.id===g.srcContent;}); if(src){ add(src.owner); addRev(src.reviewer); add(src.followers); add(src.gfxPic); } }
+      return {board:'graphic',title:g.title||'',names:names,reviewerOnly:revOnly()}; }
     if(ec){ add(ec.owner); add(ec.followers); add(ec.graphic); return {board:'ecom',title:ec.title||'',names:names}; }
-    if(cc){ add(cc.owner); add(cc.reviewer); add(cc.followers); add(cc.gfxPic);
+    if(cc){ add(cc.owner); addRev(cc.reviewer); add(cc.followers); add(cc.gfxPic);
       try{ (window.gfxIdsAdoptedFrom?window.gfxIdsAdoptedFrom(id):[]).forEach(function(gid){ var gg=window.gfxGetCard(gid); if(gg) add(gg.person); }); }catch(e){}
-      return {board:'content',title:cc.title||'',names:names}; }
-    return {board:'content',title:'',names:names};
+      return {board:'content',title:cc.title||'',names:names,reviewerOnly:revOnly()}; }
+    return {board:'content',title:'',names:names,reviewerOnly:[]};
   }
 
   /* ---------- hooks เรียกจากแต่ละบอร์ด ---------- */
@@ -15959,7 +15960,8 @@ details.fm-more[open]{padding-bottom:6px;}
     var info=cardInfo(cardId), men=mentionedNames(text);
     var snippet=String(text||'').replace(/\s+/g,' ').trim().slice(0,120) || '(แนบรูป/ลิงก์)';
     if(men.length) window.ntEmit({kind:'mention',board:info.board,refId:cardId,title:info.title,body:snippet,names:men});
-    var rel=info.names.filter(function(n){ return men.indexOf(normName(n))<0; });
+    var rev=info.reviewerOnly||[];   // ผู้ตรวจ → ไม่แจ้งเตือนทุกคอมเมนต์ · ได้เฉพาะตอนถูกแท็ก @ (ส่งไปทาง mention ด้านบนแล้ว)
+    var rel=info.names.filter(function(n){ var k=normName(n); return men.indexOf(k)<0 && rev.indexOf(k)<0; });
     window.ntEmit({kind:'comment',board:info.board,refId:cardId,title:info.title,body:snippet,names:rel});
     var um=unmappedMentions(text);
     if(um.length && typeof toast==='function') toast('แท็ก '+um.join(', ')+' แล้ว แต่ยังไม่ได้ผูกอีเมล จึงไม่ได้รับแจ้งเตือน','info');
