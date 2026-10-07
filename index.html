@@ -12444,14 +12444,42 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     if(typeof toast==='function') toast('แก้ไขคอมเมนต์แล้ว ✏️','ok'); cmSync(c,'upsert');
   };
 
+  /* ===== คอมเมนต์สด: เปิดการ์ดแล้วดึงคอมเมนต์ของการ์ดนี้จากฐานข้อมูลใหม่เสมอ + ระหว่างเปิดการ์ดค้างไว้ดึงซ้ำทุก 10 วิ =====
+     (ก่อนหน้านี้ใช้แคชในเครื่อง · เว็บหยุดโหลดข้อมูลสดตอนมีหน้าต่างเปิดอยู่ → กดแจ้งเตือนเข้ามาแล้วไม่เห็นคอมเมนต์ใหม่) */
+  var cmPollT=0;
+  function cmThreadSig(id){ return commentsFor(id).map(function(c){ return [c.id,(c.text||'').length,(c.images||'').length,(c.links||'').length,c.editedAt||''].join(':'); }).join('|'); }
+  async function cmRefreshCard(id){
+    if(!id) return false;
+    var ids=cmThreadIds(id), before=cmThreadSig(id), rows;
+    try{ rows=await sbSelect('content_comments','cardId=in.('+ids.map(encodeURIComponent).join(',')+')'); }catch(e){ return false; }
+    if(!Array.isArray(rows)) return false;
+    var fresh=rows.map(normCM).filter(function(b){return b.id&&b.cardId;}), byId={}; fresh.forEach(function(b){ byId[b.id]=b; });
+    SHEET_ROWS_CM=SHEET_ROWS_CM.filter(function(b){ return ids.indexOf(b.cardId)<0; }).concat(fresh);   // แทนที่ทั้งห้องนี้ (คอมเมนต์ที่คนอื่นลบก็หายตาม)
+    var local=cmLocal(), kept=local.filter(function(b){ var nb=normCM(b), s=byId[nb.id]; return !(s&&cmSig(s)===cmSig(nb)); }); if(kept.length!==local.length) cmSaveLocal(kept);
+    rebuildCM(); return before!==cmThreadSig(id);
+  }
+  function cmRerenderKeep(){
+    var body=document.getElementById('cc-card-body'), top=body?body.scrollTop:0; renderCardModal(); body=document.getElementById('cc-card-body'); if(body) body.scrollTop=top;
+  }
+  async function cmPollTick(){
+    var id=cmModalCard; if(!id||document.hidden) return;
+    var ov=document.getElementById('cc-card-overlay'); if(!ov||!ov.classList.contains('open')) return;
+    var changed=await cmRefreshCard(id);
+    if(changed&&cmModalCard===id){ cmRerenderKeep(); try{ cmRefreshBoards(); }catch(e){} }
+  }
+  function cmPollStart(){ clearInterval(cmPollT); cmPollT=setInterval(cmPollTick,10000); }
+  function cmPollStop(){ clearInterval(cmPollT); cmPollT=0; }
+
   window.openCardModal=function(id){
     cmModalCard=id; cmTab='c'; cmEditId=null; cmEditDraft=null; var dr=ccLoadDraft(id); ccDraft={images:(dr&&dr.images)?dr.images.slice():[], links:(dr&&dr.links)?dr.links.slice():[]};
     if(!cmLoaded && typeof loadCommentsFromSheet==='function'){ cmLoaded=true; loadCommentsFromSheet().then(function(){ if(cmModalCard===id){ renderCardModal(); renderCalActive(); } }).catch(function(){}); }
     renderCardModal();
     document.getElementById('cc-card-overlay').classList.add('open');
+    cmRefreshCard(id).then(function(changed){ if(changed&&cmModalCard===id){ cmRerenderKeep(); try{ cmRefreshBoards(); }catch(e){} } }).catch(function(){});   // ดึงคอมเมนต์ของการ์ดนี้ใหม่ทุกครั้งที่เปิด
+    cmPollStart();
   };
   window.ccCurrentCard=function(){ return cmModalCard; };
-  window.closeCardModal=function(){ var el=document.getElementById('cc-card-overlay'); if(el) el.classList.remove('open'); cmModalCard=null; cmEditId=null; cmEditDraft=null; ccDraft={images:[],links:[]}; };
+  window.closeCardModal=function(){ var el=document.getElementById('cc-card-overlay'); if(el) el.classList.remove('open'); cmModalCard=null; cmEditId=null; cmEditDraft=null; ccDraft={images:[],links:[]}; cmPollStop(); };
   window.renderCardModal=function(){
     var id=cmModalCard; if(!id) return;
     var x=(window.CONTENT_CAL||[]).find(function(c){return c.id===id;});
