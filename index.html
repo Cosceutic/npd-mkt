@@ -14801,6 +14801,7 @@ details.fm-more[open]{padding-bottom:6px;}
   };
   async function gfxSyncCard(card){
     var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
+    try{ var _sv0=(window.__srvIds||{}).gfx, _s0=_sv0&&_sv0[card.id]; if(_s0){ if(!card.srcContent&&_s0.srcContent) card.srcContent=_s0.srcContent; if(!card.srcEcom&&_s0.srcEcom) card.srcEcom=_s0.srcEcom; } }catch(e){}   // ไม่มีปุ่มยกเลิกการผูก → ลิงก์ที่มีอยู่แล้วในฐานข้อมูลห้ามถูกเขียนทับด้วยค่าว่างเด็ดขาด
     try{ var _em=(typeof sbEmail==='function')?sbEmail():'', _st=(typeof nowStamp==='function')?nowStamp():''; card.updatedAt=_st; var _sv=(window.__srvIds||{}).gfx; if(!card.createdBy && _sv && !_sv[card.id]){ card.createdBy=_em; card.createdAt=_st; } }catch(e){}
     try{ var _r=await postToSheet({target:'graphiccards',action:'upsert',keyValue:card.id,row:Object.assign({
       id:card.id, person:card.person, col:card.col, title:card.title, brand:card.brand, owner:card.owner||'', graphic:card.graphic||'', followers:card.followers||'',
@@ -15525,7 +15526,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var P=prev.person||gfxPerson||'';   // การ์ดเดิมใช้เจ้าของบอร์ดเดิมเสมอ (เปิดแก้จากปฏิทิน/หน้าการ์ดโดยไม่ได้เข้าบอร์ด gfxPerson จะว่าง → เคยทำให้การ์ดเสียชื่อเจ้าของ)
     var col=g('gfx-f-col')||(gfxColsFor(P)[0]||{}).key||'todo';
     if(gfxEditId && !gfxRevPending && gfxIsReviseCol(P,col) && !gfxIsReviseCol(P,prev.col)){ gfxRevOpen(id,{editor:true}); return; }   // เปลี่ยนคอลัมน์เป็น “แก้ไข” ในฟอร์ม → ต้องกรอกสาเหตุก่อนบันทึก
-    var card={ id:id, person:P, col:col, title:title, brand:g('gfx-f-brand')||'godmami', owner:g('gfx-f-owner'), graphic:'', followers:g('gfx-f-followers'), submitDate:g('gfx-f-submitDate'), submitTime:g('gfx-f-submitTime'), tags:tags, note:g('gfx-f-note'), checklist:(Array.isArray(prev.checklist)?prev.checklist:[]), revisions:(Array.isArray(prev.revisions)?prev.revisions:[]), images:gfxEdAtt.slice(), doneAt:prev.doneAt||'', updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') };
+    var card={ id:id, person:P, col:col, title:title, brand:g('gfx-f-brand')||'godmami', owner:g('gfx-f-owner'), graphic:'', followers:g('gfx-f-followers'), submitDate:g('gfx-f-submitDate'), submitTime:g('gfx-f-submitTime'), tags:tags, note:g('gfx-f-note'), checklist:(Array.isArray(prev.checklist)?prev.checklist:[]), revisions:(Array.isArray(prev.revisions)?prev.revisions:[]), images:gfxEdAtt.slice(), srcContent:prev.srcContent||'', srcEcom:prev.srcEcom||'', createdBy:prev.createdBy||'', createdAt:prev.createdAt||'', pos:((col===prev.col&&prev.pos!=null)?prev.pos:null), doneAt:prev.doneAt||'', updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') };
     card.ecom=(g('gfx-f-ecom')==='1' || gfxIsEcomBriefCol(P,col))?'1':'';   // อยู่/สร้างในคอลัมน์ Brief AW E-commerce = งาน E-commerce เสมอ · ที่เหลือเลือกเองได้ในข้อมูลเสริม
     if(gfxRevPending){ card.revisions=(card.revisions||[]).concat([gfxRevPending]); gfxRevPending=null; }
     if(gfxIsDoneCol(P,col)){ if(!card.doneAt) card.doneAt=TS(); } else { card.doneAt=''; }
