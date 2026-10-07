@@ -17769,7 +17769,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   window.chatOlder=async function(){ var el=document.getElementById('ch-msgs'), h0=el?el.scrollHeight:0; await loadRoom(S.room,true); renderMsgs(false); if(el) el.scrollTop=el.scrollHeight-h0; };
   window.chatSend=function(){ send(); };
   window.chatSound=function(){ S.sound=!S.sound; lsSet('chat_sound',S.sound?'1':'0'); renderHead(); if(S.sound) ping(); };
-  window.chatPickToggle=function(){ S.showPick=!S.showPick; renderRail(); };
+  window.chatPickToggle=function(){ S.showPick=!S.showPick; renderRail(); if(S.showPick){ var rl=document.getElementById('ch-rail'); if(rl) setTimeout(function(){ rl.scrollTop=rl.scrollHeight; },0); } };
   window.chatDM=function(email){ window.chatOpen(dmRoom(myEmail(),email)); };
   window.chatPick=function(id){ S.pickFor=(S.pickFor===id)?null:id; renderMsgs(false); };
   window.chatLight=function(src){ if(!IMG_OK.test(src)) return; var o=document.createElement('div'); o.className='ch-light'; o.innerHTML='<img src="'+src+'" alt="">'; o.onclick=function(){ if(o.parentNode) o.parentNode.removeChild(o); lightbox=null; }; document.body.appendChild(o); lightbox=o; };
@@ -17912,7 +17912,9 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     +'@media (prefers-reduced-motion:reduce){.ch-fab.has,.ch-panel.open{animation:none;}}'
     /* กันช่องพิมพ์/ปุ่ม ✕ หลุดจอเมื่อข้อความเยอะ: แถวของ grid ต้องไม่ขยายตามเนื้อหา */
     +'.ch-panel{grid-template-rows:minmax(0,1fr);overflow:hidden;overflow:clip;}.ch-rail,.ch-main,.ch-msgs{min-height:0;}.ch-head,.ch-typing,.ch-note,.ch-comp{flex:none;}.ch-theme{max-height:calc(100% - 66px);overflow:auto;}'
-    +'@supports (height:100dvh){.ch-panel{height:min(560px,calc(100dvh - 36px));}}@media (max-width:700px){.ch-panel{height:100vh;}}@supports (height:100dvh){@media (max-width:700px){.ch-panel{height:100dvh;}}}';
+    +'@supports (height:100dvh){.ch-panel{height:min(560px,calc(100dvh - 36px));}}@media (max-width:700px){.ch-panel{height:100vh;}}@supports (height:100dvh){@media (max-width:700px){.ch-panel{height:100dvh;}}}'
+    /* รายการห้องด้านซ้าย: ให้ทั้งแถบเลื่อนเป็นอันเดียว ไม่ให้รายชื่อคนถูกบีบเหลือเส้นเดียว */
+    +'.ch-rail>*{flex-shrink:0;}.ch-people{flex:none;max-height:none;overflow:visible;}';
   document.head.appendChild(st);
   /* ---------- เริ่มทำงาน ---------- */
   function tick(){ var li=logged(); if(li&&!S.started&&(!S.missing||Date.now()>=retryAt)) start(); else if(!li&&(S.started||S.ready)) teardown(); renderFab(); if(S.open) renderHead(); }
