@@ -18064,7 +18064,16 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     S.rdT[room]=setTimeout(function(){ S.wrote[room]=lt; q(function(c){ return c.from('chat_reads').upsert({id:room+'|'+me,room:room,email:me,lastRead:new Date(lt).toISOString(),updatedAt:new Date().toISOString()},{onConflict:'id'}); }).then(function(r){ if(r.error){ S.wrote[room]=0; if(isMissingErr(r.error)) S.readsOk=false; } }); },700); }
   function saveReads(){ lsSet('chat_lr_'+myEmail(),JSON.stringify(S.lastRead)); }
   function unreadOf(r){ var n=0, lr=lastReadOf(r), me=myEmail(); (S.msgs[r]||[]).forEach(function(m){ if(m.sender!==me&&ts(m)>lr) n++; }); var u=(S.sum[r]&&S.sum[r].unread)||0; return Math.max(n,u); }
-  function totalUnread(){ var t=0; Object.keys(S.sum).concat(Object.keys(S.msgs)).filter(function(v,i,a){ return a.indexOf(v)===i; }).forEach(function(r){ t+=unreadOf(r); }); return t; }
+  /* ซ่อนห้องที่ไม่สนใจ: เก็บต่อคนต่อเครื่อง (localStorage) · ห้องทีมซ่อนไม่ได้ · ห้องที่ซ่อนไม่นับเลขแจ้งเตือน/ไม่เด้งเตือน
+     เลิกซ่อนเองเมื่อ: เปิดห้องนั้น · ถูกแท็ก @ · แชทส่วนตัวมีข้อความใหม่ (เขาพิมพ์หาคุณโดยตรง) */
+  function hidKey(){ return 'chat_hidden_v1_'+myEmail(); }
+  function hidMap(){ var em=myEmail(); if(!S._hid||S._hidFor!==em){ S._hidFor=em; var o=null; try{ o=JSON.parse(lsGet(hidKey(),'{}')); }catch(e){} S._hid=(o&&typeof o==='object'&&!Array.isArray(o))?o:{}; } return S._hid; }
+  function hidSave(){ lsSet(hidKey(),JSON.stringify(hidMap())); }
+  function isHid(r){ return !!hidMap()[r]; }
+  function canHide(r){ return !!r&&r!=='team'; }
+  function validRoom(r){ if(isGrp(r)) return !!grpOf(r); if(/^dept:/.test(r)) return !!deptOf(r); return isCard(r)||isDM(r); }
+  function hidRooms(){ return Object.keys(hidMap()).filter(validRoom).sort(function(a,b){ return (hidMap()[b]||0)-(hidMap()[a]||0); }); }
+  function totalUnread(){ var t=0; Object.keys(S.sum).concat(Object.keys(S.msgs)).filter(function(v,i,a){ return a.indexOf(v)===i&&!isHid(v); }).forEach(function(r){ t+=unreadOf(r); }); return t; }
   function mentionsMe(body){ body=String(body||''); var n=myNick(), d=dn(n); return body.indexOf('@'+n)>=0||(d&&body.indexOf('@'+d)>=0); }
   /* ---------- เสียงเตือนเบาๆ ---------- */
   function ping(){ if(!S.sound) return; try{ var C=window.AudioContext||window.webkitAudioContext; if(!C) return; ctxA=ctxA||new C(); if(ctxA.state==='suspended') ctxA.resume(); var o=ctxA.createOscillator(), g=ctxA.createGain(), t=ctxA.currentTime; o.type='sine'; o.frequency.setValueAtTime(880,t); o.frequency.setValueAtTime(1175,t+.09); g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(.05,t+.02); g.gain.exponentialRampToValueAtTime(.0001,t+.3); o.connect(g); g.connect(ctxA.destination); o.start(t); o.stop(t+.32); }catch(e){} }
@@ -18122,6 +18131,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     if(!known&&m.sender!==me){ var viewing=S.open&&S.room===m.room&&!document.hidden;
       if(viewing){ markRead(m.room); } else { (S.sum[m.room]||(S.sum[m.room]={unread:0})).unread=(S.sum[m.room].unread||0)+1; }
       var dm=isDM(m.room)||isGrp(m.room), men=mentionsMe(m.body);
+      if(isHid(m.room)){ if(men||isDM(m.room)){ delete hidMap()[m.room]; hidSave(); } else return m; }   // ห้องที่ซ่อนไว้ ไม่เด้ง/ไม่ส่งเสียง (ยกเว้นถูกแท็กหรือแชทส่วนตัว)
       if(!viewing&&(dm||men)){ if(!quiet){ ping(); } notifyDesk((isDM(m.room)?dn(nickOf(m.sender)):dn(nickOf(m.sender))+' · '+roomTitle(m.room)),m.body||'🖼️ รูปภาพ',m.room); } }
     return m; }
   function afterIngest(){ try{ if(S.open&&S.room) ensureRoots(S.room).then(function(){ if(S.open) renderMsgs(false); }); }catch(e){} renderFab(); if(S.open){ renderRail(); if(S.room) renderMsgs(true); } }
@@ -18208,14 +18218,20 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function renderFab(){ var root=document.getElementById('ch-root'), f=document.getElementById('ch-fab'), b=document.getElementById('ch-badge'); if(!root||!f) return;
     var show=S.ready&&logged(); root.style.display=show?'block':'none'; try{ document.body.classList.toggle('ch-on',show); }catch(e){} try{ var cb=document.getElementById('cc-chatbtn'); if(cb) cb.style.display=show?'':'none'; }catch(e){} if(!show) return; var u=totalUnread();
     f.classList.toggle('idle',!u&&!S.open); f.classList.toggle('has',u>0); f.style.display=S.open?'none':'flex'; if(b) b.textContent=u?(u>99?'99+':String(u)):''; f.setAttribute('aria-label',u?('แชททีม มี '+u+' ข้อความที่ยังไม่อ่าน'):'เปิดแชททีม'); }
-  function railRow(room,ic,title){ var u=unreadOf(room); return '<button type="button" class="ch-room'+(room===S.room?' on':'')+'" onclick="chatOpen(\''+js(room)+'\')"><span class="ic">'+ic+'</span><span class="nm">'+esc(title)+'</span>'+(u?'<span class="u">'+(u>99?'99+':u)+'</span>':'')+'</button>'; }
+  function hideBtn(room){ return canHide(room)?'<button type="button" class="ch-hd" onclick="chatHide(\''+js(room)+'\')" title="ซ่อนห้องนี้ออกจากรายการ" aria-label="ซ่อนห้องนี้">🙈</button>':''; }
+  function railRow(room,ic,title){ var u=unreadOf(room); return '<div class="ch-rw"><button type="button" class="ch-room'+(room===S.room?' on':'')+'" onclick="chatOpen(\''+js(room)+'\')"><span class="ic">'+ic+'</span><span class="nm">'+esc(title)+'</span>'+(u?'<span class="u">'+(u>99?'99+':u)+'</span>':'')+'</button>'+hideBtn(room)+'</div>'; }
+  function railIc(r){ if(isGrp(r)) return '👥'; if(isCard(r)) return '🗂️'; if(isDM(r)) return '💬'; var d=deptOf(r); return d?d.ic:'💬'; }
+  function hiddenHtml(){ var hr=hidRooms(); if(!hr.length) return '';
+    var h='<button type="button" class="ch-hidtoggle'+(S.hidOpen?' on':'')+'" onclick="chatHidToggle()">🙈 ห้องที่ซ่อนไว้ ('+hr.length+') <span>'+(S.hidOpen?'▴':'▾')+'</span></button>';
+    if(S.hidOpen) h+=hr.map(function(r){ return '<div class="ch-rw hidr"><button type="button" class="ch-room" onclick="chatOpen(\''+js(r)+'\')"><span class="ic">'+railIc(r)+'</span><span class="nm">'+esc(roomTitle(r))+'</span></button><button type="button" class="ch-hd show" onclick="chatUnhide(\''+js(r)+'\')" title="เอาห้องนี้กลับมาในรายการ" aria-label="เลิกซ่อน">เลิกซ่อน</button></div>'; }).join('');
+    return h; }
   function railList(prefix){ var seen={}; return Object.keys(S.sum).concat(Object.keys(S.msgs)).filter(function(r){ if(seen[r]||r.indexOf(prefix)!==0) return false; seen[r]=1; var s=S.sum[r]; return !!(s&&s.ts)||(S.msgs[r]&&S.msgs[r].length); }).sort(function(a,b){ return ((S.sum[b]||{}).ts||0)-((S.sum[a]||{}).ts||0); }); }
   function renderRail(){ var el=document.getElementById('ch-rail'); if(!el) return; var me=myEmail(), h='<div class="ch-rh"><b>💬 แชททีม</b><button type="button" class="ch-x" onclick="chatClose()" aria-label="ปิดแชท">✕</button></div>';
-    h+='<div class="ch-sec">ห้อง</div>'+railRow('team','📣','ทั้งทีม CIL')+DEPTS.map(function(d){ return railRow('dept:'+d.k,d.ic,d.t); }).join('');
-    if(S.groupsOk){ var gl=Object.keys(S.groups).sort(function(a,b){ return ((S.sum[b]||{}).ts||Date.parse(S.groups[b].updatedAt)||0)-((S.sum[a]||{}).ts||Date.parse(S.groups[a].updatedAt)||0); });
+    h+='<div class="ch-sec">ห้อง</div>'+railRow('team','📣','ทั้งทีม CIL')+DEPTS.filter(function(d){ return !isHid('dept:'+d.k); }).map(function(d){ return railRow('dept:'+d.k,d.ic,d.t); }).join('');
+    if(S.groupsOk){ var gl=Object.keys(S.groups).filter(function(r){ return !isHid(r); }).sort(function(a,b){ return ((S.sum[b]||{}).ts||Date.parse(S.groups[b].updatedAt)||0)-((S.sum[a]||{}).ts||Date.parse(S.groups[a].updatedAt)||0); });
       h+='<div class="ch-sec">กลุ่มของฉัน</div>'+gl.map(function(r){ return railRow(r,'👥',roomTitle(r)); }).join('')+'<button type="button" class="ch-room ch-new" onclick="chatGroupNew()"><span class="ic">＋</span><span class="nm">สร้างกลุ่มใหม่</span></button>'; }
-    var cards=railList('card:').slice(0,6); if(cards.length) h+='<div class="ch-sec">การ์ดที่คุยอยู่</div>'+cards.map(function(r){ return railRow(r,'🗂️',roomTitle(r)); }).join('');
-    var dms=railList('dm:').slice(0,8); h+='<div class="ch-sec">ข้อความส่วนตัว</div>'+dms.map(function(r){ var o=nickOf(dmOther(r)), u=unreadOf(r); return '<button type="button" class="ch-room'+(r===S.room?' on':'')+'" onclick="chatOpen(\''+js(r)+'\')"><span class="avw">'+av(o,28)+(online(o)?'<i class="dot"></i>':'')+'</span><span class="nm">'+esc(dn(o))+'</span>'+(u?'<span class="u">'+(u>99?'99+':u)+'</span>':'')+'</button>'; }).join('');
+    var cards=railList('card:').filter(function(r){ return !isHid(r); }).slice(0,6); if(cards.length) h+='<div class="ch-sec">การ์ดที่คุยอยู่</div>'+cards.map(function(r){ return railRow(r,'🗂️',roomTitle(r)); }).join('');
+    var dms=railList('dm:').filter(function(r){ return !isHid(r); }).slice(0,8); h+='<div class="ch-sec">ข้อความส่วนตัว</div>'+dms.map(function(r){ var o=nickOf(dmOther(r)), u=unreadOf(r); return '<div class="ch-rw"><button type="button" class="ch-room'+(r===S.room?' on':'')+'" onclick="chatOpen(\''+js(r)+'\')"><span class="avw">'+av(o,28)+(online(o)?'<i class="dot"></i>':'')+'</span><span class="nm">'+esc(dn(o))+'</span>'+(u?'<span class="u">'+(u>99?'99+':u)+'</span>':'')+'</button>'+hideBtn(r)+'</div>'; }).join('')+hiddenHtml();
     h+='<button type="button" class="ch-room ch-new" onclick="chatPickToggle()"><span class="ic">＋</span><span class="nm">เริ่มแชทกับ…</span></button>';
     if(S.showPick){ var people=Object.keys(emap()).filter(function(e){ return e!==me; }).map(function(e){ return {e:e,n:emap()[e]}; }).sort(function(a,b){ return (online(b.n)-online(a.n))||a.n.localeCompare(b.n,'th'); });
       h+='<div class="ch-people">'+people.map(function(p){ return '<button type="button" class="ch-room" onclick="chatDM(\''+js(p.e)+'\')"><span class="avw">'+av(p.n,26)+(online(p.n)?'<i class="dot"></i>':'')+'</span><span class="nm">'+esc(dn(p.n))+'</span></button>'; }).join('')+'</div>'; }
@@ -18227,7 +18243,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     else if(isCard(r)){ ic='🗂️'; sub='ห้องคุยด่วนเรื่องการ์ดนี้ · ทุกคนในทีมเข้าอ่านได้'; }
     else { var d=deptOf(r); ic=d?d.ic:'💬'; sub='ห้องฝ่าย · ทุกคนในทีมอ่านได้'; }
     var open=isCard(r)?'<button type="button" class="ch-open" onclick="chatOpenCardRoom()">เปิดการ์ด ↗</button>':(isGrp(r)?'<button type="button" class="ch-ib sm" onclick="chatGroupManage()" title="จัดการกลุ่ม" aria-label="จัดการกลุ่ม">⚙️</button>':'');
-    el.innerHTML='<button type="button" class="ch-back" onclick="chatBack()" aria-label="กลับไปรายการห้อง">‹</button><span class="hic">'+ic+'</span><div class="ht"><b>'+esc(roomTitle(r))+'</b><small>'+esc(sub)+'</small></div>'+open+'<button type="button" class="ch-ib sm" onclick="chatThemeToggle()" title="แต่งธีมห้องแชท" aria-label="แต่งธีมห้องแชท">🎨</button><button type="button" class="ch-ib sm" onclick="chatSound()" title="เสียงเตือน (แชทส่วนตัว/แท็ก)" aria-label="เสียงเตือน">'+(S.sound?'🔔':'🔕')+'</button><button type="button" class="ch-x" onclick="chatClose()" aria-label="ปิดแชท">✕</button>'; }
+    el.innerHTML='<button type="button" class="ch-back" onclick="chatBack()" aria-label="กลับไปรายการห้อง">‹</button><span class="hic">'+ic+'</span><div class="ht"><b>'+esc(roomTitle(r))+'</b><small>'+esc(sub)+'</small></div>'+open+(canHide(r)?'<button type="button" class="ch-ib sm" onclick="chatHide(\''+js(r)+'\')" title="ซ่อนห้องนี้ออกจากรายการ (เลิกซ่อนได้ที่ “ห้องที่ซ่อนไว้” ใต้รายการห้อง)" aria-label="ซ่อนห้องนี้">🙈</button>':'')+'<button type="button" class="ch-ib sm" onclick="chatThemeToggle()" title="แต่งธีมห้องแชท" aria-label="แต่งธีมห้องแชท">🎨</button><button type="button" class="ch-ib sm" onclick="chatSound()" title="เสียงเตือน (แชทส่วนตัว/แท็ก)" aria-label="เสียงเตือน">'+(S.sound?'🔔':'🔕')+'</button><button type="button" class="ch-x" onclick="chatClose()" aria-label="ปิดแชท">✕</button>'; }
   function fmtBody(t,room){ var h=esc(t).replace(/(https?:\/\/[^\s<]+)/g,function(u){ var clean=u.replace(/&amp;/g,'&'); return '<a href="'+u+'" target="_blank" rel="noopener">'+(clean.length>38?esc(clean.slice(0,36))+'…':esc(clean))+'</a>'; }).replace(/\n/g,'<br>'); try{ if(window.ntHL&&!isDM(room)) h=window.ntHL(h); }catch(e){} return h; }
   var KIC={content:'✨',ecom:'🛒',gfx:'🎨'};
   function cardChip(m){ var c=cardOf(m); if(!c||!c.id) return ''; return '<button type="button" class="ch-card" onclick="chatOpenCardId(\''+js(m.id)+'\')"><span class="ci">'+(KIC[c.k]||'🗂️')+'</span><span class="ct"><b>'+esc(c.t||'การ์ด')+'</b><small>เปิดการ์ด ↗</small></span></button>'; }
@@ -18271,7 +18287,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   window.chatToggle=function(){ if(S.open) window.chatClose(); else window.chatOpen(S.room||'team'); };
   window.chatClose=function(){ sendTyping(0); S.themeOpen=false; S.open=false; var p=document.getElementById('ch-panel'); if(p) p.classList.remove('open'); S.mention=null; renderMention(); renderFab(); };
   window.chatBack=function(){ S.pane='list'; var p=document.getElementById('ch-panel'); if(p) p.setAttribute('data-pane','list'); };
-  window.chatOpen=async function(room){ if(!logged()){ say('เข้าสู่ระบบก่อนใช้แชท','info'); return; } if(!S.ready){ if(!S.missing) S.want=room||'team'; return; } ensureDom(); room=room||'team'; if(isDM(room)&&room.slice(3).split('|').indexOf(myEmail())<0){ say('นี่เป็นแชทส่วนตัวของคนอื่น — เปิดไม่ได้','info'); room='team'; } S.room=room; S.thread=null; S.open=true; S.pane='chat'; S.showPick=false; S.pickFor=null;
+  window.chatOpen=async function(room){ if(!logged()){ say('เข้าสู่ระบบก่อนใช้แชท','info'); return; } if(!S.ready){ if(!S.missing) S.want=room||'team'; return; } ensureDom(); room=room||'team'; if(isDM(room)&&room.slice(3).split('|').indexOf(myEmail())<0){ say('นี่เป็นแชทส่วนตัวของคนอื่น — เปิดไม่ได้','info'); room='team'; } if(isHid(room)){ delete hidMap()[room]; hidSave(); } S.room=room; S.thread=null; S.open=true; S.pane='chat'; S.showPick=false; S.pickFor=null;
     var p=document.getElementById('ch-panel'); p.classList.add('open'); p.setAttribute('data-pane','chat'); renderAck(); renderRail(); renderHead(); renderMsgs(true); renderFab(); renderTyping(); applyTheme(); S.themeOpen=false; renderTheme(); S.gman=false; renderGman(); syncComposer();
     var ta=document.getElementById('ch-ta'); if(ta){ ta.value=S.draft[dkey()]||''; autoGrow(ta); if(S.ack&&window.innerWidth>700) ta.focus(); } renderImgChip();
     if(!S.loaded[room]){ await loadRoom(room,false); if(S.room!==room) return; }
@@ -18279,6 +18295,11 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   window.chatOlder=async function(){ var el=document.getElementById('ch-msgs'), h0=el?el.scrollHeight:0; await loadRoom(S.room,true); renderMsgs(false); if(el) el.scrollTop=el.scrollHeight-h0; };
   window.chatSend=function(){ send(); };
   window.chatSound=function(){ S.sound=!S.sound; lsSet('chat_sound',S.sound?'1':'0'); renderHead(); if(S.sound) ping(); };
+  window.chatHide=function(r){ if(!canHide(r)) return; hidMap()[r]=Date.now(); hidSave(); var was=(S.room===r); renderFab();
+    if(was) window.chatOpen('team'); else renderRail();
+    say('ซ่อน “'+roomTitle(r)+'” แล้ว · เอากลับได้ที่ “🙈 ห้องที่ซ่อนไว้” ใต้รายการห้อง','ok'); };
+  window.chatUnhide=function(r){ delete hidMap()[r]; hidSave(); renderRail(); renderFab(); };
+  window.chatHidToggle=function(){ S.hidOpen=!S.hidOpen; renderRail(); if(S.hidOpen){ var rl=document.getElementById('ch-rail'); if(rl) setTimeout(function(){ var t=rl.querySelector('.ch-hidtoggle'); if(t&&t.scrollIntoView) t.scrollIntoView({block:'nearest'}); },0); } };
   window.chatPickToggle=function(){ S.showPick=!S.showPick; renderRail(); if(S.showPick){ var rl=document.getElementById('ch-rail'); if(rl) setTimeout(function(){ rl.scrollTop=rl.scrollHeight; },0); } };
   window.chatDM=function(email){ window.chatOpen(dmRoom(myEmail(),email)); };
   window.chatPick=function(id){ S.pickFor=(S.pickFor===id)?null:id; renderMsgs(false); };
@@ -18302,7 +18323,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     try{ if(typeof window.rvOpenHash==='function') window.rvOpenHash('#'+q.toString()); else if(typeof window.openCardModal==='function') window.openCardModal(c.id); }catch(e){} }
   /* ---------- ธีมห้องแชท (เห็นเฉพาะตัวเอง · เก็บในเครื่อง) ---------- */
   var STAR='url("data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><path d="M32 10l2.6 7L42 19.6 34.6 22 32 29l-2.6-7L22 19.6 29.4 17z" fill="#E4DCFA"/><circle cx="12" cy="48" r="2" fill="#EADFF7"/><circle cx="52" cy="42" r="2.4" fill="#DDE8FB"/></svg>')+'") 0 0/64px 64px,#FCFAFF';
-  var PRESETS=[{id:'plain',n:'ขาวเรียบ',bg:'linear-gradient(180deg,#fff,#FCFAFF)'},{id:'lav',n:'ลาเวนเดอร์',bg:'linear-gradient(160deg,#EFE9FF,#FBF2FF)'},{id:'mint',n:'มิ้นต์',bg:'linear-gradient(160deg,#E4F7EE,#EFFAFF)'},{id:'peach',n:'พีช',bg:'linear-gradient(160deg,#FFEEE2,#FFE7F1)'},{id:'sky',n:'ท้องฟ้า',bg:'linear-gradient(180deg,#DDEBFF,#F4F9FF)'},
+  var PRESETS=[{id:'plain',n:'ขาวเรียบ',bg:'linear-gradient(180deg,#F6F8FF,#E9EEFC)'},{id:'lav',n:'ลาเวนเดอร์',bg:'linear-gradient(160deg,#EFE9FF,#FBF2FF)'},{id:'mint',n:'มิ้นต์',bg:'linear-gradient(160deg,#E4F7EE,#EFFAFF)'},{id:'peach',n:'พีช',bg:'linear-gradient(160deg,#FFEEE2,#FFE7F1)'},{id:'sky',n:'ท้องฟ้า',bg:'linear-gradient(180deg,#DDEBFF,#F4F9FF)'},
     {id:'dots',n:'จุดๆ',bg:'radial-gradient(#D6CEF0 1.3px,transparent 1.6px) 0 0/18px 18px,#FCFAFF'},{id:'grid',n:'ตาราง',bg:'linear-gradient(#ECE7FA 1px,transparent 1px) 0 0/22px 22px,linear-gradient(90deg,#ECE7FA 1px,transparent 1px) 0 0/22px 22px,#FCFAFF'},{id:'stars',n:'ดาว',bg:STAR},
     {id:'night',n:'กลางคืน',bg:'linear-gradient(180deg,#23265A,#171A42)',dark:true},{id:'nightstars',n:'ดาวกลางคืน',bg:'radial-gradient(#5A5FA8 1.2px,transparent 1.5px) 0 0/26px 26px,linear-gradient(180deg,#23265A,#171A42)',dark:true}];
   function preOf(id){ for(var i=0;i<PRESETS.length;i++) if(PRESETS[i].id===id) return PRESETS[i]; return PRESETS[0]; }
@@ -18424,7 +18445,42 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     +'.ch-panel{grid-template-rows:minmax(0,1fr);overflow:hidden;overflow:clip;}.ch-rail,.ch-main,.ch-msgs{min-height:0;}.ch-head,.ch-typing,.ch-note,.ch-comp{flex:none;}.ch-theme{max-height:calc(100% - 66px);overflow:auto;}'
     +'@supports (height:100dvh){.ch-panel{height:min(560px,calc(100dvh - 36px));}}@media (max-width:700px){.ch-panel{height:100vh;}}@supports (height:100dvh){@media (max-width:700px){.ch-panel{height:100dvh;}}}'
     /* รายการห้องด้านซ้าย: ให้ทั้งแถบเลื่อนเป็นอันเดียว ไม่ให้รายชื่อคนถูกบีบเหลือเส้นเดียว */
-    +'.ch-rail>*{flex-shrink:0;}.ch-people{flex:none;max-height:none;overflow:visible;}';
+    +'.ch-rail>*{flex-shrink:0;}.ch-people{flex:none;max-height:none;overflow:visible;}'
+    /* ===== โทนสีหลักใหม่ของแชท: ขอบ/หัว/รายการห้อง/ฟองข้อความ ชัดขึ้น ไม่กลืนพื้นหลังเว็บ (ยังเป็นพาสเทล) ===== */
+    +'#ch-root{--c-soft:#E5E9FC;--c-line:#CFD6F1;--c-mine:#C4D5FF;--c-edge:#97A6E8;--c-h1:#D1DDFF;--c-h2:#E5D8FB;--c-bub:#fff;--c-sec:#5560A6;}'
+    +'#ch-root.ch-night{--c-edge:#4C529A;--c-h1:#2B3070;--c-h2:#33296E;--c-bub:#2B2F63;--c-sec:#9CA3E6;}'
+    +'#ch-root .ch-panel{box-shadow:0 34px 70px -22px rgba(44,52,140,.65),0 0 0 2px var(--c-edge);}'
+    +'#ch-root.ch-night .ch-panel{box-shadow:0 34px 70px -22px rgba(0,0,0,.8),0 0 0 2px var(--c-edge);}'
+    +'#ch-root .ch-rail{background:var(--c-soft);border-right:1px solid var(--c-line);}'
+    +'#ch-root .ch-head{background:linear-gradient(120deg,var(--c-h1),var(--c-h2));border-bottom:1px solid var(--c-edge);}'
+    +'#ch-root .ch-head .ch-ib,#ch-root .ch-head .ch-x,#ch-root .ch-head .ch-open,#ch-root .ch-head .ch-back{background:rgba(255,255,255,.72);}'
+    +'#ch-root.ch-night .ch-head .ch-ib,#ch-root.ch-night .ch-head .ch-x,#ch-root.ch-night .ch-head .ch-open,#ch-root.ch-night .ch-head .ch-back{background:rgba(255,255,255,.12);}'
+    +'#ch-root .ch-rh .ch-x{background:rgba(255,255,255,.75);}#ch-root.ch-night .ch-rh .ch-x{background:rgba(255,255,255,.12);}'
+    +'#ch-root .ch-sec{color:var(--c-sec);}'
+    +'#ch-root .ch-room:hover{background:rgba(255,255,255,.7);}#ch-root.ch-night .ch-room:hover{background:rgba(255,255,255,.08);}'
+    +'#ch-root .ch-room.on{background:var(--c-card);box-shadow:inset 4px 0 0 var(--c-priD),0 6px 14px -9px rgba(60,70,170,.6);}'
+    +'#ch-root .ch-room .ic{background:rgba(255,255,255,.85);}#ch-root.ch-night .ch-room .ic{background:rgba(255,255,255,.1);}'
+    +'#ch-root .ch-m .bub{background:var(--c-bub);border:1px solid var(--c-line);box-shadow:0 1px 3px -1px rgba(60,70,150,.22);}'
+    +'#ch-root .ch-m.me .bub{background:var(--c-mine);border-color:rgba(90,120,220,.38);}'
+    +'#ch-root .ch-day{background:rgba(255,255,255,.8);border:1px solid var(--c-line);}#ch-root.ch-night .ch-day{background:rgba(255,255,255,.1);}'
+    +'#ch-root .ch-comp{border-top:1px solid var(--c-line);}'
+    +'#ch-root #ch-ta{border:1.5px solid var(--c-line);background:var(--c-card);}#ch-root #ch-ta:focus{border-color:var(--c-priD);box-shadow:0 0 0 3px rgba(111,139,218,.22);}'
+    +'#ch-root .ch-send{background:linear-gradient(145deg,#8FA8F0,#6A78DC);box-shadow:0 8px 16px -8px rgba(60,70,200,.75);}'
+    +'#ch-root .ch-fab{background:rgba(255,255,255,.94);border:1.5px solid var(--c-edge);color:#5560A6;opacity:.8;box-shadow:0 10px 24px -10px rgba(50,60,170,.65);}'
+    +'#ch-root .ch-fab.has{background:linear-gradient(145deg,#8FA8F0,#6A78DC);border-color:transparent;color:#fff;opacity:1;}'
+    +'#ch-root .ch-fab:hover,#ch-root .ch-fab:focus-visible{opacity:1;}'
+    /* ซ่อนห้อง */
+    +'#ch-root .ch-rw{position:relative;display:block;}'
+    +'#ch-root .ch-rw .ch-hd{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:none;background:rgba(255,255,255,.95);border-radius:9px;width:28px;height:28px;font-size:14px;line-height:1;cursor:pointer;opacity:0;box-shadow:0 2px 6px -2px rgba(50,60,150,.45);}'
+    +'#ch-root.ch-night .ch-rw .ch-hd{background:#3A3F82;}'
+    +'#ch-root .ch-rw:hover .ch-hd,#ch-root .ch-rw .ch-hd:focus-visible,#ch-root .ch-rw .ch-hd.show{opacity:1;}'
+    +'#ch-root .ch-rw:hover .ch-room .u{visibility:hidden;}'
+    +'#ch-root .ch-rw .ch-hd.show{width:auto;padding:0 10px;font:700 12px "Sarabun",sans-serif;color:#4F5FE0;}'
+    +'@media (hover:none){#ch-root .ch-rw .ch-hd:not(.show){opacity:.55;}#ch-root .ch-rw .ch-room .u{margin-right:30px;}}'
+    +'#ch-root .ch-hidtoggle{display:flex;align-items:center;justify-content:space-between;width:100%;border:1px dashed var(--c-edge);background:transparent;color:var(--c-sec);border-radius:12px;padding:7px 10px;margin:8px 0 2px;font:700 12.5px "Sarabun",sans-serif;cursor:pointer;}'
+    +'#ch-root .ch-hidtoggle:hover,#ch-root .ch-hidtoggle.on{background:rgba(255,255,255,.6);}#ch-root.ch-night .ch-hidtoggle:hover,#ch-root.ch-night .ch-hidtoggle.on{background:rgba(255,255,255,.08);}'
+    +'#ch-root .ch-rw.hidr .ch-room{opacity:.75;padding-right:84px;}'
+    ;
   document.head.appendChild(st);
   /* ---------- เริ่มทำงาน ---------- */
   function tick(){ var li=logged(); if(li&&!S.started&&(!S.missing||Date.now()>=retryAt)) start(); else if(!li&&(S.started||S.ready)) teardown(); renderFab(); if(S.open) renderHead(); }
