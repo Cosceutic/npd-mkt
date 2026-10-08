@@ -17482,7 +17482,8 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function beep(f,d,v){ if(!sound) return; var a=ac(); if(!a) return; try{ var o=a.createOscillator(), g=a.createGain(), t=a.currentTime; o.type='sine'; o.frequency.value=f; g.gain.setValueAtTime(v||0.05,t); o.connect(g); g.connect(busS); o.start(t); g.gain.exponentialRampToValueAtTime(0.0001,t+d); o.stop(t+d+0.02); }catch(e){} }
   function sfx(k){ if(k==='move') beep(520,.08); else if(k==='inv'){ beep(660,.12); setTimeout(function(){ beep(880,.16); },130); } else if(k==='win'){ [523,659,784,1047].forEach(function(f,i){ setTimeout(function(){ beep(f,.18,.07); },i*120); }); } else if(k==='lose') beep(220,.35); else if(k==='draw') beep(400,.2); else if(k==='ok') beep(740,.09); else if(k==='bad') beep(180,.12); else if(k==='eat') beep(880,.06);
     else if(k==='ucard'){ beep(480,.05,.05); setTimeout(function(){ beep(700,.06,.04); },45); } else if(k==='udraw'){ beep(330,.07,.04); setTimeout(function(){ beep(290,.08,.04); },70); }
-    else if(k==='uuno'){ beep(880,.1,.07); setTimeout(function(){ beep(1175,.2,.07); },110); } else if(k==='uzap'){ beep(260,.1,.06); setTimeout(function(){ beep(190,.22,.06); },90); } }
+    else if(k==='uuno'){ beep(880,.1,.07); setTimeout(function(){ beep(1175,.2,.07); },110); } else if(k==='uzap'){ beep(260,.1,.06); setTimeout(function(){ beep(190,.22,.06); },90); }
+    else if(k==='uturn'){ beep(784,.09,.07); setTimeout(function(){ beep(1047,.18,.07); },110); } }
   function mtof(m){ return 440*Math.pow(2,(m-69)/12); }
   function tone(t,f,dur,type,vol,o){ var a=AC; try{ var os=a.createOscillator(), g=a.createGain(); os.type=type; os.frequency.setValueAtTime(f,t); if(o&&o.slide) os.frequency.exponentialRampToValueAtTime(o.slide,t+dur);
       g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+((o&&o.atk)||0.008)); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); os.connect(g); g.connect(busM); os.start(t); os.stop(t+dur+0.04); }catch(e){} }
@@ -17574,7 +17575,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   window.gmScore={weekKey:weekKey,wv:wv,wvPrev:wvPrev,teamWeek:teamWeek};
 
   /* ---------- Realtime (เชื่อมไว้ตลอดเมื่อล็อกอิน → คำท้าเด้งได้ทุกเมนู) ---------- */
-  function myStatus(){ return (S&&S.mode==='pvp'&&!S.sOver)?'play':(viewActive()&&!document.hidden?'lobby':'away'); }
+  function myStatus(){ return ((S&&S.mode==='pvp'&&!S.sOver)||(UNO.net&&UNO.net.view&&UNO.net.view.status==='playing'))?'play':(viewActive()&&!document.hidden?'lobby':'away'); }
   function track(){ try{ if(chan&&conn==='ok'&&me()) chan.track({n:me(),st:myStatus()}); }catch(e){} }
   function send(p){ try{ if(chan) chan.send({type:'broadcast',event:'xo',payload:p}); }catch(e){} }
   async function connect(){
@@ -17623,6 +17624,8 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     if(p.t==='urp'||p.t==='uro'){ unoOnPoke(p); return; }
     if(p.t==='sc'){ clearTimeout(scT); scT=setTimeout(function(){ loadAll(true); },700); return; }
     if(!m||p.to!==m) return;
+    if(p.t==='uinv'){ unoOnInvite(p); return; }
+    if(p.t==='uidc'){ unoOnDecline(p); return; }
     if(p.t==='inv'){ if((S&&S.mode==='pvp'&&!S.sOver)||inv||outInv){ send({t:'dec',id:p.id,from:m,to:p.from,why:'busy'}); return; }
       inv={id:p.id,from:p.from,fmt:p.fmt===3?3:1}; clearTimeout(invT); invT=setTimeout(function(){ if(inv&&inv.id===p.id){ inv=null; renderPop(); refresh(); } },30000);
       sfx('inv'); startFlash('⚔️ '+dn(p.from)+' ท้าเล่น XO!'); try{ if(document.hidden&&deskOn()){ var nt=new Notification('⚔️ '+dn(p.from)+' ท้าคุณเล่น XO!',{body:'กลับมาที่เว็บเพื่อตอบรับ (รอได้ 30 วินาที)',tag:'gm-inv',icon:((document.querySelector('link[rel~="icon"]')||{}).href)||undefined}); nt.onclick=function(){ try{ window.focus(); nt.close(); }catch(e){} }; } }catch(e){}
@@ -17915,7 +17918,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
       +(catchable?'<button type="button" class="gm-btn gu-catchb" onclick="gmUnoCatch()">🚨 จับ UNO! '+esc(uname(U.unoMiss))+'<span class="cd" style="animation-duration:'+Math.max(200,UNO.holdUntil-Date.now())+'ms"></span></button>':'')+'</div>';
     var h=hand.map(function(c){ return ucard(c,{btn:true,can:!!leg[c.id],dim:mine&&!leg[c.id]}); }).join('');
     var lg=UNO.log.slice(-4).map(function(t,i,a){ return '<div'+(i===a.length-1?' class="last"':'')+'>'+esc(t)+'</div>'; }).join('');
-    var body='<div class="gm-card gm-play gu-tbl"><div class="gu-seats">'+seats+'</div>'+mid+'<div class="gm-st '+ss.c+'">'+esc(ss.t)+(UNO.online&&U.phase!=='over'&&UNO.net.dlAt?' <small class="gu-tl" id="gu-tleft">'+unoTleft()+'</small>':'')+'</div>'+(UNO.notice?'<div class="gu-note">'+esc(UNO.notice)+'</div>':'')+ctl
+    var body='<div class="gm-card gm-play gu-tbl"><div class="gu-seats">'+seats+'</div>'+mid+(UNO.online&&mine&&UNO.net.turnAt&&Date.now()-UNO.net.turnAt<4500?'<div class="gu-turnb" role="alert">🎯 ถึงตาคุณแล้ว! เลือกไพ่เลย</div>':'')+'<div class="gm-st '+ss.c+'">'+esc(ss.t)+(UNO.online&&U.phase!=='over'&&UNO.net.dlAt?' <small class="gu-tl" id="gu-tleft">'+unoTleft()+'</small>':'')+'</div>'+(UNO.notice?'<div class="gu-note">'+esc(UNO.notice)+'</div>':'')+ctl
       +'<div class="gu-handw"><div class="gu-hl"><b>ไพ่ในมือคุณ</b><small>'+hand.length+' ใบ'+(U.said[0]&&hand.length<=2?' · 📣 กด UNO แล้ว':'')+'</small></div><div class="gu-hand'+(hand.length<=8?' sp':'')+'" id="gu-hand">'+h+'</div></div>'
       +'<div class="gu-log" aria-live="polite">'+lg+'</div><div class="gu-foot2"><button type="button" class="gm-back" onclick="gmUnoRules(true)">📖 กติกา</button><button type="button" class="gm-back" onclick="gmUnoLeave()">'+(UNO.online?'🚪 ออกจากห้อง':'🚪 เลิกเล่นตานี้')+'</button></div></div>';
     return body; }
@@ -18017,7 +18020,8 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
      ต้องรัน SQL “UNO ออนไลน์” ก่อน (ฟังก์ชัน uno_*) · หน้าเว็บแค่โพลล์ uno_poll + ส่งคำสั่ง uno_do · ไม่มีฟังก์ชัน = ซ่อนโหมดนี้ ซ้อมกับบอทใช้ได้ตามเดิม
      ============================================================ */
   UNO.tab='bot'; UNO.online=false;
-  UNO.net={rooms:[],room:'',view:null,recvAt:0,dlAt:0,busy:false,polling:false,pollT:null,listT:null,listRun:false,tickT:null,err:'',noSql:false,listAt:0,sig:'',leaving:false,tries:0,shown:{}};
+  UNO.net={rooms:[],room:'',view:null,recvAt:0,dlAt:0,busy:false,polling:false,pollT:null,listT:null,listRun:false,tickT:null,err:'',noSql:false,listAt:0,sig:'',leaving:false,tries:0,shown:{},inv:{},turnAt:0,turnT:null,flash:false,setOpen:false};
+  UNO.invIn=null; UNO.invT=null;
   UNO.ocfg={seats:4,secs:45,stack:true,callUno:true,diff:'mid'};
   try{ var _oc=JSON.parse(localStorage.getItem('gm_uno_ocfg')||'null'); if(_oc){ var _s=Math.round(+_oc.seats); if(_s>=2&&_s<=6) UNO.ocfg.seats=_s; if([0,20,30,45,60,90].indexOf(+_oc.secs)>=0) UNO.ocfg.secs=+_oc.secs; if(UBOT[_oc.diff]) UNO.ocfg.diff=_oc.diff; if(typeof _oc.stack==='boolean') UNO.ocfg.stack=_oc.stack; if(typeof _oc.callUno==='boolean') UNO.ocfg.callUno=_oc.callUno; } }catch(e){}
   var UCARD={}; uDeck().forEach(function(c){ UCARD[c.id]=c; });   // id → ไพ่ (ต้องตรงกับฟังก์ชัน uno_cc/uno_cv ฝั่ง SQL — มีเทสต์เทียบครบ 108 ใบ)
@@ -18037,21 +18041,32 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function unoTleft(){ var N=UNO.net; if(!N.dlAt) return ''; var s=Math.max(0,Math.ceil((N.dlAt-Date.now())/1000)); return '⏱ '+s+' วิ'; }
   function unoTick1s(){ var el=document.getElementById('gu-tleft'); if(el){ el.textContent=unoTleft(); var warn=(UNO.net.dlAt&&UNO.net.dlAt-Date.now()<10000); if(el.className!==undefined) el.className='gu-tl'+(warn?' warn':''); } }
   function unoNetClear(){ var N=UNO.net; N.room=''; N.view=null; N.dlAt=0; N.err=''; UNO.online=false; UNO.U=null; UNO.ov=''; UNO.pick=0; UNO.notice=''; UNO.log=[]; clearTimeout(N.pollT); N.pollT=null; }
+  /* เตือนเมื่อถึงตา/เกมเริ่ม: เสียง + สั่น · ถ้าอยู่แท็บอื่นของเว็บ = ขึ้นแจ้งเตือน · ถ้าย่อหน้าต่าง = ไทเทิลกระพริบ + แจ้งเตือนเดสก์ท็อป (ถ้าเปิดไว้) */
+  function unoAttention(title,body,kind){ var hid=document.hidden, inact=!viewActive();
+    sfx(kind==='turn'?'uturn':'inv'); try{ if(navigator.vibrate) navigator.vibrate(kind==='turn'?[120,60,120]:200); }catch(e){}
+    if(hid){ startFlash(title); UNO.net.flash=true;
+      if(deskOn()){ try{ var nt=new Notification(title,{body:body||'',tag:'gm-uno-'+(kind||'x'),icon:((document.querySelector('link[rel~="icon"]')||{}).href)||undefined}); nt.onclick=function(){ try{ window.focus(); nt.close(); }catch(e){} }; setTimeout(function(){ try{ nt.close(); }catch(e){} },20000); }catch(e){} } }
+    else if(inact) say(title+(body?' — '+body:''),'info'); }
   function unoApplyView(v,own){ var N=UNO.net; if(!v||!v.id) return;
     if(N.view&&v.id===N.view.id&&v.ver<N.view.ver) return;   // ข้อมูลเก่ากว่าที่มี (โพลล์ซ้อนกัน) → ทิ้ง
     if(v.me<0){ unoNetClear(); render(); return; }
     var prev=(N.view&&N.view.id===v.id)?N.view:null, ch=!prev||prev.ver!==v.ver||prev.status!==v.status, key=v.id+'#'+v.round;
+    var myTurnNow=(v.status==='playing'&&v.turn===v.me), wasMine=!!(prev&&prev.status==='playing'&&prev.turn===prev.me), statusChg=!prev||prev.status!==v.status;
     N.view=v; N.room=v.id; N.recvAt=Date.now(); N.dlAt=(v.deadlineMs==null)?0:N.recvAt+v.deadlineMs; UNO.tab='friend'; UNO.online=true; UNO.log=(v.log||[]).map(function(t){ v.seats.forEach(function(s){ if(!s.bot&&s.nick) t=t.split(s.nick).join(dn(s.nick)); }); return t; });
     if(v.status==='lobby'){ UNO.U=null; UNO.pick=0; UNO.ov=''; UNO.notice=''; }
     else { var U=unoPseudo(v); UNO.U=U; UNO.holdUntil=N.recvAt+(v.missMs||0);
       UNO.notice=(v.miss===v.me)?'⚠️ เหลือ 1 ใบแล้ว แต่ยังไม่ได้กด UNO! — รีบกด 📣 ก่อนโดนจับ':((v.miss>=0&&v.seats[v.miss])?'🚨 '+(v.seats[v.miss].bot?v.seats[v.miss].nick:dn(v.seats[v.miss].nick))+' ลืมกด UNO! — กด “จับ” ได้เลย':'');
       if(prev&&v.top!==prev.top) UNO.fresh=v.top;
       if(UNO.pick&&!(v.status==='playing'&&v.turn===v.me)) UNO.pick=0;
-      if(prev&&ch&&!own&&v.status==='playing'){ if(v.turn===v.me&&prev.turn!==v.me) sfx('ok'); else if(v.top!==prev.top) sfx('ucard'); else if(v.drawCnt!==prev.drawCnt) sfx('udraw'); }
+      if(myTurnNow&&!wasMine){ N.turnAt=Date.now(); clearTimeout(N.turnT); N.turnT=setTimeout(function(){ if(screen==='uno'&&UNO.online) render(); },4700); if(!own) unoAttention('🃏 ถึงตาคุณแล้ว!','เลือกไพ่เลย — UNO','turn'); }
+      else if(prev&&ch&&!own&&v.status==='playing'){ if(v.top!==prev.top) sfx('ucard'); else if(v.drawCnt!==prev.drawCnt) sfx('udraw'); }
+      if(prev&&!own&&prev.status==='lobby'&&v.status==='playing') unoAttention('🃏 เกม UNO เริ่มแล้ว!','เข้ามาเล่นได้เลย','start');
       if(v.status==='over'){
         if(!N.shown[key]){ N.shown[key]=1; var fresh=!unoRecSeen(key); UNO.ov='res';
           if(fresh&&v.winner>=0){ var hum=v.seats.filter(function(s){ return !s.bot; }).length, won=(v.winner===v.me); if(hum>=2&&me()) record(won?'w':'l','uno'); sfx(won?'win':'lose'); if(won) burst(); } }
       } else if(UNO.ov==='res') UNO.ov=''; }
+    if(N.flash&&(!myTurnNow||(!document.hidden&&viewActive()))){ stopFlash(); N.flash=false; }
+    if(statusChg) track();
     if(ch||!prev) render(); else unoTick1s(); }
   /* ---------- โพลล์ห้อง / รายการห้อง ---------- */
   function unoPollSoon(ms){ var N=UNO.net; clearTimeout(N.pollT); N.pollT=setTimeout(unoPollRun,Math.max(0,ms||0)); }
@@ -18060,14 +18075,15 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     if(v.botMs!=null) c.push(v.botMs-el+80); if(v.deadlineMs!=null&&!auto) c.push(v.deadlineMs-el+120); if(v.missMs>0) c.push(v.missMs-el+80);
     return Math.max(350,Math.min.apply(null,c)); }
   async function unoPollRun(){ var N=UNO.net; N.pollT=null; if(!N.room||screen!=='uno') return;
-    if(document.hidden||!viewActive()){ unoPollSoon(5000); return; }
+    var inact=(document.hidden||!viewActive());
+    if(inact&&!(N.view&&(N.view.status==='playing'||N.view.status==='lobby'))){ unoPollSoon(5000); return; }
     if(N.busy||N.polling){ unoPollSoon(300); return; }
     N.polling=true; var r=await unoRpc('uno_poll',{p_room:N.room}); N.polling=false; if(!N.room) return;
     if(r.error){ if(unoMissing(r.error)){ N.noSql=true; unoNetClear(); render(); return; }
       var had=!!N.err; N.err='เชื่อมต่อสะดุด — กำลังลองใหม่…'; N.tries++; if(!had) render(); unoPollSoon(Math.min(6000,1500+N.tries*700)); return; }
     N.tries=0; var d=r.data||{}; if(d.gone){ unoNetClear(); say('ห้องนี้ถูกปิดแล้ว','info'); render(); return; }
     if(N.err){ N.err=''; render(); }
-    if(d.view) unoApplyView(d.view); unoPollSoon(unoNextMs()); }
+    if(d.view) unoApplyView(d.view); var nx=unoNextMs(); unoPollSoon((document.hidden||!viewActive())?Math.max(2500,nx):nx); }
   async function unoNetList(){ var N=UNO.net; if(!me()) return; var r=await unoRpc('uno_list'); N.listAt=Date.now();
     if(r.error){ if(unoMissing(r.error)){ if(!N.noSql){ N.noSql=true; if(screen==='uno') render(); } } return; }
     if(N.noSql){ N.noSql=false; }
@@ -18078,7 +18094,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     if(document.hidden||!viewActive()){ N.listT=setTimeout(unoListRun,6000); return; }
     N.listRun=true; await unoNetList(); N.listRun=false; if(screen==='uno'&&!UNO.net.room&&!UNO.net.noSql&&!UNO.net.listT) UNO.net.listT=setTimeout(unoListRun,5000); }
   function unoEnsureLoops(){ var N=UNO.net, on=(screen==='uno'&&viewActive());
-    if(on&&N.room){ if(!N.pollT&&!N.polling) unoPollSoon(60); } else { clearTimeout(N.pollT); N.pollT=null; }
+    if(screen==='uno'&&N.room){ if(!N.pollT&&!N.polling) unoPollSoon(60); } else { clearTimeout(N.pollT); N.pollT=null; }
     if(on&&!N.room&&me()&&!N.noSql){ if(!N.listT&&!N.listRun) N.listT=setTimeout(unoListRun,N.listAt?5000:40); } else { clearTimeout(N.listT); N.listT=null; }
     var needTick=(on&&N.room&&UNO.online&&N.view&&N.view.status==='playing');
     if(needTick&&!N.tickT) N.tickT=setInterval(unoTick1s,500); else if(!needTick&&N.tickT){ clearInterval(N.tickT); N.tickT=null; } }
@@ -18139,17 +18155,53 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     for(var i=0;i<Math.max(cap,humans.length);i++){ var s=humans[i];
       slots+=s?'<div class="gu-slot on"><span class="av">'+(av(s.nick,34)||'🙂')+'</span><div class="nm"><b>'+esc(dn(s.nick))+(s.seat===v.me?' <em>คุณ</em>':'')+'</b><small>'+(s.nick===v.host?'👑 เจ้าของห้อง':'ผู้เล่น')+'</small></div></div>'
         :'<div class="gu-slot"><span class="av">🤖</span><div class="nm"><b>บอทมาเล่นแทน</b><small>ที่ว่าง — หรือรอเพื่อนเข้าห้อง</small></div></div>'; }
+    var setCtl=host?unoCfgCtl(Object.assign({},UNO.ocfg,v.cfg||{}),true):'';
     return '<div class="gu-lobby"><div class="gm-lh"><b>🏠 ห้องของ '+esc(dn(v.host))+'</b><small>รอผู้เล่น '+humans.length+'/'+cap+'</small></div>'+(UNO.net.err?'<div class="gu-note">'+esc(UNO.net.err)+'</div>':'')
-      +'<div class="gu-slots">'+slots+'</div>'+(host?unoCfgCtl(Object.assign({},UNO.ocfg,v.cfg||{}),true):unoChips(v.cfg||UNO.ocfg))
+      +'<div class="gu-slots">'+slots+'</div>'
       +'<div class="gu-ctl">'+(host?'<button type="button" class="gm-btn pri" onclick="gmUnoOStart()"'+(can?'':' disabled')+'>▶ เริ่มเกม</button>':'<span class="gu-wait">⏳ รอเจ้าของห้องกดเริ่มเกม…</span>')+'<button type="button" class="gm-btn" onclick="gmUnoLeave()">🚪 ออกจากห้อง</button></div>'
-      +(host&&!can?'<div class="gm-hint">ต้องมีผู้เล่นอย่างน้อย 2 คนถึงเริ่มได้ — ชวนเพื่อนเข้าห้อง (เพื่อนที่เปิด Game › UNO › เล่นกับเพื่อน จะเห็นห้องนี้) · เล่นคนเดียวไปแท็บ “ซ้อมกับบอท”</div>':'')+'</div>'; }
+      +(host&&!can?'<div class="gm-hint">ต้องมีผู้เล่นอย่างน้อย 2 คนถึงเริ่มได้ — กด “เชิญ” เพื่อนด้านล่าง หรือรอเพื่อนเห็นห้องแล้วกดเข้าร่วมเอง · เล่นคนเดียวไปแท็บ “ซ้อมกับบอท”</div>':'')
+      +unoInviteHtml(v)
+      +'<details class="gu-setd"'+(UNO.net.setOpen?' open':'')+' ontoggle="gmUnoSetOpen(this.open)"><summary>⚙️ ตั้งค่าห้อง'+(host?'':' (เจ้าของห้องเป็นคนตั้ง)')+'</summary>'+(host?setCtl:unoChips(v.cfg||UNO.ocfg))+'</details></div>'; }
+  window.gmUnoSetOpen=function(o){ UNO.net.setOpen=!!o; };
+  /* ---------- เชิญเพื่อน (ส่งผ่านช่อง Realtime เดิม — เพื่อนอยู่เมนูไหนของเว็บก็เห็นป๊อปอัปเด้ง) ---------- */
+  function unoInviteHtml(v){ var N=UNO.net;
+    if(conn!=='ok') return '<div class="gm-lh gu-lh2"><b>📨 ชวนเพื่อน</b></div><div class="gm-hint">กำลังเชื่อมต่อห้องเกมเพื่อดูว่าใครออนไลน์… (เพื่อนที่เปิดหน้า UNO จะเห็นห้องนี้เองอยู่แล้ว)</div>';
+    var inRoom={}; v.seats.forEach(function(s){ if(!s.bot) inRoom[s.nick]=1; });
+    var names=Object.keys(presence).filter(function(n){ return n!==me()&&!inRoom[n]; }).sort(function(a,b){ var o={lobby:0,away:1,play:2}; return (o[presence[a].st]||0)-(o[presence[b].st]||0)||(a<b?-1:1); });
+    var free=names.filter(function(n){ return presence[n].st!=='play'&&!(N.inv[n]&&Date.now()-N.inv[n]<25000); });
+    var rows=names.map(function(n){ var p=presence[n], sent=!!(N.inv[n]&&Date.now()-N.inv[n]<25000), stT=p.st==='play'?'กำลังเล่นเกมอื่นอยู่':(p.st==='away'?'ออนไลน์อยู่เมนูอื่น — คำเชิญจะเด้งให้เห็น':'อยู่ในห้องเกม — ว่าง');
+      return '<div class="gu-inv-row"><span class="av">'+(av(n,34)||'🙂')+'</span><div class="nm"><b>'+nm(n)+'</b><small class="'+(p.st==='play'?'busy':'free')+'">'+stT+'</small></div><button type="button" class="gm-btn pri sm" onclick="gmUnoInvite(\''+js(n)+'\')"'+((sent||p.st==='play')?' disabled':'')+'>'+(sent?'ส่งแล้ว ✓':'📨 เชิญ')+'</button></div>'; }).join('');
+    return '<div class="gm-lh gu-lh2"><b>📨 ชวนเพื่อน</b><small>'+(names.length?names.length+' คนออนไลน์':'')+'</small></div>'
+      +(names.length?'<div class="gu-invall"><button type="button" class="gm-btn sm" onclick="gmUnoInviteAll()"'+(free.length?'':' disabled')+'>📣 ชวนทุกคนที่ว่าง ('+free.length+')</button></div><div class="gu-invs">'+rows+'</div>'
+        :'<div class="gm-empty"><span class="e">🪑</span><span><b>ตอนนี้ยังไม่มีเพื่อนออนไลน์</b><small>พอเพื่อนล็อกอินและเปิดเว็บนี้ ชื่อจะโผล่ที่นี่ให้กดเชิญได้เลย</small></span></div>'); }
+  function unoSendInvite(n){ var N=UNO.net, v=N.view; if(!N.room||!v||v.status!=='lobby'||!presence[n]||n===me()) return false; if(N.inv[n]&&Date.now()-N.inv[n]<25000) return false;
+    N.inv[n]=Date.now(); var hum=v.seats.filter(function(s){ return !s.bot&&!s.gone; }).length;
+    send({t:'uinv',to:n,from:me(),room:N.room,host:v.host,n:hum,cap:+(v.cfg&&v.cfg.seats)||4}); return true; }
+  window.gmUnoInvite=function(n){ if(!unoSendInvite(n)) return; say('📨 ส่งคำเชิญให้ '+dn(n)+' แล้ว','info'); setTimeout(function(){ if(screen==='uno') render(); },25500); render(); };
+  window.gmUnoInviteAll=function(){ var N=UNO.net, c=0; Object.keys(presence).forEach(function(n){ if(n!==me()&&presence[n].st!=='play'&&!(N.view&&N.view.seats.some(function(s){ return s.nick===n; }))&&unoSendInvite(n)) c++; });
+    if(c){ say('📣 ส่งคำเชิญให้ '+c+' คนแล้ว','info'); setTimeout(function(){ if(screen==='uno') render(); },25500); render(); } };
+  function unoRenderPop(){ var el=document.getElementById('gu-pop'), i=UNO.invIn;
+    if(!i){ if(el&&el.parentNode) el.parentNode.removeChild(el); return; }
+    if(!el||!el.parentNode){ el=document.createElement('div'); el.id='gu-pop'; document.body.appendChild(el); }
+    el.innerHTML='<div class="gu-pop-in" role="alertdialog" aria-label="คำเชิญเล่น UNO"><div class="gu-pop-h">🃏 ชวนเล่น UNO!</div><div class="gu-pop-b">'+(av(i.from,40)||'🙂')+'<span><b>'+nm(i.from)+'</b> ชวนคุณเข้าห้อง UNO<br><small>ห้องของ '+esc(dn(i.host||i.from))+' · '+(+i.n||1)+'/'+(+i.cap||4)+' คน</small></span></div><div class="gu-pop-a"><button type="button" class="gu-pbtn pri" onclick="gmUnoInvAccept()">เข้าร่วมเลย</button><button type="button" class="gu-pbtn" onclick="gmUnoInvDecline()">ขอผ่าน</button></div></div>'; }
+  function unoOnInvite(p){ var m=me(); if(!m||p.to!==m||!p.room) return;
+    if(UNO.net.room||(S&&S.mode==='pvp'&&!S.sOver)||UNO.invIn){ send({t:'uidc',to:p.from,from:m,why:'busy'}); return; }
+    UNO.invIn={room:p.room,from:p.from,host:p.host,n:p.n,cap:p.cap}; clearTimeout(UNO.invT); UNO.invT=setTimeout(function(){ if(UNO.invIn&&UNO.invIn.room===p.room){ UNO.invIn=null; unoRenderPop(); stopFlash(); } },60000);
+    sfx('inv'); startFlash('🃏 '+dn(p.from)+' ชวนเล่น UNO!');
+    try{ if(document.hidden&&deskOn()){ var nt=new Notification('🃏 '+dn(p.from)+' ชวนคุณเล่น UNO!',{body:'กลับมาที่เว็บเพื่อเข้าร่วม (รอได้ 60 วินาที)',tag:'gm-uno-inv',icon:((document.querySelector('link[rel~="icon"]')||{}).href)||undefined}); nt.onclick=function(){ try{ window.focus(); nt.close(); }catch(e){} }; } }catch(e){}
+    unoRenderPop(); }
+  function unoOnDecline(p){ var m=me(); if(!m||p.to!==m) return; say(dn(p.from)+(p.why==='busy'?' กำลังเล่นอยู่/มีคำเชิญอื่นค้างอยู่':' ขอผ่านรอบนี้'),'info'); }
+  window.gmUnoInvAccept=function(){ var i=UNO.invIn; if(!i) return; UNO.invIn=null; clearTimeout(UNO.invT); unoRenderPop(); stopFlash();
+    if(UNO.net.room){ say('คุณอยู่ในห้อง UNO อยู่แล้ว — ออกจากห้องนั้นก่อนถึงจะเข้าห้องใหม่ได้','info'); return; }
+    goGame('uno'); UNO.tab='friend'; render(); window.gmUnoJoin(i.room); };
+  window.gmUnoInvDecline=function(){ var i=UNO.invIn; if(!i) return; UNO.invIn=null; clearTimeout(UNO.invT); unoRenderPop(); stopFlash(); send({t:'uidc',to:i.from,from:me()}); };
   function unoCreateHtml(){ var N=UNO.net, rooms=(N.rooms||[]).filter(function(r){ return r.status==='lobby'; });
     var list=rooms.length?rooms.map(function(r){ var c=r.cfg||{}, ps=(r.players||[]);
       return '<div class="gu-room"><span class="av">'+(av(r.host,34)||'🙂')+'</span><div class="nm"><b>ห้องของ '+esc(dn(r.host))+'</b><small>'+ps.length+'/'+(c.seats||4)+' คน · '+(c.secs?c.secs+' วิ/ตา':'ไม่จำกัดเวลา')+' · '+(c.stack?'ต่อ +2/+4':'ไม่ต่อ')+'</small><small>👥 '+ps.map(function(x){ return esc(dn(x)); }).join(', ')+'</small></div><button type="button" class="gm-btn pri" onclick="gmUnoJoin(\''+esc(r.id)+'\')">เข้าร่วม</button></div>'; }).join('')
       :'<div class="gm-empty"><span class="e">🃏</span><span><b>ยังไม่มีห้องที่เปิดรออยู่</b><small>เปิดห้องแล้วชวนเพื่อนเลย — เพื่อนที่เปิดหน้านี้จะเห็นห้องของคุณ</small></span></div>';
-    return (N.err?'<div class="gu-note">'+esc(N.err)+'</div>':'')+'<div class="gm-lh"><b>➕ เปิดห้องใหม่</b><small>นับคะแนนทีมเมื่อมีผู้เล่นจริงอย่างน้อย 2 คน</small></div>'+unoCfgCtl(UNO.ocfg,true)
-      +'<button type="button" class="gm-btn pri big" onclick="gmUnoCreate()">➕ เปิดห้อง UNO</button>'
-      +'<div class="gm-lh gu-lh2"><b>🚪 ห้องที่เปิดอยู่</b><small>อัปเดตอัตโนมัติ</small></div><div class="gu-rooms">'+list+'</div>'; }
+    return (N.err?'<div class="gu-note">'+esc(N.err)+'</div>':'')+'<div class="gm-lh"><b>🚪 ห้องที่เปิดรออยู่</b><small>'+(rooms.length?rooms.length+' ห้อง · ':'')+'อัปเดตอัตโนมัติ</small></div><div class="gu-rooms">'+list+'</div>'
+      +'<div class="gm-lh gu-lh2"><b>➕ เปิดห้องใหม่</b><small>นับคะแนนทีมเมื่อมีผู้เล่นจริงอย่างน้อย 2 คน</small></div>'+unoCfgCtl(UNO.ocfg,true)
+      +'<button type="button" class="gm-btn pri big" onclick="gmUnoCreate()">➕ เปิดห้อง UNO</button>'; }
   function unoFriendHtml(){ var N=UNO.net, v=N.view;
     if(!me()) return '<div class="gu-msg"><b>🔑 ล็อกอินก่อนนะ</b><p>การเล่นกับเพื่อนต้องเข้าสู่ระบบ (เพื่อบันทึกคะแนนทีม) — ซ้อมกับบอทไม่ต้องล็อกอิน</p><button type="button" class="gm-btn pri" onclick="sbShowLoginModal()">เข้าสู่ระบบ</button></div>';
     if(N.noSql) return '<div class="gu-msg warn"><b>🛠️ ห้องเล่นกับเพื่อนยังไม่เปิดใช้งาน</b><p>ผู้ดูแลต้องรัน SQL “UNO ออนไลน์” ในฐานข้อมูลก่อน (ครั้งเดียว) — ระหว่างนี้ซ้อมกับบอทได้ตามปกติ</p></div>';
@@ -18484,6 +18536,20 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     +'.gu-tl{display:inline-block;margin-left:8px;font:600 12.5px "Mitr",sans-serif;background:rgba(255,255,255,.65);color:var(--g-ink);border-radius:999px;padding:1px 10px;}.gu-tl.warn{background:#E8506A;color:#fff;}'
     +'.gu-seat .nm b{max-width:120px;overflow:hidden;text-overflow:ellipsis;}'
     +'.gu-seat .av img,.gu-slot .av img,.gu-room .av img{border-radius:50%;}'
+    +'.gu-turnb{width:100%;box-sizing:border-box;text-align:center;font:600 19px "Mitr",sans-serif;color:#fff;background:linear-gradient(90deg,#E8506A,#FF9F43);border-radius:18px;padding:11px 14px;animation:gu-turnb 4.5s ease forwards;}'
+    +'.gu-setd{margin-top:14px;background:var(--g-soft);border-radius:16px;padding:10px 14px;}.gu-setd summary{cursor:pointer;font:600 14px "Mitr",sans-serif;color:var(--g-ink);}.gu-setd[open] summary{margin-bottom:10px;}'
+    +'.gu-invall{margin:2px 0 8px;}'
+    +'.gu-invs{display:flex;flex-direction:column;gap:7px;max-height:300px;overflow:auto;}'
+    +'.gu-inv-row{display:flex;align-items:center;gap:12px;background:var(--g-soft);border-radius:14px;padding:7px 12px;}'
+    +'.gu-inv-row .av{flex:none;display:flex;font-size:24px;}.gu-inv-row .av img{border-radius:50%;}'
+    +'.gu-inv-row .nm{min-width:0;flex:1;}.gu-inv-row .nm b{display:block;font-size:13.5px;color:var(--g-ink);}.gu-inv-row .nm small{display:block;font-size:11.5px;color:var(--g-ink2);}.gu-inv-row .nm small.free{color:#1E9460;}.gu-inv-row .nm small.busy{color:#C0334F;}'
+    +'.gu-pop-in{position:fixed;right:18px;bottom:76px;z-index:100020;width:min(340px,calc(100vw - 36px));box-sizing:border-box;background:#fff;color:#2E2A5B;border:3px solid #E8506A;border-radius:24px;padding:16px;filter:drop-shadow(0 14px 22px rgba(40,30,90,.4));animation:gu-popin .35s cubic-bezier(.3,1.5,.5,1);font-family:"Sarabun",sans-serif;}'
+    +'.gu-pop-h{font:600 18px "Mitr",sans-serif;margin-bottom:10px;}'
+    +'.gu-pop-b{display:flex;align-items:center;gap:12px;font-size:14.5px;line-height:1.5;}.gu-pop-b small{color:#6D6A9C;font-size:12.5px;}.gu-pop-b img{border-radius:50%;}'
+    +'.gu-pop-a{display:flex;gap:10px;margin-top:14px;}'
+    +'.gu-pbtn{flex:1;border:0;border-radius:14px;padding:10px 12px;font:700 14px "Sarabun",sans-serif;cursor:pointer;background:#EEE9FB;color:#2E2A5B;}.gu-pbtn.pri{background:linear-gradient(180deg,#FF8A9B,#E8506A);color:#fff;}'
+    +'@keyframes gu-turnb{0%{transform:scale(.88);opacity:0;}8%{transform:scale(1.05);opacity:1;}14%{transform:scale(1);}82%{opacity:1;}100%{opacity:0;}}'
+    +'@keyframes gu-popin{0%{transform:translateY(30px) scale(.9);opacity:0;}100%{transform:none;opacity:1;}}'
     +'@keyframes gu-drop{0%{transform:translateY(-70px) rotate(-22deg) scale(1.25);opacity:.2;}70%{transform:translateY(2px) rotate(-2deg) scale(1);opacity:1;}100%{transform:rotate(-4deg);opacity:1;}}'
     +'@keyframes gu-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.035);}}'
     +'@keyframes gu-pop{0%{transform:scale(.3);}100%{transform:scale(1);}}'
@@ -18500,7 +18566,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     +'#view-game[data-theme="pastel"] .gm-gc.t-uno .go{background:linear-gradient(180deg,#F8B3BF,#F08FA0);}'
     +'@media (max-width:860px){.gu-fanh{width:230px;}.gu-seat{min-width:140px;}}'
     +'@media (max-width:520px){.gu-c.big{--cw:84px;}.gu-pile .gu-c{--cw:72px;}.gu-hand .gu-c{--cw:66px;margin-left:-26px;}.gu-hand.sp .gu-c{margin-left:5px;}.gu-mid{gap:16px;}.gu-seat{min-width:0;flex:1 1 130px;}.gu-seat .nm small{display:none;}.gu-cols{grid-template-columns:1fr 1fr;}}'
-    +'@media (prefers-reduced-motion:reduce){.gu-seat.cur,.gu-c.fresh,.gu-pile.can .gu-c,.gu-unob.pulse,.gu-chip.bad,.gu-catchb .cd{animation:none;}}'
+    +'@media (prefers-reduced-motion:reduce){.gu-turnb,.gu-pop-in,.gu-seat.cur,.gu-c.fresh,.gu-pile.can .gu-c,.gu-unob.pulse,.gu-chip.bad,.gu-catchb .cd{animation:none;}}'
     +'@media (max-width:860px){.gm-xo{grid-template-columns:minmax(0,1fr);}.gm-pn b{max-width:90px;}.gm-hubteam .s{text-align:left;}.gm-wrap{padding:18px 14px 26px;border-radius:26px;}}'
     +'@media (max-width:520px){.gm-sp-pair{grid-template-columns:1fr;}.gm-slot{width:52px;height:60px;}.gm-head h1{font-size:26px;}}'
     +'@media (prefers-reduced-motion:reduce){.gm-st.my,.gm-cell.win,.gm-pop-in,.gm-deco i,.gm-logo{animation:none;}.gm-mk.new path,.gm-mk.new circle{animation:none;stroke-dashoffset:0;}}';
