@@ -17313,7 +17313,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
 </script>
 <script id="game-zone-2026-10-07">
 /* 🎮 Game Zone — เมนูเกมของทีม (เพิ่มเกมใหม่: ใส่ใน GAMES + เขียน mount/หน้าจอของเกมนั้น)
-   เกม: ❌⭕ XO (เล่นกับเพื่อนเรียลไทม์ / บอท · แมตช์เดียว หรือ Best of 3) · 🔢 ทายตัวเลข · 🐍 เกมงู · 🔍 จับผิดภาพ
+   เกม: ❌⭕ XO (เล่นกับเพื่อนเรียลไทม์ / บอท · แมตช์เดียว หรือ Best of 3) · 🔢 ทายตัวเลข · 🐍 เกมงู · 🔍 จับผิดภาพ · 🃏 UNO (ซ้อมกับบอท)
    • Realtime: ช่อง npd-game-xo (broadcast + presence) เชื่อมไว้ตลอดเมื่อล็อกอิน → คำท้าเด้งได้ในทุกเมนู (ไม่ใช้ตารางฐานข้อมูล)
    • คะแนน: graphic_config k='game::<เกม>::<ชื่อเล่น>' (แต่ละคนเขียนของตัวเอง) · เกมคะแนนมีรายสัปดาห์ (wk/ws) + คะแนนรวมทีม */
 (function(){
@@ -17323,9 +17323,10 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     {k:'xo',ic:'❌⭕',t:'XO',d:'ต่อแถวให้ครบ 3 ช่องก่อนใคร — ท้าเพื่อนแบบเรียลไทม์ (แมตช์เดียว / Best of 3) หรือซ้อมกับบอท',on:true,score:false},
     {k:'num',ic:'🔢',t:'ทายตัวเลข',d:'ถอดรหัสเลข 4 หลักที่ไม่ซ้ำกันใน 10 ครั้ง — โจทย์ประจำวัน (นับคะแนนทีมวันละครั้ง) ยิ่งทายน้อยครั้งยิ่งได้แต้มเยอะ · เล่นฟรีเพิ่มได้ไม่จำกัด',on:true,score:true,mode:'sum',unit:'แต้ม',daily:true},
     {k:'snk',ic:'🐍',t:'เกมงู',d:'กินแอปเปิลให้ตัวยาวที่สุดโดยไม่ชนกำแพงหรือตัวเอง — ทำสถิติสูงสุดของสัปดาห์ให้ทีม',on:true,score:true,mode:'best',unit:'แต้ม',daily:false},
-    {k:'spot',ic:'🔍',t:'จับผิดภาพ',d:'หาจุดที่ต่างกัน 5 จุดให้ไวที่สุด — โจทย์ประจำวัน 3 รอบ (นับคะแนนทีมวันละครั้ง) · เล่นฟรีเพิ่มได้ไม่จำกัด',on:true,score:true,mode:'sum',unit:'แต้ม',daily:true}];
+    {k:'spot',ic:'🔍',t:'จับผิดภาพ',d:'หาจุดที่ต่างกัน 5 จุดให้ไวที่สุด — โจทย์ประจำวัน 3 รอบ (นับคะแนนทีมวันละครั้ง) · เล่นฟรีเพิ่มได้ไม่จำกัด',on:true,score:true,mode:'sum',unit:'แต้ม',daily:true},
+    {k:'uno',ic:'🃏',t:'UNO',d:'ทิ้งไพ่ในมือให้หมดก่อนใคร — ลงสี/เลขให้ตรง ใช้ไพ่พิเศษขวางคู่แข่ง · ซ้อมกับบอท หรือเปิดห้องเล่นกับเพื่อนเรียลไทม์ (นับคะแนนทีม) · มีวิธีเล่นแบบภาพให้ดูในเกม',on:true,score:false}];
   var screen='hub', tab='friend', bot={diff:'hard',side:'X'}, fmtPick=1, S=null, chan=null, conn='', presence={};
-  var ALL={xo:{},num:{},snk:{},spot:{}}, scoresAt=0, inv=null, outInv=null, lb={}, rec={}, series={w:0,l:0,d:0};
+  var ALL={xo:{},num:{},snk:{},spot:{},uno:{}}, scoresAt=0, inv=null, outInv=null, lb={}, rec={}, series={w:0,l:0,d:0};
   var goal=10000, theme='pastel', champSig='', errAt=0, sound=true, oppGone=null, botT=null, invT=null, scT=null, flashT=null, origTitle='';
   try{ sound=localStorage.getItem('gm_sound')!=='0'; var _th=localStorage.getItem('gm_theme'); if(_th==='arcade'||_th==='pastel') theme=_th; }catch(e){}   // ค่าเริ่มต้น = พาสเทล (ค่าเก่า candy → พาสเทล)
   function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -17397,6 +17398,79 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     if(o.k===3){ var p=[]; for(var i=0;i<10;i++){ var ang=-Math.PI/2+i*Math.PI/5, rr=(i%2?s*.5:s*1.25); p.push((x+Math.cos(ang)*rr).toFixed(1)+','+(y+Math.sin(ang)*rr).toFixed(1)); } return '<polygon points="'+p.join(' ')+'" '+a+'/>'; }
     return '<polygon points="'+x.toFixed(1)+','+(y-s*1.25).toFixed(1)+' '+(x+s).toFixed(1)+','+y.toFixed(1)+' '+x.toFixed(1)+','+(y+s*1.25).toFixed(1)+' '+(x-s).toFixed(1)+','+y.toFixed(1)+'" '+a+'/>'; }
   window.gmLogic={winnerOf:winnerOf,botPick:botPick,turnOf:turnOf,numSecret:numSecret,numCheck:numCheck,numPoints:numPoints,snkInit:snkInit,snkStep:snkStep,snkDelay:snkDelay,spotGen:spotGen,spotHit:spotHit,rng:rng};
+  /* ============================================================
+     🃏 UNO — กติกา + บอท (ฟังก์ชันล้วน ไม่แตะหน้าจอ ทดสอบได้) · ซ้อมกับบอท 1–5 คน
+     ไพ่ 108 ใบ · ลงสี/เลข/สัญลักษณ์ตรงกับใบบนกอง · ข้าม ⊘ · กลับทิศ ⇄ · +2 · Wild · Wild +4
+     กติกาเสริมที่เปิด/ปิดได้: ต่อ +2/+4 (stack) · ต้องกด UNO! (ลืม = ถูกจับ จั่ว 2) · ไม่มีการท้าพิสูจน์ +4 (ลงได้ทุกเมื่อ)
+     ============================================================ */
+  var UC=['R','Y','G','B'], UCN={R:'แดง',Y:'เหลือง',G:'เขียว',B:'ฟ้า'}, UVN={S:'ข้าม',R:'กลับทิศ',D2:'+2',W:'Wild',W4:'Wild +4'};
+  var UBOT={easy:{say:.65,catchP:.25,stackP:.5,playDrawn:.7},mid:{say:.9,catchP:.55,stackP:1,playDrawn:1},hard:{say:1,catchP:.9,stackP:1,playDrawn:1}};
+  function uDeck(){ var d=[], id=1; UC.forEach(function(c){ d.push({c:c,v:'0',id:id++}); for(var n=1;n<=9;n++){ d.push({c:c,v:''+n,id:id++}); d.push({c:c,v:''+n,id:id++}); }
+      ['S','R','D2'].forEach(function(v){ d.push({c:c,v:v,id:id++}); d.push({c:c,v:v,id:id++}); }); });
+    for(var i=0;i<4;i++){ d.push({c:'W',v:'W',id:id++}); d.push({c:'W',v:'W4',id:id++}); } return d; }
+  function uShuffle(a,rand){ rand=rand||Math.random; for(var i=a.length-1;i>0;i--){ var j=Math.floor(rand()*(i+1)), t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+  function uLabel(c){ return c.c==='W'?(c.v==='W4'?'Wild +4':'Wild'):(UCN[c.c]+' '+(UVN[c.v]||c.v)); }
+  function uTop(U){ return U.disc[U.disc.length-1]; }
+  function uNextIdx(U,k){ return (((U.turn+U.dir*(k||1))%U.n)+U.n)%U.n; }
+  function uSort(h){ var oc={R:0,Y:1,G:2,B:3,W:4}, ov=function(v){ return /^\d$/.test(v)?+v:({S:10,R:11,D2:12,W:13,W4:14}[v]); }; h.sort(function(a,b){ return (oc[a.c]-oc[b.c])||(ov(a.v)-ov(b.v)); }); }
+  function uNew(names,bots,rules,rand){ rand=rand||Math.random; var n=names.length;
+    var U={n:n,pl:[],draw:uShuffle(uDeck(),rand),disc:[],color:'R',dir:1,turn:0,pend:0,pendType:'',phase:'play',drewId:0,winner:-1,rules:{stack:!!(rules&&rules.stack),callUno:!!(rules&&rules.callUno)},said:[],unoMiss:-1,unoMissAt:0,hold:0,log:[],round:1,stale:false};
+    for(var i=0;i<n;i++){ U.pl.push({name:names[i],bot:!!bots[i],diff:(bots[i]&&UBOT[bots[i]])?bots[i]:(bots[i]?'mid':''),hand:[]}); U.said.push(false); }
+    for(var r=0;r<7;r++) for(var p=0;p<n;p++) U.pl[p].hand.push(U.draw.pop());
+    var top=null, g=0; while(!top&&g++<400){ var c=U.draw.pop(); if(/^\d$/.test(c.v)) top=c; else U.draw.unshift(c); }   // ใบแรกบนกอง = ไพ่ตัวเลขเสมอ
+    U.disc.push(top); U.color=top.c; U.turn=Math.floor(rand()*n); U.pl.forEach(function(q){ uSort(q.hand); }); return U; }
+  function uReshuffle(U,rand){ if(U.disc.length<=1) return false; var top=U.disc.pop(); U.draw=uShuffle(U.disc,rand); U.disc=[top]; return U.draw.length>0; }
+  function uDrawN(U,pi,k,rand){ var got=[]; for(var i=0;i<k;i++){ if(!U.draw.length&&!uReshuffle(U,rand)) break; var c=U.draw.pop(); U.pl[pi].hand.push(c); got.push(c); }
+    if(U.pl[pi].hand.length>1) U.said[pi]=false; uSort(U.pl[pi].hand); return got; }
+  function uCanPlay(U,c){ var t=uTop(U);
+    if(U.pend>0){ if(!U.rules.stack) return false; if(c.v==='D2') return U.pendType==='D2'; if(c.v==='W4') return true; return false; }
+    if(c.c==='W') return true; if(c.c===U.color) return true; return t.c!=='W'&&c.v===t.v; }
+  function uWhy(U,c){ if(U.pend>0) return U.rules.stack?'ตอนนี้ต้องต่อ '+(U.pendType==='D2'?'+2 หรือ +4':'+4')+' หรือจั่ว '+U.pend+' ใบ':'ต้องจั่ว '+U.pend+' ใบ';
+    return 'ลงไม่ได้ — ต้อง “สีเดียวกัน (สี'+UCN[U.color]+')” หรือ “เลข/สัญลักษณ์เดียวกับใบบนกอง” หรือใช้ Wild'; }
+  function uLegal(U,pi){ var out=[]; U.pl[pi].hand.forEach(function(c){ if(uCanPlay(U,c)&&(U.phase!=='drew'||c.id===U.drewId)) out.push(c); }); return out; }
+  function uPlay(U,pi,id,chosen,rand){
+    if(U.phase==='over') return {ok:false,why:'จบเกมแล้ว'}; if(U.turn!==pi) return {ok:false,why:'ยังไม่ถึงตาคุณ'};
+    var h=U.pl[pi].hand, ci=-1; for(var i=0;i<h.length;i++){ if(h[i].id===id){ ci=i; break; } } if(ci<0) return {ok:false,why:'ไม่มีไพ่ใบนี้ในมือ'};
+    var c=h[ci]; if(U.phase==='drew'&&U.drewId!==id) return {ok:false,why:'ตอนนี้ลงได้เฉพาะใบที่เพิ่งจั่ว หรือกด “ผ่าน”'};
+    if(!uCanPlay(U,c)) return {ok:false,why:uWhy(U,c)}; if(c.c==='W'&&UC.indexOf(chosen)<0) return {ok:false,why:'เลือกสีก่อน',needColor:true};
+    h.splice(ci,1); U.disc.push(c); U.color=(c.c==='W')?chosen:c.c; U.phase='play'; U.drewId=0; U.unoMiss=-1;
+    var out={ok:true,card:c,win:false,miss:false,victim:-1,drawn:0,type:'num'}, n=U.n, victim;
+    if(!h.length){ U.phase='over'; U.winner=pi; out.win=true; return out; }
+    if(h.length===1){ if(U.rules.callUno&&!U.said[pi]){ U.unoMiss=pi; U.unoMissAt=Date.now(); out.miss=true; } } else U.said[pi]=false;
+    var nxt=function(k){ U.turn=uNextIdx(U,k); };
+    if(c.v==='S'){ out.type='skip'; out.victim=uNextIdx(U,1); nxt(2); }
+    else if(c.v==='R'){ out.type='rev'; if(n===2){ out.victim=uNextIdx(U,1); nxt(2); } else { U.dir=-U.dir; nxt(1); } }
+    else if(c.v==='D2'||c.v==='W4'){ var k=(c.v==='D2')?2:4; out.type=c.v==='D2'?'d2':'w4';
+      if(U.rules.stack){ U.pend+=k; U.pendType=c.v; out.victim=uNextIdx(U,1); nxt(1); }
+      else { victim=uNextIdx(U,1); out.victim=victim; out.drawn=uDrawN(U,victim,k,rand).length; nxt(2); } }
+    else if(c.v==='W'){ out.type='wild'; nxt(1); } else nxt(1);
+    return out; }
+  function uDraw(U,pi,rand){
+    if(U.phase==='over'||U.turn!==pi) return {ok:false}; if(U.phase==='drew') return {ok:false,why:'จั่วแล้ว — ลงใบที่จั่วหรือกด “ผ่าน”'};
+    U.unoMiss=-1;
+    if(U.pend>0){ var k=U.pend; U.pend=0; U.pendType=''; var g=uDrawN(U,pi,k,rand); U.turn=uNextIdx(U,1); return {ok:true,forced:true,n:g.length}; }
+    var got=uDrawN(U,pi,1,rand), c=got[0];
+    if(!c){ U.turn=uNextIdx(U,1); return {ok:true,n:0,passed:true}; }
+    if(uCanPlay(U,c)){ U.phase='drew'; U.drewId=c.id; return {ok:true,n:1,canPlay:true,card:c}; }
+    U.turn=uNextIdx(U,1); return {ok:true,n:1,passed:true,card:c}; }
+  function uPass(U,pi){ if(U.phase!=='drew'||U.turn!==pi) return {ok:false}; U.phase='play'; U.drewId=0; U.turn=uNextIdx(U,1); return {ok:true}; }
+  function uSay(U,pi){ if(U.pl[pi].hand.length>2) return false; U.said[pi]=true; if(U.unoMiss===pi) U.unoMiss=-1; return true; }
+  function uCatch(U,pi,rand){ if(U.unoMiss!==pi||U.said[pi]||U.pl[pi].hand.length!==1) return false; uDrawN(U,pi,2,rand); U.unoMiss=-1; return true; }
+  /* ---- บอท ---- */
+  function uBotColor(h,rand){ var cnt={R:0,Y:0,G:0,B:0}, best=[], mx=-1; h.forEach(function(c){ if(cnt[c.c]!==undefined) cnt[c.c]++; });
+    UC.forEach(function(k){ if(cnt[k]>mx){ mx=cnt[k]; best=[k]; } else if(cnt[k]===mx) best.push(k); }); return best[Math.floor((rand||Math.random)()*best.length)]; }
+  function uBotChoose(U,pi,rand){ rand=rand||Math.random; var p=U.pl[pi], h=p.hand, d=p.diff||'mid', leg=uLegal(U,pi); if(!leg.length) return null;
+    if(U.phase==='drew'&&rand()>UBOT[d].playDrawn) return null; if(U.pend>0&&rand()>UBOT[d].stackP) return null;
+    if(d==='easy') return leg[Math.floor(rand()*leg.length)];
+    var nh=U.pl[uNextIdx(U,1)].hand.length, minOpp=99; U.pl.forEach(function(q,i){ if(i!==pi) minOpp=Math.min(minOpp,q.hand.length); });
+    var best=null, bs=-999;
+    leg.forEach(function(c){ var s=0, num=/^\d$/.test(c.v);
+      if(c.c==='W'){ s-=(c.v==='W4'?3:5); if(h.length<=3) s+=6; if(nh<=2||minOpp<=2) s+=(d==='hard'?9:3); }
+      else if(num) s+=(+c.v)*0.6;
+      else { s+=3; if(nh<=3) s+=(d==='hard'?8:3); }
+      s+=h.filter(function(x){ return x.c===c.c; }).length*0.4+rand()*0.5; if(s>bs){ bs=s; best=c; } });
+    return best; }
+  window.gmLogic.uno={deck:uDeck,newGame:uNew,canPlay:uCanPlay,legal:uLegal,play:uPlay,draw:uDraw,pass:uPass,say:uSay,catchUno:uCatch,botChoose:uBotChoose,botColor:uBotColor,top:uTop,label:uLabel,shuffle:uShuffle,BOT:UBOT};
 
   /* ---------- เสียง / ฉลอง / เตือน ---------- */
   /* ---------- เสียงเอฟเฟกต์ + เพลงประกอบ (สังเคราะห์ด้วย WebAudio ในเบราว์เซอร์ — ไม่ต้องมีไฟล์เสียง) ---------- */
@@ -17406,7 +17480,9 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
         busM=AC.createGain(); busM.gain.value=musicVol*0.5; busM.connect(cp); busS=AC.createGain(); busS.gain.value=0.9; busS.connect(cp); }
       if(AC.state==='suspended'&&AC.resume) AC.resume(); return AC; }catch(e){ return null; } }
   function beep(f,d,v){ if(!sound) return; var a=ac(); if(!a) return; try{ var o=a.createOscillator(), g=a.createGain(), t=a.currentTime; o.type='sine'; o.frequency.value=f; g.gain.setValueAtTime(v||0.05,t); o.connect(g); g.connect(busS); o.start(t); g.gain.exponentialRampToValueAtTime(0.0001,t+d); o.stop(t+d+0.02); }catch(e){} }
-  function sfx(k){ if(k==='move') beep(520,.08); else if(k==='inv'){ beep(660,.12); setTimeout(function(){ beep(880,.16); },130); } else if(k==='win'){ [523,659,784,1047].forEach(function(f,i){ setTimeout(function(){ beep(f,.18,.07); },i*120); }); } else if(k==='lose') beep(220,.35); else if(k==='draw') beep(400,.2); else if(k==='ok') beep(740,.09); else if(k==='bad') beep(180,.12); else if(k==='eat') beep(880,.06); }
+  function sfx(k){ if(k==='move') beep(520,.08); else if(k==='inv'){ beep(660,.12); setTimeout(function(){ beep(880,.16); },130); } else if(k==='win'){ [523,659,784,1047].forEach(function(f,i){ setTimeout(function(){ beep(f,.18,.07); },i*120); }); } else if(k==='lose') beep(220,.35); else if(k==='draw') beep(400,.2); else if(k==='ok') beep(740,.09); else if(k==='bad') beep(180,.12); else if(k==='eat') beep(880,.06);
+    else if(k==='ucard'){ beep(480,.05,.05); setTimeout(function(){ beep(700,.06,.04); },45); } else if(k==='udraw'){ beep(330,.07,.04); setTimeout(function(){ beep(290,.08,.04); },70); }
+    else if(k==='uuno'){ beep(880,.1,.07); setTimeout(function(){ beep(1175,.2,.07); },110); } else if(k==='uzap'){ beep(260,.1,.06); setTimeout(function(){ beep(190,.22,.06); },90); } }
   function mtof(m){ return 440*Math.pow(2,(m-69)/12); }
   function tone(t,f,dur,type,vol,o){ var a=AC; try{ var os=a.createOscillator(), g=a.createGain(); os.type=type; os.frequency.setValueAtTime(f,t); if(o&&o.slide) os.frequency.exponentialRampToValueAtTime(o.slide,t+dur);
       g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+((o&&o.atk)||0.008)); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); os.connect(g); g.connect(busM); os.start(t); os.stop(t+dur+0.04); }catch(e){} }
@@ -17423,6 +17499,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     xo:  {bpm:100,root:65,scale:[0,2,4,5,7,9,11],prog:[0,9,2,7],q:['M7','m7','m7','7'],lead:'sine',leadV:.24,dens:.5,bass:'walk',arp:'stab',dr:'brush',swing:.28},
     num: {bpm:84,root:57,scale:[0,3,5,7,10],prog:[0,8,3,10],q:['m','M','M','M'],lead:'sine',leadV:.22,dens:.32,bass:'long',arp:'',dr:'tick',swing:0,pad:true},
     snk: {bpm:138,root:64,scale:[0,3,5,7,10],prog:[0,0,8,10],q:['m','m','M','M'],lead:'square',leadV:.11,dens:.7,bass:'pump',arp:'fast',dr:'rock',swing:0},
+    uno: {bpm:126,root:64,scale:[0,2,4,7,9],prog:[0,5,7,0],q:['M','M','7','M'],lead:'triangle',leadV:.19,dens:.48,bass:'pizz',arp:'stab',dr:'tick2',swing:.12},
     spot:{bpm:118,root:62,scale:[0,2,3,5,7,8,10],prog:[0,0,8,7],q:['m','m','M','M'],lead:'square',leadV:.10,dens:.42,bass:'pizz',arp:'',dr:'tick2',swing:0}};
   function buildTrack(key){ if(TRK[key]) return TRK[key]; var T=TRACKS[key]||TRACKS.hub, r=rng('mus-'+key), pool=[]; for(var o=0;o<2;o++) T.scale.forEach(function(s){ pool.push(T.root+12*o+s); }); pool.push(T.root+24);
     var idx=Math.floor(pool.length/3), bars=[];
@@ -17471,7 +17548,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   /* ---------- คะแนน (graphic_config k='game::<เกม>::<ชื่อเล่น>') ---------- */
   function parseKey(k){ var m=/^game::([a-z]+)::(.+)$/.exec(String(k||'')); return m?{g:m[1],n:m[2]}:null; }
   async function loadAll(force){ if(!force&&Date.now()-scoresAt<8000) return; scoresAt=Date.now();
-    try{ var rows=await sbSelect('graphic_config','k=like.'+encodeURIComponent(PFX+'*')), o={xo:{},num:{},snk:{},spot:{}};
+    try{ var rows=await sbSelect('graphic_config','k=like.'+encodeURIComponent(PFX+'*')), o={xo:{},num:{},snk:{},spot:{},uno:{}};
       rows.forEach(function(r){ if(r.k==='game::goal'){ try{ var gv=JSON.parse(r.v||'{}'); if(+gv.n>=500) goal=Math.round(+gv.n); }catch(e){} return; } var p=parseKey(r.k); if(!p||!o[p.g]) return; try{ o[p.g][p.n]=JSON.parse(r.v||'{}'); }catch(e){} });
       ALL=o; refresh(); champCheck(); goalCelebrate(); }catch(e){} }
   async function fetchOwn(g){ var n=me(), key=PFX+g+'::'+n; try{ var rows=await sbSelect('graphic_config','k=eq.'+encodeURIComponent(key)); for(var i=0;i<rows.length;i++){ if(rows[i].k===key) return JSON.parse(rows[i].v||'{}'); } return {}; }catch(e){ return ALL[g][n]||{}; } }
@@ -17479,9 +17556,9 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     try{ var r=await postToSheet({target:'graphicconfig',action:'upsert',keyValue:key,row:{k:key,v:JSON.stringify(cur),updatedAt:(typeof todayStr==='function'?todayStr():''),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}});
       if(r&&r.ok===false) say('❌ บันทึกคะแนนไม่สำเร็จ: '+(r.error||''),'err'); else send({t:'sc'}); return r; }catch(e){} }
   /* XO: นับเป็น "แมตช์" (แมตช์เดียว = 1 เกม · Best of 3 = 1 ซีรีส์) */
-  async function record(res){ var n=me(); if(!n) return; var cur=Object.assign({w:0,l:0,d:0,s:0,b:0},await fetchOwn('xo'));
+  async function record(res,gk){ gk=gk||'xo'; var n=me(); if(!n) return; var cur=Object.assign({w:0,l:0,d:0,s:0,b:0},await fetchOwn(gk));
     cur={w:+cur.w||0,l:+cur.l||0,d:+cur.d||0,s:+cur.s||0,b:+cur.b||0};
-    if(res==='w'){ cur.w++; cur.s++; cur.b=Math.max(cur.b,cur.s); } else if(res==='l'){ cur.l++; cur.s=0; } else cur.d++; await putOwn('xo',cur); }
+    if(res==='w'){ cur.w++; cur.s++; cur.b=Math.max(cur.b,cur.s); } else if(res==='l'){ cur.l++; cur.s=0; } else cur.d++; await putOwn(gk,cur); }
   /* เกมคะแนน: mode 'sum' = สะสมรายสัปดาห์ · 'best' = สถิติสูงสุดของสัปดาห์ */
   async function recordScore(g,sc,day){ var n=me(), G=gameOf(g); if(!n||!G) return; var cur=await fetchOwn(g), wk=weekKey();
     if(cur.wk!==wk){ if(cur.wk){ cur.pwk=cur.wk; cur.pws=+cur.ws||0; } cur.wk=wk; cur.ws=0; }   // เก็บคะแนนสัปดาห์ก่อนไว้ให้ “ผู้ชนะสัปดาห์ที่แล้ว”
@@ -17543,6 +17620,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function abortGame(why){ if(!S||S.sOver) return; S.over=true; S.sOver=true; S.res='x'; S.sRes='x'; S.msg=why; S.oppLeft=true; S.stale=false; track(); refresh(); }
   window.gmAbort=function(){ if(!S||S.mode!=='pvp'||S.sOver) return; if(!confirm('ยกเลิกแมตช์นี้ — ไม่นับแพ้/ชนะให้ทั้งสองฝั่ง ใช่ไหม?')) return; send({t:'lv',id:S.id,from:me(),to:S.opp,nr:1}); abortGame('คุณยกเลิกแมตช์ (เชื่อมต่อสะดุด) — ไม่นับผล'); };
   function onMsg(p){ if(!p||!p.t) return; var m=me();
+    if(p.t==='urp'||p.t==='uro'){ unoOnPoke(p); return; }
     if(p.t==='sc'){ clearTimeout(scT); scT=setTimeout(function(){ loadAll(true); },700); return; }
     if(!m||p.to!==m) return;
     if(p.t==='inv'){ if((S&&S.mode==='pvp'&&!S.sOver)||inv||outInv){ send({t:'dec',id:p.id,from:m,to:p.from,why:'busy'}); return; }
@@ -17756,8 +17834,341 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     if(SPT.round>=SPT.rounds&&SPT.daily&&!SPT.saved){ SPT.saved=true; if(me()) recordScore('spot',SPT.total,dayKey()); else say('เข้าสู่ระบบเพื่อบันทึกคะแนนให้ทีม','info'); }
     spSave(); spotDraw(); }
 
+  /* ============================================================
+     🃏 UNO — หน้าจอ + ตัวเล่นบอท (ซ้อมกับบอท 1–5 คน · ยังไม่นับคะแนนทีม) · คุณ = ที่นั่ง 0 เสมอ
+     หน้า: ตั้งค่า + “วิธีเล่น” แบบภาพ → โต๊ะเล่น (บอทเดินเองทีละจังหวะ) → สรุปผล
+     ============================================================ */
+  var UNO={U:null,cfg:{bots:3,diff:'mid',stack:true,callUno:true},st:{g:0,w:0,s:0,b:0},timer:null,holdUntil:0,pick:0,ov:'',log:[],fresh:0,notice:'',res:null};
+  var UNO_HOLD=2600, UNAMES=['ส้มโอ','มะปราง','ลำไย','ฝรั่ง','ชมพู่'], UAV=['🍊','🍑','🍈','🍐','🍇'], UHEX={R:'#E8506A',Y:'#F0BB30',G:'#34B97A',B:'#4B8EF1'}, UDF={easy:'🙂 ง่าย',mid:'😏 กลาง',hard:'🔥 ยาก'};
+  try{ var _uc=JSON.parse(localStorage.getItem('gm_uno_cfg')||'null'); if(_uc){ var _b=Math.round(+_uc.bots); if(_b>=1&&_b<=5) UNO.cfg.bots=_b; if(UBOT[_uc.diff]) UNO.cfg.diff=_uc.diff; if(typeof _uc.stack==='boolean') UNO.cfg.stack=_uc.stack; if(typeof _uc.callUno==='boolean') UNO.cfg.callUno=_uc.callUno; }
+    var _us=JSON.parse(localStorage.getItem('gm_uno_stat')||'null'); if(_us){ ['g','w','s','b'].forEach(function(k){ var v=Math.round(+_us[k]); if(v>=0&&v<1e6) UNO.st[k]=v; }); } }catch(e){}
+  function unoSave(){ try{ localStorage.setItem('gm_uno_cfg',JSON.stringify(UNO.cfg)); localStorage.setItem('gm_uno_stat',JSON.stringify(UNO.st)); }catch(e){} }
+  function uname(i){ var U=UNO.U; return (U&&U.pl[i])?U.pl[i].name:'?'; }
+  function ulog(t){ UNO.log.push(t); if(UNO.log.length>60) UNO.log.shift(); }
+  function usym(c){ if(c.v==='S') return '⊘'; if(c.v==='R') return '⇄'; if(c.v==='D2') return '+2'; if(c.v==='W4') return '+4'; if(c.v==='W') return '★'; return c.v; }
+  /* การ์ดวาดด้วย CSS ล้วน (ดีไซน์ของเราเอง) · o: btn=กดได้ mini/tiny/big=ขนาด can=ลงได้ dim=ลงไม่ได้ cls=คลาสเสริม */
+  function ucard(c,o){ o=o||{}; var s=usym(c), tag=o.btn?'button':'div', lb=uLabel(c);
+    return '<'+tag+(o.btn?' type="button" onclick="gmUnoPlay('+c.id+')"':'')+' class="gu-c c-'+c.c+(o.mini?' mini':'')+(o.tiny?' tiny':'')+(o.big?' big':'')+(o.can?' can':'')+(o.dim?' dim':'')+(o.cls?' '+o.cls:'')+'" title="'+esc(lb)+'" aria-label="'+esc(lb)+'"><i class="tl">'+s+'</i><b class="mid"><span>'+s+'</span></b><i class="br">'+s+'</i></'+tag+'>'; }
+  function uback(o){ o=o||{}; return '<div class="gu-c back'+(o.mini?' mini':'')+(o.tiny?' tiny':'')+'" aria-hidden="true"><b class="mid"><span>UNO</span></b></div>'; }
+  function unoBanner(){ return '<span class="ic gu-banfan" aria-hidden="true">'+ucard({c:'R',v:'7',id:0},{cls:'b1'})+ucard({c:'W',v:'W4',id:0},{cls:'b2'})+ucard({c:'B',v:'S',id:0},{cls:'b3'})+'</span>'; }
+  function ucol(k){ return {R:'แดง',Y:'เหลือง',G:'เขียว',B:'ฟ้า'}[k]||''; }
+  /* ---------- วิธีเล่น (ภาพ + ข้อความ) — ใช้ทั้งหน้าตั้งค่าและป๊อปอัปกลางเกม ---------- */
+  function unoHow(){
+    var cd=function(c,v,o){ return ucard({c:c,v:v,id:0},Object.assign({mini:true},o||{})); };
+    var ex=function(card,ok,txt){ return '<div class="gu-ex '+(ok?'yes':'nay')+'">'+card+'<span class="tick">'+(ok?'✓ ลงได้':'✗ ลงไม่ได้')+'</span><small>'+txt+'</small></div>'; };
+    var sp=function(card,t,d){ return '<div class="gu-sp">'+card+'<div><b>'+t+'</b><small>'+d+'</small></div></div>'; };
+    var step=function(n,t,body){ return '<div class="gu-step"><span class="no">'+n+'</span><div class="bd"><h4>'+t+'</h4>'+body+'</div></div>'; };
+    var fan=''; for(var i=0;i<5;i++) fan+=uback({mini:true});
+    return '<div class="gm-lh"><b>📖 วิธีเล่น UNO</b><small>อ่านจบใน 1 นาที</small></div>'
+      +step(1,'🎯 เป้าหมาย','<p>ทุกคนได้ไพ่ <b>7 ใบ</b> — ใครทิ้งไพ่ในมือ<b>หมดก่อน</b> คนนั้นชนะ!</p><div class="gu-fig"><span class="gu-fan">'+fan+'</span><span class="gu-arr">➜</span><span class="gu-goal">🏆 เหลือ 0 ใบ = ชนะ</span></div>')
+      +step(2,'▶ ถึงตาคุณ — ลงไพ่ 1 ใบ','<p>ลงได้เมื่อไพ่<b>ตรงกับใบบนกอง</b> อย่างใดอย่างหนึ่ง: <b>สีเดียวกัน</b> · <b>เลข/สัญลักษณ์เดียวกัน</b> · หรือเป็นไพ่ <b>Wild</b></p>'
+        +'<div class="gu-fig"><div class="gu-ex top">'+cd('R','7',{cls:'big'})+'<small><b>ใบบนกอง</b></small></div><span class="gu-arr">⇦ เทียบกับ</span>'
+        +ex(cd('R','3'),true,'สีแดงเหมือนกัน')+ex(cd('B','7'),true,'เลข 7 เหมือนกัน')+ex(cd('W','W'),true,'Wild ลงได้ทุกเมื่อ')+ex(cd('B','2'),false,'สีและเลขไม่ตรง')+'</div>'
+        +'<p class="tip">💡 ในเกม ไพ่ที่ลงได้จะ<b>เรืองแสงเขียวและยกขึ้น</b> — กดที่ใบนั้นได้เลย</p>')
+      +step(3,'📥 ลงไม่ได้ → จั่วไพ่','<p>กดที่ <b>กองจั่ว</b> เพื่อจั่ว 1 ใบ · ถ้าใบที่จั่วลงได้ จะลงต่อได้ทันที (หรือกด “ผ่าน” เก็บไว้) · ถ้าลงไม่ได้ ตาจะข้ามไปคนถัดไปเอง</p><div class="gu-fig">'+uback({mini:true})+'<span class="gu-arr">➜ จั่ว 1 ใบ ➜</span>'+cd('G','5')+'<span class="gu-arr">?</span><small class="gu-note">ใบที่ลงได้ → ลงเลย</small></div>')
+      +step(4,'⚡ ไพ่พิเศษ','<div class="gu-sps">'+sp(cd('Y','S'),'ข้าม ⊘','คนถัดไป<b>โดนข้ามตา</b>')+sp(cd('B','R'),'กลับทิศ ⇄','ทิศการเล่น<b>ย้อนกลับ</b> (เล่น 2 คน = เหมือนข้ามตา)')+sp(cd('R','D2'),'+2','คนถัดไป<b>จั่ว 2 ใบ</b> แล้วโดนข้ามตา')+sp(cd('W','W'),'Wild','<b>เลือกสีใหม่</b>ได้ตามใจ — ลงได้ทุกเมื่อ')+sp(cd('W','W4'),'Wild +4','เลือกสีใหม่ + คนถัดไป<b>จั่ว 4 ใบ</b> แล้วโดนข้ามตา — ลงได้ทุกเมื่อ')+'</div>')
+      +step(5,'🔥 ต่อ +2 / +4 <small class="opt">กติกาเสริม · ปิดได้ตอนตั้งค่า</small>','<p>โดน +2 แล้วมี +2 ในมือ? <b>ลงต่อโยนให้คนถัดไป</b> — ยอดจั่วสะสมเพิ่ม! (+2 ต่อได้เฉพาะ +2 · Wild +4 ต่อได้ทั้ง +2 และ +4) ใครต่อไม่ได้ ต้องจั่วทั้งกองแล้วข้ามตา</p>'
+        +'<div class="gu-fig">'+cd('R','D2')+'<span class="gu-arr">➜</span>'+cd('B','D2')+'<span class="gu-arr">➜</span>'+cd('Y','D2')+'<span class="gu-arr">=</span><span class="gu-goal bad">คนสุดท้ายจั่ว 6 ใบ! 😱</span></div>')
+      +step(6,'📣 พูด “UNO!” ตอนเหลือไพ่ใบสุดท้าย','<p>เหลือไพ่ <b>1 ใบ</b> ต้องกดปุ่ม <span class="gu-unochip">📣 UNO!</span> — กดตอนเหลือ 2 ใบ (ก่อนลงใบรองสุดท้าย) หรือรีบกดทันทีหลังลง · <b>ลืมแล้วโดนจับ = จั่ว 2 ใบ</b></p><p>กลับกัน ถ้า<b>บอทลืม</b> กดปุ่ม <span class="gu-catchchip">🚨 จับ!</span> ภายใน ~2.5 วินาที บอทจะต้องจั่ว 2 ใบ</p>')
+      +step(7,'🏆 ชนะ','<p>ลงไพ่ใบสุดท้ายหมดมือก่อนใครคือชนะ — 1 เกมจบในตาเดียว (ไม่มีนับแต้ม)</p>')
+      +step(8,'💡 เคล็ดลับ','<ul class="gu-tips"><li>เก็บ <b>Wild</b> ไว้ใช้ช่วงท้ายเกม จะช่วยให้ลงใบสุดท้ายได้</li><li>ตอนใช้ Wild ให้เลือก<b>สีที่ในมือคุณมีเยอะสุด</b></li><li>คนถัดไปเหลือ 1–2 ใบ? ใช้ ข้าม / +2 / +4 ขวางไว้ก่อน</li></ul>')
+      +'<div class="gu-foot">เล่นกับบอทเพื่อความสนุก — ยังไม่นับคะแนนทีม</div>'; }
+  /* ---------- หน้าตั้งค่า ---------- */
+  function unoTabs(){ return '<div class="gm-tabs"><button type="button" class="'+(UNO.tab==='bot'?'on':'')+'" onclick="gmUnoTab(\'bot\')">🤖 ซ้อมกับบอท</button><button type="button" class="'+(UNO.tab==='friend'?'on':'')+'" onclick="gmUnoTab(\'friend\')">👥 เล่นกับเพื่อน</button></div>'; }
+  function unoSetup(){ if(UNO.net&&UNO.net.room) UNO.tab='friend'; var c=UNO.cfg, st=UNO.st, rate=st.g?Math.round(st.w/st.g*100):0;
+    var seg=function(k,v,l,cur){ return '<button type="button" class="gm-seg'+(cur===v?' on':'')+'" onclick="gmUnoCfg(\''+k+'\','+(typeof v==='number'?v:'\''+v+'\'')+')">'+l+'</button>'; };
+    var tog=function(k,on,t,s){ return '<button type="button" class="gu-tog'+(on?' on':'')+'" onclick="gmUnoCfg(\''+k+'\')" role="switch" aria-checked="'+(on?'true':'false')+'"><span class="sw"><i></i></span><span class="tx"><b>'+t+'</b><small>'+s+'</small></span></button>'; };
+    var hero='<div class="gu-hero"><div class="gu-fanh">'+ucard({c:'R',v:'7',id:0},{cls:'h1'})+ucard({c:'B',v:'S',id:0},{cls:'h2'})+ucard({c:'W',v:'W4',id:0},{cls:'h3'})+ucard({c:'Y',v:'D2',id:0},{cls:'h4'})+ucard({c:'G',v:'5',id:0},{cls:'h5'})+'</div><h2>UNO</h2><p>ทิ้งไพ่ในมือให้หมดก่อนใคร — ซ้อมกับบอทได้เลย</p></div>';
+    if(UNO.tab==='friend'){ return '<div class="gm-xo"><div class="gm-col"><div class="gm-card gm-play gu-set">'+hero+unoTabs()+unoFriendHtml()+'</div></div><div class="gm-col"><div class="gm-card gm-side">'+unoRankHtml()+'</div><div class="gm-card gm-side gu-how">'+unoHow()+'</div></div></div>'; }
+    var left='<div class="gm-card gm-play gu-set">'+hero+unoTabs()
+      +'<div class="gm-opt"><div class="gm-ol">จำนวนบอทที่เล่นด้วย</div><div class="gm-segs">'+[1,2,3,4,5].map(function(n){ return seg('bots',n,n+' คน',c.bots); }).join('')+'</div><div class="gm-hint">รวมคุณเป็น '+(c.bots+1)+' คน</div></div>'
+      +'<div class="gm-opt"><div class="gm-ol">ความเก่งของบอท</div><div class="gm-segs">'+seg('diff','easy',UDF.easy,c.diff)+seg('diff','mid',UDF.mid,c.diff)+seg('diff','hard',UDF.hard,c.diff)+'</div><div class="gm-hint">'+({easy:'เล่นมั่วๆ ลืมกด UNO บ่อย — เหมาะวอร์มอัพ',mid:'เล่นพอได้ จับ UNO ที่คุณลืมบ้าง',hard:'วางแผนไพ่พิเศษ ไม่ค่อยลืมกด UNO — จับผิดคุณเก่ง'}[c.diff])+'</div></div>'
+      +'<div class="gm-opt"><div class="gm-ol">กติกาเสริม</div>'+tog('stack',c.stack,'ต่อ +2 / +4 ได้','โดน +2/+4 แล้วต่อให้คนถัดไป ยอดจั่วทบกัน')+tog('callUno',c.callUno,'ต้องกด UNO! เมื่อเหลือ 1 ใบ','ลืมแล้วโดนจับ = จั่ว 2 ใบ (บอทก็ลืมได้ — คุณจับได้)')+'</div>'
+      +'<button type="button" class="gm-btn pri big" onclick="gmUnoStart()">▶ เริ่มเล่น</button>'
+      +'<div class="gu-st">'+(st.g?'สถิติของคุณ (เครื่องนี้): เล่น <b>'+st.g+'</b> · ชนะ <b>'+st.w+'</b> ('+rate+'%) · ชนะติดกัน <b>'+st.s+'</b> (สูงสุด '+st.b+')':'ยังไม่เคยเล่น — ลองสักตาแล้วสถิติจะขึ้นที่นี่')+'<br><small>เล่นกับบอทเพื่อความสนุก ไม่นับคะแนนทีม · สถิติเก็บในเครื่องนี้</small></div></div>';
+    return '<div class="gm-xo"><div class="gm-col">'+left+'</div><div class="gm-col"><div class="gm-card gm-side gu-how">'+unoHow()+'</div></div></div>'; }
+  /* ---------- โต๊ะเล่น ---------- */
+  function unoStatus(U){
+    if(U.phase==='over'){ return U.winner===0?{t:'🏆 คุณชนะ! เยี่ยมมาก',c:'w'}:{t:'😵 '+uname(U.winner)+' ชนะ — เอาใหม่นะ!',c:'l'}; }
+    if(U.turn===0){
+      if(U.pend>0) return {t:'⚠️ โดนสะสม '+U.pend+' ใบ — '+(U.rules.stack?'ต่อ '+(U.pendType==='D2'?'+2 / +4':'+4')+' ที่เรืองแสง หรือกองจั่วรับ '+U.pend+' ใบ':'กองจั่วรับ '+U.pend+' ใบ'),c:'my'};
+      if(U.phase==='drew') return {t:'🃏 ใบที่จั่วลงได้! ลงใบนั้น หรือกด “ผ่าน”',c:'my'};
+      return {t:uLegal(U,0).length?'🎯 ตาของคุณ — กดไพ่ที่เรืองแสงเขียว':'🤔 ไม่มีใบที่ลงได้ — กดกองจั่ว',c:'my'}; }
+    return {t:'⏳ '+uname(U.turn)+' กำลังเลือกไพ่…',c:''}; }
+  function unoSeat(U,i){ var p=U.pl[i], cnt=p.hand.length, cur=(U.phase!=='over'&&U.turn===i), nx=(U.phase!=='over'&&uNextIdx(U,1)===i&&U.turn!==i), fan='';
+    for(var k=0;k<Math.min(cnt,5);k++) fan+=uback({tiny:true});
+    var ico=p.real?(av(p.seatNick||p.name,30)||'🙂'):UAV[(i-1)%UAV.length], sub=p.afk?'💤 ระบบเล่นแทน':(p.real?'ผู้เล่น':(UDF[p.diff]||''));
+    return '<div class="gu-seat'+(cur?' cur':'')+(U.unoMiss===i?' miss':'')+'"><span class="av">'+ico+'</span><div class="nm"><b>'+esc(p.name)+'</b><small>'+sub+'</small></div><div class="cnt"><span class="fan">'+fan+'</span><b>'+cnt+'</b></div>'
+      +(cnt===1?'<em class="u">UNO!</em>':'')+(nx?'<em class="nx">ถัดไป</em>':'')+'</div>'; }
+  function unoTable(){ var U=UNO.U, top=uTop(U), me0=U.pl[0], hand=me0.hand, mine=(U.phase!=='over'&&U.turn===0&&!UNO.ov&&!UNO.pick), leg={}, ss=unoStatus(U);
+    if(mine) uLegal(U,0).forEach(function(c){ leg[c.id]=1; });
+    var canDraw=mine&&U.phase==='play', seats=''; for(var i=1;i<U.n;i++) seats+=unoSeat(U,i);
+    var catchable=(U.unoMiss>0&&(UNO.online||Date.now()<UNO.holdUntil)), sayable=(U.rules.callUno&&U.phase!=='over'&&hand.length<=2&&(!U.said[0]||U.unoMiss===0));
+    var pulse=(U.rules.callUno&&sayable&&(U.unoMiss===0||(mine&&hand.length===2)));
+    var mid='<div class="gu-mid"><button type="button" class="gu-pile'+(canDraw?' can':'')+'" onclick="gmUnoDraw()" aria-label="กองจั่ว"'+(canDraw?'':' tabindex="-1"')+'>'+uback({})+'<small>กองจั่ว · '+U.draw.length+'</small></button>'
+      +'<div class="gu-disc"><span class="ring" style="--uc:'+UHEX[U.color]+'"></span>'+ucard(top,{big:true,cls:UNO.fresh===top.id?'fresh':''})+'<small>ใบบนกอง</small></div>'
+      +'<div class="gu-info"><div class="gu-chip"><i style="background:'+UHEX[U.color]+'"></i>สี'+ucol(U.color)+'</div><div class="gu-chip">'+(U.dir>0?'↻ ทิศปกติ':'↺ กลับทิศแล้ว')+'</div>'+(U.pend>0?'<div class="gu-chip bad">+'+U.pend+' รอจั่ว!</div>':'')+'</div></div>';
+    var ctl=(U.phase==='over')?(UNO.online?unoOnlineOverCtl():'<div class="gu-ctl"><button type="button" class="gm-btn pri" onclick="gmUnoAgain()">🔁 เล่นอีกตา</button><button type="button" class="gm-btn" onclick="gmUnoSetup()">⚙️ ตั้งค่าใหม่</button></div>')
+      :'<div class="gu-ctl"><button type="button" class="gm-btn pri" onclick="gmUnoDraw()"'+(canDraw?'':' disabled')+'>📥 '+(U.pend>0?'จั่ว '+U.pend+' ใบ':'จั่วไพ่')+'</button>'
+      +(U.phase==='drew'&&U.turn===0?'<button type="button" class="gm-btn" onclick="gmUnoPass()">⏭ ผ่าน (เก็บใบที่จั่วไว้)</button>':'')
+      +(U.rules.callUno?'<button type="button" class="gm-btn gu-unob'+(pulse?' pulse':'')+'" onclick="gmUnoSay()"'+(sayable?'':' disabled')+'>📣 UNO!</button>':'')
+      +(catchable?'<button type="button" class="gm-btn gu-catchb" onclick="gmUnoCatch()">🚨 จับ UNO! '+esc(uname(U.unoMiss))+'<span class="cd" style="animation-duration:'+Math.max(200,UNO.holdUntil-Date.now())+'ms"></span></button>':'')+'</div>';
+    var h=hand.map(function(c){ return ucard(c,{btn:true,can:!!leg[c.id],dim:mine&&!leg[c.id]}); }).join('');
+    var lg=UNO.log.slice(-4).map(function(t,i,a){ return '<div'+(i===a.length-1?' class="last"':'')+'>'+esc(t)+'</div>'; }).join('');
+    var body='<div class="gm-card gm-play gu-tbl"><div class="gu-seats">'+seats+'</div>'+mid+'<div class="gm-st '+ss.c+'">'+esc(ss.t)+(UNO.online&&U.phase!=='over'&&UNO.net.dlAt?' <small class="gu-tl" id="gu-tleft">'+unoTleft()+'</small>':'')+'</div>'+(UNO.notice?'<div class="gu-note">'+esc(UNO.notice)+'</div>':'')+ctl
+      +'<div class="gu-handw"><div class="gu-hl"><b>ไพ่ในมือคุณ</b><small>'+hand.length+' ใบ'+(U.said[0]&&hand.length<=2?' · 📣 กด UNO แล้ว':'')+'</small></div><div class="gu-hand'+(hand.length<=8?' sp':'')+'" id="gu-hand">'+h+'</div></div>'
+      +'<div class="gu-log" aria-live="polite">'+lg+'</div><div class="gu-foot2"><button type="button" class="gm-back" onclick="gmUnoRules(true)">📖 กติกา</button><button type="button" class="gm-back" onclick="gmUnoLeave()">'+(UNO.online?'🚪 ออกจากห้อง':'🚪 เลิกเล่นตานี้')+'</button></div></div>';
+    return body; }
+  function unoOverlay(U){
+    if(UNO.pick){ return '<div class="gu-ov"><div class="gu-box"><h3>🎨 เลือกสีใหม่</h3><p>คุณลง '+(U.pl[0].hand.some(function(c){ return c.id===UNO.pick&&c.v==='W4'; })?'Wild +4':'Wild')+' — ให้ไพ่ใบต่อไปเป็นสีอะไร?</p><div class="gu-cols">'+UC.map(function(k){ return '<button type="button" class="gu-colb" style="--uc:'+UHEX[k]+'" onclick="gmUnoColor(\''+k+'\')"><i></i>'+ucol(k)+'</button>'; }).join('')+'</div><button type="button" class="gm-back" onclick="gmUnoPickCancel()">← เปลี่ยนใจ เลือกไพ่ใหม่</button></div></div>'; }
+    if(UNO.ov==='rules') return '<div class="gu-ov" onclick="if(event.target===this)gmUnoRules(false)"><div class="gu-box wide"><div class="gu-boxhd"><b>'+(UNO.online?'⏱ เกมยังเดินต่อระหว่างอ่านกติกา — อ่านเร็วๆ นะ':'เกมหยุดชั่วคราวระหว่างอ่านกติกา')+'</b><button type="button" class="gm-btn pri" onclick="gmUnoRules(false)">▶ เล่นต่อ</button></div>'+unoHow()+'</div></div>';
+    if(UNO.ov==='res'&&U.phase==='over'&&UNO.online) return unoOnlineRes(U);
+    if(UNO.ov==='res'&&U.phase==='over'){ var win=U.winner===0, rows=U.pl.map(function(p,i){ return '<div class="r'+(i===U.winner?' w':'')+'"><span>'+(i===0?'🙋':UAV[(i-1)%UAV.length])+' '+esc(p.name)+'</span><b>'+(i===U.winner?'🏆 หมดมือ':'เหลือ '+p.hand.length+' ใบ')+'</b></div>'; }).join('');
+      return '<div class="gu-ov"><div class="gu-box res"><div class="big">'+(win?'🏆':'😵')+'</div><h3>'+(win?'คุณชนะ!':esc(uname(U.winner))+' ชนะ')+'</h3><div class="gu-rows">'+rows+'</div><div class="gu-st">'+(UNO.st.g?'สถิติ: เล่น '+UNO.st.g+' · ชนะ '+UNO.st.w+' · ชนะติดกัน '+UNO.st.s:'')+'</div><div class="gu-ctl"><button type="button" class="gm-btn pri" onclick="gmUnoAgain()">🔁 เล่นอีกตา</button><button type="button" class="gm-btn" onclick="gmUnoSetup()">⚙️ ตั้งค่าใหม่</button><button type="button" class="gm-btn" onclick="gmUnoView()">👀 ดูโต๊ะ</button></div></div></div>'; }
+    return ''; }
+  /* หน้าต่างซ้อน (กติกา/เลือกสี/สรุปผล) วางใน #view-game ไม่ใช่ใน #gm-root — กันโดนแถบหัวเว็บบัง (z-index ใน gm-wrap ถูกจำกัดไว้) และหายเองเมื่อเปลี่ยนแท็บ */
+  function unoOv(html){ var host=document.getElementById('view-game'); if(!host) return; var el=document.getElementById('gu-ov-root'), box=el&&el.querySelector?el.querySelector('.gu-box'):null, sc=box?box.scrollTop:0;
+    if(!html){ if(el&&el.parentNode) el.parentNode.removeChild(el); return; }
+    if(!el||!el.parentNode){ el=document.createElement('div'); el.id='gu-ov-root'; host.appendChild(el); }
+    el.innerHTML=html; if(sc){ var nb=el.querySelector?el.querySelector('.gu-box'):null; if(nb) nb.scrollTop=sc; } }
+  function unoRender(){ var r=root(); if(!r) return; r.setAttribute('data-screen','uno');
+    if(r.getAttribute('data-g')!=='uno'||!document.getElementById('gu-app')){ r.innerHTML=head()+backBar()+'<div id="gu-app"></div>'; r.setAttribute('data-g','uno'); }
+    var app=document.getElementById('gu-app'); if(!app) return; var hd=document.getElementById('gu-hand'), sl=hd?hd.scrollLeft:0, was=app.getAttribute('data-m'), now=UNO.U?'t':'s';
+    app.setAttribute('data-m',now); app.innerHTML=UNO.U?unoTable():unoSetup(); var nh=document.getElementById('gu-hand'); if(nh&&was==='t') nh.scrollLeft=sl; UNO.fresh=0; unoOv(UNO.U?unoOverlay(UNO.U):''); unoEnsureLoops(); }
+  /* ---------- ตัวเดินเกม ---------- */
+  function unoSchedule(ms){ clearTimeout(UNO.timer); UNO.timer=setTimeout(unoStep,ms); }
+  function unoDelay(){ return 750+Math.round(Math.random()*650); }
+  function unoPlayText(pi,o,col){ var U=UNO.U, c=o.card, t=uname(pi)+' ลง '+uLabel(c);
+    if(c.c==='W') t+=' → เลือกสี'+ucol(col||U.color);
+    if(o.type==='skip') t+=' · ข้ามตา '+uname(o.victim);
+    else if(o.type==='rev') t+=(U.n===2?' · เหมือนข้ามตา':' · กลับทิศ!');
+    else if(o.type==='d2'||o.type==='w4'){ var k=(c.v==='D2')?2:4; t+=U.rules.stack?' · '+uname(o.victim)+' ต้องต่อ หรือจั่ว '+U.pend:' · '+uname(o.victim)+' จั่ว '+k+' ใบ + โดนข้ามตา'; }
+    return t; }
+  function unoWin(pi){ var U=UNO.U, human=(pi===0); UNO.st.g++; if(human){ UNO.st.w++; UNO.st.s++; if(UNO.st.s>UNO.st.b) UNO.st.b=UNO.st.s; } else UNO.st.s=0; unoSave();
+    ulog(human?'🏆 คุณชนะ!':'😵 '+uname(pi)+' ชนะ'); UNO.notice=''; UNO.ov='res'; clearTimeout(UNO.timer); sfx(human?'win':'lose'); if(human) burst(); render(); }
+  function unoAfterPlay(pi,o,col){ var U=UNO.U; UNO.fresh=o.card.id; UNO.notice=''; ulog(unoPlayText(pi,o,col)); sfx((o.type==='num'||o.type==='wild')?'ucard':'uzap');
+    if(o.win){ unoWin(pi); return true; }
+    if(o.miss){ if(pi>0&&Math.random()<UBOT[U.pl[pi].diff].say){ uSay(U,pi); ulog('📣 '+uname(pi)+': UNO!'); UNO.notice='📣 '+uname(pi)+' ประกาศ UNO!'; sfx('uuno'); }
+      else if(pi>0){ UNO.holdUntil=Date.now()+UNO_HOLD; UNO.notice='🚨 '+uname(pi)+' ลืมกด UNO! — กด “จับ” ได้เลย'; sfx('uzap'); }
+      else { UNO.holdUntil=Date.now()+UNO_HOLD; UNO.notice='⚠️ เหลือ 1 ใบแล้ว แต่ยังไม่ได้กด UNO! — รีบกด 📣 ก่อนโดนจับ'; sfx('uzap'); } }
+    return false; }
+  function unoStep(){ UNO.timer=null; var U=UNO.U; if(!U||UNO.online||screen!=='uno'||U.phase==='over') return;
+    if(!viewActive()||document.hidden||UNO.ov){ unoSchedule(600); return; }   // กำลังอ่านกติกา / อยู่แท็บอื่น → หยุดรอ ไม่เดินไพ่
+    var now=Date.now();
+    if(U.unoMiss>=0){
+      if(now<UNO.holdUntil){ unoSchedule(Math.min(400,UNO.holdUntil-now+20)); return; }
+      if(U.unoMiss===0&&U.n>1){ var b=1+Math.floor(Math.random()*(U.n-1));
+        if(Math.random()<UBOT[U.pl[b].diff].catchP&&uCatch(U,0,Math.random)){ ulog('🚨 '+uname(b)+' จับได้! คุณลืมกด UNO — จั่ว 2 ใบ'); UNO.notice='🚨 '+uname(b)+' จับได้! คุณลืมกด UNO — จั่ว 2 ใบ'; sfx('uzap'); render(); unoSchedule(1100); return; } }
+      U.unoMiss=-1; UNO.notice=''; render(); unoSchedule(450); return; }
+    var pi=U.turn, P=U.pl[pi]; if(!P||!P.bot) return;   // ตาของคนเล่น → รอกดเอง
+    var c=uBotChoose(U,pi,Math.random), done=false;
+    if(c){ var rest=P.hand.filter(function(x){ return x.id!==c.id; }), col=(c.c==='W')?uBotColor(rest,Math.random):null, o=uPlay(U,pi,c.id,col,Math.random);
+      if(o.ok){ done=true; if(unoAfterPlay(pi,o,col)) return; } }
+    if(!done){
+      if(U.phase==='drew'){ uPass(U,pi); ulog(uname(pi)+' ไม่ลงใบที่จั่ว — ผ่านตา'); done=true; }
+      else { var d=uDraw(U,pi,Math.random); if(d.ok){ done=true; sfx('udraw'); ulog(d.forced?uname(pi)+' จั่ว '+d.n+' ใบ (รับยอดสะสม) แล้วข้ามตา':(d.canPlay?uname(pi)+' จั่ว 1 ใบ':uname(pi)+' จั่ว 1 ใบ — ลงไม่ได้ ผ่านตา')); } } }
+    if(!done){ U.phase='play'; U.drewId=0; U.turn=uNextIdx(U,1); ulog(uname(pi)+' ผ่านตา'); }   // กันค้าง (ไม่ควรเกิด)
+    render(); unoSchedule(unoDelay()); }
+  function unoStart(){ if(UNO.net&&UNO.net.room){ say('คุณอยู่ในห้องออนไลน์ — ออกจากห้องก่อนถึงจะซ้อมกับบอทได้','info'); return; } clearTimeout(UNO.timer); UNO.online=false; var c=UNO.cfg, names=['คุณ'], bots=[0];
+    for(var i=0;i<c.bots;i++){ names.push('บอท'+UNAMES[i%UNAMES.length]); bots.push(c.diff); }
+    UNO.U=uNew(names,bots,{stack:c.stack,callUno:c.callUno},Math.random); UNO.pick=0; UNO.ov=''; UNO.notice=''; UNO.holdUntil=0; UNO.fresh=0; UNO.res=null; UNO.log=[];
+    ulog('เริ่มเกม · '+uLabel(uTop(UNO.U))+' เป็นใบแรก · '+(UNO.U.turn===0?'คุณเริ่มก่อน':uname(UNO.U.turn)+' เริ่มก่อน')); sfx('ucard'); render(); unoSchedule(UNO.U.turn===0?600:950); }
+  window.gmUnoCfg=function(k,v){ var c=UNO.cfg; if(k==='bots'){ var n=Math.round(+v); if(n>=1&&n<=5) c.bots=n; } else if(k==='diff'){ if(UBOT[v]) c.diff=v; } else if(k==='stack') c.stack=!c.stack; else if(k==='callUno') c.callUno=!c.callUno; unoSave(); render(); };
+  window.gmUnoStart=function(){ unoStart(); };
+  window.gmUnoAgain=function(){ if(UNO.online){ window.gmUnoRematch(); return; } unoStart(); };
+  window.gmUnoSetup=function(){ if(UNO.online||UNO.net.room){ unoNetLeave(); return; } clearTimeout(UNO.timer); UNO.U=null; UNO.ov=''; UNO.pick=0; UNO.notice=''; render(); };
+  window.gmUnoView=function(){ UNO.ov=''; render(); };
+  window.gmUnoLeave=function(){ var U=UNO.U; if(UNO.online||UNO.net.room){ var v=UNO.net.view; if(v&&v.status==='playing'&&!confirm('ออกจากห้อง = ออกจากเกมนี้ (นับเป็นแพ้ ระบบจะเล่นแทนคุณ) — ต้องการออกไหม?')) return; unoNetLeave(); return; } if(!U) return; if(U.phase!=='over'&&!confirm('เลิกเล่นตานี้? (ไม่นับแพ้ ไม่เสียสถิติ)')) return; window.gmUnoSetup(); };
+  window.gmUnoRules=function(on){ if(!UNO.U&&!on) return; UNO.ov=on?'rules':((UNO.U&&UNO.U.phase==='over')?'res':''); render(); };
+  window.gmUnoPlay=function(id){ var U=UNO.U; if(!U||U.phase==='over'||UNO.ov||UNO.pick) return;
+    if(U.turn!==0){ say('ยังไม่ถึงตาคุณ — รอเพื่อนเล่นก่อนนะ','info'); sfx('bad'); return; }
+    var c=null; U.pl[0].hand.forEach(function(x){ if(x.id===id) c=x; }); if(!c) return;
+    if(U.phase==='drew'&&U.drewId!==id){ say('ตอนนี้ลงได้เฉพาะใบที่เพิ่งจั่ว — หรือกด “ผ่าน”','info'); sfx('bad'); return; }
+    if(!uCanPlay(U,c)){ say(uWhy(U,c),'info'); sfx('bad'); return; }
+    if(c.c==='W'){ UNO.pick=id; render(); return; }
+    unoHumanPlay(id,null); };
+  window.gmUnoColor=function(col){ var U=UNO.U, id=UNO.pick; if(!U||!id||UC.indexOf(col)<0) return; UNO.pick=0; unoHumanPlay(id,col); };
+  window.gmUnoPickCancel=function(){ UNO.pick=0; render(); };
+  function unoHumanPlay(id,col){ if(UNO.online){ unoNetAct('play',id,col); return; } var U=UNO.U, o=uPlay(U,0,id,col,Math.random); if(!o.ok){ say(o.why||'ลงไม่ได้','info'); sfx('bad'); render(); return; }
+    if(unoAfterPlay(0,o,col)) return; render(); unoSchedule(650); }
+  window.gmUnoDraw=function(){ var U=UNO.U; if(!U||U.phase==='over'||UNO.ov||UNO.pick) return;
+    if(U.turn!==0){ say('ยังไม่ถึงตาคุณ — รอเพื่อนเล่นก่อนนะ','info'); sfx('bad'); return; }
+    if(U.phase==='drew'){ say('จั่วแล้ว — ลงใบที่จั่ว หรือกด “ผ่าน”','info'); sfx('bad'); return; }
+    if(UNO.online){ unoNetAct('draw'); return; }
+    var o=uDraw(U,0,Math.random); if(!o.ok) return; UNO.notice=''; sfx('udraw');
+    if(o.forced) ulog('คุณจั่ว '+o.n+' ใบ (รับยอดสะสม) แล้วข้ามตา');
+    else if(o.canPlay) ulog('คุณจั่ว '+uLabel(o.card)+' — ลงได้! ลงเลย หรือกด “ผ่าน”');
+    else if(!o.n) ulog('กองจั่วหมดและไม่มีไพ่ให้สับ — ผ่านตา');
+    else ulog('คุณจั่ว '+uLabel(o.card)+' — ลงไม่ได้ ผ่านตา');
+    render(); if(!o.canPlay) unoSchedule(700); };
+  window.gmUnoPass=function(){ var U=UNO.U; if(!U||UNO.ov||UNO.pick||U.turn!==0||U.phase!=='drew') return; if(UNO.online){ unoNetAct('pass'); return; } uPass(U,0); ulog('คุณผ่านตา (เก็บใบที่จั่วไว้)'); render(); unoSchedule(650); };
+  window.gmUnoSay=function(){ var U=UNO.U; if(!U||U.phase==='over'||UNO.ov) return;
+    if(!U.rules.callUno){ say('รอบนี้ปิดกติกา “ต้องกด UNO!” — ไม่ต้องกดก็ได้','info'); return; }
+    if(U.pl[0].hand.length>2){ say('กด UNO! ได้ตอนเหลือไพ่ 2 ใบ (ก่อนลงใบรองสุดท้าย) หรือ 1 ใบ','info'); sfx('bad'); return; }
+    if(U.said[0]&&U.unoMiss!==0){ say('คุณกด UNO! ไปแล้ว','info'); return; }
+    if(UNO.online){ unoNetAct('say'); return; }
+    if(uSay(U,0)){ ulog('📣 คุณ: UNO!'); UNO.notice='📣 คุณประกาศ UNO!'; sfx('uuno'); render(); } };
+  window.gmUnoCatch=function(){ var U=UNO.U; if(!U||U.phase==='over'||UNO.ov) return; var off=U.unoMiss;
+    if(UNO.online){ if(off>0) unoNetAct('catch'); else { say('ตอนนี้ยังไม่มีใครให้จับ','info'); sfx('bad'); } return; }
+    if(off>0&&uCatch(U,off,Math.random)){ ulog('🚨 คุณจับได้! '+uname(off)+' ลืมกด UNO — จั่ว 2 ใบ'); UNO.notice='🚨 จับได้! '+uname(off)+' จั่ว 2 ใบ'; sfx('uzap'); render(); }
+    else { say('ตอนนี้ยังไม่มีใครให้จับ — จับได้เฉพาะตอนมีคนเหลือ 1 ใบแล้วลืมกด UNO!','info'); sfx('bad'); } };
+  /* ============================================================
+     🃏 UNO ออนไลน์ — ห้องเล่นกับเพื่อน (เซิร์ฟเวอร์ Supabase เป็นคนสับไพ่/คุมกติกา/เดินบอท · ไพ่ในมือใครคนนั้นเห็นเอง)
+     ต้องรัน SQL “UNO ออนไลน์” ก่อน (ฟังก์ชัน uno_*) · หน้าเว็บแค่โพลล์ uno_poll + ส่งคำสั่ง uno_do · ไม่มีฟังก์ชัน = ซ่อนโหมดนี้ ซ้อมกับบอทใช้ได้ตามเดิม
+     ============================================================ */
+  UNO.tab='bot'; UNO.online=false;
+  UNO.net={rooms:[],room:'',view:null,recvAt:0,dlAt:0,busy:false,polling:false,pollT:null,listT:null,listRun:false,tickT:null,err:'',noSql:false,listAt:0,sig:'',leaving:false,tries:0,shown:{}};
+  UNO.ocfg={seats:4,secs:45,stack:true,callUno:true,diff:'mid'};
+  try{ var _oc=JSON.parse(localStorage.getItem('gm_uno_ocfg')||'null'); if(_oc){ var _s=Math.round(+_oc.seats); if(_s>=2&&_s<=6) UNO.ocfg.seats=_s; if([0,20,30,45,60,90].indexOf(+_oc.secs)>=0) UNO.ocfg.secs=+_oc.secs; if(UBOT[_oc.diff]) UNO.ocfg.diff=_oc.diff; if(typeof _oc.stack==='boolean') UNO.ocfg.stack=_oc.stack; if(typeof _oc.callUno==='boolean') UNO.ocfg.callUno=_oc.callUno; } }catch(e){}
+  var UCARD={}; uDeck().forEach(function(c){ UCARD[c.id]=c; });   // id → ไพ่ (ต้องตรงกับฟังก์ชัน uno_cc/uno_cv ฝั่ง SQL — มีเทสต์เทียบครบ 108 ใบ)
+  async function unoRpc(fn,args){ try{ if(typeof sbInit==='function') await sbInit(); if(typeof SB_CLIENT==='undefined'||!SB_CLIENT) return {error:{message:'ยังเชื่อมต่อระบบไม่ได้'}}; var r=await SB_CLIENT.rpc(fn,args||{}); return r||{error:{message:'ไม่มีข้อมูลตอบกลับ'}}; }catch(e){ return {error:{message:String((e&&e.message)||e)}}; } }
+  function unoMissing(e){ return !!e&&(e.code==='PGRST202'||e.code==='42883'||/could not find the function|schema cache|does not exist/i.test(String(e.message||''))); }
+  function rankUno(){ return Object.keys(ALL.uno).map(function(n){ var s=ALL.uno[n], g=(+s.w||0)+(+s.l||0)+(+s.d||0); return {n:n,s:s,g:g,rate:g?(+s.w||0)/g:0}; }).filter(function(x){ return x.g>0; })
+    .sort(function(a,b){ return ((+b.s.w||0)-(+a.s.w||0))||(b.rate-a.rate)||((+a.s.l||0)-(+b.s.l||0))||(a.n<b.n?-1:1); }); }
+  function unoRecSeen(key){ var arr=[]; try{ arr=JSON.parse(localStorage.getItem('gm_uno_rec')||'[]')||[]; }catch(e){} if(arr.indexOf(key)>=0) return true; arr.push(key); if(arr.length>60) arr.shift(); try{ localStorage.setItem('gm_uno_rec',JSON.stringify(arr)); }catch(e){} return false; }
+  /* มุมมองจากเซิร์ฟเวอร์ → ออบเจ็กต์เกมหน้าตาเดียวกับโหมดซ้อมบอท (หมุนที่นั่งให้ “คุณ” เป็นที่ 0) เพื่อใช้ตัววาดโต๊ะเดิม */
+  function unoPseudo(v){ var n=v.seats.length, me0=v.me; if(me0<0||n<2) return null;
+    var U={n:n,pl:[],draw:new Array(Math.max(0,v.drawCnt||0)),disc:[UCARD[v.top]||{c:'R',v:'0',id:0}],color:v.color,dir:v.dir,turn:(v.turn-me0+n)%n,pend:v.pend||0,pendType:v.pendType||'',phase:(v.status==='over'?'over':v.phase),drewId:v.drew||0,
+      winner:v.winner<0?-1:(v.winner-me0+n)%n,rules:{stack:!!(v.cfg&&v.cfg.stack),callUno:!!(v.cfg&&v.cfg.callUno)},said:[],unoMiss:v.miss<0?-1:(v.miss-me0+n)%n,unoMissAt:0,hold:0,log:[],round:v.round,stale:false};
+    for(var i=0;i<n;i++){ var s=v.seats[(me0+i)%n], hand;
+      if(i===0){ hand=(v.hand||[]).map(function(id){ return UCARD[id]; }).filter(Boolean); uSort(hand); } else hand=new Array(Math.max(0,s.cnt||0));
+      U.pl.push({name:s.bot?s.nick:dn(s.nick),seatNick:s.nick,bot:!!s.bot,real:!s.bot,afk:!!(s.afk||s.gone),diff:s.diff||'',hand:hand,seat:s.seat}); U.said.push(!!s.said); }
+    return U; }
+  function unoTleft(){ var N=UNO.net; if(!N.dlAt) return ''; var s=Math.max(0,Math.ceil((N.dlAt-Date.now())/1000)); return '⏱ '+s+' วิ'; }
+  function unoTick1s(){ var el=document.getElementById('gu-tleft'); if(el){ el.textContent=unoTleft(); var warn=(UNO.net.dlAt&&UNO.net.dlAt-Date.now()<10000); if(el.className!==undefined) el.className='gu-tl'+(warn?' warn':''); } }
+  function unoNetClear(){ var N=UNO.net; N.room=''; N.view=null; N.dlAt=0; N.err=''; UNO.online=false; UNO.U=null; UNO.ov=''; UNO.pick=0; UNO.notice=''; UNO.log=[]; clearTimeout(N.pollT); N.pollT=null; }
+  function unoApplyView(v,own){ var N=UNO.net; if(!v||!v.id) return;
+    if(N.view&&v.id===N.view.id&&v.ver<N.view.ver) return;   // ข้อมูลเก่ากว่าที่มี (โพลล์ซ้อนกัน) → ทิ้ง
+    if(v.me<0){ unoNetClear(); render(); return; }
+    var prev=(N.view&&N.view.id===v.id)?N.view:null, ch=!prev||prev.ver!==v.ver||prev.status!==v.status, key=v.id+'#'+v.round;
+    N.view=v; N.room=v.id; N.recvAt=Date.now(); N.dlAt=(v.deadlineMs==null)?0:N.recvAt+v.deadlineMs; UNO.tab='friend'; UNO.online=true; UNO.log=(v.log||[]).map(function(t){ v.seats.forEach(function(s){ if(!s.bot&&s.nick) t=t.split(s.nick).join(dn(s.nick)); }); return t; });
+    if(v.status==='lobby'){ UNO.U=null; UNO.pick=0; UNO.ov=''; UNO.notice=''; }
+    else { var U=unoPseudo(v); UNO.U=U; UNO.holdUntil=N.recvAt+(v.missMs||0);
+      UNO.notice=(v.miss===v.me)?'⚠️ เหลือ 1 ใบแล้ว แต่ยังไม่ได้กด UNO! — รีบกด 📣 ก่อนโดนจับ':((v.miss>=0&&v.seats[v.miss])?'🚨 '+(v.seats[v.miss].bot?v.seats[v.miss].nick:dn(v.seats[v.miss].nick))+' ลืมกด UNO! — กด “จับ” ได้เลย':'');
+      if(prev&&v.top!==prev.top) UNO.fresh=v.top;
+      if(UNO.pick&&!(v.status==='playing'&&v.turn===v.me)) UNO.pick=0;
+      if(prev&&ch&&!own&&v.status==='playing'){ if(v.turn===v.me&&prev.turn!==v.me) sfx('ok'); else if(v.top!==prev.top) sfx('ucard'); else if(v.drawCnt!==prev.drawCnt) sfx('udraw'); }
+      if(v.status==='over'){
+        if(!N.shown[key]){ N.shown[key]=1; var fresh=!unoRecSeen(key); UNO.ov='res';
+          if(fresh&&v.winner>=0){ var hum=v.seats.filter(function(s){ return !s.bot; }).length, won=(v.winner===v.me); if(hum>=2&&me()) record(won?'w':'l','uno'); sfx(won?'win':'lose'); if(won) burst(); } }
+      } else if(UNO.ov==='res') UNO.ov=''; }
+    if(ch||!prev) render(); else unoTick1s(); }
+  /* ---------- โพลล์ห้อง / รายการห้อง ---------- */
+  function unoPollSoon(ms){ var N=UNO.net; clearTimeout(N.pollT); N.pollT=setTimeout(unoPollRun,Math.max(0,ms||0)); }
+  function unoNextMs(){ var N=UNO.net, v=N.view; if(!v) return 1500; if(v.status!=='playing') return v.status==='lobby'?1800:3500;
+    var el=Date.now()-N.recvAt, cur=v.seats[v.turn], auto=!!(cur&&(cur.bot||cur.afk||cur.gone)), c=[1500];
+    if(v.botMs!=null) c.push(v.botMs-el+80); if(v.deadlineMs!=null&&!auto) c.push(v.deadlineMs-el+120); if(v.missMs>0) c.push(v.missMs-el+80);
+    return Math.max(350,Math.min.apply(null,c)); }
+  async function unoPollRun(){ var N=UNO.net; N.pollT=null; if(!N.room||screen!=='uno') return;
+    if(document.hidden||!viewActive()){ unoPollSoon(5000); return; }
+    if(N.busy||N.polling){ unoPollSoon(300); return; }
+    N.polling=true; var r=await unoRpc('uno_poll',{p_room:N.room}); N.polling=false; if(!N.room) return;
+    if(r.error){ if(unoMissing(r.error)){ N.noSql=true; unoNetClear(); render(); return; }
+      var had=!!N.err; N.err='เชื่อมต่อสะดุด — กำลังลองใหม่…'; N.tries++; if(!had) render(); unoPollSoon(Math.min(6000,1500+N.tries*700)); return; }
+    N.tries=0; var d=r.data||{}; if(d.gone){ unoNetClear(); say('ห้องนี้ถูกปิดแล้ว','info'); render(); return; }
+    if(N.err){ N.err=''; render(); }
+    if(d.view) unoApplyView(d.view); unoPollSoon(unoNextMs()); }
+  async function unoNetList(){ var N=UNO.net; if(!me()) return; var r=await unoRpc('uno_list'); N.listAt=Date.now();
+    if(r.error){ if(unoMissing(r.error)){ if(!N.noSql){ N.noSql=true; if(screen==='uno') render(); } } return; }
+    if(N.noSql){ N.noSql=false; }
+    var rooms=Array.isArray(r.data)?r.data:[], sig=JSON.stringify(rooms), mine=null; rooms.forEach(function(x){ if(x.mine) mine=x; });
+    if(mine&&!N.room&&!N.leaving){ N.rooms=rooms; N.sig=sig; UNO.tab='friend'; N.room=mine.id; unoPollSoon(0); if(screen==='uno') render(); return; }
+    if(sig!==N.sig||N.listAt===0){ N.rooms=rooms; N.sig=sig; if(screen==='uno'&&!UNO.U) render(); } }
+  async function unoListRun(){ var N=UNO.net; N.listT=null; if(screen!=='uno'||N.room||!me()||N.noSql){ return; }
+    if(document.hidden||!viewActive()){ N.listT=setTimeout(unoListRun,6000); return; }
+    N.listRun=true; await unoNetList(); N.listRun=false; if(screen==='uno'&&!UNO.net.room&&!UNO.net.noSql&&!UNO.net.listT) UNO.net.listT=setTimeout(unoListRun,5000); }
+  function unoEnsureLoops(){ var N=UNO.net, on=(screen==='uno'&&viewActive());
+    if(on&&N.room){ if(!N.pollT&&!N.polling) unoPollSoon(60); } else { clearTimeout(N.pollT); N.pollT=null; }
+    if(on&&!N.room&&me()&&!N.noSql){ if(!N.listT&&!N.listRun) N.listT=setTimeout(unoListRun,N.listAt?5000:40); } else { clearTimeout(N.listT); N.listT=null; }
+    var needTick=(on&&N.room&&UNO.online&&N.view&&N.view.status==='playing');
+    if(needTick&&!N.tickT) N.tickT=setInterval(unoTick1s,500); else if(!needTick&&N.tickT){ clearInterval(N.tickT); N.tickT=null; } }
+  function unoStopNet(){ var N=UNO.net; clearTimeout(N.pollT); N.pollT=null; clearTimeout(N.listT); N.listT=null; if(N.tickT){ clearInterval(N.tickT); N.tickT=null; } }
+  function unoOnPoke(p){ var N=UNO.net;
+    if(p.t==='urp'){ if(screen==='uno'&&N.room&&N.room===p.r) unoPollSoon(40); return; }
+    if(p.from&&p.from===me()) return;
+    if(screen==='uno'&&!N.room&&viewActive()&&me()){ N.listAt=0; clearTimeout(N.listT); N.listT=null; unoNetList(); }
+    if(p.k==='new'&&me()&&!(screen==='uno'&&viewActive()&&UNO.tab==='friend')) say('🃏 '+dn(p.from)+' เปิดห้อง UNO ชวนเล่น — เมนู Game › UNO › เล่นกับเพื่อน','info'); }
+  function unoPoke(k,room){ try{ if(room) send({t:'urp',r:room,from:me()}); if(k) send({t:'uro',k:k,from:me()}); }catch(e){} }
+  /* ---------- คำสั่ง ---------- */
+  function unoResult(r,fail){ var N=UNO.net;
+    if(r.error){ if(unoMissing(r.error)){ N.noSql=true; unoNetClear(); render(); return null; } say(fail+': '+(r.error.message||'ไม่ทราบสาเหตุ'),'err'); sfx('bad'); return null; }
+    var d=r.data||{}; if(d.ok===false){ say(d.why||fail,'info'); sfx('bad'); if(d.room&&!N.room){ N.room=d.room; UNO.tab='friend'; unoPollSoon(0); } return null; }
+    return d; }
+  async function unoNetAct(act,card,color){ var N=UNO.net; if(!N.room||N.busy) return; N.busy=true;
+    var r=await unoRpc('uno_do',{p_room:N.room,p_act:act,p_card:card||0,p_color:color||null}); N.busy=false; if(!N.room) return;
+    if(r.error){ if(unoMissing(r.error)){ N.noSql=true; unoNetClear(); render(); return; } say('ส่งคำสั่งไม่สำเร็จ: '+(r.error.message||''),'err'); sfx('bad'); unoPollSoon(300); return; }
+    var d=r.data||{}; if(d.view) unoApplyView(d.view,true);
+    if(d.ok===false){ say(d.why||'ทำรายการไม่ได้','info'); sfx('bad'); return; }
+    sfx(act==='play'?'ucard':act==='draw'?'udraw':act==='say'?'uuno':act==='catch'?'uzap':'ok'); unoPoke(null,N.room); unoPollSoon(unoNextMs()); }
+  async function unoNetLeave(quiet){ var N=UNO.net, v=N.view, id=N.room; if(!id||N.leaving) return; N.leaving=true;
+    if(v&&v.status==='playing'&&!unoRecSeen(v.id+'#'+v.round)){ var hum=v.seats.filter(function(s){ return !s.bot; }).length; if(hum>=2&&me()) record('l','uno'); }
+    unoNetClear(); if(!quiet) render();
+    var r=await unoRpc('uno_leave',{p_room:id}); N.leaving=false; unoPoke('leave'); N.listAt=0; if(!quiet&&screen==='uno') unoNetList(); return r; }
+  function unoHomeGuard(){ if(screen!=='uno') return true; var N=UNO.net, v=N.view;
+    if(N.room){ if(v&&v.status==='playing'&&!confirm('ออกจากหน้านี้ = ออกจากห้อง UNO (นับเป็นแพ้ ระบบจะเล่นแทนคุณ) — ต้องการออกไหม?')) return false; unoNetLeave(true); return true; }
+    if(UNO.U&&UNO.U.phase!=='over'&&!confirm('เกม UNO ยังไม่จบ — ออกเลยไหม? (ไม่นับแพ้ ไม่เสียสถิติ)')) return false;
+    UNO.U=null; UNO.ov=''; UNO.pick=0; UNO.notice=''; return true; }
+  window.gmUnoPoll=function(ms){ if(UNO.net.room) unoPollSoon(ms||0); };   // ใช้ทดสอบ/กดรีเฟรชทันที
+  window.gmUnoTab=function(t){ if(t!=='bot'&&t!=='friend') return; if(UNO.net.room&&t==='bot'){ say('คุณอยู่ในห้องออนไลน์ — ออกจากห้องก่อนถึงจะสลับไปซ้อมกับบอทได้','info'); return; }
+    UNO.tab=t; render(); if(t==='friend'&&me()){ UNO.net.listAt=0; unoNetList(); } };
+  window.gmUnoOCfg=async function(k,v){ var N=UNO.net, c=Object.assign({},UNO.ocfg);
+    if(k==='seats'){ var n=Math.round(+v); if(n>=2&&n<=6) c.seats=n; } else if(k==='secs'){ if([0,20,30,45,60,90].indexOf(+v)>=0) c.secs=+v; } else if(k==='diff'){ if(UBOT[v]) c.diff=v; } else if(k==='stack') c.stack=!c.stack; else if(k==='callUno') c.callUno=!c.callUno; else return;
+    if(N.room&&N.view&&N.view.status==='lobby'){ if(!N.view.hostMe) return; if(N.busy) return; N.busy=true; var r=await unoRpc('uno_cfg',{p_room:N.room,p_cfg:c}); N.busy=false; var d=unoResult(r,'เปลี่ยนการตั้งค่าไม่สำเร็จ'); if(d&&d.view){ unoApplyView(d.view,true); UNO.ocfg=Object.assign({},UNO.ocfg,d.view.cfg||{}); } unoPoke(null,N.room); }
+    else { UNO.ocfg=c; render(); }
+    try{ localStorage.setItem('gm_uno_ocfg',JSON.stringify(UNO.ocfg)); }catch(e){} };
+  window.gmUnoCreate=async function(){ var N=UNO.net; if(!me()){ try{ sbShowLoginModal(); }catch(e){} return; } if(N.busy||N.room) return; N.busy=true;
+    var r=await unoRpc('uno_create',{p_nick:me(),p_cfg:UNO.ocfg}); N.busy=false; var d=unoResult(r,'เปิดห้องไม่สำเร็จ'); if(!d) return;
+    N.shown={}; unoApplyView(d.view,true); sfx('ok'); unoPoke('new',N.room); };
+  window.gmUnoJoin=async function(id){ var N=UNO.net; if(!me()){ try{ sbShowLoginModal(); }catch(e){} return; } if(N.busy||N.room) return; N.busy=true;
+    var r=await unoRpc('uno_join',{p_room:id,p_nick:me()}); N.busy=false; var d=unoResult(r,'เข้าห้องไม่สำเร็จ'); if(!d){ N.listAt=0; unoNetList(); return; }
+    N.shown={}; unoApplyView(d.view,true); sfx('ok'); unoPoke('join',N.room); };
+  window.gmUnoOStart=async function(){ var N=UNO.net; if(!N.room||N.busy) return; N.busy=true; var r=await unoRpc('uno_start',{p_room:N.room}); N.busy=false; var d=unoResult(r,'เริ่มเกมไม่สำเร็จ'); if(!d) return;
+    N.shown={}; unoApplyView(d.view,true); sfx('ucard'); unoPoke('start',N.room); };
+  window.gmUnoRematch=async function(){ var N=UNO.net; if(!N.room||N.busy) return; N.busy=true; var r=await unoRpc('uno_rematch',{p_room:N.room}); N.busy=false; var d=unoResult(r,'เริ่มตาใหม่ไม่สำเร็จ'); if(!d) return;
+    unoApplyView(d.view,true); sfx('ok'); unoPoke(null,N.room); };
+  /* ---------- หน้าจอ: ล็อบบี้ / เปิดห้อง / รายการห้อง / ตารางคะแนน ---------- */
+  var USECS=[[30,'30 วิ'],[45,'45 วิ'],[60,'60 วิ'],[90,'90 วิ'],[0,'ไม่จำกัด']];
+  function unoCfgCtl(c,editable){ var seg=function(k,v,l,cur){ return '<button type="button" class="gm-seg'+(cur===v?' on':'')+'"'+(editable?' onclick="gmUnoOCfg(\''+k+'\','+(typeof v==='number'?v:'\''+v+'\'')+')"':' disabled')+'>'+l+'</button>'; };
+    var tog=function(k,on,t,s){ return '<button type="button" class="gu-tog'+(on?' on':'')+'"'+(editable?' onclick="gmUnoOCfg(\''+k+'\')"':' disabled')+' role="switch" aria-checked="'+(on?'true':'false')+'"><span class="sw"><i></i></span><span class="tx"><b>'+t+'</b><small>'+s+'</small></span></button>'; };
+    return '<div class="gm-opt"><div class="gm-ol">จำนวนที่นั่ง</div><div class="gm-segs">'+[2,3,4,5,6].map(function(n){ return seg('seats',n,n+' คน',c.seats); }).join('')+'</div><div class="gm-hint">ที่ว่างตอนกดเริ่มจะมีบอทมาเล่นแทน</div></div>'
+      +'<div class="gm-opt"><div class="gm-ol">เวลาต่อตา</div><div class="gm-segs">'+USECS.map(function(x){ return seg('secs',x[0],x[1],c.secs); }).join('')+'</div><div class="gm-hint">หมดเวลา = ระบบจั่ว/ผ่านให้ · ไม่ตอบ 2 ตาติด = ระบบเล่นแทนจนกว่าจะกลับมากดเอง</div></div>'
+      +'<div class="gm-opt"><div class="gm-ol">ความเก่งของบอทที่มาเติม</div><div class="gm-segs">'+seg('diff','easy',UDF.easy,c.diff)+seg('diff','mid',UDF.mid,c.diff)+seg('diff','hard',UDF.hard,c.diff)+'</div></div>'
+      +'<div class="gm-opt"><div class="gm-ol">กติกาเสริม</div>'+tog('stack',c.stack,'ต่อ +2 / +4 ได้','โดน +2/+4 แล้วต่อให้คนถัดไป ยอดจั่วทบกัน')+tog('callUno',c.callUno,'ต้องกด UNO! เมื่อเหลือ 1 ใบ','ลืมแล้วโดนเพื่อน/บอทจับ = จั่ว 2 ใบ')+'</div>'; }
+  function unoChips(c){ return '<div class="gu-chips"><span>👥 '+c.seats+' ที่นั่ง</span><span>'+(c.secs?'⏱ '+c.secs+' วิ/ตา':'⏱ ไม่จำกัดเวลา')+'</span><span>'+(c.stack?'ต่อ +2/+4 ✓':'ต่อ +2/+4 ✗')+'</span><span>'+(c.callUno?'ต้องกด UNO ✓':'ไม่ต้องกด UNO')+'</span></div>'; }
+  function unoLobbyHtml(v){ var humans=v.seats.filter(function(s){ return !s.bot&&!s.gone; }), cap=+(v.cfg&&v.cfg.seats)||4, host=v.hostMe, can=humans.length>=2, slots='';
+    for(var i=0;i<Math.max(cap,humans.length);i++){ var s=humans[i];
+      slots+=s?'<div class="gu-slot on"><span class="av">'+(av(s.nick,34)||'🙂')+'</span><div class="nm"><b>'+esc(dn(s.nick))+(s.seat===v.me?' <em>คุณ</em>':'')+'</b><small>'+(s.nick===v.host?'👑 เจ้าของห้อง':'ผู้เล่น')+'</small></div></div>'
+        :'<div class="gu-slot"><span class="av">🤖</span><div class="nm"><b>บอทมาเล่นแทน</b><small>ที่ว่าง — หรือรอเพื่อนเข้าห้อง</small></div></div>'; }
+    return '<div class="gu-lobby"><div class="gm-lh"><b>🏠 ห้องของ '+esc(dn(v.host))+'</b><small>รอผู้เล่น '+humans.length+'/'+cap+'</small></div>'+(UNO.net.err?'<div class="gu-note">'+esc(UNO.net.err)+'</div>':'')
+      +'<div class="gu-slots">'+slots+'</div>'+(host?unoCfgCtl(Object.assign({},UNO.ocfg,v.cfg||{}),true):unoChips(v.cfg||UNO.ocfg))
+      +'<div class="gu-ctl">'+(host?'<button type="button" class="gm-btn pri" onclick="gmUnoOStart()"'+(can?'':' disabled')+'>▶ เริ่มเกม</button>':'<span class="gu-wait">⏳ รอเจ้าของห้องกดเริ่มเกม…</span>')+'<button type="button" class="gm-btn" onclick="gmUnoLeave()">🚪 ออกจากห้อง</button></div>'
+      +(host&&!can?'<div class="gm-hint">ต้องมีผู้เล่นอย่างน้อย 2 คนถึงเริ่มได้ — ชวนเพื่อนเข้าห้อง (เพื่อนที่เปิด Game › UNO › เล่นกับเพื่อน จะเห็นห้องนี้) · เล่นคนเดียวไปแท็บ “ซ้อมกับบอท”</div>':'')+'</div>'; }
+  function unoCreateHtml(){ var N=UNO.net, rooms=(N.rooms||[]).filter(function(r){ return r.status==='lobby'; });
+    var list=rooms.length?rooms.map(function(r){ var c=r.cfg||{}, ps=(r.players||[]);
+      return '<div class="gu-room"><span class="av">'+(av(r.host,34)||'🙂')+'</span><div class="nm"><b>ห้องของ '+esc(dn(r.host))+'</b><small>'+ps.length+'/'+(c.seats||4)+' คน · '+(c.secs?c.secs+' วิ/ตา':'ไม่จำกัดเวลา')+' · '+(c.stack?'ต่อ +2/+4':'ไม่ต่อ')+'</small><small>👥 '+ps.map(function(x){ return esc(dn(x)); }).join(', ')+'</small></div><button type="button" class="gm-btn pri" onclick="gmUnoJoin(\''+esc(r.id)+'\')">เข้าร่วม</button></div>'; }).join('')
+      :'<div class="gm-empty"><span class="e">🃏</span><span><b>ยังไม่มีห้องที่เปิดรออยู่</b><small>เปิดห้องแล้วชวนเพื่อนเลย — เพื่อนที่เปิดหน้านี้จะเห็นห้องของคุณ</small></span></div>';
+    return (N.err?'<div class="gu-note">'+esc(N.err)+'</div>':'')+'<div class="gm-lh"><b>➕ เปิดห้องใหม่</b><small>นับคะแนนทีมเมื่อมีผู้เล่นจริงอย่างน้อย 2 คน</small></div>'+unoCfgCtl(UNO.ocfg,true)
+      +'<button type="button" class="gm-btn pri big" onclick="gmUnoCreate()">➕ เปิดห้อง UNO</button>'
+      +'<div class="gm-lh gu-lh2"><b>🚪 ห้องที่เปิดอยู่</b><small>อัปเดตอัตโนมัติ</small></div><div class="gu-rooms">'+list+'</div>'; }
+  function unoFriendHtml(){ var N=UNO.net, v=N.view;
+    if(!me()) return '<div class="gu-msg"><b>🔑 ล็อกอินก่อนนะ</b><p>การเล่นกับเพื่อนต้องเข้าสู่ระบบ (เพื่อบันทึกคะแนนทีม) — ซ้อมกับบอทไม่ต้องล็อกอิน</p><button type="button" class="gm-btn pri" onclick="sbShowLoginModal()">เข้าสู่ระบบ</button></div>';
+    if(N.noSql) return '<div class="gu-msg warn"><b>🛠️ ห้องเล่นกับเพื่อนยังไม่เปิดใช้งาน</b><p>ผู้ดูแลต้องรัน SQL “UNO ออนไลน์” ในฐานข้อมูลก่อน (ครั้งเดียว) — ระหว่างนี้ซ้อมกับบอทได้ตามปกติ</p></div>';
+    if(v&&v.status==='lobby') return unoLobbyHtml(v);
+    return unoCreateHtml(); }
+  function unoRankHtml(){ var r=rankUno(), h='<div class="gm-lh"><b>🏆 ตารางคะแนนทีม</b><small>เฉพาะเล่นกับเพื่อน</small></div>';
+    if(!r.length) return h+'<div class="gm-empty"><span class="e">🥇</span><span><b>ยังไม่มีใครลงสนาม</b><small>ชนะเพื่อนในห้องเป็นคนแรก แล้วชื่อคุณจะขึ้นอันดับ 1</small></span></div>';
+    var medal=['🥇','🥈','🥉'];
+    return h+howBox(HOW.uno)+'<div class="gm-rank">'+r.slice(0,10).map(function(x,i){ var mine=x.n===me(), s=x.s; return '<div class="gm-rk'+(mine?' me':'')+'"><span class="no">'+(medal[i]||(i+1))+'</span><span class="gm-pav">'+av(x.n,32)+'</span><span class="gm-rn"><b>'+nm(x.n)+(mine?' <em>คุณ</em>':'')+'</b><small>ชนะ '+(+s.w||0)+' · แพ้ '+(+s.l||0)+((+s.s||0)>1?' · 🔥 ติดกัน '+s.s:'')+'</small></span><span class="pct">'+Math.round(x.rate*100)+'%</span></div>'; }).join('')+'</div>'; }
+  function unoOnlineOverCtl(){ var v=UNO.net.view, host=!!(v&&v.hostMe);
+    return '<div class="gu-ctl">'+(host?'<button type="button" class="gm-btn pri" onclick="gmUnoRematch()">🔁 เล่นอีกตา (ห้องเดิม)</button>':'<span class="gu-wait">⏳ รอเจ้าของห้องเริ่มตาใหม่…</span>')+'<button type="button" class="gm-btn" onclick="gmUnoSetup()">🚪 ออกจากห้อง</button></div>'; }
+  function unoOnlineRes(U){ var win=U.winner===0, rows=U.pl.map(function(p,i){ return '<div class="r'+(i===U.winner?' w':'')+'"><span>'+(p.real?(i===0?'🙋':'🙂'):'🤖')+' '+esc(p.name)+'</span><b>'+(i===U.winner?'🏆 หมดมือ':'เหลือ '+p.hand.length+' ใบ')+'</b></div>'; }).join('');
+    var me1=ALL.uno[me()]||{}, hum=UNO.net.view?UNO.net.view.seats.filter(function(s){ return !s.bot; }).length:0;
+    return '<div class="gu-ov"><div class="gu-box res"><div class="big">'+(win?'🏆':'😵')+'</div><h3>'+(win?'คุณชนะ!':esc(uname(U.winner))+' ชนะ')+'</h3><div class="gu-rows">'+rows+'</div>'
+      +'<div class="gu-st">'+(hum>=2?'บันทึกคะแนนทีมแล้ว · สถิติเล่นกับเพื่อนของคุณ: ชนะ '+(+me1.w||0)+' · แพ้ '+(+me1.l||0):'ตานี้มีผู้เล่นจริงคนเดียว — ไม่นับคะแนนทีม')+'</div>'
+      +'<div class="gu-ctl">'+(UNO.net.view&&UNO.net.view.hostMe?'<button type="button" class="gm-btn pri" onclick="gmUnoRematch()">🔁 เล่นอีกตา</button>':'<span class="gu-wait">⏳ รอเจ้าของห้องเริ่มตาใหม่</span>')+'<button type="button" class="gm-btn" onclick="gmUnoView()">👀 ดูโต๊ะ</button><button type="button" class="gm-btn" onclick="gmUnoSetup()">🚪 ออกจากห้อง</button></div></div></div>'; }
+
   /* ---------- ฮับ + โครงหน้า + แผงอันดับ ---------- */
-  function head(){ return '<div class="gm-deco" aria-hidden="true"><i>❌</i><i>⭕</i><i>⭐</i><i>🔢</i><i>🐍</i><i>🔍</i></div><div class="gm-head"><div class="gm-logo">🎮</div><div><h1>Game Zone</h1><p>พักสมองกับเกมเล็กๆ ของทีม CIL — แข่งกับเพื่อนแบบเรียลไทม์ หรือสะสมคะแนนให้ทีมทุกวัน</p></div></div>'; }
+  function head(){ return '<div class="gm-deco" aria-hidden="true"><i>❌</i><i>⭕</i><i>⭐</i><i>🔢</i><i>🐍</i><i>🔍</i><i>🃏</i></div><div class="gm-head"><div class="gm-logo">🎮</div><div><h1>Game Zone</h1><p>พักสมองกับเกมเล็กๆ ของทีม CIL — แข่งกับเพื่อนแบบเรียลไทม์ หรือสะสมคะแนนให้ทีมทุกวัน</p></div></div>'; }
   function medalOf(i){ return ['🥇','🥈','🥉'][i]||String(i+1); }
   /* ---------- แชมป์สัปดาห์ที่แล้ว (ป้าย 🏆 ข้างชื่อในห้อง CIL) ---------- */
   function nkey(n){ return String(n==null?'':n).replace(/\s+/g,'').replace(/^คุณ/,'').toLowerCase(); }
@@ -17787,6 +18198,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     num:['<b>ทายตัวเลข:</b> ทายถูกในครั้งที่ n ได้ 110 − 10×n แต้ม (ครั้งแรก = 100 · ครั้งที่ 10 = 10 · ทายไม่ถูกใน 10 ครั้ง = 0)','นับเฉพาะ “โจทย์ประจำวัน” วันละ 1 รอบ · แต้มรายสัปดาห์ = ผลรวมของแต่ละวัน · เล่นฟรีไม่นับ'],
     snk:['<b>เกมงู:</b> กินแอปเปิล 1 ลูก = 10 แต้ม','นับ “คะแนนสูงสุด” ของคุณในสัปดาห์นั้น (ไม่รวมสะสมทุกรอบ — เล่นเยอะไม่ได้เปรียบ ต้องเก่งขึ้นเอา)'],
     spot:['<b>จับผิดภาพ:</b> แต่ละยก เจอ 1 จุด = 100 แต้ม · เจอครบ 5 จุดได้โบนัส “เวลาที่เหลือ × 3” · แตะผิดหัก 25 แต้ม','โจทย์ประจำวัน 3 ยก วันละ 1 รอบ · แต้มรายสัปดาห์ = ผลรวมของแต่ละวัน · เล่นฟรีไม่นับ'],
+    uno:['<b>UNO (เล่นกับเพื่อน):</b> ไม่มีแต้ม — นับ ชนะ/แพ้ ของเกมในห้องที่มีผู้เล่นจริงอย่างน้อย 2 คน แล้วจัดอันดับตามจำนวนที่ชนะ (เท่ากันดูอัตราชนะ)','ออกจากห้องกลางเกม = นับเป็นแพ้ · ซ้อมกับบอทและห้องที่มีคนเดียวไม่นับ'],
     xo:['<b>XO:</b> ไม่มีแต้ม — นับ ชนะ/เสมอ/แพ้ ของแมตช์ที่เล่นกับเพื่อน แล้วจัดอันดับตามจำนวนที่ชนะ (เท่ากันดูอัตราชนะ)','Best of 3 นับเป็น 1 แมตช์ · เล่นกับบอทไม่นับ']};
   var HOW_TEAM=['<b>คะแนนรวมทีม</b> = รวมแต้มรายสัปดาห์ของทุกคนในเกมทายตัวเลข เกมงู และจับผิดภาพ','เริ่มนับใหม่ทุกวันจันทร์ · ผลสัปดาห์ก่อนหน้าไปโชว์ที่ “ผู้ชนะสัปดาห์ที่แล้ว” หน้า Game Zone','🎯 <b>แถบเป้าหมาย</b> — ทั้งทีมช่วยกันสะสมแต้มให้ถึงเป้าภายในสัปดาห์ (ผู้ดูแลคอนเทนต์ตั้งเป้าได้) ถึงเป้าแล้วมีพลุฉลอง','🏆 <b>ป้ายแชมป์</b> — ผู้ที่ได้คะแนนสูงสุดของแต่ละเกมในสัปดาห์ที่แล้ว จะมีป้าย 🏆 ข้างชื่อในห้อง CIL ตลอดสัปดาห์นี้','ตอนนี้เป็นการแข่งเพื่อความสนุกและอันดับ — ยังไม่มีรางวัลอย่างเป็นทางการ (ทีมตกลงกันเองได้ เช่น รางวัลเล็กๆ ให้ผู้ชนะประจำสัปดาห์)'];
   function howBox(list,title){ return '<details class="gm-how"><summary>'+(title||'📖 คะแนนนับยังไง?')+'</summary><ul>'+list.map(function(x){ return '<li>'+x+'</li>'; }).join('')+'</ul></details>'; }
@@ -17802,9 +18214,10 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     var cards=GAMES.map(function(g){ var stat='';
       if(g.score){ var tw=teamWeek(g.k), top=rankScore(g.k,'wk')[0]; stat='<div class="st"><span>ทีมสัปดาห์นี้ <b>'+tw.total+'</b> '+g.unit+'</span>'+(top?'<span>'+medalOf(0)+' '+nm(top.n)+' <b>'+top.v+'</b></span>':'')+'</div>';
         if(g.daily) stat+='<div class="dl'+(me()&&playedToday(g.k)?' done':'')+'">'+(me()&&playedToday(g.k)?'✓ วันนี้เล่นโจทย์ประจำวันแล้ว +'+((ALL[g.k][me()]||{}).lp||0):'🗓️ โจทย์ประจำวันรออยู่ — ทั้งทีมได้โจทย์เดียวกัน'+(me()?'':' (ล็อกอินเพื่อบันทึกคะแนน)'))+'</div>'; }
+      else if(g.k==='uno'){ var ru=rankUno()[0]; stat='<div class="st">'+(ru?'<span>'+medalOf(0)+' '+nm(ru.n)+' ชนะ <b>'+(+ru.s.w||0)+'</b></span>':'<span>เล่นกับเพื่อนนับคะแนนทีม</span>')+(UNO.st.g?'<span>ซ้อมบอท ชนะ <b>'+UNO.st.w+'</b>/'+UNO.st.g+'</span>':'')+'</div>'; }
       else { var rx=rankXo()[0]; stat='<div class="st">'+(rx?'<span>'+medalOf(0)+' '+nm(rx.n)+' ชนะ <b>'+(+rx.s.w||0)+'</b></span>':'<span>ยังไม่มีใครลงสนาม</span>')+'</div>'; }
-      return '<div class="gm-gc t-'+g.k+'" onclick="gmOpen(\''+g.k+'\')" onkeydown="if(event.key===\'Enter\')gmOpen(\''+g.k+'\')" role="button" tabindex="0"><div class="ban"><span class="ic">'+g.ic+'</span></div><div class="tx"><h3>'+esc(g.t)+'</h3><p>'+esc(g.d)+'</p>'+stat+'</div><span class="go">▶ เล่นเลย</span></div>'; }).join('');
-    return '<div class="gm-bar">'+themeBar()+audBar()+'</div>'+banner+goalBar()+dailyQuest()+'<div class="gm-hub">'+cards+'</div>'+lastWeekHtml()+howBox(HOW_TEAM.concat(['<b>เกมที่นับคะแนน</b> — กดเข้าเกมแต่ละเกมเพื่อดูวิธีนับของเกมนั้น'])); }
+      return '<div class="gm-gc t-'+g.k+'" onclick="gmOpen(\''+g.k+'\')" onkeydown="if(event.key===\'Enter\')gmOpen(\''+g.k+'\')" role="button" tabindex="0"><div class="ban">'+(g.k==='uno'?unoBanner():'<span class="ic">'+g.ic+'</span>')+'</div><div class="tx"><h3>'+esc(g.t)+'</h3><p>'+esc(g.d)+'</p>'+stat+'</div><span class="go">▶ เล่นเลย</span></div>'; }).join('');
+    return '<div class="gm-bar">'+themeBar()+audBar()+'</div>'+banner+goalBar()+dailyQuest()+'<div class="gm-hub">'+cards+'</div>'+lastWeekHtml()+howBox(HOW_TEAM.concat(['<b>เกมที่นับคะแนน</b> — กดเข้าเกมแต่ละเกมเพื่อดูวิธีนับของเกมนั้น','<b>🃏 UNO</b> — ซ้อมกับบอทเพื่อความสนุก ยังไม่นับคะแนนทีม (กดเข้าเกมแล้วอ่าน “วิธีเล่น” ได้เลย)'])); }
   function shellHtml(){ return backBar()+'<div class="gm-xo"><div class="gm-col"><div class="gm-card gm-play"><div id="gm-main" class="gm-mainbox"></div></div></div><div class="gm-col"><div class="gm-card gm-side" id="gm-side"></div></div></div>'; }
   function sideHtml(G){ var kind=lb[G.k]||'wk', rows=rankScore(G.k,kind), tw=teamWeek(G.k);
     var team='<div class="gm-team"><div class="k">⭐ คะแนนรวมทีม · สัปดาห์นี้</div><div class="v">'+tw.total+' <small>'+G.unit+'</small></div><div class="s">'+tw.players+' คนร่วมทำคะแนน'+(G.mode==='best'?' · นับสถิติสูงสุดของแต่ละคน':' · สะสมจากโจทย์ประจำวัน')+'</div></div>';
@@ -17815,25 +18228,27 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function renderSide(){ var el=document.getElementById('gm-side'), G=gameOf(screen); if(!el||!G||!G.score) return; el.innerHTML=sideHtml(G); }
   function render(){ var r=root(); if(!r) return; r.setAttribute('data-screen',screen);
     if(screen==='hub'){ r.removeAttribute('data-g'); r.innerHTML=head()+hubHtml(); return; }
+    if(screen==='uno'){ unoRender(); return; }
     if(screen==='xo'){ r.removeAttribute('data-g'); r.innerHTML=head()+xoHtml(); if(S) S.fresh=-1; return; }
     if(r.getAttribute('data-g')!==screen||!document.getElementById('gm-main')){ r.innerHTML=head()+shellHtml(); r.setAttribute('data-g',screen); mountGame(screen); }
     renderSide(); }
   function refresh(){ if(!viewActive()) return; render(); }
   function mountGame(k){ if(k==='num') numStart(true); else if(k==='snk') snkMount(); else if(k==='spot') spotStart(true); }
-  function stopAll(){ clearTimeout(SNK.t); SNK.run=false; if(SPT&&SPT.timer){ clearInterval(SPT.timer); SPT.timer=null; } }
+  function stopAll(){ clearTimeout(UNO.timer); UNO.timer=null; unoOv(''); unoStopNet(); clearTimeout(SNK.t); SNK.run=false; if(SPT&&SPT.timer){ clearInterval(SPT.timer); SPT.timer=null; } }
   function openGame(k){ stopAll(); screen=k; musicPlay(k); var r=root(); if(r) r.removeAttribute('data-g'); render(); loadAll(false); connect(); track(); try{ if(window.rvSave) setTimeout(window.rvSave,60); }catch(e){} }
   window.gmOpen=function(k){ var G=gameOf(k); if(G&&G.on) openGame(k); };
   window.gmQuit=function(){ if(S&&S.mode==='pvp'&&!S.sOver&&!confirm('ออกจากเกมนี้ = ยอมแพ้ (นับเป็นแพ้) — ต้องการออกไหม?')) return; window.gmLeave(); };
-  window.gmHome=function(){ if(S&&S.mode==='pvp'&&!S.sOver&&!confirm('กำลังเล่นกับเพื่อนอยู่ — ออกจากเกมนี้ (นับเป็นแพ้) ?')) return; if(S) window.gmLeave(); stopAll(); screen='hub'; musicPlay('hub'); render(); loadAll(false); try{ if(window.rvSave) setTimeout(window.rvSave,60); }catch(e){} };
+  window.gmHome=function(){ if(!unoHomeGuard()) return;
+    if(S&&S.mode==='pvp'&&!S.sOver&&!confirm('กำลังเล่นกับเพื่อนอยู่ — ออกจากเกมนี้ (นับเป็นแพ้) ?')) return; if(S) window.gmLeave(); stopAll(); screen='hub'; musicPlay('hub'); render(); loadAll(false); try{ if(window.rvSave) setTimeout(window.rvSave,60); }catch(e){} };
   window.gmTab=function(t){ tab=t; refresh(); };
   window.gmSet=function(k,v){ bot[k]=v; refresh(); };
   window.gmFmt=function(v){ fmtPick=(v===3?3:1); refresh(); };
   window.gmLb=function(k){ lb[screen]=k; renderSide(); };
   window.gmStartBot=function(){ startBot(); };
   window.gmCur=function(){ return screen==='hub'?'':screen; };
-  window.gmDebug=function(){ return {S:S,presence:presence,inv:inv,outInv:outInv,conn:conn,screen:screen,ALL:ALL,N:N,SPT:SPT,SNK:SNK,fmtPick:fmtPick}; };
+  window.gmDebug=function(){ return {S:S,presence:presence,inv:inv,outInv:outInv,conn:conn,screen:screen,ALL:ALL,N:N,SPT:SPT,SNK:SNK,fmtPick:fmtPick,UNO:UNO}; };
   /* ---------- เข้า/ออกแท็บ Game · คีย์บอร์ด ---------- */
-  function onEnter(){ render(); connect(); loadAll(false); track(); musicPlay(curKey()); }
+  function onEnter(){ if(screen==='uno'&&UNO.net.room) unoPollSoon(50); render(); connect(); loadAll(false); track(); musicPlay(curKey()); }
   function onLeave(){ if(SNK.run) snkPause(); musicStop(); track(); }
   function wire(){ applyTheme(); try{ window.addEventListener('gm-champs',function(){ try{ var vo=document.getElementById('view-office'); if(vo&&vo.classList.contains('active')&&typeof window.renderOffice==='function') window.renderOffice(); if(typeof window.cilChanged==='function') window.cilChanged(); }catch(e){} }); }catch(e){}
     var t=document.querySelector('#nav .tab[data-view="game"]'); if(t) t.addEventListener('click',function(){ setTimeout(onEnter,30); });
@@ -17962,6 +18377,130 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     +'#view-game[data-theme="pastel"] .gm-board{background:linear-gradient(145deg,#F0EBFC,#FDEBF3);box-shadow:inset 0 0 0 2px #fff,0 14px 26px -16px rgba(140,130,190,.55);}#view-game[data-theme="pastel"] .gm-cell{box-shadow:0 4px 10px -5px rgba(140,130,190,.4);}#view-game[data-theme="pastel"] .gm-mk{stroke-width:10;filter:none;}#view-game[data-theme="pastel"] .gm-cell.win{background:linear-gradient(135deg,#FFF3C4,#FFE3A0);box-shadow:0 0 18px rgba(255,200,90,.6);}'
     +'#view-game[data-theme="pastel"] .gm-vs .vs{background:linear-gradient(135deg,#F6B9A6,#F29BBB);box-shadow:none;}#view-game[data-theme="pastel"] .gm-sym{box-shadow:none;}#view-game[data-theme="pastel"] .gm-sn-wrap canvas{box-shadow:0 0 0 4px #fff,0 14px 28px -14px rgba(60,60,140,.55);}#view-game[data-theme="pastel"] .gm-play{border-top-width:6px;}'
     +'#view-game[data-theme="pastel"] .gm-sp-svg{box-shadow:0 0 0 4px #fff,0 8px 18px -10px rgba(200,150,60,.55);}#view-game[data-theme="pastel"] .gm-sp-pair .gm-sp-svg:nth-child(2){box-shadow:0 0 0 4px #fff,0 8px 18px -10px rgba(220,110,160,.55);}'
+    +'/* ===== UNO ===== */'
+    +'[data-screen="uno"] .gm-play{border-top-color:#E8506A;}'
+    +'.gm-gc.t-uno .ban{background:linear-gradient(135deg,#FF6B81,#FFB347);}'
+    +'.gm-gc.t-uno .go{background:linear-gradient(180deg,#FF8A9B,#E8506A);}'
+    +'.gm-deco i:nth-child(7){left:26%;top:90%;font-size:42px;animation-delay:-1s;}'
+    +'.gu-c{--cw:76px;--cb:#2B2744;--cn:#2B2744;position:relative;display:block;flex:none;box-sizing:border-box;width:var(--cw);height:calc(var(--cw)*1.46);border-radius:calc(var(--cw)*.14);background:var(--cb);border:calc(var(--cw)*.05) solid #fff;padding:0;margin:0;font-family:"Mitr","Sarabun",sans-serif;color:#fff;filter:drop-shadow(0 5px 5px rgba(30,20,70,.32));overflow:hidden;user-select:none;-webkit-appearance:none;appearance:none;cursor:default;transition:transform .15s,filter .15s,outline-color .15s;}'
+    +'.gu-c.c-R{--cb:#E8506A;--cn:#D63A56;}.gu-c.c-Y{--cb:#F0BB30;--cn:#C98F00;}.gu-c.c-G{--cb:#34B97A;--cn:#1E9460;}.gu-c.c-B{--cb:#4B8EF1;--cn:#2F6FD6;}.gu-c.c-W{--cb:#2B2744;}'
+    +'.gu-c .mid{position:absolute;left:50%;top:50%;width:86%;height:62%;margin:0;transform:translate(-50%,-50%) rotate(-24deg);border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;}'
+    +'.gu-c .mid span{display:block;transform:rotate(24deg);font-weight:600;font-size:calc(var(--cw)*.4);line-height:1;color:var(--cn);white-space:nowrap;}'
+    +'.gu-c i{position:absolute;font-style:normal;font-weight:600;font-size:calc(var(--cw)*.2);line-height:1;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.28);}'
+    +'.gu-c .tl{left:calc(var(--cw)*.1);top:calc(var(--cw)*.07);}.gu-c .br{right:calc(var(--cw)*.1);bottom:calc(var(--cw)*.07);transform:rotate(180deg);}'
+    +'.gu-c.c-W .mid{background:conic-gradient(#E8506A 0 25%,#F0BB30 0 50%,#34B97A 0 75%,#4B8EF1 0);}'
+    +'.gu-c.c-W .mid span{color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.55);}'
+    +'.gu-c.back .mid{background:#E8506A;}.gu-c.back .mid span{color:#FFE066;font-style:italic;font-size:calc(var(--cw)*.3);transform:rotate(24deg);letter-spacing:.5px;text-shadow:0 2px 0 rgba(0,0,0,.25);}'
+    +'.gu-c.mini{--cw:36px;}.gu-c.tiny{--cw:22px;}.gu-c.big{--cw:96px;}'
+    +'.gu-c.tiny.back .mid span,.gu-c.mini.back .mid span{font-size:0;}'
+    +'.gu-c.tiny{border-width:1.5px;filter:drop-shadow(0 2px 2px rgba(30,20,70,.3));}.gu-c.mini{border-width:2px;filter:drop-shadow(0 3px 3px rgba(30,20,70,.3));}'
+    +'.gu-c.tiny i,.gu-c.mini i{display:none;}'
+    +'.gu-c.fresh{animation:gu-drop .38s cubic-bezier(.3,1.4,.5,1);}'
+    +'.gu-banfan{position:relative;display:block;width:130px;height:88px;margin-top:-4px;}.gu-banfan .gu-c{--cw:46px;position:absolute;left:50%;bottom:8px;margin-left:-23px;transform-origin:50% 135%;}.gu-banfan .b1{transform:rotate(-28deg);}.gu-banfan .b2{transform:translateY(-6px);z-index:2;}.gu-banfan .b3{transform:rotate(28deg);}'
+    +'.gu-hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;margin:2px 0 8px;}'
+    +'.gu-hero h2{margin:6px 0 0;font:600 40px "Mitr",sans-serif;letter-spacing:2px;background:linear-gradient(90deg,#E8506A,#F0BB30 40%,#34B97A 70%,#4B8EF1);-webkit-background-clip:text;background-clip:text;color:transparent;}'
+    +'.gu-hero p{margin:0;font-size:13.5px;color:var(--g-ink2);}'
+    +'.gu-fanh{position:relative;width:250px;height:122px;margin-top:6px;}'
+    +'.gu-fanh .gu-c{--cw:62px;position:absolute;bottom:0;left:50%;margin-left:-31px;transform-origin:50% 120%;}'
+    +'.gu-fanh .h1{transform:rotate(-34deg) translateY(-2px);}.gu-fanh .h2{transform:rotate(-17deg);}.gu-fanh .h3{transform:rotate(0deg) translateY(-8px);z-index:2;}.gu-fanh .h4{transform:rotate(17deg);}.gu-fanh .h5{transform:rotate(34deg) translateY(-2px);}'
+    +'.gu-tog{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:2px solid transparent;background:var(--g-soft);border-radius:16px;padding:9px 13px;margin-bottom:8px;cursor:pointer;color:var(--g-ink);font-family:"Sarabun",sans-serif;transition:border-color .15s,background .15s;}'
+    +'.gu-tog .sw{flex:none;width:42px;height:24px;border-radius:999px;background:#CFCBE3;position:relative;transition:background .15s;}.gu-tog .sw i{position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;}'
+    +'.gu-tog.on{border-color:#34B97A;background:rgba(52,185,122,.1);}.gu-tog.on .sw{background:#34B97A;}.gu-tog.on .sw i{left:21px;}'
+    +'.gu-tog .tx b{display:block;font-size:13.5px;}.gu-tog .tx small{display:block;font-size:12px;color:var(--g-ink2);margin-top:1px;line-height:1.45;}'
+    +'.gu-st{margin-top:12px;font-size:12.5px;color:var(--g-ink);line-height:1.7;text-align:center;}.gu-st small{color:var(--g-ink2);}'
+    +'.gu-set{align-items:stretch;}'
+    +'.gu-how{max-height:none;}'
+    +'.gu-step{display:flex;gap:12px;padding:12px 0;border-bottom:1px dashed var(--g-line);}.gu-step:last-of-type{border-bottom:0;}'
+    +'.gu-step .no{flex:none;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#FF8A9B,#E8506A);color:#fff;font:600 14px "Mitr",sans-serif;display:flex;align-items:center;justify-content:center;}'
+    +'.gu-step .bd{min-width:0;flex:1;}.gu-step h4{margin:0 0 5px;font:600 15px "Mitr",sans-serif;color:var(--g-ink);}.gu-step h4 .opt{font:500 11.5px "Sarabun",sans-serif;color:var(--g-ink2);margin-left:6px;}'
+    +'.gu-step p{margin:0 0 9px;font-size:13px;line-height:1.75;color:var(--g-ink2);}.gu-step p b{color:var(--g-ink);}.gu-step p.tip{background:rgba(52,185,122,.12);border-radius:12px;padding:6px 10px;margin:8px 0 0;color:var(--g-ink);}'
+    +'.gu-fig{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--g-soft);border-radius:16px;padding:10px 12px;}'
+    +'.gu-fan{display:flex;}.gu-fan .gu-c{margin-left:-14px;}.gu-fan .gu-c:first-child{margin-left:0;}'
+    +'.gu-arr{font:600 13px "Mitr",sans-serif;color:var(--g-ink2);}'
+    +'.gu-goal{font:600 14px "Mitr",sans-serif;color:#157A47;background:rgba(52,185,122,.16);border-radius:999px;padding:5px 12px;}.gu-goal.bad{color:#C0334F;background:rgba(232,80,106,.14);}'
+    +'.gu-note{font-size:12.5px;color:var(--g-ink2);}'
+    +'.gu-ex{display:flex;flex-direction:column;align-items:center;gap:5px;max-width:92px;text-align:center;}.gu-ex small{font-size:11.5px;line-height:1.35;color:var(--g-ink2);}'
+    +'.gu-ex .tick{font:600 12px "Mitr",sans-serif;}.gu-ex.yes .tick{color:#1E9460;}.gu-ex.nay .tick{color:#D63A56;}.gu-ex.yes .gu-c{outline:2px solid #35E0A1;outline-offset:2px;}.gu-ex.nay .gu-c{opacity:.55;filter:grayscale(.3);}'
+    +'.gu-ex.top{max-width:none;}.gu-ex.top .gu-c{--cw:60px;}'
+    +'.gu-sps{display:flex;flex-direction:column;gap:8px;}'
+    +'.gu-sp{display:flex;align-items:center;gap:12px;background:var(--g-soft);border-radius:14px;padding:8px 12px;}.gu-sp b{display:block;font:600 13.5px "Mitr",sans-serif;color:var(--g-ink);}.gu-sp small{display:block;font-size:12.5px;color:var(--g-ink2);line-height:1.55;}.gu-sp small b{display:inline;font:700 12.5px "Sarabun",sans-serif;}'
+    +'.gu-unochip,.gu-catchchip{display:inline-block;font:600 12.5px "Mitr",sans-serif;color:#fff;border-radius:999px;padding:2px 10px;background:linear-gradient(180deg,#FF8A9B,#E8506A);}.gu-catchchip{background:linear-gradient(180deg,#8E7CF0,#6A55D6);}'
+    +'.gu-tips{margin:0 0 0 18px;padding:0;font-size:13px;line-height:1.75;color:var(--g-ink2);}.gu-tips b{color:var(--g-ink);}'
+    +'.gu-foot{margin-top:6px;text-align:center;font-size:12px;color:var(--g-ink2);}'
+    +'.gu-tbl{align-items:stretch;gap:12px;}'
+    +'.gu-seats{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;padding-top:8px;}'
+    +'.gu-seat{position:relative;display:flex;align-items:center;gap:8px;background:var(--g-soft);border-radius:18px;border:3px solid transparent;padding:5px 9px;min-width:158px;transition:border-color .2s,background .2s;}'
+    +'.gu-seat .av{font-size:26px;line-height:1;}.gu-seat .nm{min-width:0;}.gu-seat .nm b{display:block;font-size:13.5px;color:var(--g-ink);white-space:nowrap;}.gu-seat .nm small{display:block;font-size:11px;color:var(--g-ink2);}'
+    +'.gu-seat .cnt{margin-left:auto;display:flex;align-items:center;gap:7px;}.gu-seat .fan{display:flex;}.gu-seat .fan .gu-c{margin-left:-13px;}.gu-seat .fan .gu-c:first-child{margin-left:0;}.gu-seat .cnt b{font:600 20px "Mitr",sans-serif;color:var(--g-ink);min-width:20px;text-align:right;}'
+    +'.gu-seat.cur{background:var(--g-card);border-color:#FFB347;animation:gu-pulse 1.5s ease-in-out infinite;}'
+    +'.gu-seat.miss{border-color:#E8506A;}'
+    +'.gu-seat em{position:absolute;top:-9px;font-style:normal;font-weight:800;font-size:11px;padding:2px 9px;border-radius:999px;color:#fff;}.gu-seat em.u{right:10px;background:#E8506A;animation:gu-pop .5s cubic-bezier(.3,1.6,.5,1);}.gu-seat em.nx{left:10px;background:#8FA9FF;}'
+    +'.gu-mid{display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap;padding:6px 0 2px;}'
+    +'.gu-pile{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:7px;padding:0;color:var(--g-ink2);font:700 12px "Sarabun",sans-serif;cursor:default;}.gu-pile .gu-c{--cw:84px;}'
+    +'.gu-pile.can{cursor:pointer;}.gu-pile.can .gu-c{outline:3px solid #35E0A1;outline-offset:3px;filter:drop-shadow(0 0 10px rgba(53,224,161,.85));animation:gu-bob 1.2s ease-in-out infinite;}'
+    +'.gu-disc{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--g-ink2);font:700 12px "Sarabun",sans-serif;}'
+    +'.gu-disc .ring{position:absolute;left:50%;top:calc(50% - 10px);width:170px;height:170px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,var(--uc) 0 38%,transparent 68%);opacity:.42;pointer-events:none;transition:background .3s;}'
+    +'.gu-disc .gu-c{position:relative;transform:rotate(-4deg);}'
+    +'.gu-info{display:flex;flex-direction:column;gap:7px;align-items:flex-start;}'
+    +'.gu-chip{display:inline-flex;align-items:center;gap:7px;background:var(--g-soft);border-radius:999px;padding:5px 13px;font:600 13px "Mitr",sans-serif;color:var(--g-ink);}.gu-chip i{width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-sizing:content-box;}.gu-chip.bad{background:rgba(232,80,106,.16);color:#C0334F;animation:gu-pulse 1.2s ease-in-out infinite;}'
+    +'.gu-tbl .gm-st{width:100%;box-sizing:border-box;}'
+    +'.gu-note{text-align:center;font-size:13px;font-weight:700;color:#B3263E;background:rgba(232,80,106,.12);border-radius:14px;padding:7px 12px;}'
+    +'.gu-ctl{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}'
+    +'.gu-ctl .gm-btn:disabled{opacity:.45;cursor:not-allowed;}'
+    +'.gu-unob{background:linear-gradient(180deg,#FF8A9B,#E8506A)!important;color:#fff!important;border-bottom:4px solid #B8324A!important;}.gu-unob:disabled{filter:grayscale(.6);}'
+    +'.gu-unob.pulse{animation:gu-pulse .8s ease-in-out infinite;}'
+    +'.gu-catchb{position:relative;overflow:hidden;background:linear-gradient(180deg,#9A88F5,#6A55D6)!important;color:#fff!important;border-bottom:4px solid #46359F!important;}'
+    +'.gu-catchb .cd{position:absolute;left:0;bottom:0;height:4px;width:100%;background:rgba(255,255,255,.85);transform-origin:left;animation:gu-cd linear forwards;}'
+    +'.gu-handw{background:var(--g-soft);border-radius:20px;padding:8px 6px 10px;}'
+    +'.gu-hl{display:flex;align-items:baseline;gap:10px;padding:0 12px;}.gu-hl b{font:600 14px "Mitr",sans-serif;color:var(--g-ink);}.gu-hl small{font-size:12px;color:var(--g-ink2);}'
+    +'.gu-hand{display:flex;align-items:flex-end;overflow-x:auto;overflow-y:hidden;padding:30px 18px 10px;min-height:150px;scrollbar-width:thin;}'
+    +'.gu-hand .gu-c{--cw:76px;margin-left:-24px;cursor:pointer;}.gu-hand .gu-c:first-child{margin-left:0;}.gu-hand.sp .gu-c{margin-left:8px;}.gu-hand.sp .gu-c:first-child{margin-left:0;}'
+    +'.gu-hand .gu-c.dim{filter:saturate(.5) brightness(.92) drop-shadow(0 4px 4px rgba(30,20,70,.25));cursor:not-allowed;}'
+    +'.gu-hand .gu-c.can{transform:translateY(-16px);outline:3px solid #35E0A1;outline-offset:2px;filter:drop-shadow(0 0 9px rgba(53,224,161,.9));}.gu-hand .gu-c.can:hover{transform:translateY(-28px);z-index:3;}'
+    +'.gu-hand .gu-c:focus-visible{outline:3px solid #8FA9FF;outline-offset:3px;}'
+    +'.gu-log{font-size:12.5px;line-height:1.7;color:var(--g-ink2);background:var(--g-soft);border-radius:16px;padding:8px 14px;min-height:34px;}.gu-log div.last{color:var(--g-ink);font-weight:700;}'
+    +'.gu-foot2{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;}'
+    +'.gu-ov{position:fixed;inset:0;z-index:100010;background:rgba(30,24,70,.58);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;}'
+    +'.gu-box{background:var(--g-card);color:var(--g-ink);border-radius:26px;padding:22px;max-width:480px;width:100%;max-height:90vh;overflow:auto;border:1px solid var(--g-line);text-align:center;box-sizing:border-box;}'
+    +'.gu-box.wide{max-width:720px;text-align:left;}.gu-box h3{margin:0 0 6px;font:600 22px "Mitr",sans-serif;}.gu-box p{margin:0 0 12px;color:var(--g-ink2);font-size:13.5px;}'
+    +'.gu-boxhd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px;position:sticky;top:-22px;background:var(--g-card);padding:10px 0;z-index:2;}.gu-boxhd b{font:600 14px "Mitr",sans-serif;color:var(--g-ink2);}'
+    +'.gu-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 14px;}'
+    +'.gu-colb{display:flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:18px;padding:16px 8px;background:var(--uc);color:#fff;font:600 17px "Mitr",sans-serif;cursor:pointer;border:0;border-bottom:5px solid rgba(0,0,0,.25);text-shadow:0 1px 2px rgba(0,0,0,.35);transition:transform .1s;}.gu-colb:active{transform:translateY(4px);border-bottom-width:1px;}.gu-colb i{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid rgba(255,255,255,.45);box-sizing:content-box;}'
+    +'.gu-box.res .big{font-size:64px;line-height:1.1;}.gu-box .gu-ctl{margin-top:14px;}'
+    +'.gu-rows{display:flex;flex-direction:column;gap:6px;margin:10px 0;text-align:left;}.gu-rows .r{display:flex;justify-content:space-between;gap:10px;background:var(--g-soft);border-radius:12px;padding:8px 14px;font-size:13.5px;}.gu-rows .r.w{background:rgba(255,200,60,.28);font-weight:700;}'
+    +'.gu-lobby .gm-lh,.gu-lh2{margin-top:6px;}'
+    +'.gu-lh2{margin-top:16px;}'
+    +'.gu-slots{display:flex;flex-direction:column;gap:8px;margin:6px 0 12px;}'
+    +'.gu-slot,.gu-room{display:flex;align-items:center;gap:12px;background:var(--g-soft);border-radius:16px;padding:9px 13px;border:2px solid transparent;}'
+    +'.gu-slot.on{background:var(--g-card);border-color:#34B97A;}'
+    +'.gu-slot:not(.on){opacity:.7;border:2px dashed var(--g-line);}'
+    +'.gu-slot .av,.gu-room .av{font-size:26px;line-height:1;flex:none;display:flex;}'
+    +'.gu-slot .nm,.gu-room .nm{min-width:0;flex:1;}.gu-slot .nm b,.gu-room .nm b{display:block;font-size:13.5px;color:var(--g-ink);}.gu-slot .nm b em{font-style:normal;font-size:11px;background:#8FA9FF;color:#fff;border-radius:999px;padding:1px 8px;margin-left:4px;}'
+    +'.gu-slot .nm small,.gu-room .nm small{display:block;font-size:11.5px;color:var(--g-ink2);line-height:1.5;overflow:hidden;text-overflow:ellipsis;}'
+    +'.gu-rooms{display:flex;flex-direction:column;gap:8px;}'
+    +'.gu-chips{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 12px;}.gu-chips span{background:var(--g-soft);border-radius:999px;padding:4px 12px;font-size:12.5px;color:var(--g-ink);}'
+    +'.gu-msg{background:var(--g-soft);border-radius:18px;padding:14px 16px;text-align:center;}.gu-msg b{font:600 15px "Mitr",sans-serif;color:var(--g-ink);}.gu-msg p{margin:6px 0 10px;font-size:13px;color:var(--g-ink2);line-height:1.7;}.gu-msg.warn{background:rgba(240,187,48,.16);}'
+    +'.gu-wait{font-size:13px;color:var(--g-ink2);align-self:center;}'
+    +'.gu-tl{display:inline-block;margin-left:8px;font:600 12.5px "Mitr",sans-serif;background:rgba(255,255,255,.65);color:var(--g-ink);border-radius:999px;padding:1px 10px;}.gu-tl.warn{background:#E8506A;color:#fff;}'
+    +'.gu-seat .nm b{max-width:120px;overflow:hidden;text-overflow:ellipsis;}'
+    +'.gu-seat .av img,.gu-slot .av img,.gu-room .av img{border-radius:50%;}'
+    +'@keyframes gu-drop{0%{transform:translateY(-70px) rotate(-22deg) scale(1.25);opacity:.2;}70%{transform:translateY(2px) rotate(-2deg) scale(1);opacity:1;}100%{transform:rotate(-4deg);opacity:1;}}'
+    +'@keyframes gu-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.035);}}'
+    +'@keyframes gu-pop{0%{transform:scale(.3);}100%{transform:scale(1);}}'
+    +'@keyframes gu-bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}'
+    +'@keyframes gu-cd{from{transform:scaleX(1);}to{transform:scaleX(0);}}'
+    +'#view-game[data-theme="arcade"] .gm-gc.t-uno .ban{background:linear-gradient(135deg,#FF4F8B,#FF9F43);}'
+    +'#view-game[data-theme="arcade"] .gu-seat.cur{background:rgba(255,179,71,.14);}'
+    +'#view-game[data-theme="arcade"] .gu-tog .sw{background:rgba(255,255,255,.25);}'
+    +'#view-game[data-theme="arcade"] .gu-note{color:#FFB3C2;background:rgba(255,90,120,.18);}'
+    +'#view-game[data-theme="arcade"] .gu-goal{color:#6DFFB5;background:rgba(70,240,160,.16);}'
+    +'#view-game[data-theme="arcade"] .gu-goal.bad{color:#FF9DB2;background:rgba(255,90,120,.18);}'
+    +'#view-game[data-theme="arcade"] .gu-chip.bad{color:#FF9DB2;}'
+    +'#view-game[data-theme="pastel"] .gm-gc.t-uno .ban{background:linear-gradient(135deg,#F9C0C9,#FBDDAE);}'
+    +'#view-game[data-theme="pastel"] .gm-gc.t-uno .go{background:linear-gradient(180deg,#F8B3BF,#F08FA0);}'
+    +'@media (max-width:860px){.gu-fanh{width:230px;}.gu-seat{min-width:140px;}}'
+    +'@media (max-width:520px){.gu-c.big{--cw:84px;}.gu-pile .gu-c{--cw:72px;}.gu-hand .gu-c{--cw:66px;margin-left:-26px;}.gu-hand.sp .gu-c{margin-left:5px;}.gu-mid{gap:16px;}.gu-seat{min-width:0;flex:1 1 130px;}.gu-seat .nm small{display:none;}.gu-cols{grid-template-columns:1fr 1fr;}}'
+    +'@media (prefers-reduced-motion:reduce){.gu-seat.cur,.gu-c.fresh,.gu-pile.can .gu-c,.gu-unob.pulse,.gu-chip.bad,.gu-catchb .cd{animation:none;}}'
     +'@media (max-width:860px){.gm-xo{grid-template-columns:minmax(0,1fr);}.gm-pn b{max-width:90px;}.gm-hubteam .s{text-align:left;}.gm-wrap{padding:18px 14px 26px;border-radius:26px;}}'
     +'@media (max-width:520px){.gm-sp-pair{grid-template-columns:1fr;}.gm-slot{width:52px;height:60px;}.gm-head h1{font-size:26px;}}'
     +'@media (prefers-reduced-motion:reduce){.gm-st.my,.gm-cell.win,.gm-pop-in,.gm-deco i,.gm-logo{animation:none;}.gm-mk.new path,.gm-mk.new circle{animation:none;stroke-dashoffset:0;}}';
