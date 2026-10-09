@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="npd-build" content="20261009-2243">
+<meta name="npd-build" content="20261009-2320">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Godmami · NPD Product Calendar</title>
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -11117,6 +11117,78 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 
 </script>
 
+<script id="board-filter-2026-10-10">
+/* 🔎 ตัวกรองบอร์ด: แท็ก · สินค้า · ค้นหาคีย์เวิร์ดจากชื่อการ์ด — ใช้ร่วมกันใน Content Pipeline ('pl') และบอร์ดกราฟฟิก ('gfx')
+   • แท็ก/สินค้า เลือกได้หลายอัน (ตรงอันใดอันหนึ่ง = แสดง) · มีตัวเลือก “ไม่มีแท็ก/ไม่ระบุสินค้า” กันการ์ดที่ไม่มีข้อมูลหายเงียบๆ
+   • ค้นหา: พิมพ์หลายคำได้ (ต้องมีครบทุกคำในชื่อการ์ด · ไม่สนตัวพิมพ์ใหญ่เล็ก) · ค่าตัวกรองไม่ถูกจำข้ามการรีเฟรช (กันลืมว่ากรองอยู่)
+   • บอร์ดเรียก feed() → filter() → draw() ตอนวาด · ตัวกรอง PIC/แบรนด์เดิมของแต่ละบอร์ดทำงานคู่กัน */
+(function(){
+  var S={}, REG={}, NONE_T='— ไม่มีแท็ก —', NONE_P='— ไม่ระบุสินค้า —';
+  function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function st(k){ return S[k]||(S[k]={tag:new Set(),prod:new Set(),q:'',open:'',pq:'',opts:{tags:[],prods:[]},a:null,focus:null,t:0,stat:null}); }
+  function tagsOf(a,x){ var arr=[]; try{ arr=(a.tags?a.tags(x):[])||[]; }catch(e){} arr=arr.map(function(t){return String(t).trim();}).filter(Boolean); return arr.length?arr:[NONE_T]; }
+  function prodOf(a,x){ var p=''; try{ p=String(a.product?a.product(x):'').trim(); }catch(e){} return p||NONE_P; }
+  function titleOf(a,x){ try{ return String(a.title?a.title(x):x.title||'').toLowerCase(); }catch(e){ return ''; } }
+  function active(k){ var s=st(k); return !!(s.tag.size||s.prod.size||String(s.q).trim()); }
+  function pass(k,x){ var s=st(k), a=s.a; if(!a) return true;
+    if(s.tag.size && !tagsOf(a,x).some(function(t){ return s.tag.has(t); })) return false;
+    if(s.prod.size && !s.prod.has(prodOf(a,x))) return false;
+    var ws=String(s.q).toLowerCase().split(/\s+/).filter(Boolean); if(ws.length){ var ti=titleOf(a,x); for(var i=0;i<ws.length;i++) if(ti.indexOf(ws[i])<0) return false; }
+    return true; }
+  function feed(k,items,a){ var s=st(k); s.a=a; var tg={}, pr={};
+    (items||[]).forEach(function(x){ tagsOf(a,x).forEach(function(t){ tg[t]=(tg[t]||0)+1; }); var p=prodOf(a,x); pr[p]=(pr[p]||0)+1; });
+    s.tag.forEach(function(t){ if(tg[t]==null) tg[t]=0; }); s.prod.forEach(function(p){ if(pr[p]==null) pr[p]=0; });
+    var cmp=function(m){ return function(x,y){ if(x===NONE_T||x===NONE_P) return 1; if(y===NONE_T||y===NONE_P) return -1; return x.localeCompare(y,'th'); }; };
+    s.opts={ tags:Object.keys(tg).sort(cmp()).map(function(t){return [t,tg[t]];}), prods:Object.keys(pr).sort(cmp()).map(function(p){return [p,pr[p]];}) }; }
+  function filter(k,items){ return (items||[]).filter(function(x){ return pass(k,x); }); }
+  function opt(on,js,label,n){ return '<button type="button" class="cf-opt'+(on?' on':'')+'" onclick="'+js+'"><span class="cf-chk">'+(on?'✓':'')+'</span><span class="cf-opt-t">'+esc(label)+'</span><span class="cf-opt-n">'+n+'</span></button>'; }
+  function listHtml(k,kind){ var s=st(k), arr=(kind==='tag'?s.opts.tags:s.opts.prods), sel=(kind==='tag'?s.tag:s.prod), q=(kind==='prod'?String(s.pq).toLowerCase().trim():'');
+    var rows=arr.map(function(it,i){ if(q && it[0].toLowerCase().indexOf(q)<0) return ''; return opt(sel.has(it[0]),"BF.pick('"+k+"','"+kind+"',"+i+")",it[0],it[1]); }).join('');
+    return rows||'<div class="cf-empty">'+(arr.length?('ไม่พบ “'+esc(s.pq)+'”'):(kind==='tag'?'ยังไม่มีแท็กในการ์ด':'ยังไม่มีสินค้าในการ์ด'))+'</div>'; }
+  function dd(k,kind,label,nSel){ var s=st(k), open=(s.open===kind);
+    var panel=open?('<div class="cf-dd-panel" onclick="event.stopPropagation()">'
+      +(kind==='prod'?'<input type="text" class="cf-dd-search" id="bf-pq-'+k+'" autocomplete="off" placeholder="🔎 พิมพ์ค้นหาสินค้า…" value="'+esc(s.pq)+'" oninput="BF.pq(\''+k+'\',this.value)">':'')
+      +'<div class="cf-dd-list" id="bf-list-'+k+'-'+kind+'">'+listHtml(k,kind)+'</div>'
+      +'<div class="cf-dd-foot"><button type="button" onclick="BF.clearKind(\''+k+'\',\''+kind+'\')">ล้างที่เลือก</button><button type="button" class="cf-done" onclick="BF.open(\''+k+'\',\'\')">เสร็จ</button></div></div>'):'';
+    return '<div class="cf-dd"><button type="button" class="cf-pill'+(nSel?' on':'')+'" style="'+(nSel?'background:linear-gradient(120deg,#7cb6e4,#5aa0d8);border-color:transparent;color:#fff;':'')+'" aria-haspopup="listbox" aria-expanded="'+(open?'true':'false')+'" onclick="event.stopPropagation();BF.open(\''+k+'\',\''+kind+'\')">'+label+' <span style="opacity:.75">▾</span></button>'+panel+'</div>'; }
+  function draw(k,stat){ var el=document.getElementById('bf-'+k); if(!el) return; var s=st(k); if(stat) s.stat=stat;
+    var chip=function(t,js){ return '<span class="cf-chip">'+t+'<i title="เอาออก" onclick="'+js+'">✕</i></span>'; };
+    var chips=[]; Array.from(s.tag).forEach(function(t){ chips.push(chip('แท็ก: '+esc(t),"BF.rm('"+k+"','tag',"+JSON.stringify(t).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+")")); });
+    Array.from(s.prod).forEach(function(p){ chips.push(chip('สินค้า: '+esc(p),"BF.rm('"+k+"','prod',"+JSON.stringify(p).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+")")); });
+    var q=String(s.q); if(q.trim()) chips.push(chip('ค้นหา: '+esc(q.trim()),"BF.setQ('"+k+"','',true)"));
+    var on=active(k), sum=(on&&s.stat)?('<span class="bf-sum">แสดง '+s.stat.shown+' จาก '+s.stat.total+' การ์ด</span>'):'';
+    el.className='bf-wrap';
+    el.innerHTML=dd(k,'tag','🏷️ แท็ก: '+(s.tag.size?(s.tag.size===1?esc(Array.from(s.tag)[0]):s.tag.size+' อัน'):'ทุกแท็ก'),s.tag.size)
+      +dd(k,'prod','📦 สินค้า: '+(s.prod.size?(s.prod.size===1?esc(Array.from(s.prod)[0]):s.prod.size+' รายการ'):'ทุกสินค้า'),s.prod.size)
+      +'<span class="bf-qw"><input type="text" class="bf-q" id="bf-q-'+k+'" autocomplete="off" placeholder="🔎 ค้นหาชื่อการ์ด…" value="'+esc(q)+'" oninput="BF.setQ(\''+k+'\',this.value)" onkeydown="if(event.key===\'Escape\'){BF.setQ(\''+k+'\',\'\',true);}">'+(q?'<i class="bf-qx" title="ล้างคำค้น" onclick="BF.setQ(\''+k+'\',\'\',true)">✕</i>':'')+'</span>'
+      +chips.join('')+(on?'<button type="button" class="cf-clearall" onclick="BF.clearAll(\''+k+'\')">ล้างค้นหา/แท็ก/สินค้า</button>':'')+sum;
+    if(s.focus){ var inp=document.getElementById('bf-q-'+k); if(inp){ inp.focus(); var pos=Math.min(s.focus.pos,inp.value.length); try{ inp.setSelectionRange(pos,pos); }catch(e){} } s.focus=null; }
+    if(s.open==='prod'){ var pi=document.getElementById('bf-pq-'+k); if(pi&&document.activeElement!==pi){ pi.focus(); try{ pi.setSelectionRange(pi.value.length,pi.value.length); }catch(e){} } } }
+  function rerender(k){ try{ if(REG[k]) REG[k](); else draw(k); }catch(e){} }
+  window.BF={ reg:function(k,fn){ REG[k]=fn; }, feed:feed, filter:filter, pass:pass, active:active, draw:draw, st:st,
+    open:function(k,kind){ var s=st(k); s.open=(s.open===kind)?'':kind; if(s.open==='prod') s.pq=''; draw(k); },
+    pick:function(k,kind,i){ var s=st(k), arr=(kind==='tag'?s.opts.tags:s.opts.prods), it=arr[i]; if(!it) return; var set=(kind==='tag'?s.tag:s.prod); if(set.has(it[0])) set.delete(it[0]); else set.add(it[0]);
+      var l=document.getElementById('bf-list-'+k+'-'+kind), top=l?l.scrollTop:0; rerender(k); var l2=document.getElementById('bf-list-'+k+'-'+kind); if(l2) l2.scrollTop=top; },
+    pq:function(k,v){ var s=st(k); s.pq=v||''; var l=document.getElementById('bf-list-'+k+'-prod'); if(l) l.innerHTML=listHtml(k,'prod'); },
+    rm:function(k,kind,v){ var s=st(k); (kind==='tag'?s.tag:s.prod).delete(v); rerender(k); },
+    clearKind:function(k,kind){ var s=st(k); (kind==='tag'?s.tag:s.prod).clear(); rerender(k); },
+    clearAll:function(k){ var s=st(k); s.tag.clear(); s.prod.clear(); s.q=''; s.open=''; rerender(k); },
+    setQ:function(k,v,now){ var s=st(k); s.q=v||''; var inp=document.getElementById('bf-q-'+k); if(inp&&document.activeElement===inp&&!now) s.focus={pos:inp.selectionStart}; else if(now&&inp) s.focus={pos:0};
+      clearTimeout(s.t); if(now){ rerender(k); } else s.t=setTimeout(function(){ rerender(k); },150); } };
+  document.addEventListener('click',function(){ Object.keys(S).forEach(function(k){ if(S[k].open){ S[k].open=''; draw(k); } }); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') Object.keys(S).forEach(function(k){ if(S[k].open){ S[k].open=''; draw(k); } }); });
+  var css=document.createElement('style'); css.id='bf-css';
+  css.textContent='.bf-wrap{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center;}'
+    +'.bf-qw{position:relative;display:inline-flex;align-items:center;}'
+    +'.bf-q{border:1px solid var(--line,#E7ECF5);border-radius:999px;padding:5px 26px 5px 12px;font-family:inherit;font-size:12.5px;min-width:200px;background:#fff;color:inherit;}'
+    +'.bf-q:focus{outline:none;border-color:#7cb6e4;box-shadow:0 0 0 3px rgba(124,182,228,.2);}'
+    +'.bf-qx{position:absolute;right:9px;font-style:normal;cursor:pointer;opacity:.55;font-size:11px;} .bf-qx:hover{opacity:1;color:#c0392b;}'
+    +'.bf-sum{font-size:11.5px;color:var(--ink-soft,#6b7794);font-weight:600;}'
+    +'.bf-wrap .cf-pill{padding:5px 12px;}'
+    +'@media(max-width:640px){.bf-q{min-width:150px;}}';
+  document.head.appendChild(css);
+})();
+</script>
 <script>
 (function(){
   var CSV='https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/gviz/tq?tqx=out:csv&sheet=ContentIdeas';
@@ -11542,6 +11614,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   var CF_PALETTE=['#5B8FF9','#F2994A','#3CA5A5','#EB5FA0','#9B7EF8','#26A69A','#E9557F','#2D9CDB','#8E7CC3','#E0A100'];
   function cfColor(n){ var h=0,t=String(n||''); for(var i=0;i<t.length;i++) h=(h*31+t.charCodeAt(i))>>>0; return CF_PALETTE[h%CF_PALETTE.length]; }
   var CC_NOPIC='— ไม่ระบุ PIC —';   // ตัวเลือกกรองสำหรับการ์ดที่ไม่มี PIC (เช่น งานที่มอบให้กราฟฟิกล้วนๆ) — เดิมถูกซ่อนทันทีที่เลือกกรองคนใดคนหนึ่ง
+  var BF_ACC_PL={ tags:function(x){ return String(x.tags||'').split(/[,،、]/); }, product:function(x){ return x.product; }, title:function(x){ return x.title; } };
   function ccOwnersOf(x){ var a=String(x.owner||'').split(/[,\/、]/).map(function(t){return t.trim();}).filter(Boolean); return a.length?a:[CC_NOPIC]; }
   function ccOwnerMatch(x){ return !ccOwnerSel.size || ccOwnersOf(x).some(function(o){ return ccOwnerSel.has(o); }); }
   // ---- การ์ดจากคอลัมน์ Brief AW E-commerce ของบอร์ดกราฟฟิก → ปฏิทิน Content (แยกสีตามผู้มอบหมายงาน) ----
@@ -12038,7 +12111,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var dd=cfDd('plowner','👤 ผู้รับมอบหมาย (PIC): '+(oSel.length===0?'ทั้งทีม ('+tot+')':(oSel.length===1?e2(oSel[0]):(oSel.length+' คน'))), oSel.length,
       names.map(function(n){ var c=base.filter(function(x){ return ccOwnersOf(x).indexOf(n)>=0; }).length; return cfOpt(ccOwnerSel.has(n), "ccOwnerToggle('"+aj(n)+"')", e2(n), c, null, (c&&tot)?Math.round(c/tot*100):0); }).join(''), 'ccOwnerClear()').replace('ตัวเลข = จำนวนงานของเดือนที่ดูอยู่','ตัวเลข = จำนวนการ์ดทั้งหมดของแต่ละคน');
     bar.innerHTML=dd+oSel.map(function(n){ return '<span class="cf-chip">PIC: '+e2(n)+'<i title="เอาออก" onclick="ccOwnerToggle(\''+aj(n)+'\')">✕</i></span>'; }).join('')
-      +(oSel.length?'<button type="button" class="cf-clearall" onclick="ccOwnerClear()">ล้างตัวกรอง</button>':'');
+      +(oSel.length?'<button type="button" class="cf-clearall" onclick="ccOwnerClear()">ล้างตัวกรอง</button>':'')
+      +'<span id="bf-pl"></span>';
   }
   window.renderPipeline=function(){
     var host=document.getElementById('cc-pl-host'); if(!host) return;
@@ -12047,6 +12121,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     renderPlPicBar();
     var items=(window.CONTENT_CAL||[]).filter(function(x){ return ciBrand==='all' || (x.brand||'other')===ciBrand; });
     if(ccOwnerSel.size){ items=items.filter(ccOwnerMatch); }
+    var items0n=items.length; BF.reg('pl',function(){ renderPipeline(); }); BF.feed('pl',items,BF_ACC_PL); items=BF.filter('pl',items);   // ตัวกรอง แท็ก/สินค้า/ค้นหาชื่อ
     var byStatus={}; CAL_STATUS_ORDER.forEach(function(s){byStatus[s]=[];});
     items.forEach(function(x){ var s=CAL_STATUS[x.status]?x.status:'brief'; byStatus[s].push(x); });
     var canEdit=unlocked();
@@ -12062,6 +12137,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
             +(canEdit?'<button type="button" class="gfx-colmore" title="เปลี่ยนสีหัวคอลัมน์" aria-label="เปลี่ยนสีหัวคอลัมน์" aria-haspopup="menu"'+hs.more+' onclick="ccHdrMenu(event,\''+s+'\')">⋮</button>':'')+'</div>'; })()
         +'<div class="cc-pl-cards">'+cards+'</div>'+addC+'</div>';
     }).join('')+'</div>';
+    BF.draw('pl',{shown:items.length,total:items0n});
   };
   /* สีหัวคอลัมน์ของ Content Pipeline (ตั้งเองได้ · ทั้งทีมเห็นเหมือนกัน · เก็บที่ graphic_config k='content::hdr') */
   var CC_HDR={}, CC_HDR_LKEY='npd_cc_hdr_v1', CC_HDR_K='content::hdr', ccHdrDirtyAt=0, ccHdrUnsynced=false, ccHdrAsked=false;
@@ -15427,6 +15503,7 @@ details.fm-more[open]{padding-bottom:6px;}
       if(gfxFilterTag && String(x.tags||'').split(',').map(function(t){return t.trim();}).indexOf(gfxFilterTag)<0) return false;
       return true;
     });
+    var lk0=gfxLinkedContent(p), list0n=list.length; BF.reg('gfx',function(){ gfxReRender(); }); BF.feed('gfx',list.concat(lk0),BF_ACC_GFX); list=BF.filter('gfx',list);   // ตัวกรอง แท็ก/สินค้า/ค้นหาชื่อ (ใช้กับช่อง “รับงานจาก บอร์ด Content” ด้วย)
     var byCol={}; cols.forEach(function(c){byCol[c.key]=[];}); var orphan=[];
     list.forEach(function(x){ if(byCol[x.col]) byCol[x.col].push(x); else orphan.push(x); });
     if(orphan.length && cols[0]) byCol[cols[0].key]=byCol[cols[0].key].concat(orphan);
@@ -15437,7 +15514,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var SEL='style="padding:7px 10px;border:1px solid var(--line,#E7ECF5);border-radius:9px;font-family:inherit;"';
     var filterBar='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">'
       +'<span style="display:inline-flex;gap:6px;flex-wrap:wrap;">'+brandPills+'</span>'
-      +'<select onchange="gfxSetTag(this.value)" '+SEL+'>'+tagOpts+'</select>'
+      +'<span id="bf-gfx"></span>'
       +'</div>';
     var TB='class="gfx-tbtn"';
     var board='<div class="cc-pl-board">'+gfxLinkedColHtml(p)+cols.map(function(c,idx){
@@ -15453,6 +15530,7 @@ details.fm-more[open]{padding-bottom:6px;}
         +tools+'<div class="cc-pl-cards">'+cardsHtml+'</div>'+addC+'</div>';
     }).join('')+(canEd?'<div class="cc-pl-col" style="background:transparent;border:none;box-shadow:none;min-width:150px;"><button class="cc-pl-add" style="border-style:dashed;height:44px;" onclick="gfxAddCol()">➕ เพิ่มคอลัมน์</button></div>':'')+'</div>';
     main.innerHTML=filterBar+board;
+    var lkShown=BF.filter('gfx',lk0).length; BF.draw('gfx',{shown:list.length+lkShown,total:list0n+lk0.length});
   }
   function gfxCard(x,c){
     var canEd=gfxCanEdit();
@@ -15565,11 +15643,14 @@ details.fm-more[open]{padding-bottom:6px;}
       +((d||dlf||x.owner)?'<div class="cc-pl-meta">'+(d?'<span title="วันลงโพสต์">📮 '+E(d)+'</span>':'')+(dlf?'<span title="กำหนดส่ง (Draft/Final)">🎯 '+E(dlf)+'</span>':'')+(x.owner&&window.pplStack?'<span class="cc-pl-av">'+window.pplStack(x.owner,24)+'</span>':'')+'</div>':'')
       +act+'</div>';
   }
+  var BF_ACC_GFX={ tags:function(x){ return String(x.tags||'').split(/[,،、]/); }, title:function(x){ return x.title; },
+    product:function(x){ if(x.product!=null) return x.product; var c=x.srcContent?(window.CONTENT_CAL||[]).find(function(k){ return k.id===x.srcContent; }):null; return c?c.product:''; } };   // การ์ดกราฟฟิกไม่มีฟิลด์สินค้า → ใช้สินค้าของการ์ด Content ต้นทาง
   function gfxLinkedColHtml(person){
-    var linked=gfxLinkedContent(person); if(!linked.length) return '';
+    var linkedAll=gfxLinkedContent(person); if(!linkedAll.length) return '';
+    var linked=BF.filter('gfx',linkedAll);
     var adopted=linked.filter(function(x){return gfxAdoptedCardId(person,x.id) || gfxTwinCardId(person,x);}).length;
     return '<div class="cc-pl-col" style="background:#faf8ff;">'
-      +'<div class="cc-pl-colhead"><span class="cc-pl-dot" style="background:#5aa0d8"></span><span class="cc-pl-colname">✨ จาก Content</span><span class="cc-pl-colcount">'+linked.length+'</span></div>'
+      +'<div class="cc-pl-colhead"><span class="cc-pl-dot" style="background:#5aa0d8"></span><span class="cc-pl-colname">✨ รับงานจาก บอร์ด Content</span><span class="cc-pl-colcount">'+linked.length+'</span></div>'
       +'<div style="font-size:10.5px;color:var(--ink-soft);margin:1px 0 6px;">งานที่ถูกมอบให้ · กด 📥 เพื่อรับมาทำในบอร์ด'+(adopted?(' · รับแล้ว '+adopted+'/'+linked.length):'')+'</div>'
       +'<div class="cc-pl-cards">'+linked.map(function(x){return gfxLinkedCard(x,person);}).join('')+'</div></div>';
   }
@@ -15714,7 +15795,7 @@ details.fm-more[open]{padding-bottom:6px;}
     try{ if(typeof ntGfxMoved==='function') ntGfxMoved(c, def.title, !!def.done); }catch(e){}
     gfxRefreshContentSoon(c);
   };
-  window.gfxDel=function(id){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!confirm('ลบการ์ด “'+((c&&c.title)||'')+'” ?')) return; GFX=GFX.filter(function(x){return x.id!==id;}); gfxSaveCardsLocal(); gfxReRender(); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(cfg.url){ try{ postToSheet({target:'graphiccards',action:'delete',keyValue:id}); }catch(e){} } TOAST('ลบแล้ว','ok'); };
+  window.gfxDel=function(id){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!confirm('ลบการ์ด “'+((c&&c.title)||'')+'” ?'+((c&&c.srcContent)?'\n\n(การ์ดต้นทางใน Content ไม่หาย — จะกลับไปรอในช่อง “รับงานจาก บอร์ด Content” ให้กด 📥 รับใหม่ได้)':''))) return; GFX=GFX.filter(function(x){return x.id!==id;}); gfxSaveCardsLocal(); gfxReRender(); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(cfg.url){ try{ postToSheet({target:'graphiccards',action:'delete',keyValue:id}); }catch(e){} } TOAST('ลบแล้ว','ok'); };
   window.gfxCopy=function(id){ if(!gfxCanEdit()){ TOAST('เข้าสู่ระบบก่อน','info'); return; } var src=GFX.find(function(x){return x.id===id;}); if(!src) return; var nid=gfxUid('g'); var card=Object.assign({},src,{id:nid,title:(src.title||'')+' (copy)',checklist:(Array.isArray(src.checklist)?src.checklist.map(function(it){return {text:it.text,done:it.done};}):[]),revisions:[],images:(Array.isArray(src.images)?src.images.slice():[]),srcContent:'',pos:null,doneAt:(gfxIsDoneCol(src.person,src.col)?TS():''),updatedAt:TS(),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}); gfxUpsertLocal(card); gfxReRender(); TOAST('คัดลอกการ์ดแล้ว 📋','ok'); gfxSyncCard(card); };
 
   function openGfxEditor(c){
@@ -19545,7 +19626,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   document.addEventListener('dragend',hide,true);
 })();
 </script>
-<script type="application/json" id="whatsnew-data">{"id":"20261009-2243","date":"2026-10-10","title":"กรอง PIC แล้วการ์ดที่ไม่มี PIC ไม่หายอีก","items":[{"ic":"🔎","t":"ตัวเลือก “— ไม่ระบุ PIC —” ในตัวกรอง PIC","d":"เดิมพอเลือกกรองคนใดคนหนึ่ง การ์ดที่ไม่มี PIC (เช่น งานที่มอบให้กราฟฟิกล้วนๆ) จะหายไปจากบอร์ดและปฏิทิน Content ทั้งที่ยังอยู่ ตอนนี้มีตัวเลือก “ไม่ระบุ PIC” พร้อมจำนวน เลือกดูหรือเลือกรวมกับคนอื่นได้"}],"history":[{"id":"20261009-2132","date":"2026-10-09","title":"Planning → Brief · กราฟฟิกทุกคนมีคอลัมน์ Brief เหมือนกัน","items":[{"ic":"🗂️","t":"Content มีคอลัมน์ Planning ก่อน Brief","d":"การ์ดใหม่เริ่มที่ Planning = ยังวางแผน ยังไม่ส่งให้กราฟฟิก · ย้ายเป็น Brief (เปลี่ยนชื่อจาก “บรีฟ/ไอเดีย”) เมื่อพร้อมส่งงาน กราฟฟิกถึงจะเห็นในช่อง “จาก Content” · การ์ดเดิมที่อยู่ Brief คงเดิม"},{"ic":"📥","t":"กราฟฟิกทุกคนมีคอลัมน์ 📥 Brief เหมือนกัน","d":"กด 📥 รับงานจาก Content แล้วการ์ดลงคอลัมน์ Brief ของทุกคน (ไม่ไปลงคอลัมน์ E-com อีก) · เพิ่มการ์ดเองด้วยปุ่ม ➕ ในแต่ละคอลัมน์ (เอาปุ่มบนสุดออกแล้ว) · การ์ดที่รับจาก Content ไม่ถูกนับเป็นงาน E-com เองอีก"},{"ic":"💬","t":"ห้องคุยร่วม Content ⇄ Graphic","d":"การ์ดที่บรีฟไปกราฟฟิกมีแถบ “ห้องคุยร่วม” + ปุ่มกดข้ามไปการ์ดอีกฝั่ง (เหมือน E-com) · คอมเมนต์เป็นชุดเดียวกัน เห็นตรงกันทั้งสองทีม และแจ้งเตือนถึงกัน"}]},{"id":"20261009-2038","date":"2026-10-09","title":"กรองแจ้งเตือนได้ — แท็ก / ย้าย / คอมเมนต์ + ดูเฉพาะที่ยังไม่อ่าน","items":[{"ic":"🔔","t":"ปุ่มแยกชนิดแจ้งเตือนในกระดิ่ง","d":"กด ＠ แท็ก · 🔁 ย้าย · 💬 คอมเมนต์ · 📌 มอบหมาย · 📋 อื่นๆ เพื่อดูเฉพาะชนิดนั้น แต่ละปุ่มมีตัวเลขที่ยังไม่อ่าน กดซ้ำเพื่อกลับไปดูทั้งหมด"},{"ic":"●","t":"ดูเฉพาะข้อความที่ยังไม่อ่าน","d":"ปุ่ม “ยังไม่อ่าน” ใช้ร่วมกับชนิดได้ (เช่น แท็กที่ยังไม่อ่าน) · ปุ่ม “อ่านที่เห็นทั้งหมด” จะอ่านเฉพาะที่กรองอยู่ · เครื่องจำตัวกรองที่เลือกไว้ให้"}]},{"id":"20261009-1945","date":"2026-10-09","title":"เตือนการ์ดที่ลืมย้ายเป็น “โพสต์แล้ว” + บอกสีสถานะชัดขึ้น","items":[{"ic":"⏰","t":"เตือนการ์ดที่อนุมัติแล้วแต่เลยวันลงโพสต์","d":"การ์ดสถานะ ✅ อนุมัติ (รอโพสต์) ที่วันลงโพสต์ผ่านไปแล้ว จะมีป้าย ⏰ ที่ชิปในปฏิทิน การ์ดบนบอร์ด และกล่องสีเหลืองด้านบน — ถ้าโพสต์ไปแล้วให้ย้ายเป็น 🚀 โพสต์แล้ว"},{"ic":"🎨","t":"แถบสีสถานะบอกชื่อสีชัดเจน","d":"แต่ละสถานะเป็นป้ายสีพร้อมชื่อสี (เหลือง · ส้ม · ม่วง · แดง · เขียว · น้ำเงิน · เขียวอมฟ้า) และบอกว่าตอนนี้สีชิป = สถานะ หรือ = ประเภทงาน — โหมดวันลงโพสต์มีจุดสีสถานะหน้าชื่อชิปด้วย"}]},{"id":"20261009-1505","date":"2026-10-09","title":"แชทเตือนดัง-ทันใจขึ้น + ปล่อยการ์ดไม่สะดุด","items":[{"ic":"🔔","t":"เสียงแจ้งเตือนแชทดังชัดขึ้น","d":"เสียงใหม่เป็นสองโน้ต ดังขึ้นหลายเท่า และปลุกระบบเสียงรอไว้ล่วงหน้า เสียงแรกจึงไม่ตกหรือมาช้า (ปิด/เปิดเสียงที่ปุ่มกระดิ่งหัวแชทเหมือนเดิม)"},{"ic":"⚡","t":"แชทแจ้งเร็วขึ้น ไม่ค้างเงียบ","d":"ถ้าสัญญาณเรียลไทม์หลุด (เน็ตสะดุด พับจอ ซ่อนแท็บนาน) ระบบต่อใหม่เอง ไม่ต้องรีเฟรช · ข้อความที่ตกหล่นดึงมาพร้อมเสียงเตือน · กลับมาที่แท็บแล้วดึงข้อความที่พลาดทันที · คนส่งช่วยสะกิดให้เครื่องอื่นดึงข้อความทันที"},{"ic":"🖱️","t":"ปล่อยการ์ดเร็วขึ้น 2–3 เท่า","d":"ตอนปล่อยการ์ด ระบบวาดเฉพาะการ์ด/คอลัมน์ที่เปลี่ยน ไม่วาดทั้งบอร์ดใหม่ — รูปในการ์ดไม่กะพริบ ตำแหน่งเลื่อนของบอร์ดไม่เด้ง (Content · E-commerce · Graphic)"},{"ic":"🗂️","t":"จัดลำดับคอลัมน์ยาวๆ ไวขึ้น","d":"บันทึกลำดับการ์ดในเครื่องครั้งเดียวแทนการบันทึกซ้ำทุกใบ"}]},{"id":"20261009-1136","date":"2026-10-09","title":"ลากการ์ดเบาลงอีก — การ์ดข้อมูลเยอะก็ลื่น","items":[{"ic":"🪶","t":"ลากการ์ดที่มีข้อมูลเยอะลื่นขึ้น","d":"ตอนลาก ระบบจะแสดงการ์ดเป็นแบบย่อ (ชื่อ + หัวข้อสำคัญ) แทนการก๊อปทั้งใบพร้อมรูปและปุ่มทั้งหมด หน้าเว็บเลยไม่ต้องคำนวณใหม่ทั้งหน้าทุกครั้งที่ขยับเมาส์ — ยิ่งการ์ดข้อมูลเยอะยิ่งเห็นความต่าง"},{"ic":"🎯","t":"จุดที่จะวางชัดขึ้น","d":"คอลัมน์ปลายทางมีกรอบไฮไลต์ เส้นสีฟ้าบอกตำแหน่งที่การ์ดจะลงตรงๆ และการ์ดต้นทางจางลงให้เห็นว่ากำลังย้ายใบไหน"}]},{"id":"20261009-1058","date":"2026-10-09","title":"ลากการ์ดลื่นขึ้น + ย้ายแล้วเห็นผลทันที","items":[{"ic":"⚡","t":"ย้ายการ์ด Content แล้วการ์ดไปอยู่คอลัมน์ใหม่ทันที","d":"แก้อาการหน่วงตอนวางการ์ด — เดิมการ์ดจะรอให้ระบบบันทึกเสร็จก่อนถึงย้ายให้เห็น ตอนนี้ย้ายให้เห็นทันที (รวมถึงการสลับลำดับ แก้ไขการ์ด และขยายเวลาส่ง)"},{"ic":"🖱️","t":"ลากการ์ดแบบใหม่ ลื่นขึ้นมาก (Content · E-commerce · Graphic)","d":"การ์ดลอยตามเมาส์ เส้นสีฟ้าบอกตำแหน่งที่จะวาง คอลัมน์ปลายทางไฮไลต์ ลากชิดขอบแล้วบอร์ด/รายการเลื่อนให้เอง กด Esc เพื่อยกเลิก ปล่อยแล้วการ์ดร่อนเข้าที่ — บนมือถือ กดการ์ดค้างแล้วลากได้"}]},{"id":"20261009-0106","date":"2026-10-09","title":"เกมงู: เก็บเหรียญ + แต่งตัวหนอน","items":[{"ic":"🪙","t":"เกมงูมีเหรียญให้เก็บแล้ว","d":"เหรียญทองโผล่ในกระดานเป็นช่วงๆ (หายใน ~7 วินาที) เหรียญใหญ่ได้ +5 และจบเกมได้โบนัส 1 เหรียญทุก 50 แต้ม — เหรียญไม่ปนกับคะแนนทีม ล็อกอินเพื่อเก็บเข้ากระเป๋า"},{"ic":"🎨","t":"ร้านแต่งตัวหนอน 17 สกิน","d":"ฟรี 5 แบบ แล้วไล่ระดับ Common (25) → Rare (80) → Epic (200) → Legendary (400) เช่น ราชา นักบินอวกาศ นินจา มังกรเพลิง กาแล็กซี — กดปุ่ม “🎨 แต่งตัวหนอน” ใต้กระดานเกมงู"}]},{"id":"20261008-1535","date":"2026-10-08","title":"เตือนพักผ่อน 15:00 น.","items":[{"ic":"☕","t":"เตือนพักผ่อนทุกวันจันทร์–ศุกร์ 15:00 น.","d":"ป๊อปอัปภาพสวยๆ “It's time for some relaxing time.” พร้อมเพลงและพลุกระดาษสี — กด ✕ หรือ “ขอบคุณ พักแล้ว” เพื่อปิด (หรือกด Esc) · ปิดการเตือนบนเครื่องตัวเองและกดดูตัวอย่างได้จากปุ่ม ✨ มุมขวาบน"}]},{"id":"20261008-1518","date":"2026-10-08","title":"เกม UNO + แจ้งเตือนอัปเดต","items":[{"ic":"🃏","t":"เพิ่มเกม UNO ใน Game Zone","d":"ซ้อมกับบอทได้เลยไม่ต้องล็อกอิน มีวิธีเล่นแบบภาพในเกม — กดการ์ดที่เรืองแสงเขียวเพื่อลง"},{"ic":"👥","t":"เล่น UNO กับเพื่อนแบบเรียลไทม์","d":"เปิดห้อง ตั้งจำนวนคน/เวลาต่อตา แล้วชวนเพื่อนเข้าห้อง ที่ว่างมีบอทมาเล่นแทน — นับชนะ/แพ้ในตารางคะแนนทีม"},{"ic":"📨","t":"ชวนเพื่อนเล่น + เตือนเมื่อถึงตา","d":"เพื่อนที่ออนไลน์จะเห็นป๊อปอัปคำเชิญ กด “เข้าร่วมเลย” ได้ทันที และเมื่อถึงตาคุณจะมีเสียง/แถบเตือน แม้อยู่เมนูอื่น"},{"ic":"✨","t":"แจ้งเตือนเมื่อมีอัปเดตใหม่","d":"ต่อไปนี้ถ้ามีเวอร์ชันใหม่ จะมีแถบเตือนให้กดดูว่ามีอะไรเปลี่ยนก่อน แล้วค่อยกด “อัปเดตเลย” — และกดปุ่ม ✨ มุมขวาบนเพื่อดูย้อนหลังได้ตลอด"}]},{"id":"20261007","date":"2026-10-07","title":"แชท การ์ด ไฟล์ และเกม","items":[{"ic":"🙈","t":"แชทซ่อนห้องที่ไม่สนใจได้","d":"และสีแชทใหม่ที่อ่านง่ายขึ้น"},{"ic":"📎","t":"คอมเมนต์ลากไฟล์ลงได้","d":"มีตัวอย่าง PDF/ไฟล์ และดาวน์โหลดแล้วชื่อไทยไม่เพี้ยน"},{"ic":"✍️","t":"แก้ไขคอมเมนต์ + จัดรูปแบบข้อความได้","d":"มีแท็บ ความเห็น / ไฟล์"},{"ic":"🖐️","t":"ลากบอร์ดซ้าย-ขวาได้ และลากสลับคอลัมน์ได้","d":"Content / E-com / Graphic"},{"ic":"🕒","t":"ประวัติการย้ายการ์ดอ่านง่ายขึ้น","d":"เวลาเป็นภาษาไทย รวมรายการที่สลับไปมา"},{"ic":"🎨","t":"ปฏิทิน Content โทนพาสเทล","d":""},{"ic":"❌⭕","t":"แก้ XO ค้างตอนเล่นกับเพื่อน","d":""}]}]}</script>
+<script type="application/json" id="whatsnew-data">{"id":"20261009-2320","date":"2026-10-10","title":"ค้นหาการ์ด + กรอง Tag/สินค้า ในบอร์ด Content และกราฟฟิก","items":[{"ic":"🔎","t":"ช่องค้นหาชื่อการ์ด + กรองแท็ก + กรองสินค้า","d":"บอร์ด Content และบอร์ดกราฟฟิกมีปุ่ม 🏷️ แท็ก · 📦 สินค้า (เลือกได้หลายอัน) และช่อง 🔎 ค้นหาคีย์เวิร์ดจากชื่อการ์ด — พิมพ์หลายคำได้ (ต้องมีครบทุกคำ) · ใช้ร่วมกับตัวกรอง PIC/แบรนด์เดิมได้ · มีตัวเลือก “ไม่มีแท็ก/ไม่ระบุสินค้า” และบอกว่าแสดง N จาก M การ์ด"},{"ic":"✨","t":"ช่อง “รับงานจาก บอร์ด Content” (กราฟฟิก)","d":"เปลี่ยนชื่อจาก “จาก Content” · ลบการ์ดที่รับมาแล้ว การ์ดต้นทางใน Content ไม่หาย จะกลับมารอให้กด 📥 รับใหม่ (มีข้อความเตือนตอนลบ) · ตัวกรองใหม่ใช้กับช่องนี้ด้วย"}],"history":[{"id":"20261009-2243","date":"2026-10-10","title":"กรอง PIC แล้วการ์ดที่ไม่มี PIC ไม่หายอีก","items":[{"ic":"🔎","t":"ตัวเลือก “— ไม่ระบุ PIC —” ในตัวกรอง PIC","d":"เดิมพอเลือกกรองคนใดคนหนึ่ง การ์ดที่ไม่มี PIC (เช่น งานที่มอบให้กราฟฟิกล้วนๆ) จะหายไปจากบอร์ดและปฏิทิน Content ทั้งที่ยังอยู่ ตอนนี้มีตัวเลือก “ไม่ระบุ PIC” พร้อมจำนวน เลือกดูหรือเลือกรวมกับคนอื่นได้"}]},{"id":"20261009-2132","date":"2026-10-09","title":"Planning → Brief · กราฟฟิกทุกคนมีคอลัมน์ Brief เหมือนกัน","items":[{"ic":"🗂️","t":"Content มีคอลัมน์ Planning ก่อน Brief","d":"การ์ดใหม่เริ่มที่ Planning = ยังวางแผน ยังไม่ส่งให้กราฟฟิก · ย้ายเป็น Brief (เปลี่ยนชื่อจาก “บรีฟ/ไอเดีย”) เมื่อพร้อมส่งงาน กราฟฟิกถึงจะเห็นในช่อง “จาก Content” · การ์ดเดิมที่อยู่ Brief คงเดิม"},{"ic":"📥","t":"กราฟฟิกทุกคนมีคอลัมน์ 📥 Brief เหมือนกัน","d":"กด 📥 รับงานจาก Content แล้วการ์ดลงคอลัมน์ Brief ของทุกคน (ไม่ไปลงคอลัมน์ E-com อีก) · เพิ่มการ์ดเองด้วยปุ่ม ➕ ในแต่ละคอลัมน์ (เอาปุ่มบนสุดออกแล้ว) · การ์ดที่รับจาก Content ไม่ถูกนับเป็นงาน E-com เองอีก"},{"ic":"💬","t":"ห้องคุยร่วม Content ⇄ Graphic","d":"การ์ดที่บรีฟไปกราฟฟิกมีแถบ “ห้องคุยร่วม” + ปุ่มกดข้ามไปการ์ดอีกฝั่ง (เหมือน E-com) · คอมเมนต์เป็นชุดเดียวกัน เห็นตรงกันทั้งสองทีม และแจ้งเตือนถึงกัน"}]},{"id":"20261009-2038","date":"2026-10-09","title":"กรองแจ้งเตือนได้ — แท็ก / ย้าย / คอมเมนต์ + ดูเฉพาะที่ยังไม่อ่าน","items":[{"ic":"🔔","t":"ปุ่มแยกชนิดแจ้งเตือนในกระดิ่ง","d":"กด ＠ แท็ก · 🔁 ย้าย · 💬 คอมเมนต์ · 📌 มอบหมาย · 📋 อื่นๆ เพื่อดูเฉพาะชนิดนั้น แต่ละปุ่มมีตัวเลขที่ยังไม่อ่าน กดซ้ำเพื่อกลับไปดูทั้งหมด"},{"ic":"●","t":"ดูเฉพาะข้อความที่ยังไม่อ่าน","d":"ปุ่ม “ยังไม่อ่าน” ใช้ร่วมกับชนิดได้ (เช่น แท็กที่ยังไม่อ่าน) · ปุ่ม “อ่านที่เห็นทั้งหมด” จะอ่านเฉพาะที่กรองอยู่ · เครื่องจำตัวกรองที่เลือกไว้ให้"}]},{"id":"20261009-1945","date":"2026-10-09","title":"เตือนการ์ดที่ลืมย้ายเป็น “โพสต์แล้ว” + บอกสีสถานะชัดขึ้น","items":[{"ic":"⏰","t":"เตือนการ์ดที่อนุมัติแล้วแต่เลยวันลงโพสต์","d":"การ์ดสถานะ ✅ อนุมัติ (รอโพสต์) ที่วันลงโพสต์ผ่านไปแล้ว จะมีป้าย ⏰ ที่ชิปในปฏิทิน การ์ดบนบอร์ด และกล่องสีเหลืองด้านบน — ถ้าโพสต์ไปแล้วให้ย้ายเป็น 🚀 โพสต์แล้ว"},{"ic":"🎨","t":"แถบสีสถานะบอกชื่อสีชัดเจน","d":"แต่ละสถานะเป็นป้ายสีพร้อมชื่อสี (เหลือง · ส้ม · ม่วง · แดง · เขียว · น้ำเงิน · เขียวอมฟ้า) และบอกว่าตอนนี้สีชิป = สถานะ หรือ = ประเภทงาน — โหมดวันลงโพสต์มีจุดสีสถานะหน้าชื่อชิปด้วย"}]},{"id":"20261009-1505","date":"2026-10-09","title":"แชทเตือนดัง-ทันใจขึ้น + ปล่อยการ์ดไม่สะดุด","items":[{"ic":"🔔","t":"เสียงแจ้งเตือนแชทดังชัดขึ้น","d":"เสียงใหม่เป็นสองโน้ต ดังขึ้นหลายเท่า และปลุกระบบเสียงรอไว้ล่วงหน้า เสียงแรกจึงไม่ตกหรือมาช้า (ปิด/เปิดเสียงที่ปุ่มกระดิ่งหัวแชทเหมือนเดิม)"},{"ic":"⚡","t":"แชทแจ้งเร็วขึ้น ไม่ค้างเงียบ","d":"ถ้าสัญญาณเรียลไทม์หลุด (เน็ตสะดุด พับจอ ซ่อนแท็บนาน) ระบบต่อใหม่เอง ไม่ต้องรีเฟรช · ข้อความที่ตกหล่นดึงมาพร้อมเสียงเตือน · กลับมาที่แท็บแล้วดึงข้อความที่พลาดทันที · คนส่งช่วยสะกิดให้เครื่องอื่นดึงข้อความทันที"},{"ic":"🖱️","t":"ปล่อยการ์ดเร็วขึ้น 2–3 เท่า","d":"ตอนปล่อยการ์ด ระบบวาดเฉพาะการ์ด/คอลัมน์ที่เปลี่ยน ไม่วาดทั้งบอร์ดใหม่ — รูปในการ์ดไม่กะพริบ ตำแหน่งเลื่อนของบอร์ดไม่เด้ง (Content · E-commerce · Graphic)"},{"ic":"🗂️","t":"จัดลำดับคอลัมน์ยาวๆ ไวขึ้น","d":"บันทึกลำดับการ์ดในเครื่องครั้งเดียวแทนการบันทึกซ้ำทุกใบ"}]},{"id":"20261009-1136","date":"2026-10-09","title":"ลากการ์ดเบาลงอีก — การ์ดข้อมูลเยอะก็ลื่น","items":[{"ic":"🪶","t":"ลากการ์ดที่มีข้อมูลเยอะลื่นขึ้น","d":"ตอนลาก ระบบจะแสดงการ์ดเป็นแบบย่อ (ชื่อ + หัวข้อสำคัญ) แทนการก๊อปทั้งใบพร้อมรูปและปุ่มทั้งหมด หน้าเว็บเลยไม่ต้องคำนวณใหม่ทั้งหน้าทุกครั้งที่ขยับเมาส์ — ยิ่งการ์ดข้อมูลเยอะยิ่งเห็นความต่าง"},{"ic":"🎯","t":"จุดที่จะวางชัดขึ้น","d":"คอลัมน์ปลายทางมีกรอบไฮไลต์ เส้นสีฟ้าบอกตำแหน่งที่การ์ดจะลงตรงๆ และการ์ดต้นทางจางลงให้เห็นว่ากำลังย้ายใบไหน"}]},{"id":"20261009-1058","date":"2026-10-09","title":"ลากการ์ดลื่นขึ้น + ย้ายแล้วเห็นผลทันที","items":[{"ic":"⚡","t":"ย้ายการ์ด Content แล้วการ์ดไปอยู่คอลัมน์ใหม่ทันที","d":"แก้อาการหน่วงตอนวางการ์ด — เดิมการ์ดจะรอให้ระบบบันทึกเสร็จก่อนถึงย้ายให้เห็น ตอนนี้ย้ายให้เห็นทันที (รวมถึงการสลับลำดับ แก้ไขการ์ด และขยายเวลาส่ง)"},{"ic":"🖱️","t":"ลากการ์ดแบบใหม่ ลื่นขึ้นมาก (Content · E-commerce · Graphic)","d":"การ์ดลอยตามเมาส์ เส้นสีฟ้าบอกตำแหน่งที่จะวาง คอลัมน์ปลายทางไฮไลต์ ลากชิดขอบแล้วบอร์ด/รายการเลื่อนให้เอง กด Esc เพื่อยกเลิก ปล่อยแล้วการ์ดร่อนเข้าที่ — บนมือถือ กดการ์ดค้างแล้วลากได้"}]},{"id":"20261009-0106","date":"2026-10-09","title":"เกมงู: เก็บเหรียญ + แต่งตัวหนอน","items":[{"ic":"🪙","t":"เกมงูมีเหรียญให้เก็บแล้ว","d":"เหรียญทองโผล่ในกระดานเป็นช่วงๆ (หายใน ~7 วินาที) เหรียญใหญ่ได้ +5 และจบเกมได้โบนัส 1 เหรียญทุก 50 แต้ม — เหรียญไม่ปนกับคะแนนทีม ล็อกอินเพื่อเก็บเข้ากระเป๋า"},{"ic":"🎨","t":"ร้านแต่งตัวหนอน 17 สกิน","d":"ฟรี 5 แบบ แล้วไล่ระดับ Common (25) → Rare (80) → Epic (200) → Legendary (400) เช่น ราชา นักบินอวกาศ นินจา มังกรเพลิง กาแล็กซี — กดปุ่ม “🎨 แต่งตัวหนอน” ใต้กระดานเกมงู"}]},{"id":"20261008-1535","date":"2026-10-08","title":"เตือนพักผ่อน 15:00 น.","items":[{"ic":"☕","t":"เตือนพักผ่อนทุกวันจันทร์–ศุกร์ 15:00 น.","d":"ป๊อปอัปภาพสวยๆ “It's time for some relaxing time.” พร้อมเพลงและพลุกระดาษสี — กด ✕ หรือ “ขอบคุณ พักแล้ว” เพื่อปิด (หรือกด Esc) · ปิดการเตือนบนเครื่องตัวเองและกดดูตัวอย่างได้จากปุ่ม ✨ มุมขวาบน"}]},{"id":"20261008-1518","date":"2026-10-08","title":"เกม UNO + แจ้งเตือนอัปเดต","items":[{"ic":"🃏","t":"เพิ่มเกม UNO ใน Game Zone","d":"ซ้อมกับบอทได้เลยไม่ต้องล็อกอิน มีวิธีเล่นแบบภาพในเกม — กดการ์ดที่เรืองแสงเขียวเพื่อลง"},{"ic":"👥","t":"เล่น UNO กับเพื่อนแบบเรียลไทม์","d":"เปิดห้อง ตั้งจำนวนคน/เวลาต่อตา แล้วชวนเพื่อนเข้าห้อง ที่ว่างมีบอทมาเล่นแทน — นับชนะ/แพ้ในตารางคะแนนทีม"},{"ic":"📨","t":"ชวนเพื่อนเล่น + เตือนเมื่อถึงตา","d":"เพื่อนที่ออนไลน์จะเห็นป๊อปอัปคำเชิญ กด “เข้าร่วมเลย” ได้ทันที และเมื่อถึงตาคุณจะมีเสียง/แถบเตือน แม้อยู่เมนูอื่น"},{"ic":"✨","t":"แจ้งเตือนเมื่อมีอัปเดตใหม่","d":"ต่อไปนี้ถ้ามีเวอร์ชันใหม่ จะมีแถบเตือนให้กดดูว่ามีอะไรเปลี่ยนก่อน แล้วค่อยกด “อัปเดตเลย” — และกดปุ่ม ✨ มุมขวาบนเพื่อดูย้อนหลังได้ตลอด"}]},{"id":"20261007","date":"2026-10-07","title":"แชท การ์ด ไฟล์ และเกม","items":[{"ic":"🙈","t":"แชทซ่อนห้องที่ไม่สนใจได้","d":"และสีแชทใหม่ที่อ่านง่ายขึ้น"},{"ic":"📎","t":"คอมเมนต์ลากไฟล์ลงได้","d":"มีตัวอย่าง PDF/ไฟล์ และดาวน์โหลดแล้วชื่อไทยไม่เพี้ยน"},{"ic":"✍️","t":"แก้ไขคอมเมนต์ + จัดรูปแบบข้อความได้","d":"มีแท็บ ความเห็น / ไฟล์"},{"ic":"🖐️","t":"ลากบอร์ดซ้าย-ขวาได้ และลากสลับคอลัมน์ได้","d":"Content / E-com / Graphic"},{"ic":"🕒","t":"ประวัติการย้ายการ์ดอ่านง่ายขึ้น","d":"เวลาเป็นภาษาไทย รวมรายการที่สลับไปมา"},{"ic":"🎨","t":"ปฏิทิน Content โทนพาสเทล","d":""},{"ic":"❌⭕","t":"แก้ XO ค้างตอนเล่นกับเพื่อน","d":""}]}]}</script>
 <script id="update-notice-2026-10-08">
 /* ✨ แจ้งเตือนอัปเดตใหม่ + “มีอะไรใหม่” (2026-10-08)
    • เว็บนี้ฝังรหัสเวอร์ชันไว้ที่ <meta name="npd-build"> (บนสุดของไฟล์) และโน้ตการอัปเดตใน <script type="application/json" id="whatsnew-data">
