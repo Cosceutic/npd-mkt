@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="npd-build" content="20261009-2038">
+<meta name="npd-build" content="20261009-2132">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Godmami · NPD Product Calendar</title>
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -1867,6 +1867,10 @@ html.bp-panning,html.bp-panning *{cursor:grabbing !important;user-select:none !i
   #view-content .cc-od-chip b{color:#C0392B;}
   #view-content .cc-od-chip:hover{background:#fff3f3;border-color:#C0392B;}
   #view-content .cc-od-more{font-size:11.5px;color:#8A2B22;align-self:center;font-weight:600;}
+  #cc-card-body .cc-cm-group{background:#EEF4FB;border:1px solid #CFE0F3;border-radius:12px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#34506E;}
+  #cc-card-body .cc-cm-group .h{font-weight:800;font-size:12.5px;} #cc-card-body .cc-cm-group .h span{font-weight:500;font-size:11px;opacity:.8;margin-left:6px;}
+  #cc-card-body .cc-cm-group .s{margin-top:2px;} #cc-card-body .cc-cm-group .p{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
+  #cc-card-body .cc-cm-group .p i{font-style:normal;background:#fff;border:1px solid #CFE0F3;border-radius:999px;padding:0 8px;font-size:11px;}
   /* ⏰ อนุมัติแล้วแต่เลยวันลงโพสต์ (ยังไม่ได้ย้ายเป็น 🚀 โพสต์แล้ว) */
   #view-content .cc-postlate,#cc-card-body .cc-postlate{font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 9px;background:#FFF0CF;color:#9A5B00;white-space:nowrap;}
   #view-content .cc-pl-banner2{background:#FFF7E6;border:1px solid #F0D79F;border-radius:12px;padding:11px 14px;margin-bottom:14px;}
@@ -11330,10 +11334,10 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function checklistItems(cl){ var out=[]; cl.groups.forEach(function(g){ g.items.forEach(function(it){ out.push(it); }); }); return out; }
   function checklistProgress(x){ var cl=checklistFor(x.title); if(!cl) return null; var done=(x.checklistDone||'').split(';').map(function(s){return s.trim();}).filter(Boolean); var all=checklistItems(cl); var n=all.filter(function(it){return done.indexOf(it)>=0;}).length; return {done:n, total:all.length}; }
   // content pipeline (review flow): brief → production → review → revise → approved → posted → track
-  var CAL_STATUS={brief:{t:'📝 บรีฟ/ไอเดีย',c:'#f2c94c'},production:{t:'🎬 กำลังผลิต',c:'#ffb454'},review:{t:'👀 รอตรวจสอบ',c:'#a78bfa'},revise:{t:'🔧 แก้ไข (ตีกลับ)',c:'#ef6b6b'},approved:{t:'✅ อนุมัติ (รอโพสต์)',c:'#5fd0a8'},posted:{t:'🚀 โพสต์แล้ว',c:'#4b9ef8'},track:{t:'📈 ติดตามผล',c:'#26a69a'}};
-  var CAL_STATUS_ORDER=['brief','production','review','revise','approved','posted','track'];
-  // การ์ดที่ PIC = ชื่อกราฟฟิก → ใช้แค่ 5 สถานะ (ขั้นรอตรวจ/แก้ไข ไปเกิดที่บอร์ดกราฟฟิก) · 🎬/✅ เลื่อนอัตโนมัติ
-  var GFX_PIC_STATUS_ORDER=['brief','production','approved','posted','track'];
+  var CAL_STATUS={planning:{t:'🗂️ Planning',c:'#9AA8C7'},brief:{t:'📝 Brief',c:'#f2c94c'},production:{t:'🎬 กำลังผลิต',c:'#ffb454'},review:{t:'👀 รอตรวจสอบ',c:'#a78bfa'},revise:{t:'🔧 แก้ไข (ตีกลับ)',c:'#ef6b6b'},approved:{t:'✅ อนุมัติ (รอโพสต์)',c:'#5fd0a8'},posted:{t:'🚀 โพสต์แล้ว',c:'#4b9ef8'},track:{t:'📈 ติดตามผล',c:'#26a69a'}};
+  var CAL_STATUS_ORDER=['planning','brief','production','review','revise','approved','posted','track'];   // Planning = ยังวางแผน (ไม่ส่งให้กราฟฟิก) · Brief = ส่งงานให้กราฟฟิกรับ
+  // การ์ดที่ PIC = ชื่อกราฟฟิก → ใช้แค่ 6 สถานะ (ขั้นรอตรวจ/แก้ไข ไปเกิดที่บอร์ดกราฟฟิก) · 🎬/✅ เลื่อนอัตโนมัติ
+  var GFX_PIC_STATUS_ORDER=['planning','brief','production','approved','posted','track'];
   // งานนี้มอบให้กราฟฟิกหรือไม่ = มีชื่อในช่อง "PIC กราฟฟิก" (เดิมดูจากช่องเจ้าของงาน)
   function ccIsGfxPic(x){ return !!(x && String(x.gfxPic||'').trim()); }
   // ชื่อของคนกราฟฟิก (ไว้ตัดออกจากรายชื่อ/ตัวกรอง "เจ้าของงาน" ของ Content)
@@ -11463,7 +11467,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function calToday0(){ var t=new Date(); t.setHours(0,0,0,0); return t; }
   function dueDiff(x){ if(!x||!x.due) return null; var d=new Date(x.due+'T00:00:00'); if(isNaN(d)) return null; return Math.round((d-calToday0())/86400000); }
   function dueState(x){ if(!x||!x.due||cardDone(x.status)) return ''; var diff=dueDiff(x); if(diff===null) return ''; if(diff<0) return 'overdue'; if(diff<=1) return 'soon'; return 'ok'; }
-  var CAL_STATUS_CN={brief:'เหลือง',production:'ส้ม',review:'ม่วง',revise:'แดง',approved:'เขียว',posted:'น้ำเงิน',track:'เขียวอมฟ้า'};
+  var CAL_STATUS_CN={planning:'เทาน้ำเงิน',brief:'เหลือง',production:'ส้ม',review:'ม่วง',revise:'แดง',approved:'เขียว',posted:'น้ำเงิน',track:'เขียวอมฟ้า'};
   function postLateDays(x){ if(!x||x.status!=='approved'||!x.date) return 0; var d=new Date(x.date+'T00:00:00'); if(isNaN(d)) return 0; var n=Math.round((calToday0()-d)/86400000); return n>0?n:0; }   // อนุมัติแล้ว แต่วันลงโพสต์ผ่านไปแล้ว (ยังไม่ถูกย้ายเป็น โพสต์แล้ว)
   function postLateBadge(x){ var n=postLateDays(x); return n?'<span class="cc-postlate" title="อนุมัติแล้วแต่เลยวันลงโพสต์ — ถ้าโพสต์ไปแล้วให้ย้ายเป็น 🚀 โพสต์แล้ว">⏰ เลยวันโพสต์ '+n+' วัน · ยังไม่ได้ย้าย</span>':''; }
   function postLateList(){ return calItems().filter(function(x){ return postLateDays(x)>0; }).sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); }); }
@@ -11883,7 +11887,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     calEditId=id||null;
     var x = id ? (window.CONTENT_CAL||[]).find(function(i){return i.id===id;}) : {};
     x = x || {}; if(presetDate && !x.date) x.date=presetDate;
-    if(!id){ if(typeof plPresetStatus!=='undefined' && plPresetStatus){ x=Object.assign({},x,{status:plPresetStatus}); } plPresetStatus=null; }
+    if(!id){ if(typeof plPresetStatus!=='undefined' && plPresetStatus){ x=Object.assign({},x,{status:plPresetStatus}); } plPresetStatus=null; if(!x.status) x=Object.assign({},x,{status:'planning'}); }   // การ์ดใหม่เริ่มที่ Planning
     ccDrafts = ccParseDrafts(x.drafts);
     var brandsPresent=[...new Set((typeof PRODUCTS!=='undefined'?PRODUCTS:[]).map(function(p){return p.brand;}).filter(Boolean))];
     if(!brandsPresent.length) brandsPresent=['godmami','glimmer','mamilabo'];
@@ -11919,7 +11923,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
         fmRow('ผู้รับมอบหมาย (PIC)', fmChips('cc-cf-owner', ownerNames, x.owner||'', {multi:1,add:1}))
         +fmRow('ผู้ตรวจงาน', fmChips('cc-cf-reviewer', reviewerNames, x.reviewer||'', {multi:1,add:1}))
         +fmRow('ผู้มอบหมายงาน', fmChips('cc-cf-followers', CC_PEOPLE, x.followers||'', {multi:1,add:1}))
-        +fmRow('🎨 PIC Graphic', fmChips('cc-cf-gfxpic', gfxList, x.gfxPic||'', {multi:1,add:1})+'<div class="fm-hint">เลือกคนกราฟฟิกที่รับงานนี้ — งานจะไปโผล่ในบอร์ด/ปฏิทินของเขา · ไม่เลือก = ไม่ใช้กราฟฟิก</div>')
+        +fmRow('🎨 PIC Graphic', fmChips('cc-cf-gfxpic', gfxList, x.gfxPic||'', {multi:1,add:1})+'<div class="fm-hint">เลือกคนกราฟฟิกที่รับงานนี้ — งานจะไปโผล่ในบอร์ด/ปฏิทินของเขา เมื่อการ์ดอยู่ Brief ขึ้นไป (Planning = ยังไม่ส่ง) · ไม่เลือก = ไม่ใช้กราฟฟิก</div>')
         +'<div class="fm-note">💡 <b>หมายเหตุ:</b> กรณีมอบหมายงานให้ตัวเอง หรือเป็นผู้ดูแลงานกราฟฟิก ให้กรอก<b>ชื่อตนเอง</b>ทั้งช่อง “ผู้รับมอบหมาย (PIC)” และช่อง “ผู้มอบหมายงาน”</div>')
       +fmSec(3,'เมื่อไหร่',
         '<div class="fm-g3"><div><label>วันที่ลง *</label><input type="date" id="cc-cf-date" data-req="1" value="'+e2(x.date||'')+'"></div><div><label>เวลา</label><input type="time" id="cc-cf-time" value="'+e2(x.time||'')+'"></div><div><label>🎯 ส่ง Final</label><input type="date" id="cc-cf-due" value="'+e2(x.due||'')+'"></div></div>'
@@ -12087,7 +12091,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   /* ลำดับคอลัมน์ Content (ลากสลับได้) — เก็บใน graphic_config คีย์ content::order ทีมเห็นลำดับเดียวกัน */
   var CC_ORD=null, CC_ORD_LKEY='npd_cc_order_v1', CC_ORD_K='content::order', ccOrdDirtyAt=0, ccOrdUnsynced=false;
   try{ var _co=JSON.parse(localStorage.getItem(CC_ORD_LKEY)||'null'); if(Array.isArray(_co)) CC_ORD=_co; }catch(e){}
-  function ccStatusOrder(){ var base=CAL_STATUS_ORDER.slice(); if(!Array.isArray(CC_ORD)) return base; var out=[]; CC_ORD.forEach(function(s){ if(base.indexOf(s)>=0&&out.indexOf(s)<0) out.push(s); }); base.forEach(function(s){ if(out.indexOf(s)<0) out.push(s); }); return out; }
+  function ccStatusOrder(){ var base=CAL_STATUS_ORDER.slice(); if(!Array.isArray(CC_ORD)) return base; var out=[]; CC_ORD.forEach(function(s){ if(base.indexOf(s)>=0&&out.indexOf(s)<0) out.push(s); }); base.forEach(function(s){ if(out.indexOf(s)<0) out.push(s); }); if(CC_ORD.indexOf('planning')<0){ out=out.filter(function(s){return s!=='planning';}); out.unshift('planning'); } return out; }   // ทีมที่เคยจัดลำดับคอลัมน์ไว้: Planning ใหม่ต้องมาก่อนเสมอ
   async function ccOrdLoad(){
     if(Date.now()-ccOrdDirtyAt<10000||ccOrdUnsynced) return;
     try{ var rows=await sbSelect('graphic_config','k=eq.'+encodeURIComponent(CC_ORD_K)); var row=null; for(var i=0;i<rows.length;i++){ if(rows[i].k===CC_ORD_K){ row=rows[i]; break; } }
@@ -12134,12 +12138,14 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var b=[];
     if(ccIsGfxPic(x)){
       // งานกราฟฟิก: 🎬 กำลังผลิต/✅ อนุมัติ เลื่อนอัตโนมัติจากบอร์ดกราฟฟิก → เหลือปุ่มโพสต์ + ดรอปดาว 5 สถานะ
+      if(s==='planning') b.push('<button class="cc-pl-send" title="ย้ายไป Brief = ส่งงานให้กราฟฟิกรับ" onclick="event.stopPropagation();plMove(\''+aj(x.id)+'\',\'brief\')">ส่ง Brief ให้กราฟฟิก 📥</button>');
       if(s==='approved') b.push('<button class="cc-pl-post" onclick="event.stopPropagation();plMove(\''+aj(x.id)+'\',\'posted\')">โพสต์แล้ว 🚀</button>');
       var order=GFX_PIC_STATUS_ORDER.slice(); if(order.indexOf(s)<0) order.unshift(s);
       var gopts=order.map(function(k){return '<option value="'+k+'"'+(k===s?' selected':'')+'>'+e2(CAL_STATUS[k].t)+'</option>';}).join('');
       b.push('<select class="cc-pl-move" title="งานกราฟฟิก · เลื่อนได้ 5 สถานะ" onclick="event.stopPropagation();" onchange="plMove(\''+aj(x.id)+'\',this.value)">'+gopts+'</select>');
       return '<div class="cc-pl-actions">'+b.join('')+'</div>';
     }
+    if(s==='planning') b.push('<button class="cc-pl-send" title="ย้ายไป Brief" onclick="event.stopPropagation();plMove(\''+aj(x.id)+'\',\'brief\')">ไป Brief →</button>');
     if(s==='brief'||s==='production') b.push('<button class="cc-pl-send" onclick="event.stopPropagation();plMove(\''+aj(x.id)+'\',\'review\')">ส่งตรวจ 👀</button>');
     if(s==='review'){ b.push('<button class="cc-pl-ok" onclick="event.stopPropagation();plMove(\''+aj(x.id)+'\',\'approved\')">อนุมัติ ✅</button>'); b.push('<button class="cc-pl-no" onclick="event.stopPropagation();plMove(\''+aj(x.id)+'\',\'revise\')">ตีกลับ 🔧</button>'); }
     if(s==='revise') b.push('<button class="cc-pl-send" onclick="event.stopPropagation();plMove(\''+aj(x.id)+'\',\'review\')">ส่งตรวจอีกครั้ง 👀</button>');
@@ -12720,6 +12726,9 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     rows+=addRow('แท็ก', x.tags?tagChips(x.tags):'');
     rows+=addRow('ผู้รับมอบหมาย (PIC)', x.owner?('👤 '+e2(x.owner)):'');
     rows+=addRow('PIC Graphic', x.gfxPic?('🎨 '+e2(x.gfxPic)):'');
+    (function(){ try{ var gl=(typeof window.gfxCardsFromContent==='function')?window.gfxCardsFromContent(x.id):[], h2=gl.map(function(g){ return '<button class="gfx-goto-btn" style="margin:0 6px 4px 0;" onclick="openCardModal(\''+aj(g.id)+'\')">🎨 '+e2(g.person)+(g.colTitle?' · '+e2(g.colTitle):'')+' →</button>'; }).join('');
+      if(!gl.length && x.gfxPic){ h2=(x.status==='planning')?'<span style="color:var(--ink-soft);">🗂️ ยังเป็น Planning — ยังไม่ส่งให้กราฟฟิก (ย้ายเป็น Brief เพื่อส่งงาน)</span>':'<span style="color:#9A5B00;">⏳ ส่งให้ '+e2(x.gfxPic)+' แล้ว — รอกด 📥 รับงานในบอร์ดกราฟฟิก</span>'; }
+      if(h2) rows+=addRow('การ์ดกราฟฟิก', h2+'<div style="font-size:11.5px;color:var(--ink-soft);">คอมเมนต์ห้องเดียวกันกับกราฟฟิก เห็นตรงกันทั้งสองฝั่ง</div>'); }catch(e){} })();
     rows+=addRow('ผู้ตรวจ', x.reviewer?('🔍 '+e2(x.reviewer)):'');
     rows+=addRow('ผู้มอบหมายงาน', x.followers?followerChips(x.followers):'');
     rows+=addRow(ccNoteName(x), x.note?linkBtnsHtml(x.note):'');
@@ -12747,6 +12756,18 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   (function(){ var _rcm=window.renderCardModal; window.renderCardModal=function(){ var a=document.activeElement, id=a&&a.id, s=a&&a.selectionStart, e=a&&a.selectionEnd;
     _rcm.apply(this,arguments); if(id==='cc-cm-text'||id==='cc-cm-edit-text'){ var n=document.getElementById(id); if(n){ n.focus(); try{ n.setSelectionRange(s,e); }catch(x){} } } }; })();
   // แผงคอมเมนต์ (ใช้ร่วมกันทั้งการ์ด Content และการ์ด E-Commerce) — อิงจาก cmModalCard
+  /* แถบ “ห้องคุยร่วม Content ⇄ Graphic” — การ์ดที่บรีฟไปกราฟฟิก (มีการ์ดกราฟฟิกที่รับแล้ว หรือระบุ PIC Graphic ไว้) ใช้คอมเมนต์ห้องเดียวกัน */
+  function cmGroupBannerHtml(){
+    try{ var id=cmModalCard; if(!id) return '';
+      var g=(typeof window.gfxGetCard==='function')?window.gfxGetCard(id):null, root=(g&&g.srcContent)?g.srcContent:id;
+      var cc=(window.CONTENT_CAL||[]).find(function(x){return x.id===root;}); if(!cc) return '';
+      var twins=(typeof window.gfxIdsAdoptedFrom==='function'?window.gfxIdsAdoptedFrom(root):[]).map(function(t){return window.gfxGetCard(t);}).filter(Boolean);
+      var pics=String(cc.gfxPic||'').split(/[,\/、]/).map(function(s){return s.trim();}).filter(Boolean);
+      if(!twins.length && !pics.length) return '';
+      var seen={}, ppl=[]; [cc.owner,cc.reviewer,cc.followers].concat(pics).concat(twins.map(function(t){return t.person;})).forEach(function(s){ String(s||'').split(/[,\/、]/).forEach(function(n){ n=n.trim(); if(n&&!seen[n]){ seen[n]=1; ppl.push(n); } }); });
+      var note=(cc.status==='planning')?'🗂️ ตอนนี้เป็น Planning — ยังไม่ส่งให้กราฟฟิก (ย้ายเป็น Brief เพื่อส่งงาน) · แต่คุยกันที่นี่ได้เลย':(twins.length?'🎨 กราฟฟิกรับงานแล้ว':'⏳ ส่งให้ '+pics.join(', ')+' แล้ว · รอรับงาน 📥');
+      return '<div class="cc-cm-group"><div class="h">👥 ห้องคุยร่วม Content ⇄ Graphic <span>คอมเมนต์ชุดเดียวกัน เห็นตรงกันทั้งสองฝั่ง · แจ้งเตือนถึงกันทั้งสองทีม</span></div><div class="s">'+note+'</div><div class="p">'+ppl.map(function(n){ return '<i>'+e2(n)+'</i>'; }).join('')+'</div></div>';
+    }catch(e){ return ''; } }
   function cmCommentPaneHtml(){
     var cms=commentsFor(cmModalCard);
     var list = cms.length ? cms.map(cmItem).join('') : '<div class="cc-cm-empty">ยังไม่มีคอมเมนต์ — เริ่มคุยงานกันได้เลย 💬</div>';
@@ -12774,7 +12795,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     }
     var files=cmCollectFiles(cms);
     var tabs='<div class="cc-cm-tabs" role="tablist"><button type="button" role="tab" aria-selected="'+(cmTab==='c')+'" class="'+(cmTab==='c'?'on':'')+'" onclick="ccTab(\'c\')">ความคิดเห็น ('+cms.length+')</button><button type="button" role="tab" aria-selected="'+(cmTab==='f')+'" class="'+(cmTab==='f'?'on':'')+'" onclick="ccTab(\'f\')">ไฟล์ ('+files.length+')</button></div>';
-    return '<div class="cc-cm-sec">'+tabs+(cmTab==='f'?cmFilesHtml(files):('<div class="cc-cm-list">'+list+'</div>'+composer))+'</div>';
+    return '<div class="cc-cm-sec">'+cmGroupBannerHtml()+tabs+(cmTab==='f'?cmFilesHtml(files):('<div class="cc-cm-list">'+list+'</div>'+composer))+'</div>';
   }
   // การ์ด E-Commerce: ใช้ modal เดียวกัน (ซ้าย = รายละเอียดจากโมดูล ecom, ขวา = คอมเมนต์ร่วม)
   function ecomRenderCardModal(id){
@@ -14946,6 +14967,7 @@ details.fm-more[open]{padding-bottom:6px;}
   var GFX_SOURCE_COL={key:'source',title:'📄 ต้นฉบับ',color:'#9aa4b5',done:false,nocount:true};
   function gfxDefaultCols(){ return [
     {key:'source',title:'📄 ต้นฉบับ',color:'#9aa4b5',done:false,nocount:true},
+    {key:'brief',title:'📥 Brief',color:'#f2c94c',done:false,std:true},
     {key:'todo',title:'📋 To Do',color:'#7cb6e4',done:false},
     {key:'doing',title:'🎬 กำลังทำ',color:'#ffb454',done:false},
     {key:'review',title:'👀 รอตรวจ',color:'#5aa0d8',done:false},
@@ -14954,6 +14976,10 @@ details.fm-more[open]{padding-bottom:6px;}
   ]; }
   // ทุกบอร์ดต้องมีคอลัมน์ "ต้นฉบับ" (nocount) — เผื่อบอร์ดเก่าที่บันทึกไว้ก่อนยังไม่มี ให้เติมไว้หน้าสุด
   function gfxWithSource(cols){ if(!cols.some(function(x){return x.nocount;})) return [Object.assign({},GFX_SOURCE_COL)].concat(cols); return cols; }
+  /* คอลัมน์รับงานมาตรฐาน “📥 Brief” — กราฟฟิกทุกคนมีเหมือนกัน (ต่อจากคอลัมน์ไม่นับงานชุดหน้าสุด): งานที่กด 📥 รับจากคอลัมน์ Brief ของ Content ลงที่นี่ · เพิ่มการ์ดเองด้วยปุ่ม ➕ ของคอลัมน์ */
+  var GFX_BRIEF_COL={key:'brief',title:'📥 Brief',color:'#f2c94c',done:false,std:true};
+  function gfxWithStd(cols){ if(cols.some(function(x){return x.key==='brief';})) return cols; var out=cols.slice(), i=0; while(i<out.length && out[i].nocount) i++; out.splice(i,0,Object.assign({},GFX_BRIEF_COL)); return out; }
+  function gfxStdBriefKey(p){ var c=gfxColsFor(p).find(function(x){return x.key==='brief'&&!x.done;}); return c?c.key:''; }
   function gfxUid(p){ return (p||'c')+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
   function lget(k,def){ try{ var v=JSON.parse(localStorage.getItem(k)); return (v==null?def:v); }catch(e){ return def; } }
   function lset(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
@@ -14973,8 +14999,8 @@ details.fm-more[open]{padding-bottom:6px;}
     ecom:(r.ecom===true||r.ecom===1||/^(1|true|y)$/i.test(String(r.ecom==null?'':r.ecom).trim()))?'1':'' }; }   // ecom=1 = นับเป็นงาน E-commerce (สร้างจาก/ถูกย้ายมาคอลัมน์ Brief AW E-commerce) — ติดตัวการ์ดตลอด แม้ย้ายไปคอลัมน์อื่น
 
   function gfxPeople(){ return (GFX_PEOPLE && GFX_PEOPLE.length)?GFX_PEOPLE:GFX_PEOPLE_DEFAULT.slice(); }
-  function gfxColsFor(p){ var c=GFX_COLS[p]; if(!c || !c.length) c=gfxDefaultCols(); return gfxWithSource(c); }
-  function gfxEnsureCols(p){ if(!GFX_COLS[p]||!GFX_COLS[p].length) GFX_COLS[p]=gfxDefaultCols(); GFX_COLS[p]=gfxWithSource(GFX_COLS[p]); return GFX_COLS[p]; }
+  function gfxColsFor(p){ var c=GFX_COLS[p]; if(!c || !c.length) c=gfxDefaultCols(); return gfxWithStd(gfxWithSource(c)); }
+  function gfxEnsureCols(p){ if(!GFX_COLS[p]||!GFX_COLS[p].length) GFX_COLS[p]=gfxDefaultCols(); GFX_COLS[p]=gfxWithStd(gfxWithSource(GFX_COLS[p])); return GFX_COLS[p]; }
   function gfxColDef(p,key){ return gfxColsFor(p).find(function(c){return c.key===key;})||null; }
   function gfxIsDoneCol(p,key){ var d=gfxColDef(p,key); return !!(d&&d.done); }
   // คอลัมน์ “แก้ไข/แก้ไขงาน” — ตรวจจากชื่อคอลัมน์ (บอร์ดแต่ละคนตั้งชื่อเองได้) หรือธง revise:true · การ์ดที่ย้ายเข้าคอลัมน์นี้ต้องกรอกสาเหตุแก้ไขก่อน
@@ -14987,7 +15013,7 @@ details.fm-more[open]{padding-bottom:6px;}
     if(d.nocount || x.col==='source' || x.col==='todo' || /brief|บรีฟ/i.test(t)) return 'brief';
     if(x.col==='review' || /รอตรวจ|ส่งงาน|review/i.test(t)) return 'review';
     return 'production'; }
-  function gfxIsEcomCard(x){ return !!(x && (x.ecom==='1' || gfxIsEcomBriefCol(x.person,x.col))); }
+  function gfxIsEcomCard(x){ return !!(x && (x.ecom==='1' || (gfxIsEcomBriefCol(x.person,x.col) && !x.srcContent))); }   // การ์ดที่รับมาจาก Content ไม่ใช่งาน E-com แค่เพราะนอนอยู่ในคอลัมน์ Brief AW E-commerce — ต้องถูกย้ายเข้าเอง (ตั้งธง ecom='1') ถึงนับ
   function gfxIsReviseCol(p,key){ var d=gfxColDef(p,key); return !!(d && !d.done && !d.nocount && (d.revise===true || /แก้ไข|ตีกลับ|revis/i.test(String(d.title||'')))); }
   var gfxRevCtx=null, gfxRevPending=null;   // gfxRevCtx = การย้ายที่รอสาเหตุแก้ไข · gfxRevPending = สาเหตุที่กรอกแล้ว รอบันทึกพร้อมฟอร์มแก้ไขการ์ด
   function gfxIsNoCountCol(p,key){ var d=gfxColDef(p,key); return !!(d&&d.nocount); }
@@ -14995,6 +15021,8 @@ details.fm-more[open]{padding-bottom:6px;}
   // การ์ดที่ "นับเป็นงาน" = ไม่อยู่ในคอลัมน์ต้นฉบับ (nocount)
   function gfxActiveCardsOf(p){ return GFX.filter(function(x){return x.person===p && !gfxIsNoCountCol(x.person,x.col);}); }
   function gfxFirstActiveColKey(p){ var c=gfxColsFor(p).find(function(x){return !x.nocount;}); return c?c.key:(gfxColsFor(p)[0]||{}).key; }
+  // คอลัมน์แรกที่ "ไม่ใช่ Brief AW E-commerce" — งานที่รับจาก Content ไม่ใช่งาน E-com จึงต้องไม่ไปลงคอลัมน์ E-com (การ์ดในคอลัมน์นั้นนับเป็นงาน E-commerce อัตโนมัติ)
+  function gfxFirstPlainColKey(p){ var c=gfxColsFor(p).find(function(x){ return !x.nocount && !x.done && !gfxIsEcomBriefCol(p,x.key); }); return c?c.key:gfxFirstActiveColKey(p); }
 
   async function loadGfx(){
     var cache=lget(CARD_LKEY,[]);
@@ -15314,7 +15342,7 @@ details.fm-more[open]{padding-bottom:6px;}
     GFX.forEach(function(x){ if(!x.submitDate || gfxIsNoCountCol(x.person,x.col)) return; var d=new Date(String(x.submitDate).slice(0,10)+'T00:00:00'); if(isNaN(d)||d.getFullYear()!==Y||d.getMonth()!==M) return; add(d.getDate(), {id:x.id, person:(x.person||String(x.owner||'').split(/[,\/、]/)[0].trim()), title:x.title, col:x.col, src:'gfx'}); });
     // งาน Content ที่ PIC = ชื่อกราฟฟิก → พล็อตตามวันลงโพสต์ (สีตามคน · ตรา ✨)
     var people=gfxPeople(); var cal=(window.CONTENT_CAL||[]);
-    cal.forEach(function(x){ if(!x||x.status==='posted'||x.status==='track') return; var dl=gfxContentDeadline(x); if(!dl) return; var d=new Date(String(dl).slice(0,10)+'T00:00:00'); if(isNaN(d)||d.getFullYear()!==Y||d.getMonth()!==M) return; var owners=String(x.gfxPic||'').split(/[,\/、]/).map(function(s){return s.trim();}); people.forEach(function(p){ if(owners.indexOf(p)<0) return; if(gfxAdoptedCardId(p,x.id)) return; add(d.getDate(), {id:x.id, person:p, title:x.title, src:'content', post:x.date||''}); }); });
+    cal.forEach(function(x){ if(!x||x.status==='posted'||x.status==='track'||x.status==='planning') return; var dl=gfxContentDeadline(x); if(!dl) return; var d=new Date(String(dl).slice(0,10)+'T00:00:00'); if(isNaN(d)||d.getFullYear()!==Y||d.getMonth()!==M) return; var owners=String(x.gfxPic||'').split(/[,\/、]/).map(function(s){return s.trim();}); people.forEach(function(p){ if(owners.indexOf(p)<0) return; if(gfxAdoptedCardId(p,x.id)) return; add(d.getDate(), {id:x.id, person:p, title:x.title, src:'content', post:x.date||''}); }); });
     return out;
   }
   function renderGfxCal(){
@@ -15409,7 +15437,6 @@ details.fm-more[open]{padding-bottom:6px;}
     var filterBar='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">'
       +'<span style="display:inline-flex;gap:6px;flex-wrap:wrap;">'+brandPills+'</span>'
       +'<select onchange="gfxSetTag(this.value)" '+SEL+'>'+tagOpts+'</select>'
-      +(canEd?'<button class="btn-edit primary" onclick="gfxAddIn(\''+AJ(gfxFirstActiveColKey(p)||'')+'\')" style="margin-left:auto;flex:0 0 auto;">➕ เพิ่มการ์ด</button>':'')
       +'</div>';
     var TB='class="gfx-tbtn"';
     var board='<div class="cc-pl-board">'+gfxLinkedColHtml(p)+cols.map(function(c,idx){
@@ -15463,7 +15490,7 @@ details.fm-more[open]{padding-bottom:6px;}
   function gfxLinkedContent(person){
     if(!person) return [];
     var out=[]; var cal=(window.CONTENT_CAL||[]);
-    cal.forEach(function(x){ if(!x||x.status==='posted'||x.status==='track') return; if(String(x.gfxPic||'').split(/[,\/、]/).map(function(s){return s.trim();}).indexOf(person)<0) return; out.push(x); });
+    cal.forEach(function(x){ if(!x||x.status==='posted'||x.status==='track'||x.status==='planning') return; if(String(x.gfxPic||'').split(/[,\/、]/).map(function(s){return s.trim();}).indexOf(person)<0) return; out.push(x); });
     out.sort(function(a,b){ return String(a.date||'').localeCompare(String(b.date||'')); });
     return out;
   }
@@ -15493,6 +15520,7 @@ details.fm-more[open]{padding-bottom:6px;}
       cb&&cb(added);
     });
   };
+  window.gfxCardsFromContent=function(cid){ return GFX.filter(function(x){return x.srcContent===cid;}).map(function(x){ var d=gfxColDef(x.person,x.col)||{}; return {id:x.id,person:x.person,colTitle:d.title||''}; }); };
   window.gfxCardsFromEcom=function(ecomId){ return GFX.filter(function(x){return x.srcEcom===ecomId;}).map(function(x){ var d=gfxColDef(x.person,x.col)||{}; return {id:x.id,person:x.person,colTitle:d.title||''}; }); };
   window.gfxCreateFromEcom=function(ec,cb){
     if(!ec||!ec.id){ cb&&cb({made:[],skipped:[]}); return; }
@@ -15549,9 +15577,10 @@ details.fm-more[open]{padding-bottom:6px;}
     var p=gfxPerson; if(!p) return;
     if(gfxAdoptedCardId(p,cid)){ TOAST('รับงานนี้เข้าบอร์ดแล้ว','info'); return; }
     var post=(window.CONTENT_CAL||[]).find(function(x){return x.id===cid;}); if(!post){ TOAST('ไม่พบงาน Content','err'); return; }
-    var col=gfxFirstActiveColKey(p)||'todo';
+    if(post.status==='planning'){ TOAST('งานนี้ยังเป็น Planning — Content ต้องย้ายเป็น Brief ก่อนถึงจะรับได้','info'); return; }
+    var col=gfxStdBriefKey(p)||gfxFirstPlainColKey(p)||'todo';
     var card={ id:gfxUid('g'), person:p, col:col, title:post.title||'', brand:(typeof normalizeBrand==='function'?normalizeBrand(post.brand):(post.brand||'').trim().toLowerCase()), owner:p, graphic:'', followers:'', submitDate:gfxContentDeadline(post), submitTime:'', tags:post.tags||'', note:post.note||'', checklist:[], revisions:[], images:[], srcContent:cid, doneAt:(gfxIsDoneCol(p,col)?nowStamp():''), updatedAt:TS(), updatedBy:(typeof sbEmail==='function'?sbEmail():'') };
-    gfxUpsertLocal(card); gfxReRender(); TOAST('รับงานเข้าบอร์ดแล้ว 📥 (อยู่คอลัมน์แรก)','ok'); gfxSyncCard(card);
+    gfxUpsertLocal(card); gfxReRender(); TOAST('รับงานเข้าบอร์ดแล้ว 📥 (อยู่คอลัมน์ “'+String((gfxColDef(p,col)||{}).title||'แรก').replace(/^[^A-Za-zก-๙]+/,'')+'”)','ok'); gfxSyncCard(card);
     // เชื่อม Content Pipeline: รับงาน → การ์ด Content เลื่อนไป 🎬 กำลังผลิต อัตโนมัติ (เฉพาะถ้ายังอยู่ 📝 บรีฟ)
     try{ if(typeof window.plSetStatus==='function') window.plSetStatus(cid,'production',['brief'],'กราฟฟิกรับงานเข้าบอร์ด'); }catch(e){}
     try{ if(typeof ntAssigned==='function') ntAssigned('content', cid, post.title, [post.owner, post.reviewer, post.followers], p+' รับงานเข้าบอร์ดกราฟฟิกแล้ว (เริ่มผลิต)'); }catch(e){}
@@ -15635,7 +15664,7 @@ details.fm-more[open]{padding-bottom:6px;}
   window.gfxToggleNoCountCol=function(key){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); var c=cols.find(function(x){return x.key===key;}); if(!c) return; c.nocount=!c.nocount; gfxSaveCols(gfxPerson); gfxReRender(); TOAST(c.nocount?('“'+c.title+'” = ไม่นับเป็นจำนวนงาน'):('“'+c.title+'” = นับเป็นจำนวนงานแล้ว'),'ok'); };
   window.gfxReorderCol=function(from,to,after){ if(!gfxCanEdit()||from===to) return false; var cols=gfxEnsureCols(gfxPerson), fi=cols.findIndex(function(x){return x.key===from;}); if(fi<0) return false; var it=cols.splice(fi,1)[0], ti=cols.findIndex(function(x){return x.key===to;}); if(ti<0){ cols.splice(fi,0,it); return false; } cols.splice(ti+(after?1:0),0,it); gfxSaveCols(gfxPerson); gfxReRender(); return true; };
   window.gfxMoveCol=function(key,dir){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); var i=cols.findIndex(function(x){return x.key===key;}); var j=i+dir; if(i<0||j<0||j>=cols.length) return; var tmp=cols[i]; cols[i]=cols[j]; cols[j]=tmp; gfxSaveCols(gfxPerson); gfxReRender(); };
-  window.gfxDelCol=function(key){ if(!gfxCanEdit()) return; var cols=gfxEnsureCols(gfxPerson); if(cols.length<=1){ TOAST('ต้องมีอย่างน้อย 1 คอลัมน์','info'); return; } var c=cols.find(function(x){return x.key===key;}); var inCol=gfxCardsOf(gfxPerson).filter(function(x){return x.col===key;}); if(!confirm('ลบคอลัมน์ “'+((c&&c.title)||'')+'”?'+(inCol.length?(' การ์ด '+inCol.length+' ใบจะย้ายไปคอลัมน์แรก'):''))) return; var newCols=cols.filter(function(x){return x.key!==key;}); GFX_COLS[gfxPerson]=newCols; var firstKey=newCols[0].key; inCol.forEach(function(x){ x.col=firstKey; if(gfxIsDoneCol(gfxPerson,firstKey)){ if(!x.doneAt) x.doneAt=TS(); } else { x.doneAt=''; } x.updatedAt=TS(); gfxUpsertLocal(x); gfxSyncCard(x); }); gfxSaveCols(gfxPerson); gfxReRender(); };
+  window.gfxDelCol=function(key){ if(!gfxCanEdit()) return; if(key==='brief'){ TOAST('📥 Brief เป็นคอลัมน์รับงานมาตรฐานของกราฟฟิกทุกคน — ลบไม่ได้ (แก้ชื่อ/เลื่อนตำแหน่งได้)','info'); return; } var cols=gfxEnsureCols(gfxPerson); if(cols.length<=1){ TOAST('ต้องมีอย่างน้อย 1 คอลัมน์','info'); return; } var c=cols.find(function(x){return x.key===key;}); var inCol=gfxCardsOf(gfxPerson).filter(function(x){return x.col===key;}); if(!confirm('ลบคอลัมน์ “'+((c&&c.title)||'')+'”?'+(inCol.length?(' การ์ด '+inCol.length+' ใบจะย้ายไปคอลัมน์แรก'):''))) return; var newCols=cols.filter(function(x){return x.key!==key;}); GFX_COLS[gfxPerson]=newCols; var firstKey=newCols[0].key; inCol.forEach(function(x){ x.col=firstKey; if(gfxIsDoneCol(gfxPerson,firstKey)){ if(!x.doneAt) x.doneAt=TS(); } else { x.doneAt=''; } x.updatedAt=TS(); gfxUpsertLocal(x); gfxSyncCard(x); }); gfxSaveCols(gfxPerson); gfxReRender(); };
 
   /* เมนู ⋮ ของหัวคอลัมน์ (แทนปุ่มเครื่องมือเดิมที่เรียงอยู่ใต้ชื่อคอลัมน์) */
   window.gfxColMenuClose=function(){ var m=document.getElementById('gfx-colmenu'); if(m && m.parentNode) m.parentNode.removeChild(m); };
@@ -15653,6 +15682,7 @@ details.fm-more[open]{padding-bottom:6px;}
       ['▶','เลื่อนคอลัมน์ไปทางขวา','gfxMoveCol(\''+k+'\',1)', idx>=cols.length-1?'off':''],
       ['🗑️','ลบคอลัมน์','gfxDelCol(\''+k+'\')','danger']
     ];
+    if(c.std||key==='brief'){ items.splice(1,2); items.pop(); }   // คอลัมน์มาตรฐาน: ไม่มีเมนูตั้งเป็น “เสร็จแล้ว” / “ไม่นับงาน” / ลบ (กันงานรับเข้าแล้วถูกนับเสร็จเอง)
     var m=document.createElement('div'); m.id='gfx-colmenu'; m.className='gfx-colmenu'; m.setAttribute('role','menu'); m.setAttribute('data-key',key);
     var btnHtml=function(it){ return '<button type="button" role="menuitem" class="'+it[3]+'"'+(it[3]==='off'?' disabled':'')+' onclick="gfxColMenuClose();'+it[2]+'"><span class="mi">'+it[0]+'</span><span>'+it[1]+'</span></button>'; };
     m.innerHTML='<div class="gfx-colmenu-h">'+E(c.title)+'</div>'+btnHtml(items[0])+(window.hdrSwatchBlock?window.hdrSwatchBlock('gfxSetColColor','gfxResetColColor',key,c.hc||'#3F6DB5','gfxColMenuClose'):'')+items.slice(1).map(btnHtml).join('');
@@ -15776,6 +15806,7 @@ details.fm-more[open]{padding-bottom:6px;}
     rows+=row('ผู้รับผิดชอบ', x.owner?('👤 '+E(x.owner)):'');
     rows+=row('ผู้มอบหมายงาน', x.followers?('👤 '+E(x.followers)):'');
     if(x.srcEcom) rows+=row('มาจาก', '<button class="gfx-goto-btn" onclick="openCardModal(\''+AJ(x.srcEcom)+'\')">🛒 ดูงานต้นทางฝั่ง E-com →</button>');
+    if(x.srcContent) rows+=row('มาจาก', '<button class="gfx-goto-btn" onclick="openCardModal(\''+AJ(x.srcContent)+'\')">✨ ดูงานต้นทางฝั่ง Content →</button> <span style="font-size:11.5px;color:var(--ink-soft);">คอมเมนต์ห้องเดียวกัน เห็นตรงกันทั้งสองฝั่ง</span>');
     rows+=row('แท็ก', tags);
     rows+=row('รายละเอียดงาน', x.note?linkBtnsHtml(x.note):'');
     // checklist
@@ -16196,7 +16227,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var um=unmappedMentions(text);
     if(um.length && typeof toast==='function') toast('แท็ก '+um.join(', ')+' แล้ว แต่ยังไม่ได้ผูกอีเมล จึงไม่ได้รับแจ้งเตือน','info');
   };
-  window.ntContentMoved=function(card,label){ window.ntEmit({kind:'status',board:'content',refId:card.id,title:card.title,body:label,names:[card.owner,card.reviewer,card.followers,card.gfxPic]}); };
+  window.ntContentMoved=function(card,label){ window.ntEmit({kind:'status',board:'content',refId:card.id,title:card.title,body:label,names:[card.owner,card.reviewer,card.followers,(card.status==='planning'?'':card.gfxPic)]}); };
   window.ntGfxMoved=function(card,label,done){ var info=cardInfo(card.id); window.ntEmit({kind:'status',board:'graphic',refId:card.id,title:card.title,body:done?('ทำเสร็จแล้ว ✅ → '+label):('ย้ายไป “'+label+'”'),names:info.names}); };
   window.ntEcomMoved=function(card,label){ window.ntEmit({kind:'status',board:'ecom',refId:card.id,title:card.title,body:'ย้ายไป '+label,names:[card.owner,card.followers,card.graphic]}); };
   window.ntAssigned=function(board,id,title,names,body){ window.ntEmit({kind:'assign',board:board,refId:id,title:title,body:body||'มอบหมายงานให้คุณ',names:names}); };
@@ -19513,7 +19544,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   document.addEventListener('dragend',hide,true);
 })();
 </script>
-<script type="application/json" id="whatsnew-data">{"id":"20261009-2038","date":"2026-10-09","title":"กรองแจ้งเตือนได้ — แท็ก / ย้าย / คอมเมนต์ + ดูเฉพาะที่ยังไม่อ่าน","items":[{"ic":"🔔","t":"ปุ่มแยกชนิดแจ้งเตือนในกระดิ่ง","d":"กด ＠ แท็ก · 🔁 ย้าย · 💬 คอมเมนต์ · 📌 มอบหมาย · 📋 อื่นๆ เพื่อดูเฉพาะชนิดนั้น แต่ละปุ่มมีตัวเลขที่ยังไม่อ่าน กดซ้ำเพื่อกลับไปดูทั้งหมด"},{"ic":"●","t":"ดูเฉพาะข้อความที่ยังไม่อ่าน","d":"ปุ่ม “ยังไม่อ่าน” ใช้ร่วมกับชนิดได้ (เช่น แท็กที่ยังไม่อ่าน) · ปุ่ม “อ่านที่เห็นทั้งหมด” จะอ่านเฉพาะที่กรองอยู่ · เครื่องจำตัวกรองที่เลือกไว้ให้"}],"history":[{"id":"20261009-1945","date":"2026-10-09","title":"เตือนการ์ดที่ลืมย้ายเป็น “โพสต์แล้ว” + บอกสีสถานะชัดขึ้น","items":[{"ic":"⏰","t":"เตือนการ์ดที่อนุมัติแล้วแต่เลยวันลงโพสต์","d":"การ์ดสถานะ ✅ อนุมัติ (รอโพสต์) ที่วันลงโพสต์ผ่านไปแล้ว จะมีป้าย ⏰ ที่ชิปในปฏิทิน การ์ดบนบอร์ด และกล่องสีเหลืองด้านบน — ถ้าโพสต์ไปแล้วให้ย้ายเป็น 🚀 โพสต์แล้ว"},{"ic":"🎨","t":"แถบสีสถานะบอกชื่อสีชัดเจน","d":"แต่ละสถานะเป็นป้ายสีพร้อมชื่อสี (เหลือง · ส้ม · ม่วง · แดง · เขียว · น้ำเงิน · เขียวอมฟ้า) และบอกว่าตอนนี้สีชิป = สถานะ หรือ = ประเภทงาน — โหมดวันลงโพสต์มีจุดสีสถานะหน้าชื่อชิปด้วย"}]},{"id":"20261009-1505","date":"2026-10-09","title":"แชทเตือนดัง-ทันใจขึ้น + ปล่อยการ์ดไม่สะดุด","items":[{"ic":"🔔","t":"เสียงแจ้งเตือนแชทดังชัดขึ้น","d":"เสียงใหม่เป็นสองโน้ต ดังขึ้นหลายเท่า และปลุกระบบเสียงรอไว้ล่วงหน้า เสียงแรกจึงไม่ตกหรือมาช้า (ปิด/เปิดเสียงที่ปุ่มกระดิ่งหัวแชทเหมือนเดิม)"},{"ic":"⚡","t":"แชทแจ้งเร็วขึ้น ไม่ค้างเงียบ","d":"ถ้าสัญญาณเรียลไทม์หลุด (เน็ตสะดุด พับจอ ซ่อนแท็บนาน) ระบบต่อใหม่เอง ไม่ต้องรีเฟรช · ข้อความที่ตกหล่นดึงมาพร้อมเสียงเตือน · กลับมาที่แท็บแล้วดึงข้อความที่พลาดทันที · คนส่งช่วยสะกิดให้เครื่องอื่นดึงข้อความทันที"},{"ic":"🖱️","t":"ปล่อยการ์ดเร็วขึ้น 2–3 เท่า","d":"ตอนปล่อยการ์ด ระบบวาดเฉพาะการ์ด/คอลัมน์ที่เปลี่ยน ไม่วาดทั้งบอร์ดใหม่ — รูปในการ์ดไม่กะพริบ ตำแหน่งเลื่อนของบอร์ดไม่เด้ง (Content · E-commerce · Graphic)"},{"ic":"🗂️","t":"จัดลำดับคอลัมน์ยาวๆ ไวขึ้น","d":"บันทึกลำดับการ์ดในเครื่องครั้งเดียวแทนการบันทึกซ้ำทุกใบ"}]},{"id":"20261009-1136","date":"2026-10-09","title":"ลากการ์ดเบาลงอีก — การ์ดข้อมูลเยอะก็ลื่น","items":[{"ic":"🪶","t":"ลากการ์ดที่มีข้อมูลเยอะลื่นขึ้น","d":"ตอนลาก ระบบจะแสดงการ์ดเป็นแบบย่อ (ชื่อ + หัวข้อสำคัญ) แทนการก๊อปทั้งใบพร้อมรูปและปุ่มทั้งหมด หน้าเว็บเลยไม่ต้องคำนวณใหม่ทั้งหน้าทุกครั้งที่ขยับเมาส์ — ยิ่งการ์ดข้อมูลเยอะยิ่งเห็นความต่าง"},{"ic":"🎯","t":"จุดที่จะวางชัดขึ้น","d":"คอลัมน์ปลายทางมีกรอบไฮไลต์ เส้นสีฟ้าบอกตำแหน่งที่การ์ดจะลงตรงๆ และการ์ดต้นทางจางลงให้เห็นว่ากำลังย้ายใบไหน"}]},{"id":"20261009-1058","date":"2026-10-09","title":"ลากการ์ดลื่นขึ้น + ย้ายแล้วเห็นผลทันที","items":[{"ic":"⚡","t":"ย้ายการ์ด Content แล้วการ์ดไปอยู่คอลัมน์ใหม่ทันที","d":"แก้อาการหน่วงตอนวางการ์ด — เดิมการ์ดจะรอให้ระบบบันทึกเสร็จก่อนถึงย้ายให้เห็น ตอนนี้ย้ายให้เห็นทันที (รวมถึงการสลับลำดับ แก้ไขการ์ด และขยายเวลาส่ง)"},{"ic":"🖱️","t":"ลากการ์ดแบบใหม่ ลื่นขึ้นมาก (Content · E-commerce · Graphic)","d":"การ์ดลอยตามเมาส์ เส้นสีฟ้าบอกตำแหน่งที่จะวาง คอลัมน์ปลายทางไฮไลต์ ลากชิดขอบแล้วบอร์ด/รายการเลื่อนให้เอง กด Esc เพื่อยกเลิก ปล่อยแล้วการ์ดร่อนเข้าที่ — บนมือถือ กดการ์ดค้างแล้วลากได้"}]},{"id":"20261009-0106","date":"2026-10-09","title":"เกมงู: เก็บเหรียญ + แต่งตัวหนอน","items":[{"ic":"🪙","t":"เกมงูมีเหรียญให้เก็บแล้ว","d":"เหรียญทองโผล่ในกระดานเป็นช่วงๆ (หายใน ~7 วินาที) เหรียญใหญ่ได้ +5 และจบเกมได้โบนัส 1 เหรียญทุก 50 แต้ม — เหรียญไม่ปนกับคะแนนทีม ล็อกอินเพื่อเก็บเข้ากระเป๋า"},{"ic":"🎨","t":"ร้านแต่งตัวหนอน 17 สกิน","d":"ฟรี 5 แบบ แล้วไล่ระดับ Common (25) → Rare (80) → Epic (200) → Legendary (400) เช่น ราชา นักบินอวกาศ นินจา มังกรเพลิง กาแล็กซี — กดปุ่ม “🎨 แต่งตัวหนอน” ใต้กระดานเกมงู"}]},{"id":"20261008-1535","date":"2026-10-08","title":"เตือนพักผ่อน 15:00 น.","items":[{"ic":"☕","t":"เตือนพักผ่อนทุกวันจันทร์–ศุกร์ 15:00 น.","d":"ป๊อปอัปภาพสวยๆ “It's time for some relaxing time.” พร้อมเพลงและพลุกระดาษสี — กด ✕ หรือ “ขอบคุณ พักแล้ว” เพื่อปิด (หรือกด Esc) · ปิดการเตือนบนเครื่องตัวเองและกดดูตัวอย่างได้จากปุ่ม ✨ มุมขวาบน"}]},{"id":"20261008-1518","date":"2026-10-08","title":"เกม UNO + แจ้งเตือนอัปเดต","items":[{"ic":"🃏","t":"เพิ่มเกม UNO ใน Game Zone","d":"ซ้อมกับบอทได้เลยไม่ต้องล็อกอิน มีวิธีเล่นแบบภาพในเกม — กดการ์ดที่เรืองแสงเขียวเพื่อลง"},{"ic":"👥","t":"เล่น UNO กับเพื่อนแบบเรียลไทม์","d":"เปิดห้อง ตั้งจำนวนคน/เวลาต่อตา แล้วชวนเพื่อนเข้าห้อง ที่ว่างมีบอทมาเล่นแทน — นับชนะ/แพ้ในตารางคะแนนทีม"},{"ic":"📨","t":"ชวนเพื่อนเล่น + เตือนเมื่อถึงตา","d":"เพื่อนที่ออนไลน์จะเห็นป๊อปอัปคำเชิญ กด “เข้าร่วมเลย” ได้ทันที และเมื่อถึงตาคุณจะมีเสียง/แถบเตือน แม้อยู่เมนูอื่น"},{"ic":"✨","t":"แจ้งเตือนเมื่อมีอัปเดตใหม่","d":"ต่อไปนี้ถ้ามีเวอร์ชันใหม่ จะมีแถบเตือนให้กดดูว่ามีอะไรเปลี่ยนก่อน แล้วค่อยกด “อัปเดตเลย” — และกดปุ่ม ✨ มุมขวาบนเพื่อดูย้อนหลังได้ตลอด"}]},{"id":"20261007","date":"2026-10-07","title":"แชท การ์ด ไฟล์ และเกม","items":[{"ic":"🙈","t":"แชทซ่อนห้องที่ไม่สนใจได้","d":"และสีแชทใหม่ที่อ่านง่ายขึ้น"},{"ic":"📎","t":"คอมเมนต์ลากไฟล์ลงได้","d":"มีตัวอย่าง PDF/ไฟล์ และดาวน์โหลดแล้วชื่อไทยไม่เพี้ยน"},{"ic":"✍️","t":"แก้ไขคอมเมนต์ + จัดรูปแบบข้อความได้","d":"มีแท็บ ความเห็น / ไฟล์"},{"ic":"🖐️","t":"ลากบอร์ดซ้าย-ขวาได้ และลากสลับคอลัมน์ได้","d":"Content / E-com / Graphic"},{"ic":"🕒","t":"ประวัติการย้ายการ์ดอ่านง่ายขึ้น","d":"เวลาเป็นภาษาไทย รวมรายการที่สลับไปมา"},{"ic":"🎨","t":"ปฏิทิน Content โทนพาสเทล","d":""},{"ic":"❌⭕","t":"แก้ XO ค้างตอนเล่นกับเพื่อน","d":""}]}]}</script>
+<script type="application/json" id="whatsnew-data">{"id":"20261009-2132","date":"2026-10-09","title":"Planning → Brief · กราฟฟิกทุกคนมีคอลัมน์ Brief เหมือนกัน","items":[{"ic":"🗂️","t":"Content มีคอลัมน์ Planning ก่อน Brief","d":"การ์ดใหม่เริ่มที่ Planning = ยังวางแผน ยังไม่ส่งให้กราฟฟิก · ย้ายเป็น Brief (เปลี่ยนชื่อจาก “บรีฟ/ไอเดีย”) เมื่อพร้อมส่งงาน กราฟฟิกถึงจะเห็นในช่อง “จาก Content” · การ์ดเดิมที่อยู่ Brief คงเดิม"},{"ic":"📥","t":"กราฟฟิกทุกคนมีคอลัมน์ 📥 Brief เหมือนกัน","d":"กด 📥 รับงานจาก Content แล้วการ์ดลงคอลัมน์ Brief ของทุกคน (ไม่ไปลงคอลัมน์ E-com อีก) · เพิ่มการ์ดเองด้วยปุ่ม ➕ ในแต่ละคอลัมน์ (เอาปุ่มบนสุดออกแล้ว) · การ์ดที่รับจาก Content ไม่ถูกนับเป็นงาน E-com เองอีก"},{"ic":"💬","t":"ห้องคุยร่วม Content ⇄ Graphic","d":"การ์ดที่บรีฟไปกราฟฟิกมีแถบ “ห้องคุยร่วม” + ปุ่มกดข้ามไปการ์ดอีกฝั่ง (เหมือน E-com) · คอมเมนต์เป็นชุดเดียวกัน เห็นตรงกันทั้งสองทีม และแจ้งเตือนถึงกัน"}],"history":[{"id":"20261009-2038","date":"2026-10-09","title":"กรองแจ้งเตือนได้ — แท็ก / ย้าย / คอมเมนต์ + ดูเฉพาะที่ยังไม่อ่าน","items":[{"ic":"🔔","t":"ปุ่มแยกชนิดแจ้งเตือนในกระดิ่ง","d":"กด ＠ แท็ก · 🔁 ย้าย · 💬 คอมเมนต์ · 📌 มอบหมาย · 📋 อื่นๆ เพื่อดูเฉพาะชนิดนั้น แต่ละปุ่มมีตัวเลขที่ยังไม่อ่าน กดซ้ำเพื่อกลับไปดูทั้งหมด"},{"ic":"●","t":"ดูเฉพาะข้อความที่ยังไม่อ่าน","d":"ปุ่ม “ยังไม่อ่าน” ใช้ร่วมกับชนิดได้ (เช่น แท็กที่ยังไม่อ่าน) · ปุ่ม “อ่านที่เห็นทั้งหมด” จะอ่านเฉพาะที่กรองอยู่ · เครื่องจำตัวกรองที่เลือกไว้ให้"}]},{"id":"20261009-1945","date":"2026-10-09","title":"เตือนการ์ดที่ลืมย้ายเป็น “โพสต์แล้ว” + บอกสีสถานะชัดขึ้น","items":[{"ic":"⏰","t":"เตือนการ์ดที่อนุมัติแล้วแต่เลยวันลงโพสต์","d":"การ์ดสถานะ ✅ อนุมัติ (รอโพสต์) ที่วันลงโพสต์ผ่านไปแล้ว จะมีป้าย ⏰ ที่ชิปในปฏิทิน การ์ดบนบอร์ด และกล่องสีเหลืองด้านบน — ถ้าโพสต์ไปแล้วให้ย้ายเป็น 🚀 โพสต์แล้ว"},{"ic":"🎨","t":"แถบสีสถานะบอกชื่อสีชัดเจน","d":"แต่ละสถานะเป็นป้ายสีพร้อมชื่อสี (เหลือง · ส้ม · ม่วง · แดง · เขียว · น้ำเงิน · เขียวอมฟ้า) และบอกว่าตอนนี้สีชิป = สถานะ หรือ = ประเภทงาน — โหมดวันลงโพสต์มีจุดสีสถานะหน้าชื่อชิปด้วย"}]},{"id":"20261009-1505","date":"2026-10-09","title":"แชทเตือนดัง-ทันใจขึ้น + ปล่อยการ์ดไม่สะดุด","items":[{"ic":"🔔","t":"เสียงแจ้งเตือนแชทดังชัดขึ้น","d":"เสียงใหม่เป็นสองโน้ต ดังขึ้นหลายเท่า และปลุกระบบเสียงรอไว้ล่วงหน้า เสียงแรกจึงไม่ตกหรือมาช้า (ปิด/เปิดเสียงที่ปุ่มกระดิ่งหัวแชทเหมือนเดิม)"},{"ic":"⚡","t":"แชทแจ้งเร็วขึ้น ไม่ค้างเงียบ","d":"ถ้าสัญญาณเรียลไทม์หลุด (เน็ตสะดุด พับจอ ซ่อนแท็บนาน) ระบบต่อใหม่เอง ไม่ต้องรีเฟรช · ข้อความที่ตกหล่นดึงมาพร้อมเสียงเตือน · กลับมาที่แท็บแล้วดึงข้อความที่พลาดทันที · คนส่งช่วยสะกิดให้เครื่องอื่นดึงข้อความทันที"},{"ic":"🖱️","t":"ปล่อยการ์ดเร็วขึ้น 2–3 เท่า","d":"ตอนปล่อยการ์ด ระบบวาดเฉพาะการ์ด/คอลัมน์ที่เปลี่ยน ไม่วาดทั้งบอร์ดใหม่ — รูปในการ์ดไม่กะพริบ ตำแหน่งเลื่อนของบอร์ดไม่เด้ง (Content · E-commerce · Graphic)"},{"ic":"🗂️","t":"จัดลำดับคอลัมน์ยาวๆ ไวขึ้น","d":"บันทึกลำดับการ์ดในเครื่องครั้งเดียวแทนการบันทึกซ้ำทุกใบ"}]},{"id":"20261009-1136","date":"2026-10-09","title":"ลากการ์ดเบาลงอีก — การ์ดข้อมูลเยอะก็ลื่น","items":[{"ic":"🪶","t":"ลากการ์ดที่มีข้อมูลเยอะลื่นขึ้น","d":"ตอนลาก ระบบจะแสดงการ์ดเป็นแบบย่อ (ชื่อ + หัวข้อสำคัญ) แทนการก๊อปทั้งใบพร้อมรูปและปุ่มทั้งหมด หน้าเว็บเลยไม่ต้องคำนวณใหม่ทั้งหน้าทุกครั้งที่ขยับเมาส์ — ยิ่งการ์ดข้อมูลเยอะยิ่งเห็นความต่าง"},{"ic":"🎯","t":"จุดที่จะวางชัดขึ้น","d":"คอลัมน์ปลายทางมีกรอบไฮไลต์ เส้นสีฟ้าบอกตำแหน่งที่การ์ดจะลงตรงๆ และการ์ดต้นทางจางลงให้เห็นว่ากำลังย้ายใบไหน"}]},{"id":"20261009-1058","date":"2026-10-09","title":"ลากการ์ดลื่นขึ้น + ย้ายแล้วเห็นผลทันที","items":[{"ic":"⚡","t":"ย้ายการ์ด Content แล้วการ์ดไปอยู่คอลัมน์ใหม่ทันที","d":"แก้อาการหน่วงตอนวางการ์ด — เดิมการ์ดจะรอให้ระบบบันทึกเสร็จก่อนถึงย้ายให้เห็น ตอนนี้ย้ายให้เห็นทันที (รวมถึงการสลับลำดับ แก้ไขการ์ด และขยายเวลาส่ง)"},{"ic":"🖱️","t":"ลากการ์ดแบบใหม่ ลื่นขึ้นมาก (Content · E-commerce · Graphic)","d":"การ์ดลอยตามเมาส์ เส้นสีฟ้าบอกตำแหน่งที่จะวาง คอลัมน์ปลายทางไฮไลต์ ลากชิดขอบแล้วบอร์ด/รายการเลื่อนให้เอง กด Esc เพื่อยกเลิก ปล่อยแล้วการ์ดร่อนเข้าที่ — บนมือถือ กดการ์ดค้างแล้วลากได้"}]},{"id":"20261009-0106","date":"2026-10-09","title":"เกมงู: เก็บเหรียญ + แต่งตัวหนอน","items":[{"ic":"🪙","t":"เกมงูมีเหรียญให้เก็บแล้ว","d":"เหรียญทองโผล่ในกระดานเป็นช่วงๆ (หายใน ~7 วินาที) เหรียญใหญ่ได้ +5 และจบเกมได้โบนัส 1 เหรียญทุก 50 แต้ม — เหรียญไม่ปนกับคะแนนทีม ล็อกอินเพื่อเก็บเข้ากระเป๋า"},{"ic":"🎨","t":"ร้านแต่งตัวหนอน 17 สกิน","d":"ฟรี 5 แบบ แล้วไล่ระดับ Common (25) → Rare (80) → Epic (200) → Legendary (400) เช่น ราชา นักบินอวกาศ นินจา มังกรเพลิง กาแล็กซี — กดปุ่ม “🎨 แต่งตัวหนอน” ใต้กระดานเกมงู"}]},{"id":"20261008-1535","date":"2026-10-08","title":"เตือนพักผ่อน 15:00 น.","items":[{"ic":"☕","t":"เตือนพักผ่อนทุกวันจันทร์–ศุกร์ 15:00 น.","d":"ป๊อปอัปภาพสวยๆ “It's time for some relaxing time.” พร้อมเพลงและพลุกระดาษสี — กด ✕ หรือ “ขอบคุณ พักแล้ว” เพื่อปิด (หรือกด Esc) · ปิดการเตือนบนเครื่องตัวเองและกดดูตัวอย่างได้จากปุ่ม ✨ มุมขวาบน"}]},{"id":"20261008-1518","date":"2026-10-08","title":"เกม UNO + แจ้งเตือนอัปเดต","items":[{"ic":"🃏","t":"เพิ่มเกม UNO ใน Game Zone","d":"ซ้อมกับบอทได้เลยไม่ต้องล็อกอิน มีวิธีเล่นแบบภาพในเกม — กดการ์ดที่เรืองแสงเขียวเพื่อลง"},{"ic":"👥","t":"เล่น UNO กับเพื่อนแบบเรียลไทม์","d":"เปิดห้อง ตั้งจำนวนคน/เวลาต่อตา แล้วชวนเพื่อนเข้าห้อง ที่ว่างมีบอทมาเล่นแทน — นับชนะ/แพ้ในตารางคะแนนทีม"},{"ic":"📨","t":"ชวนเพื่อนเล่น + เตือนเมื่อถึงตา","d":"เพื่อนที่ออนไลน์จะเห็นป๊อปอัปคำเชิญ กด “เข้าร่วมเลย” ได้ทันที และเมื่อถึงตาคุณจะมีเสียง/แถบเตือน แม้อยู่เมนูอื่น"},{"ic":"✨","t":"แจ้งเตือนเมื่อมีอัปเดตใหม่","d":"ต่อไปนี้ถ้ามีเวอร์ชันใหม่ จะมีแถบเตือนให้กดดูว่ามีอะไรเปลี่ยนก่อน แล้วค่อยกด “อัปเดตเลย” — และกดปุ่ม ✨ มุมขวาบนเพื่อดูย้อนหลังได้ตลอด"}]},{"id":"20261007","date":"2026-10-07","title":"แชท การ์ด ไฟล์ และเกม","items":[{"ic":"🙈","t":"แชทซ่อนห้องที่ไม่สนใจได้","d":"และสีแชทใหม่ที่อ่านง่ายขึ้น"},{"ic":"📎","t":"คอมเมนต์ลากไฟล์ลงได้","d":"มีตัวอย่าง PDF/ไฟล์ และดาวน์โหลดแล้วชื่อไทยไม่เพี้ยน"},{"ic":"✍️","t":"แก้ไขคอมเมนต์ + จัดรูปแบบข้อความได้","d":"มีแท็บ ความเห็น / ไฟล์"},{"ic":"🖐️","t":"ลากบอร์ดซ้าย-ขวาได้ และลากสลับคอลัมน์ได้","d":"Content / E-com / Graphic"},{"ic":"🕒","t":"ประวัติการย้ายการ์ดอ่านง่ายขึ้น","d":"เวลาเป็นภาษาไทย รวมรายการที่สลับไปมา"},{"ic":"🎨","t":"ปฏิทิน Content โทนพาสเทล","d":""},{"ic":"❌⭕","t":"แก้ XO ค้างตอนเล่นกับเพื่อน","d":""}]}]}</script>
 <script id="update-notice-2026-10-08">
 /* ✨ แจ้งเตือนอัปเดตใหม่ + “มีอะไรใหม่” (2026-10-08)
    • เว็บนี้ฝังรหัสเวอร์ชันไว้ที่ <meta name="npd-build"> (บนสุดของไฟล์) และโน้ตการอัปเดตใน <script type="application/json" id="whatsnew-data">
