@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="npd-build" content="20261009-1945">
+<meta name="npd-build" content="20261009-2038">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Godmami · NPD Product Calendar</title>
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -15928,6 +15928,13 @@ details.fm-more[open]{padding-bottom:6px;}
   var SND_KEY='npd_nt_sound_v1';
   var BOARDS={ content:{t:'Content',c:'#FFB7CF',ic:'✨'}, graphic:{t:'Graphic',c:'#BED1E8',ic:'🎨'}, ecom:{t:'E-Commerce',c:'#a2d7c3',ic:'🛒'}, npd:{t:'NPD',c:'#FFF8B2',ic:'📋'}, chat:{t:'แชท',c:'#D8CCF7',ic:'💬'} };
   var KIND_IC={ mention:'＠', comment:'💬', status:'🔁', assign:'📌', npd:'📋', due:'⏰' };
+  /* ตัวกรองแผงแจ้งเตือน: ชนิด (แท็ก/ย้าย/คอมเมนต์/มอบหมาย/อื่นๆ) + เฉพาะที่ยังไม่อ่าน — จำค่าไว้ต่อเครื่อง */
+  var NTF_KEY='npd_nt_filter_v1', NTF={k:'all',u:false}, NT_LIM=60;
+  var NTF_KINDS=[['all','ทั้งหมด','','เห็นทุกชนิด'],['mention','＠','แท็ก','ถูกแท็ก @'],['status','🔁','ย้าย','การ์ดถูกย้ายสถานะ/คอลัมน์'],['comment','💬','คอมเมนต์','คอมเมนต์/ตอบกลับ'],['assign','📌','มอบหมาย','ถูกมอบหมายงาน'],['other','📋','อื่นๆ','NPD · ใกล้ครบกำหนด · อื่นๆ']];
+  try{ var _nf=JSON.parse(localStorage.getItem(NTF_KEY)||'null'); if(_nf&&typeof _nf==='object'){ NTF.k=String(_nf.k||'all'); NTF.u=!!_nf.u; } }catch(e){}
+  function ntKindOf(n){ var k=n&&n.kind; return (k==='mention'||k==='status'||k==='comment'||k==='assign')?k:'other'; }
+  function ntSaveF(){ try{ localStorage.setItem(NTF_KEY,JSON.stringify(NTF)); }catch(e){} }
+  function ntFiltered(){ return NT.filter(function(n){ return (NTF.k==='all'||ntKindOf(n)===NTF.k)&&(!NTF.u||!n.readAt); }); }
 
   /* ---------- identity ---------- */
   var ALIAS={'ไอซ์':'ไอซ์GP','ไอซ์ GP':'ไอซ์GP','ไอซ์ SC':'ไอซ์SC'};
@@ -16136,6 +16143,7 @@ details.fm-more[open]{padding-bottom:6px;}
     }catch(e){}
   }
   window.ntLoadNow=function(){ return load(); };
+  if(window.__TEST) window.__ntT={get:function(){ return {NT:NT,NTF:NTF,NT_LIM:NT_LIM}; }};
 
   /* ---------- สร้างแจ้งเตือน (ฝั่งผู้ทำรายการ → เขียนแถวให้ผู้รับ) ---------- */
   async function insertRow(row){ try{ var r=await postToSheet({target:'notifications',action:'append',row:row}); return !!(r&&r.ok); }catch(e){ return false; } }
@@ -16260,7 +16268,12 @@ details.fm-more[open]{padding-bottom:6px;}
     if(!changed.length) return; render();
     try{ await sbInit(); await SB_CLIENT.from('notifications').update({readAt:stamp}).in('id',changed); }catch(e){}
   }
-  window.ntMarkAll=function(){ markRead(NT.filter(function(n){return !n.readAt;}).map(function(n){return n.id;})); };
+  window.ntMarkAll=function(){ markRead(ntFiltered().filter(function(n){return !n.readAt;}).map(function(n){return n.id;})); };   // มีตัวกรองอยู่ = อ่านเฉพาะที่เห็น
+  function ntRefilter(top){ var p=document.getElementById('nt-panel'); renderPanel(); if(top){ var l=p&&p.querySelector('.nt-list'); if(l) l.scrollTop=0; } }
+  window.ntFilterKind=function(k){ NTF.k=(NTF.k===k&&k!=='all')?'all':k; ntSaveF(); NT_LIM=60; ntRefilter(true); };
+  window.ntFilterUnread=function(){ NTF.u=!NTF.u; ntSaveF(); NT_LIM=60; ntRefilter(true); };
+  window.ntFilterClear=function(){ NTF.k='all'; NTF.u=false; ntSaveF(); NT_LIM=60; ntRefilter(true); };
+  window.ntMore=function(){ NT_LIM+=60; ntRefilter(false); };
 
   /* ---------- UI: ระฆัง + แผง ---------- */
   function ago(ts){
@@ -16279,31 +16292,43 @@ details.fm-more[open]{padding-bottom:6px;}
   }
   function renderPanel(){
     var p=document.getElementById('nt-panel'); if(!p) return;
+    var oldList=p.querySelector('.nt-list'), keepTop=oldList?oldList.scrollTop:0;
     var c=unread(), on=soundOn(), html='';
     html+='<div class="nt-ph"><b>แจ้งเตือนของคุณ</b><span>'+(c?('ใหม่ '+c+' รายการ'):'ไม่มีรายการใหม่')+'</span></div>';
     if(loggedIn()){ var me=myEmail(), nick=emap()[me]||'';
       html+='<div class="nt-me'+(nick?'':' bad')+'">'+(nick?('👤 ล็อกอินเป็น <b>'+E(nick)+'</b> · '+E(me)):('⚠️ อีเมล <b>'+E(me)+'</b> ยังไม่ผูกกับชื่อใคร — จะไม่ได้รับแจ้งเตือน/การแท็ก (แจ้งผู้ดูแลให้ผูกอีเมลกับชื่อ)'))+'</div>'; }
+    var shown=ntFiltered(), filtering=(NTF.k!=='all'||NTF.u), shownUn=shown.filter(function(n){return !n.readAt;}).length;
+    if(loggedIn()&&ntBroken!=='missing'&&NT.length){
+      var tot={}, un={}; NT.forEach(function(n){ var k=ntKindOf(n); tot[k]=(tot[k]||0)+1; if(!n.readAt) un[k]=(un[k]||0)+1; });
+      html+='<div class="nt-fl" role="group" aria-label="กรองแจ้งเตือน">'+NTF_KINDS.filter(function(f){ return f[0]==='all'||tot[f[0]]||NTF.k===f[0]; }).map(function(f){
+        var on1=(NTF.k===f[0]), n=(f[0]==='all')?c:(un[f[0]]||0);
+        return '<button type="button" class="nt-fc'+(on1?' on':'')+'" aria-pressed="'+(on1?'true':'false')+'" title="'+E(f[3])+'" onclick="ntFilterKind(\''+f[0]+'\')"><span class="ic">'+f[1]+'</span>'+(f[2]?'<span>'+f[2]+'</span>':'')+(n?'<i>'+(n>99?'99+':n)+'</i>':'')+'</button>'; }).join('')
+        +'<button type="button" class="nt-fc nt-fu'+(NTF.u?' on':'')+'" aria-pressed="'+(NTF.u?'true':'false')+'" title="แสดงเฉพาะที่ยังไม่อ่าน" onclick="ntFilterUnread()"><span class="ic">●</span><span>ยังไม่อ่าน</span></button></div>';
+    }
     html+='<div class="nt-list">';
     if(!loggedIn()) html+='<div class="nt-empty">เข้าสู่ระบบ (ปุ่มมุมขวาล่าง) เพื่อดูแจ้งเตือน</div>';
     else if(ntBroken==='missing') html+='<div class="nt-empty">ระบบแจ้งเตือนยังไม่พร้อมใช้งาน<br><small>ผู้ดูแลต้องรัน notifications.sql ใน Supabase 1 ครั้ง</small></div>';
     else if(!NT.length) html+='<div class="nt-empty">ยังไม่มีแจ้งเตือน<br><small>เมื่อมีคนแท็กคุณ คอมเมนต์ในงานของคุณ หรือสถานะงานเปลี่ยน จะขึ้นที่นี่</small></div>';
-    else NT.slice(0,60).forEach(function(n){
+    else if(!shown.length) html+='<div class="nt-empty">ไม่มีรายการที่ตรงกับตัวกรอง<br><button type="button" class="nt-clr" onclick="ntFilterClear()">ล้างตัวกรอง</button></div>';
+    else { shown.slice(0,NT_LIM).forEach(function(n){
       var bd=BOARDS[n.board]||BOARDS.content;
-      html+='<div class="nt-it'+(n.readAt?'':' un')+'" onclick="ntOpen(\''+String(n.id).replace(/'/g,"\\'")+'\')">'
+      html+='<div class="nt-it'+(n.readAt?'':' un')+'" data-k="'+ntKindOf(n)+'" onclick="ntOpen(\''+String(n.id).replace(/'/g,"\\'")+'\')">'
         +'<div class="nt-ic" style="background:'+bd.c+';">'+(KIND_IC[n.kind]||'🔔')+'</div>'
         +'<div class="nt-tx"><span class="nt-tag" style="background:'+bd.c+';">'+E(bd.t)+'</span>'
         +'<b>'+E(n.fromName||'ระบบ')+'</b> · '+E(n.title||'')+'<div class="nt-sub">'+E(n.body||'')+'</div></div>'
         +'<div class="nt-time">'+E(ago(n.createdAt))+'</div>'+(n.readAt?'':'<span class="nt-dot"></span>')+'</div>';
-    });
+      });
+      if(shown.length>NT_LIM) html+='<div class="nt-moreb"><button type="button" onclick="ntMore()">แสดงเพิ่ม ('+(shown.length-NT_LIM)+' รายการ)</button></div>'; }
     var dpm=deskPerm(), dhelp=(dpm==='denied')?'เบราว์เซอร์บล็อกไว้ — กดไอคอนข้างช่อง URL → การแจ้งเตือน → อนุญาต แล้วรีเฟรชหน้านี้':((dpm==='granted'&&deskOn())?'เด้งที่มุมจอแม้อยู่แท็บอื่น · ต้องเปิดเว็บนี้ค้างไว้ในเบราว์เซอร์':'เปิดเพื่อให้เด้งที่มุมจอแม้อยู่แท็บอื่น');
     html+='</div>'+((loggedIn()&&deskLabel())?('<div class="nt-dk"><button type="button" onclick="ntDeskToggle()" title="แจ้งเตือนที่มุมจอ ตอนไม่ได้เปิดหน้านี้อยู่">'+deskLabel()+'</button>'+'<button type="button" onclick="ntDiag()" title="ตรวจว่าเครื่องนี้เด้งแจ้งเตือนได้ไหม">🔎 ตรวจเครื่องนี้</button>'+(dpm==='granted'?'<button type="button" onclick="ntDeskTest()" title="ส่งแจ้งเตือนทดสอบ">🧪 ทดสอบ</button>':'')+'<small>'+dhelp+'</small></div>'):'')
-      +'<div class="nt-pf"><button type="button" onclick="ntMarkAll()">✓ อ่านทั้งหมด</button>'
+      +'<div class="nt-pf"><button type="button" onclick="ntMarkAll()">'+(filtering?('✓ อ่านที่เห็นทั้งหมด'+(shownUn?' ('+shownUn+')':'')):'✓ อ่านทั้งหมด')+'</button>'
       +'<span class="nt-snd"><button type="button" onclick="ntSoundToggle()" title="เปิด/ปิดเสียง">'+(on?'🔊 เสียง: เปิด':'🔇 เสียง: ปิด')+'</button>'
       +'<button type="button" title="ฟังเสียง Content" onclick="ntSoundTest(\'content\')" style="background:#FFB7CF;">C</button>'
       +'<button type="button" title="ฟังเสียง Graphic" onclick="ntSoundTest(\'graphic\')" style="background:#BED1E8;">G</button>'
       +'<button type="button" title="ฟังเสียง NPD" onclick="ntSoundTest(\'npd\')" style="background:#FFF8B2;">N</button>'
       +'<button type="button" title="ฟังเสียง E-Commerce" onclick="ntSoundTest(\'ecom\')" style="background:#a2d7c3;">E</button></span></div>';
     p.innerHTML=html;
+    if(keepTop){ var nl=p.querySelector('.nt-list'); if(nl) nl.scrollTop=keepTop; }
   }
   function ensurePanel(){
     var p=document.getElementById('nt-panel'); if(p) return p;
@@ -16419,6 +16444,13 @@ details.fm-more[open]{padding-bottom:6px;}
    +'.nt-time{font-size:11.5px;color:#8A7B6F;white-space:nowrap;}'
    +'.nt-dot{width:8px;height:8px;border-radius:50%;background:#FF91C0;flex:none;margin-top:6px;}'
    +'.nt-empty{padding:34px 20px;text-align:center;color:#8A7B6F;font-size:13px;line-height:1.7;}'
+   +'.nt-fl{display:flex;flex-wrap:wrap;gap:5px;padding:7px 10px;border-bottom:1px solid #ECE6DF;background:#fff;}'
+   +'.nt-fc{display:inline-flex;align-items:center;gap:4px;border:1px solid #ECE6DF;background:#fff;color:#443025;border-radius:999px;padding:2px 8px;font-size:11.5px;cursor:pointer;font-family:inherit;line-height:1.4;}'
+   +'.nt-fc:hover{background:#EAF1F8;} .nt-fc.on{background:#BED1E8;border-color:#8FB0D8;font-weight:700;}'
+   +'.nt-fc .ic{font-size:13px;} .nt-fc i{font-style:normal;background:#FF91C0;color:#443025;border-radius:999px;font-size:10px;font-weight:700;min-width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;}'
+   +'.nt-fu .ic{color:#FF5FA8;} .nt-fu.on{background:#FFD9EA;border-color:#FF91C0;}'
+   +'.nt-clr{margin-top:10px;border:1px solid #ECE6DF;background:#fff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;color:#443025;font-family:inherit;}'
+   +'.nt-moreb{text-align:center;padding:10px;} .nt-moreb button{border:1px solid #ECE6DF;background:#fff;border-radius:999px;padding:5px 16px;font-size:12px;cursor:pointer;color:#443025;font-family:inherit;}'
    +'.nt-pf{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border-top:1px solid #ECE6DF;background:#FBF9F6;flex-wrap:wrap;}'
    +'.nt-pf button{border:1px solid #ECE6DF;background:#fff;border-radius:999px;padding:4px 11px;font-size:12px;cursor:pointer;color:#443025;font-family:inherit;}'
    +'.nt-snd{display:flex;gap:5px;align-items:center;} .nt-snd button:not(:first-child){border:none;width:26px;height:26px;padding:0;font-weight:700;}'
@@ -19481,7 +19513,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   document.addEventListener('dragend',hide,true);
 })();
 </script>
-<script type="application/json" id="whatsnew-data">{"id":"20261009-1945","date":"2026-10-09","title":"เตือนการ์ดที่ลืมย้ายเป็น “โพสต์แล้ว” + บอกสีสถานะชัดขึ้น","items":[{"ic":"⏰","t":"เตือนการ์ดที่อนุมัติแล้วแต่เลยวันลงโพสต์","d":"การ์ดสถานะ ✅ อนุมัติ (รอโพสต์) ที่วันลงโพสต์ผ่านไปแล้ว จะมีป้าย ⏰ ที่ชิปในปฏิทิน การ์ดบนบอร์ด และกล่องสีเหลืองด้านบน — ถ้าโพสต์ไปแล้วให้ย้ายเป็น 🚀 โพสต์แล้ว"},{"ic":"🎨","t":"แถบสีสถานะบอกชื่อสีชัดเจน","d":"แต่ละสถานะเป็นป้ายสีพร้อมชื่อสี (เหลือง · ส้ม · ม่วง · แดง · เขียว · น้ำเงิน · เขียวอมฟ้า) และบอกว่าตอนนี้สีชิป = สถานะ หรือ = ประเภทงาน — โหมดวันลงโพสต์มีจุดสีสถานะหน้าชื่อชิปด้วย"}],"history":[{"id":"20261009-1505","date":"2026-10-09","title":"แชทเตือนดัง-ทันใจขึ้น + ปล่อยการ์ดไม่สะดุด","items":[{"ic":"🔔","t":"เสียงแจ้งเตือนแชทดังชัดขึ้น","d":"เสียงใหม่เป็นสองโน้ต ดังขึ้นหลายเท่า และปลุกระบบเสียงรอไว้ล่วงหน้า เสียงแรกจึงไม่ตกหรือมาช้า (ปิด/เปิดเสียงที่ปุ่มกระดิ่งหัวแชทเหมือนเดิม)"},{"ic":"⚡","t":"แชทแจ้งเร็วขึ้น ไม่ค้างเงียบ","d":"ถ้าสัญญาณเรียลไทม์หลุด (เน็ตสะดุด พับจอ ซ่อนแท็บนาน) ระบบต่อใหม่เอง ไม่ต้องรีเฟรช · ข้อความที่ตกหล่นดึงมาพร้อมเสียงเตือน · กลับมาที่แท็บแล้วดึงข้อความที่พลาดทันที · คนส่งช่วยสะกิดให้เครื่องอื่นดึงข้อความทันที"},{"ic":"🖱️","t":"ปล่อยการ์ดเร็วขึ้น 2–3 เท่า","d":"ตอนปล่อยการ์ด ระบบวาดเฉพาะการ์ด/คอลัมน์ที่เปลี่ยน ไม่วาดทั้งบอร์ดใหม่ — รูปในการ์ดไม่กะพริบ ตำแหน่งเลื่อนของบอร์ดไม่เด้ง (Content · E-commerce · Graphic)"},{"ic":"🗂️","t":"จัดลำดับคอลัมน์ยาวๆ ไวขึ้น","d":"บันทึกลำดับการ์ดในเครื่องครั้งเดียวแทนการบันทึกซ้ำทุกใบ"}]},{"id":"20261009-1136","date":"2026-10-09","title":"ลากการ์ดเบาลงอีก — การ์ดข้อมูลเยอะก็ลื่น","items":[{"ic":"🪶","t":"ลากการ์ดที่มีข้อมูลเยอะลื่นขึ้น","d":"ตอนลาก ระบบจะแสดงการ์ดเป็นแบบย่อ (ชื่อ + หัวข้อสำคัญ) แทนการก๊อปทั้งใบพร้อมรูปและปุ่มทั้งหมด หน้าเว็บเลยไม่ต้องคำนวณใหม่ทั้งหน้าทุกครั้งที่ขยับเมาส์ — ยิ่งการ์ดข้อมูลเยอะยิ่งเห็นความต่าง"},{"ic":"🎯","t":"จุดที่จะวางชัดขึ้น","d":"คอลัมน์ปลายทางมีกรอบไฮไลต์ เส้นสีฟ้าบอกตำแหน่งที่การ์ดจะลงตรงๆ และการ์ดต้นทางจางลงให้เห็นว่ากำลังย้ายใบไหน"}]},{"id":"20261009-1058","date":"2026-10-09","title":"ลากการ์ดลื่นขึ้น + ย้ายแล้วเห็นผลทันที","items":[{"ic":"⚡","t":"ย้ายการ์ด Content แล้วการ์ดไปอยู่คอลัมน์ใหม่ทันที","d":"แก้อาการหน่วงตอนวางการ์ด — เดิมการ์ดจะรอให้ระบบบันทึกเสร็จก่อนถึงย้ายให้เห็น ตอนนี้ย้ายให้เห็นทันที (รวมถึงการสลับลำดับ แก้ไขการ์ด และขยายเวลาส่ง)"},{"ic":"🖱️","t":"ลากการ์ดแบบใหม่ ลื่นขึ้นมาก (Content · E-commerce · Graphic)","d":"การ์ดลอยตามเมาส์ เส้นสีฟ้าบอกตำแหน่งที่จะวาง คอลัมน์ปลายทางไฮไลต์ ลากชิดขอบแล้วบอร์ด/รายการเลื่อนให้เอง กด Esc เพื่อยกเลิก ปล่อยแล้วการ์ดร่อนเข้าที่ — บนมือถือ กดการ์ดค้างแล้วลากได้"}]},{"id":"20261009-0106","date":"2026-10-09","title":"เกมงู: เก็บเหรียญ + แต่งตัวหนอน","items":[{"ic":"🪙","t":"เกมงูมีเหรียญให้เก็บแล้ว","d":"เหรียญทองโผล่ในกระดานเป็นช่วงๆ (หายใน ~7 วินาที) เหรียญใหญ่ได้ +5 และจบเกมได้โบนัส 1 เหรียญทุก 50 แต้ม — เหรียญไม่ปนกับคะแนนทีม ล็อกอินเพื่อเก็บเข้ากระเป๋า"},{"ic":"🎨","t":"ร้านแต่งตัวหนอน 17 สกิน","d":"ฟรี 5 แบบ แล้วไล่ระดับ Common (25) → Rare (80) → Epic (200) → Legendary (400) เช่น ราชา นักบินอวกาศ นินจา มังกรเพลิง กาแล็กซี — กดปุ่ม “🎨 แต่งตัวหนอน” ใต้กระดานเกมงู"}]},{"id":"20261008-1535","date":"2026-10-08","title":"เตือนพักผ่อน 15:00 น.","items":[{"ic":"☕","t":"เตือนพักผ่อนทุกวันจันทร์–ศุกร์ 15:00 น.","d":"ป๊อปอัปภาพสวยๆ “It's time for some relaxing time.” พร้อมเพลงและพลุกระดาษสี — กด ✕ หรือ “ขอบคุณ พักแล้ว” เพื่อปิด (หรือกด Esc) · ปิดการเตือนบนเครื่องตัวเองและกดดูตัวอย่างได้จากปุ่ม ✨ มุมขวาบน"}]},{"id":"20261008-1518","date":"2026-10-08","title":"เกม UNO + แจ้งเตือนอัปเดต","items":[{"ic":"🃏","t":"เพิ่มเกม UNO ใน Game Zone","d":"ซ้อมกับบอทได้เลยไม่ต้องล็อกอิน มีวิธีเล่นแบบภาพในเกม — กดการ์ดที่เรืองแสงเขียวเพื่อลง"},{"ic":"👥","t":"เล่น UNO กับเพื่อนแบบเรียลไทม์","d":"เปิดห้อง ตั้งจำนวนคน/เวลาต่อตา แล้วชวนเพื่อนเข้าห้อง ที่ว่างมีบอทมาเล่นแทน — นับชนะ/แพ้ในตารางคะแนนทีม"},{"ic":"📨","t":"ชวนเพื่อนเล่น + เตือนเมื่อถึงตา","d":"เพื่อนที่ออนไลน์จะเห็นป๊อปอัปคำเชิญ กด “เข้าร่วมเลย” ได้ทันที และเมื่อถึงตาคุณจะมีเสียง/แถบเตือน แม้อยู่เมนูอื่น"},{"ic":"✨","t":"แจ้งเตือนเมื่อมีอัปเดตใหม่","d":"ต่อไปนี้ถ้ามีเวอร์ชันใหม่ จะมีแถบเตือนให้กดดูว่ามีอะไรเปลี่ยนก่อน แล้วค่อยกด “อัปเดตเลย” — และกดปุ่ม ✨ มุมขวาบนเพื่อดูย้อนหลังได้ตลอด"}]},{"id":"20261007","date":"2026-10-07","title":"แชท การ์ด ไฟล์ และเกม","items":[{"ic":"🙈","t":"แชทซ่อนห้องที่ไม่สนใจได้","d":"และสีแชทใหม่ที่อ่านง่ายขึ้น"},{"ic":"📎","t":"คอมเมนต์ลากไฟล์ลงได้","d":"มีตัวอย่าง PDF/ไฟล์ และดาวน์โหลดแล้วชื่อไทยไม่เพี้ยน"},{"ic":"✍️","t":"แก้ไขคอมเมนต์ + จัดรูปแบบข้อความได้","d":"มีแท็บ ความเห็น / ไฟล์"},{"ic":"🖐️","t":"ลากบอร์ดซ้าย-ขวาได้ และลากสลับคอลัมน์ได้","d":"Content / E-com / Graphic"},{"ic":"🕒","t":"ประวัติการย้ายการ์ดอ่านง่ายขึ้น","d":"เวลาเป็นภาษาไทย รวมรายการที่สลับไปมา"},{"ic":"🎨","t":"ปฏิทิน Content โทนพาสเทล","d":""},{"ic":"❌⭕","t":"แก้ XO ค้างตอนเล่นกับเพื่อน","d":""}]}]}</script>
+<script type="application/json" id="whatsnew-data">{"id":"20261009-2038","date":"2026-10-09","title":"กรองแจ้งเตือนได้ — แท็ก / ย้าย / คอมเมนต์ + ดูเฉพาะที่ยังไม่อ่าน","items":[{"ic":"🔔","t":"ปุ่มแยกชนิดแจ้งเตือนในกระดิ่ง","d":"กด ＠ แท็ก · 🔁 ย้าย · 💬 คอมเมนต์ · 📌 มอบหมาย · 📋 อื่นๆ เพื่อดูเฉพาะชนิดนั้น แต่ละปุ่มมีตัวเลขที่ยังไม่อ่าน กดซ้ำเพื่อกลับไปดูทั้งหมด"},{"ic":"●","t":"ดูเฉพาะข้อความที่ยังไม่อ่าน","d":"ปุ่ม “ยังไม่อ่าน” ใช้ร่วมกับชนิดได้ (เช่น แท็กที่ยังไม่อ่าน) · ปุ่ม “อ่านที่เห็นทั้งหมด” จะอ่านเฉพาะที่กรองอยู่ · เครื่องจำตัวกรองที่เลือกไว้ให้"}],"history":[{"id":"20261009-1945","date":"2026-10-09","title":"เตือนการ์ดที่ลืมย้ายเป็น “โพสต์แล้ว” + บอกสีสถานะชัดขึ้น","items":[{"ic":"⏰","t":"เตือนการ์ดที่อนุมัติแล้วแต่เลยวันลงโพสต์","d":"การ์ดสถานะ ✅ อนุมัติ (รอโพสต์) ที่วันลงโพสต์ผ่านไปแล้ว จะมีป้าย ⏰ ที่ชิปในปฏิทิน การ์ดบนบอร์ด และกล่องสีเหลืองด้านบน — ถ้าโพสต์ไปแล้วให้ย้ายเป็น 🚀 โพสต์แล้ว"},{"ic":"🎨","t":"แถบสีสถานะบอกชื่อสีชัดเจน","d":"แต่ละสถานะเป็นป้ายสีพร้อมชื่อสี (เหลือง · ส้ม · ม่วง · แดง · เขียว · น้ำเงิน · เขียวอมฟ้า) และบอกว่าตอนนี้สีชิป = สถานะ หรือ = ประเภทงาน — โหมดวันลงโพสต์มีจุดสีสถานะหน้าชื่อชิปด้วย"}]},{"id":"20261009-1505","date":"2026-10-09","title":"แชทเตือนดัง-ทันใจขึ้น + ปล่อยการ์ดไม่สะดุด","items":[{"ic":"🔔","t":"เสียงแจ้งเตือนแชทดังชัดขึ้น","d":"เสียงใหม่เป็นสองโน้ต ดังขึ้นหลายเท่า และปลุกระบบเสียงรอไว้ล่วงหน้า เสียงแรกจึงไม่ตกหรือมาช้า (ปิด/เปิดเสียงที่ปุ่มกระดิ่งหัวแชทเหมือนเดิม)"},{"ic":"⚡","t":"แชทแจ้งเร็วขึ้น ไม่ค้างเงียบ","d":"ถ้าสัญญาณเรียลไทม์หลุด (เน็ตสะดุด พับจอ ซ่อนแท็บนาน) ระบบต่อใหม่เอง ไม่ต้องรีเฟรช · ข้อความที่ตกหล่นดึงมาพร้อมเสียงเตือน · กลับมาที่แท็บแล้วดึงข้อความที่พลาดทันที · คนส่งช่วยสะกิดให้เครื่องอื่นดึงข้อความทันที"},{"ic":"🖱️","t":"ปล่อยการ์ดเร็วขึ้น 2–3 เท่า","d":"ตอนปล่อยการ์ด ระบบวาดเฉพาะการ์ด/คอลัมน์ที่เปลี่ยน ไม่วาดทั้งบอร์ดใหม่ — รูปในการ์ดไม่กะพริบ ตำแหน่งเลื่อนของบอร์ดไม่เด้ง (Content · E-commerce · Graphic)"},{"ic":"🗂️","t":"จัดลำดับคอลัมน์ยาวๆ ไวขึ้น","d":"บันทึกลำดับการ์ดในเครื่องครั้งเดียวแทนการบันทึกซ้ำทุกใบ"}]},{"id":"20261009-1136","date":"2026-10-09","title":"ลากการ์ดเบาลงอีก — การ์ดข้อมูลเยอะก็ลื่น","items":[{"ic":"🪶","t":"ลากการ์ดที่มีข้อมูลเยอะลื่นขึ้น","d":"ตอนลาก ระบบจะแสดงการ์ดเป็นแบบย่อ (ชื่อ + หัวข้อสำคัญ) แทนการก๊อปทั้งใบพร้อมรูปและปุ่มทั้งหมด หน้าเว็บเลยไม่ต้องคำนวณใหม่ทั้งหน้าทุกครั้งที่ขยับเมาส์ — ยิ่งการ์ดข้อมูลเยอะยิ่งเห็นความต่าง"},{"ic":"🎯","t":"จุดที่จะวางชัดขึ้น","d":"คอลัมน์ปลายทางมีกรอบไฮไลต์ เส้นสีฟ้าบอกตำแหน่งที่การ์ดจะลงตรงๆ และการ์ดต้นทางจางลงให้เห็นว่ากำลังย้ายใบไหน"}]},{"id":"20261009-1058","date":"2026-10-09","title":"ลากการ์ดลื่นขึ้น + ย้ายแล้วเห็นผลทันที","items":[{"ic":"⚡","t":"ย้ายการ์ด Content แล้วการ์ดไปอยู่คอลัมน์ใหม่ทันที","d":"แก้อาการหน่วงตอนวางการ์ด — เดิมการ์ดจะรอให้ระบบบันทึกเสร็จก่อนถึงย้ายให้เห็น ตอนนี้ย้ายให้เห็นทันที (รวมถึงการสลับลำดับ แก้ไขการ์ด และขยายเวลาส่ง)"},{"ic":"🖱️","t":"ลากการ์ดแบบใหม่ ลื่นขึ้นมาก (Content · E-commerce · Graphic)","d":"การ์ดลอยตามเมาส์ เส้นสีฟ้าบอกตำแหน่งที่จะวาง คอลัมน์ปลายทางไฮไลต์ ลากชิดขอบแล้วบอร์ด/รายการเลื่อนให้เอง กด Esc เพื่อยกเลิก ปล่อยแล้วการ์ดร่อนเข้าที่ — บนมือถือ กดการ์ดค้างแล้วลากได้"}]},{"id":"20261009-0106","date":"2026-10-09","title":"เกมงู: เก็บเหรียญ + แต่งตัวหนอน","items":[{"ic":"🪙","t":"เกมงูมีเหรียญให้เก็บแล้ว","d":"เหรียญทองโผล่ในกระดานเป็นช่วงๆ (หายใน ~7 วินาที) เหรียญใหญ่ได้ +5 และจบเกมได้โบนัส 1 เหรียญทุก 50 แต้ม — เหรียญไม่ปนกับคะแนนทีม ล็อกอินเพื่อเก็บเข้ากระเป๋า"},{"ic":"🎨","t":"ร้านแต่งตัวหนอน 17 สกิน","d":"ฟรี 5 แบบ แล้วไล่ระดับ Common (25) → Rare (80) → Epic (200) → Legendary (400) เช่น ราชา นักบินอวกาศ นินจา มังกรเพลิง กาแล็กซี — กดปุ่ม “🎨 แต่งตัวหนอน” ใต้กระดานเกมงู"}]},{"id":"20261008-1535","date":"2026-10-08","title":"เตือนพักผ่อน 15:00 น.","items":[{"ic":"☕","t":"เตือนพักผ่อนทุกวันจันทร์–ศุกร์ 15:00 น.","d":"ป๊อปอัปภาพสวยๆ “It's time for some relaxing time.” พร้อมเพลงและพลุกระดาษสี — กด ✕ หรือ “ขอบคุณ พักแล้ว” เพื่อปิด (หรือกด Esc) · ปิดการเตือนบนเครื่องตัวเองและกดดูตัวอย่างได้จากปุ่ม ✨ มุมขวาบน"}]},{"id":"20261008-1518","date":"2026-10-08","title":"เกม UNO + แจ้งเตือนอัปเดต","items":[{"ic":"🃏","t":"เพิ่มเกม UNO ใน Game Zone","d":"ซ้อมกับบอทได้เลยไม่ต้องล็อกอิน มีวิธีเล่นแบบภาพในเกม — กดการ์ดที่เรืองแสงเขียวเพื่อลง"},{"ic":"👥","t":"เล่น UNO กับเพื่อนแบบเรียลไทม์","d":"เปิดห้อง ตั้งจำนวนคน/เวลาต่อตา แล้วชวนเพื่อนเข้าห้อง ที่ว่างมีบอทมาเล่นแทน — นับชนะ/แพ้ในตารางคะแนนทีม"},{"ic":"📨","t":"ชวนเพื่อนเล่น + เตือนเมื่อถึงตา","d":"เพื่อนที่ออนไลน์จะเห็นป๊อปอัปคำเชิญ กด “เข้าร่วมเลย” ได้ทันที และเมื่อถึงตาคุณจะมีเสียง/แถบเตือน แม้อยู่เมนูอื่น"},{"ic":"✨","t":"แจ้งเตือนเมื่อมีอัปเดตใหม่","d":"ต่อไปนี้ถ้ามีเวอร์ชันใหม่ จะมีแถบเตือนให้กดดูว่ามีอะไรเปลี่ยนก่อน แล้วค่อยกด “อัปเดตเลย” — และกดปุ่ม ✨ มุมขวาบนเพื่อดูย้อนหลังได้ตลอด"}]},{"id":"20261007","date":"2026-10-07","title":"แชท การ์ด ไฟล์ และเกม","items":[{"ic":"🙈","t":"แชทซ่อนห้องที่ไม่สนใจได้","d":"และสีแชทใหม่ที่อ่านง่ายขึ้น"},{"ic":"📎","t":"คอมเมนต์ลากไฟล์ลงได้","d":"มีตัวอย่าง PDF/ไฟล์ และดาวน์โหลดแล้วชื่อไทยไม่เพี้ยน"},{"ic":"✍️","t":"แก้ไขคอมเมนต์ + จัดรูปแบบข้อความได้","d":"มีแท็บ ความเห็น / ไฟล์"},{"ic":"🖐️","t":"ลากบอร์ดซ้าย-ขวาได้ และลากสลับคอลัมน์ได้","d":"Content / E-com / Graphic"},{"ic":"🕒","t":"ประวัติการย้ายการ์ดอ่านง่ายขึ้น","d":"เวลาเป็นภาษาไทย รวมรายการที่สลับไปมา"},{"ic":"🎨","t":"ปฏิทิน Content โทนพาสเทล","d":""},{"ic":"❌⭕","t":"แก้ XO ค้างตอนเล่นกับเพื่อน","d":""}]}]}</script>
 <script id="update-notice-2026-10-08">
 /* ✨ แจ้งเตือนอัปเดตใหม่ + “มีอะไรใหม่” (2026-10-08)
    • เว็บนี้ฝังรหัสเวอร์ชันไว้ที่ <meta name="npd-build"> (บนสุดของไฟล์) และโน้ตการอัปเดตใน <script type="application/json" id="whatsnew-data">
