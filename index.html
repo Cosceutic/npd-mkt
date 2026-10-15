@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="npd-build" content="20261014-0838">
+<meta name="npd-build" content="20261015-0954">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Godmami · NPD Product Calendar</title>
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -11934,7 +11934,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
         var cn=(typeof commentCount==='function')?commentCount(x.id):0; if(cn) meta.push('💬 '+cn);
         return '<div class="ccal-post"><span class="ccal-post-s" style="--s:'+st.c+'">'+st.t+'</span><div class="ccal-post-main"><div class="ccal-post-title" style="cursor:pointer;" onclick="openCardModal(\''+aj(x.id)+'\')">'+e2(x.title)+'</div>'
           +(tags?'<div class="ccal-post-meta">'+tags+'</div>':'')
-          +'<div class="ccal-post-meta">'+meta.join('')+calChanChips(x.channel)+'</div>'+(x.note?'<div class="cc-mh-note">'+e2(x.note)+'</div>':'')+'</div>'+act+'</div>';
+          +'<div class="ccal-post-meta">'+meta.join('')+calChanChips(x.channel)+'</div>'+(x.note?'<div class="cc-mh-note">'+e2(window.RT?RT.toPlain(x.note):x.note)+'</div>':'')+'</div>'+act+'</div>';
       }).join('');
       return '<div class="ccal-day'+(past?' past':'')+'">'+head+rows+'</div>';
     }).join('');
@@ -11987,7 +11987,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +(x.channel?'<div class="ccal-detail-row"><b>ช่องทาง</b><span>'+calChanChips(x.channel)+'</span></div>':'')
       +(x.owner?'<div class="ccal-detail-row"><b>ผู้รับมอบหมาย (PIC)</b><span>👤 '+e2(x.owner)+'</span></div>':'')
       +(x.reviewer?'<div class="ccal-detail-row"><b>ผู้ตรวจ</b><span>🔍 '+e2(x.reviewer)+'</span></div>':'')
-      +(x.note?'<div class="ccal-detail-row"><b>'+ccNoteName(x)+'</b><span>'+linkBtnsHtml(x.note)+'</span></div>':'');
+      +(x.note?'<div class="ccal-detail-row"><b>'+ccNoteName(x)+'</b><span>'+(window.RT?RT.view(x.note,'note'):linkBtnsHtml(x.note))+'</span></div>':'');
     document.getElementById('cc-editor-title').textContent='📅 '+x.title;
     document.getElementById('cc-editor-body').innerHTML=rows+'<div style="display:flex;justify-content:flex-end;margin-top:16px;"><button class="btn-sm ghost" onclick="closeContentIdeaEditor()">ปิด</button></div>';
     document.getElementById('cc-editor-overlay').classList.add('open');
@@ -12069,7 +12069,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +fmSec(1,'งานอะไร',
         ideaRow
         +fmRow('หัวข้อโพสต์ *','<input type="text" id="cc-cf-title" data-req="1" value="'+e2(x.title||'')+'" placeholder="เช่น รีวิวลิปสีใหม่ Halloween">')
-        +fmRow('รายละเอียดงาน','<textarea id="cc-cf-note" class="fm-big" placeholder="บรีฟ / แคปชัน / มุมเล่า / สิ่งที่ต้องเตรียม — วางลิงก์ Drive ได้เลย จะกลายเป็นปุ่มให้กดเปิด">'+e2(x.note||'')+'</textarea>'))
+        +fmRow('รายละเอียดงาน','<textarea id="cc-cf-note" class="fm-big" data-rt="note" placeholder="บรีฟ / แคปชัน / มุมเล่า / สิ่งที่ต้องเตรียม — วางลิงก์ Drive ได้เลย จะกลายเป็นปุ่มให้กดเปิด">'+e2(x.note||'')+'</textarea>'))
       +fmSec(2,'ใครทำ',
         fmRow('ผู้รับมอบหมาย (PIC)', fmChips('cc-cf-owner', ownerNames, x.owner||'', {multi:1,add:1}))
         +fmRow('ผู้ตรวจงาน', fmChips('cc-cf-reviewer', reviewerNames, x.reviewer||'', {multi:1,add:1}))
@@ -12465,6 +12465,17 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     return true;
   };
   window.plAddIn=function(s){ if(!unlocked()){ if(typeof toast==='function') toast('เข้าโหมดแก้ไข 🔓 ก่อน','info'); return; } plPresetStatus=s; openContentCalEditor(); };
+  window.ccNoteSave=function(id,val){
+    if(!unlocked()){ if(typeof toast==='function') toast('เข้าโหมดแก้ไข 🔓 ก่อน','info'); return false; }
+    var x=(window.CONTENT_CAL||[]).find(function(c){return c.id===id;}); if(!x) return false;
+    var local=calLocal(); var i=local.findIndex(function(z){return z.id===id;}); var base=(i>-1)?normCAL(local[i]):Object.assign({},x);
+    var before=JSON.parse(JSON.stringify(base)); base.note=val; base.updatedAt=(typeof todayStr==='function'?todayStr():'');
+    base.__t=Date.now(); if(i>-1) local[i]=base; else local.push(base); calSaveLocal(local);
+    rebuildCAL(); if(cmModalCard) renderCardModal(); try{ renderCalActive(); }catch(e){}
+    if(typeof toast==='function') toast('บันทึกรายละเอียดแล้ว','ok');
+    calSync(base,'upsert',before); return true;
+  };
+  window.RT_BOARDS=window.RT_BOARDS||{}; window.RT_BOARDS.content={get:function(id){ var x=(window.CONTENT_CAL||[]).find(function(c){return c.id===id;}); return x?x.note:''; },save:function(id,v){ return window.ccNoteSave(id,v); }};
   window.extendDue=function(id){
     if(!unlocked()){ if(typeof toast==='function') toast('เข้าโหมดแก้ไข 🔓 ก่อน','info'); return; }
     var x=(window.CONTENT_CAL||[]).find(function(c){return c.id===id;}); if(!x) return;
@@ -12669,6 +12680,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       else { flushList(); buf.push(ln); } });
     flushText(); flushList(); return out.join('');
   }
+  window.cmRichLegacy=cmRich;   // ใช้โดย RT.view เพื่อแสดงคอมเมนต์เก่า (รูปแบบสัญลักษณ์ **หนา**) เหมือนเดิม
   function cmFmtBar(id,withPrev){
     var b=function(k,html,tip){ return '<button type="button" class="cc-fb" title="'+tip+'" onclick="ccFmt(\''+id+'\',\''+k+'\')">'+html+'</button>'; };
     return '<div class="cc-fmt" onmousedown="event.preventDefault()">'+b('b','<b>B</b>','ตัวหนา (Ctrl+B)')+b('i','<i>I</i>','ตัวเอียง (Ctrl+I)')+b('u','<u>U</u>','ขีดเส้นใต้ (Ctrl+U)')+b('s','<s>S</s>','ขีดฆ่า')+b('h','<span class="cc-hl">ปากกาเน้น</span>','ไฮไลต์')
@@ -12924,7 +12936,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       if(h2) rows+=addRow('การ์ดกราฟฟิก', h2+'<div style="font-size:11.5px;color:var(--ink-soft);">คอมเมนต์ห้องเดียวกันกับกราฟฟิก เห็นตรงกันทั้งสองฝั่ง</div>'); }catch(e){} })();
     rows+=addRow('ผู้ตรวจ', x.reviewer?('🔍 '+e2(x.reviewer)):'');
     rows+=addRow('ผู้มอบหมายงาน', x.followers?followerChips(x.followers):'');
-    rows+=addRow(ccNoteName(x), x.note?linkBtnsHtml(x.note):'');
+    rows+=(window.RT?RT.noteRow('content',x.id,x.note,unlocked()):addRow(ccNoteName(x), x.note?linkBtnsHtml(x.note):''));
     var logLines=(x.log||'').split('\n').filter(Boolean);
     var histTitle='📋 ประวัติงาน'+((x.reviseCount||x.extendCount)?(' — '+(x.reviseCount?('🔧 แก้ '+x.reviseCount+' ครั้ง'):'')+(x.reviseCount&&x.extendCount?' · ':'')+(x.extendCount?('⏱️ ขยายเวลา '+x.extendCount+' ครั้ง'):'')):'');
     var histHtml=(logLines.length)?('<div class="cc-cd-hist"><div class="cc-cd-hist-h">'+histTitle+'</div><ul class="cc-cd-loglist">'+ccLogItems(logLines)+'</ul></div>'):'';
@@ -12946,8 +12958,10 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +'</div>';
   };
   /* รีเรนเดอร์ modal (เช่น ซิงก์เบื้องหลัง) แล้วคืนโฟกัส/ตำแหน่งเคอร์เซอร์ในช่องพิมพ์ — ไม่ให้เด้งออกกลางพิมพ์ */
-  (function(){ var _rcm=window.renderCardModal; window.renderCardModal=function(){ var a=document.activeElement, id=a&&a.id, s=a&&a.selectionStart, e=a&&a.selectionEnd;
-    _rcm.apply(this,arguments); if(id==='cc-cm-text'||id==='cc-cm-edit-text'){ var n=document.getElementById(id); if(n){ n.focus(); try{ n.setSelectionRange(s,e); }catch(x){} } } }; })();
+  (function(){ var _rcm=window.renderCardModal; window.renderCardModal=function(){ var a=document.activeElement, id=a&&a.id, s=a&&a.selectionStart, e=a&&a.selectionEnd, rtOff=-1;
+    if(a&&a.classList&&a.classList.contains('rt-ed')){ var tx=a.parentNode&&a.parentNode.nextElementSibling; id=tx&&tx.id; rtOff=(window.RT&&RT.caretGet)?RT.caretGet(a):-1; }
+    var rtSnap=(window.RT&&RT.noteSnapshot)?RT.noteSnapshot():null;
+    _rcm.apply(this,arguments); if(rtSnap) RT.noteRestoreSnapshot(rtSnap); if(id==='cc-cm-text'||id==='cc-cm-edit-text'){ var n=document.getElementById(id); if(n){ if(rtOff>=0&&window.RT&&RT.caretSet&&n._rt){ n._rt.ed.focus(); RT.caretSet(n._rt.ed,rtOff); } else { n.focus(); try{ n.setSelectionRange(s,e); }catch(x){} } } } }; })();
   // แผงคอมเมนต์ (ใช้ร่วมกันทั้งการ์ด Content และการ์ด E-Commerce) — อิงจาก cmModalCard
   /* แถบ “ห้องคุยร่วม Content ⇄ Graphic” — การ์ดที่บรีฟไปกราฟฟิก (มีการ์ดกราฟฟิกที่รับแล้ว หรือระบุ PIC Graphic ไว้) ใช้คอมเมนต์ห้องเดียวกัน */
   function cmGroupBannerHtml(){
@@ -12972,7 +12986,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       var draftText=(ccLoadDraft(cmModalCard)||{}).text||'';
       composer='<div class="cc-cm-box'+(draftText?' has-text':'')+'">'
         +((draftText||ccDraft.images.length||ccDraft.links.length)?'<div class="cc-cm-draftnote">📝 ร่างที่ยังไม่ได้ส่ง (เก็บไว้ให้อัตโนมัติ)</div>':'')
-        +cmFmtBar('cc-cm-text',true)+'<textarea id="cc-cm-text" oninput="ccSaveDraft();ccAutoGrow(this);ccPrevUpdate();if(window.ntMentionInput)ntMentionInput(this)" onfocus="ccAutoGrow(this)" onkeydown="if(window.ccFmtKey&&ccFmtKey(event,\'cc-cm-text\'))return;if(window.ntMentionKey)ntMentionKey(event)" onblur="if(window.ntMentionClose)setTimeout(ntMentionClose,160)" placeholder="พิมพ์คอมเมนต์คุยงาน… (พิมพ์ @ เพื่อแท็กคน · วางลิงก์ในข้อความก็ได้)">'+e2(draftText)+'</textarea><div id="cc-cm-prev" class="cc-cm-prev" style="display:'+(cmPrevOn?'block':'none')+'">'+((cmPrevOn&&draftText.trim())?('<div class="cc-cm-text">'+cmRich(draftText)+'</div>'):'')+'</div>'
+        +'<textarea id="cc-cm-text" data-rt="comment" data-rt-submit="postComment()" oninput="ccSaveDraft()" placeholder="พิมพ์คอมเมนต์คุยงาน… (พิมพ์ @ เพื่อแท็กคน · วางลิงก์ได้เลย · Ctrl+Enter ส่ง)">'+e2(draftText)+'</textarea>'
         +((draftImgs||draftLinks)?'<div class="cc-cm-drafts">'+draftImgs+draftLinks+'</div>':'')
         +'<div class="cc-cm-status" id="cc-cm-status"></div>'
         +'<div class="cc-cm-toolbar">'
@@ -13038,11 +13052,11 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     var top='<div class="cc-cm-top">'+cmAvatar(c.author)+'<span class="cc-cm-name">'+((c.author&&window.pplName)?window.pplName(c.author):e2(c.author||'ไม่ระบุชื่อ'))+'</span><span class="cc-cm-time">'+e2(c.createdAt||'')+'</span>'+edited+'<span class="cc-cm-acts">'+edBtn+del+'</span></div>';
     var body;
     if(editing){
-      body='<div class="cc-cm-editbox">'+cmFmtBar('cc-cm-edit-text',false)
-        +'<textarea id="cc-cm-edit-text" oninput="ccEditInput(this);ccAutoGrow(this);if(window.ntMentionInput)ntMentionInput(this)" onfocus="ccAutoGrow(this)" onkeydown="if(window.ccFmtKey&&ccFmtKey(event,\'cc-cm-edit-text\'))return;if(window.ntMentionKey)ntMentionKey(event)" onblur="if(window.ntMentionClose)setTimeout(ntMentionClose,160)">'+e2(cmEditDraft.text)+'</textarea>'
+      body='<div class="cc-cm-editbox">'
+        +'<textarea id="cc-cm-edit-text" data-rt="comment" data-rt-submit="ccEditSave()" data-rt-cancel="ccEditCancel()" oninput="ccEditInput(this)">'+e2(cmEditDraft.text)+'</textarea>'
         +cmEditAttach()+'<div class="cc-cm-editbtns"><button type="button" class="cc-cm-send" onclick="ccEditSave()">บันทึก</button><button type="button" class="cc-cm-tool" onclick="ccEditCancel()">ยกเลิก</button></div></div>';
     } else {
-      body=(c.text?'<div class="cc-cm-text">'+cmRich(c.text)+'</div>':'')+commentImages(c.images)
+      body=(c.text?'<div class="cc-cm-text">'+(window.RT?RT.view(c.text,'comment'):cmRich(c.text))+'</div>':'')+commentImages(c.images)
         +(c.links?('<div class="cc-cm-links">'+c.links.split(';').map(function(u){u=u.trim();return u?'<a class="lnk-btn" href="'+e2(u)+'" target="_blank" rel="noopener" title="'+e2(u)+'">🔗 '+e2(linkLabel(u))+' <small>↗ เปิดดู</small></a>':'';}).join('')+'</div>'):'');
     }
     return '<div class="cc-cm'+(editing?' editing':'')+'" id="cmi-'+e2(c.id)+'">'+top+body+'</div>';
@@ -13071,7 +13085,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     rebuildCM(); renderCardModal(); cmRefreshBoards();
     if(typeof toast==='function') toast('ส่งคอมเมนต์แล้ว 💬','ok');
     cmSync(c,'upsert');
-    try{ if(typeof ntOnComment==='function') ntOnComment(cmModalCard, cmPlain(text)); }catch(e){}
+    try{ if(typeof ntOnComment==='function') ntOnComment(cmModalCard, cmPlain(window.RT?RT.toPlain(text):text)); }catch(e){}
   };
   window.deleteComment=function(id){
     if(!canComment()) return;
@@ -14991,7 +15005,7 @@ details.fm-more[open]{padding-bottom:6px;}
       +'<div class="fm-form" style="padding:14px 18px;max-height:70vh;overflow:auto;">'
         +fmSec(1,'งานอะไร',
           fmRow('หัวข้องาน *','<input type="text" id="ecom-f-title" data-req="1" value="'+E(c.title)+'" placeholder="เช่น ถ่ายรูปสินค้า A ลงหน้าร้าน Shopee">')
-          +fmRow('รายละเอียดงาน','<textarea id="ecom-f-note" class="fm-big" placeholder="รายละเอียดงาน / ลิงก์อ้างอิง — วางลิงก์ได้เลย จะกลายเป็นปุ่มให้กดเปิด">'+E(c.note)+'</textarea>'))
+          +fmRow('รายละเอียดงาน','<textarea id="ecom-f-note" class="fm-big" data-rt="note" placeholder="รายละเอียดงาน / ลิงก์อ้างอิง — วางลิงก์ได้เลย จะกลายเป็นปุ่มให้กดเปิด">'+E(c.note)+'</textarea>'))
         +fmSec(2,'ใครทำ',
           fmRow('ผู้รับผิดชอบ (PIC)', fmChips('ecom-f-owner', ecomOwnerNames(), c.owner||'', {multi:1,add:1}))
           +fmRow('ผู้มอบหมายงาน', fmChips('ecom-f-followers', ecomFollowerNames(), c.followers||'', {multi:1,add:1}))
@@ -15067,7 +15081,7 @@ details.fm-more[open]{padding-bottom:6px;}
     if(!gl.length && ecomCanEdit()) glHtml='<button class="gfx-adopt-btn" onclick="ecomSendGfx(\''+AJ(x.id)+'\')">🎨 สร้างการ์ดในบอร์ดกราฟฟิก</button>';
     rows+=row('การ์ดกราฟฟิก', glHtml);
     rows+=row('แท็ก', tags);
-    rows+=row('รายละเอียดงาน', x.note?linkBtnsHtml(x.note):'');
+    rows+=(window.RT?RT.noteRow('ecom',x.id,x.note,ecomCanEdit()):row('รายละเอียดงาน', x.note?linkBtnsHtml(x.note):''));
     var editBtn=ecomCanEdit()?('<div class="cc-cd-edit"><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="ecomEdit(\''+AJ(id)+'\')">✏️ แก้ไขรายละเอียด</button><button class="btn-sm ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="closeCardModal();ecomCopy(\''+AJ(id)+'\')">📋 Copy สร้างใหม่</button><button class="btn-sm warn-ghost" style="flex:0 0 auto;padding:6px 12px;" onclick="closeCardModal();ecomDel(\''+AJ(id)+'\')">🗑️ ลบการ์ด</button></div>'):'';
     // เช็คลิสต์ย่อยในการ์ด (รายการที่ต้องทำ)
     var canEd=ecomCanEdit();
@@ -15094,6 +15108,8 @@ details.fm-more[open]{padding-bottom:6px;}
   };
   // จัดการเช็คลิสต์ย่อยในการ์ด
   function ecomAfterChk(c){ c.updatedAt=TS(); ecomUpsertLocal(c); ecomSync(c); try{ renderEcomBoard(); }catch(e){} var cov=document.getElementById('cc-card-overlay'); if(cov && cov.classList.contains('open') && typeof renderCardModal==='function') renderCardModal(); }
+  window.ecomNoteSave=function(id,val){ if(!ecomCanEdit()) return false; var c=ECOM.find(function(x){return x.id===id;}); if(!c) return false; c.note=val; ecomAfterChk(c); if(typeof toast==='function') toast('บันทึกรายละเอียดแล้ว','ok'); return true; };
+  window.RT_BOARDS=window.RT_BOARDS||{}; window.RT_BOARDS.ecom={get:function(id){ var c=ECOM.find(function(x){return x.id===id;}); return c?c.note:''; },save:function(id,v){ return window.ecomNoteSave(id,v); }};
   window.ecomChkAdd=function(id){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c) return; 
     ecomDialog({title:'➕ เพิ่มรายการที่ต้องทำ',label:'รายการที่ต้องทำ',placeholder:'เช่น ภาพ AW : ปกสินค้า สำหรับ MKP',okText:'เพิ่มรายการ',max:200,validate:ecomNeedText('รายการ')}).then(function(t){ if(t==null) return; if(!Array.isArray(c.checklist)) c.checklist=[]; c.checklist.push({text:t,done:false}); ecomAfterChk(c); try{ if(window.gfxSyncAwFromEcom) window.gfxSyncAwFromEcom(c); }catch(e){} }); };
   window.ecomChkToggle=function(id,i){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.checklist)||!c.checklist[i]) return; c.checklist[i].done=!c.checklist[i].done; ecomAfterChk(c); };
@@ -15982,7 +15998,7 @@ details.fm-more[open]{padding-bottom:6px;}
         +((draft && !gfxEditId)?'<div style="display:flex;align-items:center;gap:8px;background:#fff7ea;border:1px solid #ffe2b8;border-radius:9px;padding:7px 11px;font-size:12px;color:#8a6d3b;">📝 กู้ร่างที่ยังไม่ได้บันทึกกลับมาแล้ว<button onclick="gfxDiscardDraft()" style="margin-left:auto;border:none;background:none;color:#c4485f;font-weight:600;cursor:pointer;font-size:12px;">ล้างร่าง</button></div>':'')
         +fmSec(1,'งานอะไร',
           fmRow('หัวข้องาน *','<input type="text" id="gfx-f-title" data-req="1" oninput="gfxSaveDraft()" value="'+E(c.title)+'" placeholder="เช่น ออกแบบภาพโปรโมชัน Shopee">')
-          +fmRow('รายละเอียดงาน','<textarea id="gfx-f-note" class="fm-big" oninput="gfxSaveDraft()" placeholder="รายละเอียดงาน / บรีฟ / ขนาด-ช่องทางที่จะลง / สิ่งที่ต้องเตรียม — วางลิงก์ได้เลย จะกลายเป็นปุ่มให้กดเปิด">'+E(c.note)+'</textarea>')
+          +fmRow('รายละเอียดงาน','<textarea id="gfx-f-note" class="fm-big" data-rt="note" oninput="gfxSaveDraft()" placeholder="รายละเอียดงาน / บรีฟ / ขนาด-ช่องทางที่จะลง / สิ่งที่ต้องเตรียม — วางลิงก์ได้เลย จะกลายเป็นปุ่มให้กดเปิด">'+E(c.note)+'</textarea>')
           +fmRow('แนบรูป/ไฟล์',
             '<div id="gfx-ed-att" style="display:flex;gap:8px;flex-wrap:wrap;">'+gfxEdAttHtml()+'</div>'
             +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;">'
@@ -16056,7 +16072,7 @@ details.fm-more[open]{padding-bottom:6px;}
     if(x.srcContent) rows+=row('มาจาก', '<button class="gfx-goto-btn" onclick="openCardModal(\''+AJ(x.srcContent)+'\')">✨ ดูงานต้นทางฝั่ง Content →</button> <span style="font-size:11.5px;color:var(--ink-soft);">คอมเมนต์ห้องเดียวกัน เห็นตรงกันทั้งสองฝั่ง</span>');
     if(!gfxIsNoCountCol(x.person,x.col)&&gfxColSince(x)){ var sinceN=gfxWorkdaysAfter(gfxColSince(x)); rows+=row('อยู่ในคอลัมน์นี้ตั้งแต่', (x.colAt?'🕒 '+E(fmtDoneStamp(x.colAt)):'<span title="'+E(gfxSinceNote(x))+'">≈ '+E(gfxFmtDDMM(String(gfxColSince(x)).slice(0,10)))+' <span style="font-size:11.5px;color:var(--ink-soft);">(ประมาณ — นับจากวันอัปเดตล่าสุด)</span></span>')+(sinceN>0?' · <span style="color:var(--ink-soft);">ผ่านมา '+sinceN+' วันทำการ</span>':' · <span style="color:var(--ink-soft);">วันนี้</span>')); }
     rows+=row('แท็ก', tags);
-    rows+=row('รายละเอียดงาน', x.note?linkBtnsHtml(x.note):'');
+    rows+=(window.RT?RT.noteRow('gfx',x.id,x.note,gfxCanEdit()):row('รายละเอียดงาน', x.note?linkBtnsHtml(x.note):''));
     // checklist
     var chk=Array.isArray(x.checklist)?x.checklist:[]; var doneN=chk.filter(function(it){return it.done;}).length;
     var chkItems=chk.map(function(it,i){
@@ -16083,6 +16099,8 @@ details.fm-more[open]{padding-bottom:6px;}
     return '<div class="cc-cd-info"><div class="cc-cd-badges"><span class="cc-cd-s" style="background:'+(col.color||'#7cb6e4')+'">'+E(col.title||'')+'</span>'+(x.brand?'<span class="cc-brand" style="--b:'+((typeof BRAND_TINT!=='undefined'?BRAND_TINT:{})[x.brand]||'#6B7280')+'">'+E(gfxBrandLabel(x.brand))+'</span>':'')+tags+'</div><div class="cc-cd-rows">'+rows+'</div>'+imgSection+chkSection+revSection+gfxMovesSection(x)+editBtn+'</div>';
   };
   function gfxAfterChange(c){ c.updatedAt=TS(); gfxUpsertLocal(c); gfxSyncCard(c); try{ gfxRefreshView(); }catch(e){} var cov=document.getElementById('cc-card-overlay'); if(cov && cov.classList.contains('open') && typeof renderCardModal==='function') renderCardModal(); }
+  window.gfxNoteSave=function(id,val){ if(!gfxCanEdit()) return false; var c=GFX.find(function(x){return x.id===id;}); if(!c) return false; c.note=val; gfxAfterChange(c); TOAST('บันทึกรายละเอียดแล้ว','ok'); return true; };
+  window.RT_BOARDS=window.RT_BOARDS||{}; window.RT_BOARDS.gfx={get:function(id){ var c=GFX.find(function(x){return x.id===id;}); return c?c.note:''; },save:function(id,v){ return window.gfxNoteSave(id,v); }};
   window.gfxChkAdd=function(id){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c) return; var t=prompt('รายการที่ต้องทำ:',''); if(t==null) return; t=String(t).trim(); if(!t) return; if(!Array.isArray(c.checklist)) c.checklist=[]; c.checklist.push({text:t,done:false}); gfxAfterChange(c); };
   window.gfxChkToggle=function(id,i){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.checklist)||!c.checklist[i]) return; c.checklist[i].done=!c.checklist[i].done; gfxAfterChange(c); };
   window.gfxChkEdit=function(id,i){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!c||!Array.isArray(c.checklist)||!c.checklist[i]) return; var t=prompt('แก้ไขรายการ:',c.checklist[i].text||''); if(t==null) return; t=String(t).trim(); if(!t) return; c.checklist[i].text=t; gfxAfterChange(c); };
@@ -16466,6 +16484,7 @@ details.fm-more[open]{padding-bottom:6px;}
 
   /* ---------- hooks เรียกจากแต่ละบอร์ด ---------- */
   window.ntOnComment=function(cardId,text){
+    if(window.RT) text=RT.toPlain(text);
     var info=cardInfo(cardId), men=mentionedNames(text);
     var snippet=String(text||'').replace(/\s+/g,' ').trim().slice(0,120) || '(แนบรูป/ลิงก์)';
     if(men.length) window.ntEmit({kind:'mention',board:info.board,refId:cardId,title:info.title,body:snippet,names:men});
@@ -16661,6 +16680,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var names=people().map(function(p){return p.name;}).sort(function(a,b){return b.length-a.length;}); if(!names.length) return html;
     return String(html).replace(new RegExp('@('+names.map(escRe).join('|')+')','g'),'<span class="cc-mention">@$1</span>');
   };
+  window.ntPeopleList=function(){ return people(); };   // รายชื่อให้ตัวแก้ไขข้อความ (RT) ใช้ทำแท็ก @
   var TEAM_OF={'แนน':'Marketing','ออม':'Marketing','สมายด์':'Marketing','เอ':'Marketing','หรา':'Marketing','เลิฟ':'Marketing','สเปียร์':'Marketing','เมษา':'Graphic','ไอซ์GP':'Graphic','น้ำฝน':'Graphic','เหมียว':'Graphic','พลอย':'NPD','แพรว':'NPD','จ๋า':'NPD','โบนัส':'NPD','มีน':'NPD','พีท':'NPD','ข้าวหอม':'Data Support','Admin':'Data Support','ไอซ์SC':'Supply Chain','คุณกอล์ฟ':'Executive','คุณยา':'Executive'};
   var MN={open:false,items:[],idx:0,start:-1,ta:null};
   function mnEl(){ return document.getElementById('nt-mention'); }
@@ -19910,7 +19930,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   document.addEventListener('dragend',hide,true);
 })();
 </script>
-<script type="application/json" id="whatsnew-data">{"id":"20261014-0838","date":"2026-10-14","title":"Copy Card ไม่คัดลอกประวัติ","items":[{"ic":"📋","t":"Copy Card (Graphic / E-com) ได้การ์ดใหม่ที่สะอาด ไม่เอาประวัติเดิมมาด้วย","d":"ตอนคัดลอกการ์ด จะไม่ติดข้อมูลที่เป็นประวัติของใบเดิมไปแล้ว: ประวัติการแก้ไข · ลิงก์การ์ดต้นทาง · ผู้สร้าง/วันที่สร้างเดิม (ใบใหม่ถือว่าคนที่กดคัดลอกเป็นผู้สร้าง ณ ตอนนี้) · เวลาที่เข้าคอลัมน์ (เริ่มนับใหม่ ไม่ขึ้นว่าค้างเหมือนใบเดิม) · เช็คลิสต์ที่เคยติ๊กแล้ว (คงรายการไว้ แต่ติ๊กออกหมด) · ส่วนเนื้องาน เช่น ชื่อ แบรนด์ ผู้รับผิดชอบ วันส่ง โน้ต แท็ก รูป ยังคัดลอกตามเดิม และการ์ดใบเดิมไม่ถูกแตะ"}],"history":[{"id":"20261014-0120","date":"2026-10-14","title":"บอร์ด Branding เต็มจอ + หัวกระชับ","items":[{"ic":"🗂️","t":"บอร์ด Branding กว้างเต็มจอเหมือนบอร์ดอื่น","d":"เดิมบอร์ดถูกจำกัดความกว้างเท่าหน้าทั่วไป เห็นแค่ ~5 คอลัมน์ ตอนนี้กว้างเต็มหน้าจอ จอใหญ่ๆ คอลัมน์ขยายให้พอดีไม่ต้องเลื่อนข้าง · ส่วนหน้าอื่นของ Branding (แผนเปิดตัว Road Map ธีม) ยังจัดกึ่งกลางตามเดิม"},{"ic":"📐","t":"ส่วนหัวของ Branding เหลือบรรทัดเดียว","d":"ชื่อ + ตัวกรอง (แบรนด์ / ประเภท / คน / งานของฉัน / ค้นหา) + เมนูส่วนงาน รวมอยู่แถวเดียวกัน จากเดิมกินที่แนวตั้ง ~90px เหลือ ~40px ได้พื้นที่บอร์ดเพิ่ม · เมนูส่วนงานย่อให้กะทัดรัด"}]},{"id":"20261014-0107","date":"2026-10-14","title":"Branding: ดรอปดาวน์ + ฟอนต์ใหม่ + ปุ่มเผยแพร่หาง่ายขึ้น","items":[{"ic":"🗂️","t":"เมนู Branding เปลี่ยนเป็นดรอปดาวน์","d":"แทนแถวปุ่มยาวๆ ด้วยเมนูเดียว “ส่วนงาน” กดแล้วเลือกได้ จัดเป็นกลุ่ม (งานประจำ · วางแผน · หน้าร้าน · ดูผลลัพธ์) มีไอคอนและคำอธิบายสั้นๆ ของแต่ละส่วน · ส่วนที่ยังไม่เปิดมีป้าย “เร็วๆ นี้” · มีจุดแดงเตือนเมื่อมีวันเปิดตัวใน Product Info ที่ต้องตัดสินใจ · ใช้คีย์บอร์ดได้ (↑ ↓ Esc) และใช้งานบนมือถือได้"},{"ic":"🔤","t":"ฟอนต์ใหม่ในเมนู Branding และหน้า Branding Plan","d":"เปลี่ยนเป็น Noto Sans Thai (ตัวสะอาด ทันสมัย แทน Sarabun ที่หัวมีวง) ทั้งหน้าบอร์ด แผนเปิดตัว Road Map ธีมรายเดือน หน้าต่างแก้ไข และหน้า Branding Plan · ตัวเลข/ปุ่ม/ช่องกรอกใช้ฟอนต์เดียวกันหมด"},{"ic":"📣","t":"ปุ่ม “เผยแพร่” ขึ้นที่การ์ดแผนเปิดตัวและหน้า Road Map ของทีมโดยตรง","d":"ไม่ต้องเปิดแผนก่อนอีกแล้ว: การ์ดในหน้า 🚀 แผนเปิดตัวและหน้า 🧭 Road Map มีปุ่ม 📣 เผยแพร่ / 🔄 อัปเดต / 🚫 ยกเลิกเผยแพร่ · ในหน้าต่างแก้ธีม ปุ่มเผยแพร่ย้ายขึ้นใต้หัวหน้าต่าง · หน้า Branding Plan ที่ยังว่างจะบอกสมาชิกทีมว่าต้องกดเผยแพร่ตรงไหน"}]},{"id":"20261014-0029","date":"2026-10-14","title":"Branding Plan: ธีมรายเดือน + หน้าสาธารณะ","items":[{"ic":"🗓️","t":"แท็บใหม่ “Branding Plan” — ใครก็ดูได้ ไม่ต้องล็อกอิน","d":"หน้าสรุปจากทีม Branding เพื่อให้ MKT / Content / NPD ทำงานไปทางเดียวกัน: ธีมเดือนนี้ของ Godmami และ Glimmer Sisters (ชื่อ สโลแกน โทนสี) · วันแคมเปญที่ใกล้ถึง · ธีมรายเดือนทั้งปี คลิกดูโทนสี Key Visual วันสำคัญ แฮชแท็ก (คัดลอกได้) ควรทำ/ห้ามทำ · Road Map สินค้าเปิดตัว แถบขั้นตอนวงกลมเลขขั้น บอกว่าตอนนี้อยู่เฟสไหน ต้องมีคอนเทนต์อะไร · แสดงเฉพาะสิ่งที่ทีม Branding กดเผยแพร่ ไม่มีงบ ไม่มีบันทึกภายใน"},{"ic":"🎨","t":"ธีมรายเดือน (เมนู Branding → 🎨 ธีมรายเดือน)","d":"ตารางเดือน × แบรนด์ คลิกเดือนเพื่อตั้งธีม: ชื่อ สโลแกน โทนสี (สูงสุด 6) Key Visual วันแคมเปญ แฮชแท็ก ควรทำ/ห้ามทำ และ 🔒 บันทึกภายใน (ไม่เผยแพร่) · บันทึกอัตโนมัติ · กด “เผยแพร่” จึงขึ้นหน้า Branding Plan · แก้หลังเผยแพร่จะมีป้ายเตือนและปุ่มอัปเดต ไม่ส่งออกเองจนกว่าทีมจะกด"},{"ic":"📣","t":"เผยแพร่แผนเปิดตัวขึ้น Road Map สาธารณะ + มุมมองสาธารณะสำหรับทีม","d":"ในหน้าแผนเปิดตัวมีปุ่ม “เผยแพร่ในหน้า Branding Plan” (ส่งเฉพาะชื่อเฟส วัน เป้าหมาย คอนเทนต์ — ไม่ส่งเช็คลิสต์ ผู้รับผิดชอบ หรือบันทึก) · เมนู Branding มีแท็บ “👁️ มุมมองสาธารณะ” ดูหน้าเดียวกับที่คนนอกเห็น พร้อมปุ่มคัดลอกลิงก์ · สมาชิก Branding จะเห็นแท็บ Branding แทนแท็บ Branding Plan (กันแถบเมนูกว้างเกิน)"},{"ic":"🧭","t":"แถบเมนูบนไม่ตกขอบจอ","d":"ปรับให้เมนูครบทุกแท็บบนจอ ~1400–1600px (ซ่อนชื่อโปรแกรมเหลือโลโก้เมื่อจอแคบ) และจัดกลางแบบไม่ตัดขอบ"}]},{"id":"20261013-2353","date":"2026-10-13","title":"แก้เมนูบนตกขอบจอ","items":[{"ic":"🧭","t":"แก้แถบเมนูด้านบนไม่ให้ตกขอบ","d":"พอมีแท็บ Branding เพิ่ม แถบเมนูบนจอกว้าง ~1400–1500px กว้างเกินที่ แท็บแรกกับแท็บท้ายสุดโดนตัดและเลื่อนไปไม่ถึง · ปรับให้กระชับขึ้นเล็กน้อย จัดกลางแบบไม่ตัดขอบ และบนจอ ~1440px ซ่อนชื่อโปรแกรมไว้ เหลือแต่โลโก้ เพื่อให้เมนูครบทุกแท็บ"}]},{"id":"20261013-2331","date":"2026-10-13","title":"Branding: แผนเปิดตัวสินค้า + Timeline Road Map","items":[{"ic":"🚀","t":"แผนเปิดตัวสินค้า (เมนู Branding → 🚀 แผนเปิดตัว)","d":"เลือกสินค้า → ดึงวันเปิดตัวจาก Product Info → เลือกเทมเพลตเฟส (มาตรฐาน: เตรียมการ · Teaser · Reveal · Launch · Sustain · Review / เทมเพลตที่ทีมเซฟไว้ / เริ่มจากหน้าว่าง) ระบบคำนวณวันของทุกเฟสให้ · แก้ได้ทุกจุด: ชื่อเฟส วัน เป้าหมาย คอนเทนต์ที่ต้องทำ (เช่น โพสต์ ×4) เช็คลิสต์สิ่งที่ต้องทำ (เปลี่ยนภาพปก IG, ลง Grid 9 ช่อง, ติดตั้ง Display ล่วงหน้า ฯลฯ) ผู้รับผิดชอบ · เพิ่ม/ลบ/สลับลำดับเฟสได้ · กด “สร้างการ์ดทุกเฟสลงบอร์ด” แล้วแต่ละเฟสกลายเป็นการ์ดบน Kanban พร้อมเช็คลิสต์ (เลื่อนวันเปิดตัวแล้ววันที่การ์ดที่ยังไม่เสร็จขยับตาม) · เซฟแผนเป็นเทมเพลตของทีมไว้ใช้ครั้งต่อไปได้"},{"ic":"🧭","t":"Timeline Road Map — ตอนนี้สินค้าควรโฟกัสขั้นไหน","d":"แถบขั้นตอนวงกลมเลขขั้นแบบในตัวอย่าง (เฟสที่ผ่านแล้วเป็น ✓ · เฟสปัจจุบันไฮไลต์ · เฟสที่เหลือเป็นสีจาง) เทียบวันนี้กับวันของแต่ละเฟสให้อัตโนมัติ · กล่อง “ตอนนี้โฟกัส” บอกวันที่เท่าไรของเฟส เป้าหมาย คอนเทนต์ที่ต้องทำ และสิ่งที่ยังไม่ได้ติ๊ก (ติ๊กจากหน้านี้ได้เลย) · ธงแดง “ค้าง N” เมื่อเฟสจบแล้วแต่ยังมีสิ่งที่ต้องทำเหลือ · ตารางทุกสินค้าพร้อมแถบย่อ ดูทีเดียวรู้ว่าแต่ละตัวอยู่ขั้นไหน · แสดงสถานะการพัฒนา (NPD) คู่กับ"},{"ic":"⚠️","t":"ถ้าวันเปิดตัวใน Product Info ถูกแก้ → ถาม Branding ก่อน","d":"แผนจำวันเปิดตัวที่เห็นล่าสุดจาก Product Info — ถ้ามีคนแก้ภายหลัง ทีม Branding จะเจอ Pop-up บอกวันเก่า/ใหม่ (ช้าลง/เร็วขึ้นกี่วัน และเตือนถ้าเฟสจะเริ่มก่อนวันนี้) แล้วเลือก: เลื่อนทั้งแผนตามวันใหม่ · คงวันเดิมของแผน · ถามทีหลัง · แท็บ Branding มีจุดแดงจนกว่าจะตัดสินใจ · ทุกการตัดสินใจถูกจดไว้ในประวัติของแผน"}]},{"id":"20261013-1951","date":"2026-10-13","title":"เมนูใหม่ 🏷️ Branding (ทีม Branding) · รูปบรีฟขึ้นที่เก็บกลาง","items":[{"ic":"🏷️","t":"เมนู Branding — พื้นที่ทำงานของทีม Branding (เห็นเฉพาะสมาชิก)","d":"บอร์ด Kanban 6 คอลัมน์ ติดป้ายแบรนด์ (Godmami / Glimmer Sisters) และประเภทงาน (ธีมรายเดือน · เปิดตัวสินค้า · Decorate · Display · Tester) ผูกสินค้าจาก Product Info · ผู้รับผิดชอบ · กำหนดส่ง · เช็คลิสต์ · ลิงก์ · คอมเมนต์ · ประวัติย้ายคอลัมน์ · ลากการ์ดได้ลื่นเหมือนบอร์ดอื่น · บันทึกอัตโนมัติ · สิทธิ์บังคับที่ฐานข้อมูล (คนอื่นเรียกดูข้อมูลไม่ได้) · รอบถัดไป: แผนเปิดตัว + Road Map · ธีมรายเดือน + แดชบอร์ด Branding Plan · Decorate Offline · Display/Tester"},{"ic":"☁️","t":"แนบรูปในฟอร์ม NPD Brief → ขึ้นที่เก็บกลางทันที (ทีมเห็นรูปเดียวกัน)","d":"ล็อกอินอยู่ แนบรูปแล้วระบบย่อรูปและอัปขึ้นที่เก็บกลางให้เลย ในเครื่องเก็บแค่ลิงก์ (ไม่กินพื้นที่ ไม่เต็มอีก) · ใช้กับช่องรูปทุกช่องของฟอร์ม (PKG, สติกเกอร์, ภาพระบุตำแหน่งยิง, ลายเซ็น ฯลฯ) · ถ้ายังไม่ได้ล็อกอินหรืออัปไม่สำเร็จ จะเก็บในเครื่องไปก่อนและแจ้งสาเหตุ แล้วกด “บันทึกบรีฟ (กลาง)” เพื่อส่งรูปที่ค้างอยู่ขึ้นที่เก็บกลาง"}]},{"id":"20261012-1028","date":"2026-10-12","title":"แก้บัค NPD Brief · G3 Packaging (PKG)","items":[{"ic":"📄","t":"Summary (G. Supply Chain): G3 Packaging แสดงครบทุกแถว","d":"เดิมโชว์แค่ PKG ตัวแรก ตอนนี้ขึ้นเป็นตาราง รหัส · ชื่อ · รูปภาพ ครบทุกแถวที่กรอก พร้อมรหัสส่งสกรีนสินค้า"},{"ic":"🖼️","t":"แนบรูปในฟอร์ม NPD Brief ได้แล้ว แม้เป็นรูปถ่ายจากมือถือ","d":"รูปใหญ่ (หลาย MB) เคยทำให้ที่เก็บในเครื่องเต็มแล้วรูปหายเงียบๆ — ตอนนี้ระบบย่อรูปให้อัตโนมัติ (ด้านยาวสุด 1600px) และถ้าที่เก็บเต็มจริงจะมีข้อความแจ้ง ไม่หายเงียบ · ใช้กับช่องรูปทุกช่องของฟอร์ม (PKG, สติกเกอร์, ภาพระบุตำแหน่งยิง ฯลฯ)"}]},{"id":"20261012-0041","date":"2026-10-12","title":"ลูกบอล + วันทำการ ใช้กับกราฟฟิกทุกคน · รู้วันที่การ์ดย้ายคอลัมน์จริง","items":[{"ic":"⚽","t":"บอร์ดกราฟฟิกทุกคน (เมษา · น้ำฝน · เหมียว ฯลฯ) ตั้ง “ลูกบอลอยู่ที่ใคร” ได้แล้ว","d":"เมนู ⋮ ของคอลัมน์ → ลูกบอลอยู่ที่ใคร: กราฟฟิกทำอยู่ (นับล่าช้า) / ส่งแล้ว รอผู้สั่งงาน / พักงาน · คอลัมน์ “👀 รอตรวจ” / “ส่งงานรอตรวจ” ตั้งต้นเป็น “ส่งแล้ว รอผู้สั่งงาน” ให้เลย → การ์ดขึ้น “✅ ส่งแล้ว · รอ [ผู้สั่งงาน] N วัน” และไม่ถูกนับว่าล่าช้า · คอลัมน์อื่นยังนับล่าช้าเหมือนเดิมจนกว่าจะตั้งเอง"},{"ic":"📅","t":"นับล่าช้าเป็นวันทำการ จันทร์–ศุกร์ กับกราฟฟิกทุกคน","d":"เสาร์–อาทิตย์ไม่นับเป็นวันล่าช้า และ “รอ N วัน” ก็นับเป็นวันทำการ (ยังไม่หักวันหยุดนักขัตฤกษ์) · ข้อความบนการ์ดและหน้ารายละเอียดขึ้น “ล่าช้า N วันทำการ”"},{"ic":"🕘","t":"หน้ารายละเอียดการ์ดกราฟฟิก: อยู่ในคอลัมน์นี้ตั้งแต่เมื่อไหร่ + ประวัติย้ายคอลัมน์","d":"“รอ N วัน” นับจากวันที่ย้ายเข้าคอลัมน์จริง (ฐานข้อมูลจดให้เองทุกครั้งที่ย้าย) · ในหน้ารายละเอียดมีแถว “อยู่ในคอลัมน์นี้ตั้งแต่” และรายการ “ประวัติย้ายคอลัมน์” (จากไหน → ไปไหน · เมื่อไหร่ · ใครย้าย) ให้ตรวจเทียบได้ · การ์ดเก่าจะแม่นหลังย้ายครั้งถัดไป ก่อนหน้านั้นใช้วันอัปเดตล่าสุดแทน"}]},{"id":"20261011-2209","date":"2026-10-11","title":"บอร์ดกราฟฟิกไอซ์: “ลูกบอลอยู่ที่ใคร” + นับล่าช้าเป็นวันทำการ","items":[{"ic":"⚽","t":"งานที่ส่งแล้วรอคนอื่น ไม่ถูกนับว่าล่าช้าอีกต่อไป","d":"คอลัมน์ รอ NPD / Branding / ไอซ์ SC ตรวจสอบ · CF แบบรอใบ Confirm · รอส่งต่อจัดซื้อ → การ์ดขึ้น “✅ ส่งแล้ว · รอ [ผู้สั่งงาน] N วัน” (ไม่แดง ไม่ติดงานล่าช้า) · งานไม่เร่ง = ⏸ พักงาน · ที่ยังนับล่าช้าคืองานที่ไอซ์ถืออยู่ (Inprocess / แก้ไขเพิ่มเติม / Brief ฯลฯ)"},{"ic":"📅","t":"นับล่าช้าเป็นวันทำการ จันทร์–ศุกร์ + เปลี่ยนชื่อช่องเป็น “กำหนดส่งงาน”","d":"เสาร์–อาทิตย์ไม่นับเป็นวันล่าช้า (ยังไม่หักวันหยุดนักขัตฤกษ์) · ใช้กับบอร์ดไอซ์ก่อน · ปรับได้เองที่เมนู ⋮ ของคอลัมน์ → “ลูกบอลอยู่ที่ใคร” (กราฟฟิกทำอยู่ / ส่งแล้ว รอผู้สั่งงาน / พักงาน) · ช่อง “วันที่ส่งงาน” ในการ์ดกราฟฟิกเปลี่ยนชื่อเป็น “กำหนดส่งงาน”"}]},{"id":"20261011-1552","date":"2026-10-11","title":"เกมใหม่ 🍉 หั่นผลไม้ + จับผิดภาพมีปุ่ม ▶ เริ่มเกม","items":[{"ic":"🍉","t":"หั่นผลไม้ — ปาดเมาส์/นิ้วหั่นผลไม้ให้ได้มากที่สุดใน 60 วินาที","d":"3 หัวใจ · หั่น 1 ลูก +10 · ปาดทีเดียว 3 ลูกขึ้นไปได้โบนัสคอมโบ · 🌟 ผลไม้ทอง +30 · 💣 ระเบิด −20 แต้ม และเสียหัวใจ · ผลไม้ตกพื้นเสียหัวใจ · กด ▶ เริ่มเกม ก่อนเวลาถึงจะเริ่มนับ · เล่นบนมือถือได้"},{"ic":"🪙","t":"นับสถิติสูงสุดรายสัปดาห์ให้ทีม + ได้เหรียญ","d":"คะแนนสูงสุดของคุณในสัปดาห์นั้นรวมในคะแนนทีมและอันดับ (เหมือนเกมงู) · จบรอบได้เหรียญ = คะแนน ÷ 40 (สูงสุด 25) เข้ากระเป๋าเดียวกับเกมงู ไว้ซื้อสกินหนอน · ต้องล็อกอินถึงจะบันทึก"},{"ic":"🔍","t":"จับผิดภาพ: กด ▶ เริ่มเกม ก่อนเวลาจะเริ่มนับ","d":"เปิดเกมแล้วเจอหน้าตัวอย่าง + กติกาก่อน ยังไม่นับเวลา · กด ▶ เริ่มเกม เมื่อพร้อมค่อยขึ้นภาพยกที่ 1 (45 วิ) · ถ้าเล่นโจทย์ประจำวันค้างไว้ กลับมาจะเล่นต่อทันที เวลาเดินต่อเหมือนเดิม"}]},{"id":"20261010-0044","date":"2026-10-10","title":"แถบเตือนแบบใหม่ + ปุ่ม ❓ วิธีใช้บอร์ด Content","items":[{"ic":"🔔","t":"แถบ “สิ่งที่ต้องตาม” แถบเดียว เรียบขึ้น","d":"รวมกล่องเตือนสีแดง/เหลืองเดิมเป็นแถบบางๆ พื้นขาว มีตัวเลขแต่ละประเภท กดเพื่อกางรายการ (ชื่อ · เลยกี่วัน · ผู้รับผิดชอบ) · พับเก็บเองถ้ามีเกิน 3 รายการ · กล่องเลยวันโพสต์ยังอยู่เฉพาะหน้า Calendar"},{"ic":"❓","t":"บอร์ด Content ใช้ง่ายขึ้น: คำอธิบายใต้คอลัมน์ + ปุ่มวิธีใช้ + ปุ่มลัด","d":"ใต้ชื่อแต่ละคอลัมน์มีคำอธิบายสั้นๆ · ปุ่ม ❓ วิธีใช้บอร์ด สรุปเส้นทางการ์ดและสถานการณ์ที่เจอบ่อย (ส่งงานให้กราฟฟิก · ย้ายการ์ด · หาการ์ดไม่เจอ · แจ้งเตือน) · ปุ่มลัด 👤 งานของฉัน · 🔍 รอฉันตรวจ · ⏰ เลยกำหนด"}]},{"id":"20261009-2358","date":"2026-10-10","title":"ช่อง “รับงานจาก บอร์ด Content” เรียงงานที่ยังไม่รับไว้บนสุด","items":[{"ic":"📥","t":"งานที่ต้องกดรับ ขึ้นบนสุด","d":"ในช่อง “รับงานจาก บอร์ด Content” งานที่ยังไม่ได้รับ (มีปุ่ม 📥) อยู่บนสุด ตามด้วยงานที่มีการ์ดชื่อเดียวกันอยู่แล้ว และงานที่ “รับแล้ว” ไว้ล่าง (ในแต่ละกลุ่มเรียงตามวันเดิม)"}]},{"id":"20261009-2337","date":"2026-10-10","title":"การ์ดกราฟฟิกแสดงผู้มอบหมายงานจาก PIC ของ Content + กล่องเตือนเฉพาะหน้า Calendar","items":[{"ic":"👤","t":"ผู้มอบหมายงาน (กราฟฟิก) = PIC ของการ์ด Content","d":"การ์ดกราฟฟิกที่รับมาจาก Content จะแสดง “ผู้มอบหมายงาน” เป็นผู้รับมอบหมาย (PIC) ของการ์ด Content ต้นทางให้เอง (ตามค่าปัจจุบัน) — ทั้งในหน้าการ์ด บนบอร์ด และในหน้าแก้ไข · ถ้าเคยกรอกเอง ใช้ค่าที่กรอกไว้"},{"ic":"⏰","t":"กล่องเตือน “เลยวันโพสต์” ไว้เฉพาะหน้า Calendar","d":"บอร์ด Pipeline ไม่มีกล่องสีเหลืองด้านบนแล้ว · ป้าย ⏰ บนการ์ดในคอลัมน์ “อนุมัติ” ยังอยู่"}]},{"id":"20261009-2320","date":"2026-10-10","title":"ค้นหาการ์ด + กรอง Tag/สินค้า ในบอร์ด Content และกราฟฟิก","items":[{"ic":"🔎","t":"ช่องค้นหาชื่อการ์ด + กรองแท็ก + กรองสินค้า","d":"บอร์ด Content และบอร์ดกราฟฟิกมีปุ่ม 🏷️ แท็ก · 📦 สินค้า (เลือกได้หลายอัน) และช่อง 🔎 ค้นหาคีย์เวิร์ดจากชื่อการ์ด — พิมพ์หลายคำได้ (ต้องมีครบทุกคำ) · ใช้ร่วมกับตัวกรอง PIC/แบรนด์เดิมได้ · มีตัวเลือก “ไม่มีแท็ก/ไม่ระบุสินค้า” และบอกว่าแสดง N จาก M การ์ด"},{"ic":"✨","t":"ช่อง “รับงานจาก บอร์ด Content” (กราฟฟิก)","d":"เปลี่ยนชื่อจาก “จาก Content” · ลบการ์ดที่รับมาแล้ว การ์ดต้นทางใน Content ไม่หาย จะกลับมารอให้กด 📥 รับใหม่ (มีข้อความเตือนตอนลบ) · ตัวกรองใหม่ใช้กับช่องนี้ด้วย"}]},{"id":"20261009-2243","date":"2026-10-10","title":"กรอง PIC แล้วการ์ดที่ไม่มี PIC ไม่หายอีก","items":[{"ic":"🔎","t":"ตัวเลือก “— ไม่ระบุ PIC —” ในตัวกรอง PIC","d":"เดิมพอเลือกกรองคนใดคนหนึ่ง การ์ดที่ไม่มี PIC (เช่น งานที่มอบให้กราฟฟิกล้วนๆ) จะหายไปจากบอร์ดและปฏิทิน Content ทั้งที่ยังอยู่ ตอนนี้มีตัวเลือก “ไม่ระบุ PIC” พร้อมจำนวน เลือกดูหรือเลือกรวมกับคนอื่นได้"}]}]}</script>
+<script type="application/json" id="whatsnew-data">{"id":"20261015-0954","date":"2026-10-14","title":"ตัวแก้ไขข้อความใหม่: เห็นผลทันที + สี + ไฮไลต์ + อิโมจิ","items":[{"ic":"✍️","t":"ช่อง “รายละเอียดงาน” กดแก้ไขตรงนั้นได้เลย (ทุกบอร์ด)","d":"ในหน้าต่างการ์ด Content / E-com / Graphic เอาเมาส์ชี้ที่รายละเอียดงานจะมี ✏️ กดแล้วแก้ในที่เลย มีปุ่ม บันทึก / ยกเลิก (หรือ Ctrl+Enter / Esc) ไม่ต้องเปิดฟอร์มแก้ไขก่อน · ฟอร์มแก้ไขการ์ดและการ์ด Branding ใช้ตัวแก้ไขเดียวกัน"},{"ic":"👀","t":"พิมพ์แล้วเห็นผลทันที ไม่ต้องกด “ตัวอย่าง”","d":"ตัวหนา เอียง ขีดเส้นใต้ ขีดฆ่า รายการจุด/เลขข้อ ขึ้นให้เห็นตอนพิมพ์เลย ไม่มีสัญลักษณ์ ** หรือ == ปนในข้อความอีก · ใช้กับทั้งรายละเอียดงานและช่องคอมเมนต์ (ตอนเขียนใหม่และตอนแก้คอมเมนต์) · คอมเมนต์เก่าที่ใช้สัญลักษณ์เดิมยังแสดงถูกเหมือนเดิม และแปลงเป็นแบบใหม่ให้เมื่อเปิดแก้"},{"ic":"🎨","t":"เปลี่ยนสีตัวอักษรและสีไฮไลต์ได้เยอะ","d":"แถบเครื่องมือมีสีตัวอักษร 20 สี + เลือกสีเองได้ + ล้างสี และสีไฮไลต์ 10 สี + เลือกสีเองได้ + ลบไฮไลต์ · ใส่ลิงก์ (Ctrl+K) · ล้างรูปแบบ · ย้อนกลับ/ทำซ้ำ · แท็ก @ชื่อ ยังใช้ได้เหมือนเดิม และวางข้อความจากที่อื่นจะวางเป็นข้อความล้วน (ไม่พ่วงฟอนต์/สีแปลกๆ มา)"},{"ic":"😀","t":"ปุ่มอิโมจิ มีหมวด ค้นหา และที่ใช้ล่าสุด","d":"กดปุ่ม 😀 ในแถบเครื่องมือ เลือกหมวด (ผู้คน มือ หัวใจ ธรรมชาติ อาหาร กิจกรรม เดินทาง ของใช้) หรือพิมพ์ค้นหาเป็นไทย/อังกฤษ เช่น “รัก” “ไฟ” “ขอบคุณ” · สติกเกอร์จะตามมาในรอบถัดไป"}],"history":[{"id":"20261014-0838","date":"2026-10-14","title":"Copy Card ไม่คัดลอกประวัติ","items":[{"ic":"📋","t":"Copy Card (Graphic / E-com) ได้การ์ดใหม่ที่สะอาด ไม่เอาประวัติเดิมมาด้วย","d":"ตอนคัดลอกการ์ด จะไม่ติดข้อมูลที่เป็นประวัติของใบเดิมไปแล้ว: ประวัติการแก้ไข · ลิงก์การ์ดต้นทาง · ผู้สร้าง/วันที่สร้างเดิม (ใบใหม่ถือว่าคนที่กดคัดลอกเป็นผู้สร้าง ณ ตอนนี้) · เวลาที่เข้าคอลัมน์ (เริ่มนับใหม่ ไม่ขึ้นว่าค้างเหมือนใบเดิม) · เช็คลิสต์ที่เคยติ๊กแล้ว (คงรายการไว้ แต่ติ๊กออกหมด) · ส่วนเนื้องาน เช่น ชื่อ แบรนด์ ผู้รับผิดชอบ วันส่ง โน้ต แท็ก รูป ยังคัดลอกตามเดิม และการ์ดใบเดิมไม่ถูกแตะ"}]},{"id":"20261014-0120","date":"2026-10-14","title":"บอร์ด Branding เต็มจอ + หัวกระชับ","items":[{"ic":"🗂️","t":"บอร์ด Branding กว้างเต็มจอเหมือนบอร์ดอื่น","d":"เดิมบอร์ดถูกจำกัดความกว้างเท่าหน้าทั่วไป เห็นแค่ ~5 คอลัมน์ ตอนนี้กว้างเต็มหน้าจอ จอใหญ่ๆ คอลัมน์ขยายให้พอดีไม่ต้องเลื่อนข้าง · ส่วนหน้าอื่นของ Branding (แผนเปิดตัว Road Map ธีม) ยังจัดกึ่งกลางตามเดิม"},{"ic":"📐","t":"ส่วนหัวของ Branding เหลือบรรทัดเดียว","d":"ชื่อ + ตัวกรอง (แบรนด์ / ประเภท / คน / งานของฉัน / ค้นหา) + เมนูส่วนงาน รวมอยู่แถวเดียวกัน จากเดิมกินที่แนวตั้ง ~90px เหลือ ~40px ได้พื้นที่บอร์ดเพิ่ม · เมนูส่วนงานย่อให้กะทัดรัด"}]},{"id":"20261014-0107","date":"2026-10-14","title":"Branding: ดรอปดาวน์ + ฟอนต์ใหม่ + ปุ่มเผยแพร่หาง่ายขึ้น","items":[{"ic":"🗂️","t":"เมนู Branding เปลี่ยนเป็นดรอปดาวน์","d":"แทนแถวปุ่มยาวๆ ด้วยเมนูเดียว “ส่วนงาน” กดแล้วเลือกได้ จัดเป็นกลุ่ม (งานประจำ · วางแผน · หน้าร้าน · ดูผลลัพธ์) มีไอคอนและคำอธิบายสั้นๆ ของแต่ละส่วน · ส่วนที่ยังไม่เปิดมีป้าย “เร็วๆ นี้” · มีจุดแดงเตือนเมื่อมีวันเปิดตัวใน Product Info ที่ต้องตัดสินใจ · ใช้คีย์บอร์ดได้ (↑ ↓ Esc) และใช้งานบนมือถือได้"},{"ic":"🔤","t":"ฟอนต์ใหม่ในเมนู Branding และหน้า Branding Plan","d":"เปลี่ยนเป็น Noto Sans Thai (ตัวสะอาด ทันสมัย แทน Sarabun ที่หัวมีวง) ทั้งหน้าบอร์ด แผนเปิดตัว Road Map ธีมรายเดือน หน้าต่างแก้ไข และหน้า Branding Plan · ตัวเลข/ปุ่ม/ช่องกรอกใช้ฟอนต์เดียวกันหมด"},{"ic":"📣","t":"ปุ่ม “เผยแพร่” ขึ้นที่การ์ดแผนเปิดตัวและหน้า Road Map ของทีมโดยตรง","d":"ไม่ต้องเปิดแผนก่อนอีกแล้ว: การ์ดในหน้า 🚀 แผนเปิดตัวและหน้า 🧭 Road Map มีปุ่ม 📣 เผยแพร่ / 🔄 อัปเดต / 🚫 ยกเลิกเผยแพร่ · ในหน้าต่างแก้ธีม ปุ่มเผยแพร่ย้ายขึ้นใต้หัวหน้าต่าง · หน้า Branding Plan ที่ยังว่างจะบอกสมาชิกทีมว่าต้องกดเผยแพร่ตรงไหน"}]},{"id":"20261014-0029","date":"2026-10-14","title":"Branding Plan: ธีมรายเดือน + หน้าสาธารณะ","items":[{"ic":"🗓️","t":"แท็บใหม่ “Branding Plan” — ใครก็ดูได้ ไม่ต้องล็อกอิน","d":"หน้าสรุปจากทีม Branding เพื่อให้ MKT / Content / NPD ทำงานไปทางเดียวกัน: ธีมเดือนนี้ของ Godmami และ Glimmer Sisters (ชื่อ สโลแกน โทนสี) · วันแคมเปญที่ใกล้ถึง · ธีมรายเดือนทั้งปี คลิกดูโทนสี Key Visual วันสำคัญ แฮชแท็ก (คัดลอกได้) ควรทำ/ห้ามทำ · Road Map สินค้าเปิดตัว แถบขั้นตอนวงกลมเลขขั้น บอกว่าตอนนี้อยู่เฟสไหน ต้องมีคอนเทนต์อะไร · แสดงเฉพาะสิ่งที่ทีม Branding กดเผยแพร่ ไม่มีงบ ไม่มีบันทึกภายใน"},{"ic":"🎨","t":"ธีมรายเดือน (เมนู Branding → 🎨 ธีมรายเดือน)","d":"ตารางเดือน × แบรนด์ คลิกเดือนเพื่อตั้งธีม: ชื่อ สโลแกน โทนสี (สูงสุด 6) Key Visual วันแคมเปญ แฮชแท็ก ควรทำ/ห้ามทำ และ 🔒 บันทึกภายใน (ไม่เผยแพร่) · บันทึกอัตโนมัติ · กด “เผยแพร่” จึงขึ้นหน้า Branding Plan · แก้หลังเผยแพร่จะมีป้ายเตือนและปุ่มอัปเดต ไม่ส่งออกเองจนกว่าทีมจะกด"},{"ic":"📣","t":"เผยแพร่แผนเปิดตัวขึ้น Road Map สาธารณะ + มุมมองสาธารณะสำหรับทีม","d":"ในหน้าแผนเปิดตัวมีปุ่ม “เผยแพร่ในหน้า Branding Plan” (ส่งเฉพาะชื่อเฟส วัน เป้าหมาย คอนเทนต์ — ไม่ส่งเช็คลิสต์ ผู้รับผิดชอบ หรือบันทึก) · เมนู Branding มีแท็บ “👁️ มุมมองสาธารณะ” ดูหน้าเดียวกับที่คนนอกเห็น พร้อมปุ่มคัดลอกลิงก์ · สมาชิก Branding จะเห็นแท็บ Branding แทนแท็บ Branding Plan (กันแถบเมนูกว้างเกิน)"},{"ic":"🧭","t":"แถบเมนูบนไม่ตกขอบจอ","d":"ปรับให้เมนูครบทุกแท็บบนจอ ~1400–1600px (ซ่อนชื่อโปรแกรมเหลือโลโก้เมื่อจอแคบ) และจัดกลางแบบไม่ตัดขอบ"}]},{"id":"20261013-2353","date":"2026-10-13","title":"แก้เมนูบนตกขอบจอ","items":[{"ic":"🧭","t":"แก้แถบเมนูด้านบนไม่ให้ตกขอบ","d":"พอมีแท็บ Branding เพิ่ม แถบเมนูบนจอกว้าง ~1400–1500px กว้างเกินที่ แท็บแรกกับแท็บท้ายสุดโดนตัดและเลื่อนไปไม่ถึง · ปรับให้กระชับขึ้นเล็กน้อย จัดกลางแบบไม่ตัดขอบ และบนจอ ~1440px ซ่อนชื่อโปรแกรมไว้ เหลือแต่โลโก้ เพื่อให้เมนูครบทุกแท็บ"}]},{"id":"20261013-2331","date":"2026-10-13","title":"Branding: แผนเปิดตัวสินค้า + Timeline Road Map","items":[{"ic":"🚀","t":"แผนเปิดตัวสินค้า (เมนู Branding → 🚀 แผนเปิดตัว)","d":"เลือกสินค้า → ดึงวันเปิดตัวจาก Product Info → เลือกเทมเพลตเฟส (มาตรฐาน: เตรียมการ · Teaser · Reveal · Launch · Sustain · Review / เทมเพลตที่ทีมเซฟไว้ / เริ่มจากหน้าว่าง) ระบบคำนวณวันของทุกเฟสให้ · แก้ได้ทุกจุด: ชื่อเฟส วัน เป้าหมาย คอนเทนต์ที่ต้องทำ (เช่น โพสต์ ×4) เช็คลิสต์สิ่งที่ต้องทำ (เปลี่ยนภาพปก IG, ลง Grid 9 ช่อง, ติดตั้ง Display ล่วงหน้า ฯลฯ) ผู้รับผิดชอบ · เพิ่ม/ลบ/สลับลำดับเฟสได้ · กด “สร้างการ์ดทุกเฟสลงบอร์ด” แล้วแต่ละเฟสกลายเป็นการ์ดบน Kanban พร้อมเช็คลิสต์ (เลื่อนวันเปิดตัวแล้ววันที่การ์ดที่ยังไม่เสร็จขยับตาม) · เซฟแผนเป็นเทมเพลตของทีมไว้ใช้ครั้งต่อไปได้"},{"ic":"🧭","t":"Timeline Road Map — ตอนนี้สินค้าควรโฟกัสขั้นไหน","d":"แถบขั้นตอนวงกลมเลขขั้นแบบในตัวอย่าง (เฟสที่ผ่านแล้วเป็น ✓ · เฟสปัจจุบันไฮไลต์ · เฟสที่เหลือเป็นสีจาง) เทียบวันนี้กับวันของแต่ละเฟสให้อัตโนมัติ · กล่อง “ตอนนี้โฟกัส” บอกวันที่เท่าไรของเฟส เป้าหมาย คอนเทนต์ที่ต้องทำ และสิ่งที่ยังไม่ได้ติ๊ก (ติ๊กจากหน้านี้ได้เลย) · ธงแดง “ค้าง N” เมื่อเฟสจบแล้วแต่ยังมีสิ่งที่ต้องทำเหลือ · ตารางทุกสินค้าพร้อมแถบย่อ ดูทีเดียวรู้ว่าแต่ละตัวอยู่ขั้นไหน · แสดงสถานะการพัฒนา (NPD) คู่กับ"},{"ic":"⚠️","t":"ถ้าวันเปิดตัวใน Product Info ถูกแก้ → ถาม Branding ก่อน","d":"แผนจำวันเปิดตัวที่เห็นล่าสุดจาก Product Info — ถ้ามีคนแก้ภายหลัง ทีม Branding จะเจอ Pop-up บอกวันเก่า/ใหม่ (ช้าลง/เร็วขึ้นกี่วัน และเตือนถ้าเฟสจะเริ่มก่อนวันนี้) แล้วเลือก: เลื่อนทั้งแผนตามวันใหม่ · คงวันเดิมของแผน · ถามทีหลัง · แท็บ Branding มีจุดแดงจนกว่าจะตัดสินใจ · ทุกการตัดสินใจถูกจดไว้ในประวัติของแผน"}]},{"id":"20261013-1951","date":"2026-10-13","title":"เมนูใหม่ 🏷️ Branding (ทีม Branding) · รูปบรีฟขึ้นที่เก็บกลาง","items":[{"ic":"🏷️","t":"เมนู Branding — พื้นที่ทำงานของทีม Branding (เห็นเฉพาะสมาชิก)","d":"บอร์ด Kanban 6 คอลัมน์ ติดป้ายแบรนด์ (Godmami / Glimmer Sisters) และประเภทงาน (ธีมรายเดือน · เปิดตัวสินค้า · Decorate · Display · Tester) ผูกสินค้าจาก Product Info · ผู้รับผิดชอบ · กำหนดส่ง · เช็คลิสต์ · ลิงก์ · คอมเมนต์ · ประวัติย้ายคอลัมน์ · ลากการ์ดได้ลื่นเหมือนบอร์ดอื่น · บันทึกอัตโนมัติ · สิทธิ์บังคับที่ฐานข้อมูล (คนอื่นเรียกดูข้อมูลไม่ได้) · รอบถัดไป: แผนเปิดตัว + Road Map · ธีมรายเดือน + แดชบอร์ด Branding Plan · Decorate Offline · Display/Tester"},{"ic":"☁️","t":"แนบรูปในฟอร์ม NPD Brief → ขึ้นที่เก็บกลางทันที (ทีมเห็นรูปเดียวกัน)","d":"ล็อกอินอยู่ แนบรูปแล้วระบบย่อรูปและอัปขึ้นที่เก็บกลางให้เลย ในเครื่องเก็บแค่ลิงก์ (ไม่กินพื้นที่ ไม่เต็มอีก) · ใช้กับช่องรูปทุกช่องของฟอร์ม (PKG, สติกเกอร์, ภาพระบุตำแหน่งยิง, ลายเซ็น ฯลฯ) · ถ้ายังไม่ได้ล็อกอินหรืออัปไม่สำเร็จ จะเก็บในเครื่องไปก่อนและแจ้งสาเหตุ แล้วกด “บันทึกบรีฟ (กลาง)” เพื่อส่งรูปที่ค้างอยู่ขึ้นที่เก็บกลาง"}]},{"id":"20261012-1028","date":"2026-10-12","title":"แก้บัค NPD Brief · G3 Packaging (PKG)","items":[{"ic":"📄","t":"Summary (G. Supply Chain): G3 Packaging แสดงครบทุกแถว","d":"เดิมโชว์แค่ PKG ตัวแรก ตอนนี้ขึ้นเป็นตาราง รหัส · ชื่อ · รูปภาพ ครบทุกแถวที่กรอก พร้อมรหัสส่งสกรีนสินค้า"},{"ic":"🖼️","t":"แนบรูปในฟอร์ม NPD Brief ได้แล้ว แม้เป็นรูปถ่ายจากมือถือ","d":"รูปใหญ่ (หลาย MB) เคยทำให้ที่เก็บในเครื่องเต็มแล้วรูปหายเงียบๆ — ตอนนี้ระบบย่อรูปให้อัตโนมัติ (ด้านยาวสุด 1600px) และถ้าที่เก็บเต็มจริงจะมีข้อความแจ้ง ไม่หายเงียบ · ใช้กับช่องรูปทุกช่องของฟอร์ม (PKG, สติกเกอร์, ภาพระบุตำแหน่งยิง ฯลฯ)"}]},{"id":"20261012-0041","date":"2026-10-12","title":"ลูกบอล + วันทำการ ใช้กับกราฟฟิกทุกคน · รู้วันที่การ์ดย้ายคอลัมน์จริง","items":[{"ic":"⚽","t":"บอร์ดกราฟฟิกทุกคน (เมษา · น้ำฝน · เหมียว ฯลฯ) ตั้ง “ลูกบอลอยู่ที่ใคร” ได้แล้ว","d":"เมนู ⋮ ของคอลัมน์ → ลูกบอลอยู่ที่ใคร: กราฟฟิกทำอยู่ (นับล่าช้า) / ส่งแล้ว รอผู้สั่งงาน / พักงาน · คอลัมน์ “👀 รอตรวจ” / “ส่งงานรอตรวจ” ตั้งต้นเป็น “ส่งแล้ว รอผู้สั่งงาน” ให้เลย → การ์ดขึ้น “✅ ส่งแล้ว · รอ [ผู้สั่งงาน] N วัน” และไม่ถูกนับว่าล่าช้า · คอลัมน์อื่นยังนับล่าช้าเหมือนเดิมจนกว่าจะตั้งเอง"},{"ic":"📅","t":"นับล่าช้าเป็นวันทำการ จันทร์–ศุกร์ กับกราฟฟิกทุกคน","d":"เสาร์–อาทิตย์ไม่นับเป็นวันล่าช้า และ “รอ N วัน” ก็นับเป็นวันทำการ (ยังไม่หักวันหยุดนักขัตฤกษ์) · ข้อความบนการ์ดและหน้ารายละเอียดขึ้น “ล่าช้า N วันทำการ”"},{"ic":"🕘","t":"หน้ารายละเอียดการ์ดกราฟฟิก: อยู่ในคอลัมน์นี้ตั้งแต่เมื่อไหร่ + ประวัติย้ายคอลัมน์","d":"“รอ N วัน” นับจากวันที่ย้ายเข้าคอลัมน์จริง (ฐานข้อมูลจดให้เองทุกครั้งที่ย้าย) · ในหน้ารายละเอียดมีแถว “อยู่ในคอลัมน์นี้ตั้งแต่” และรายการ “ประวัติย้ายคอลัมน์” (จากไหน → ไปไหน · เมื่อไหร่ · ใครย้าย) ให้ตรวจเทียบได้ · การ์ดเก่าจะแม่นหลังย้ายครั้งถัดไป ก่อนหน้านั้นใช้วันอัปเดตล่าสุดแทน"}]},{"id":"20261011-2209","date":"2026-10-11","title":"บอร์ดกราฟฟิกไอซ์: “ลูกบอลอยู่ที่ใคร” + นับล่าช้าเป็นวันทำการ","items":[{"ic":"⚽","t":"งานที่ส่งแล้วรอคนอื่น ไม่ถูกนับว่าล่าช้าอีกต่อไป","d":"คอลัมน์ รอ NPD / Branding / ไอซ์ SC ตรวจสอบ · CF แบบรอใบ Confirm · รอส่งต่อจัดซื้อ → การ์ดขึ้น “✅ ส่งแล้ว · รอ [ผู้สั่งงาน] N วัน” (ไม่แดง ไม่ติดงานล่าช้า) · งานไม่เร่ง = ⏸ พักงาน · ที่ยังนับล่าช้าคืองานที่ไอซ์ถืออยู่ (Inprocess / แก้ไขเพิ่มเติม / Brief ฯลฯ)"},{"ic":"📅","t":"นับล่าช้าเป็นวันทำการ จันทร์–ศุกร์ + เปลี่ยนชื่อช่องเป็น “กำหนดส่งงาน”","d":"เสาร์–อาทิตย์ไม่นับเป็นวันล่าช้า (ยังไม่หักวันหยุดนักขัตฤกษ์) · ใช้กับบอร์ดไอซ์ก่อน · ปรับได้เองที่เมนู ⋮ ของคอลัมน์ → “ลูกบอลอยู่ที่ใคร” (กราฟฟิกทำอยู่ / ส่งแล้ว รอผู้สั่งงาน / พักงาน) · ช่อง “วันที่ส่งงาน” ในการ์ดกราฟฟิกเปลี่ยนชื่อเป็น “กำหนดส่งงาน”"}]},{"id":"20261011-1552","date":"2026-10-11","title":"เกมใหม่ 🍉 หั่นผลไม้ + จับผิดภาพมีปุ่ม ▶ เริ่มเกม","items":[{"ic":"🍉","t":"หั่นผลไม้ — ปาดเมาส์/นิ้วหั่นผลไม้ให้ได้มากที่สุดใน 60 วินาที","d":"3 หัวใจ · หั่น 1 ลูก +10 · ปาดทีเดียว 3 ลูกขึ้นไปได้โบนัสคอมโบ · 🌟 ผลไม้ทอง +30 · 💣 ระเบิด −20 แต้ม และเสียหัวใจ · ผลไม้ตกพื้นเสียหัวใจ · กด ▶ เริ่มเกม ก่อนเวลาถึงจะเริ่มนับ · เล่นบนมือถือได้"},{"ic":"🪙","t":"นับสถิติสูงสุดรายสัปดาห์ให้ทีม + ได้เหรียญ","d":"คะแนนสูงสุดของคุณในสัปดาห์นั้นรวมในคะแนนทีมและอันดับ (เหมือนเกมงู) · จบรอบได้เหรียญ = คะแนน ÷ 40 (สูงสุด 25) เข้ากระเป๋าเดียวกับเกมงู ไว้ซื้อสกินหนอน · ต้องล็อกอินถึงจะบันทึก"},{"ic":"🔍","t":"จับผิดภาพ: กด ▶ เริ่มเกม ก่อนเวลาจะเริ่มนับ","d":"เปิดเกมแล้วเจอหน้าตัวอย่าง + กติกาก่อน ยังไม่นับเวลา · กด ▶ เริ่มเกม เมื่อพร้อมค่อยขึ้นภาพยกที่ 1 (45 วิ) · ถ้าเล่นโจทย์ประจำวันค้างไว้ กลับมาจะเล่นต่อทันที เวลาเดินต่อเหมือนเดิม"}]},{"id":"20261010-0044","date":"2026-10-10","title":"แถบเตือนแบบใหม่ + ปุ่ม ❓ วิธีใช้บอร์ด Content","items":[{"ic":"🔔","t":"แถบ “สิ่งที่ต้องตาม” แถบเดียว เรียบขึ้น","d":"รวมกล่องเตือนสีแดง/เหลืองเดิมเป็นแถบบางๆ พื้นขาว มีตัวเลขแต่ละประเภท กดเพื่อกางรายการ (ชื่อ · เลยกี่วัน · ผู้รับผิดชอบ) · พับเก็บเองถ้ามีเกิน 3 รายการ · กล่องเลยวันโพสต์ยังอยู่เฉพาะหน้า Calendar"},{"ic":"❓","t":"บอร์ด Content ใช้ง่ายขึ้น: คำอธิบายใต้คอลัมน์ + ปุ่มวิธีใช้ + ปุ่มลัด","d":"ใต้ชื่อแต่ละคอลัมน์มีคำอธิบายสั้นๆ · ปุ่ม ❓ วิธีใช้บอร์ด สรุปเส้นทางการ์ดและสถานการณ์ที่เจอบ่อย (ส่งงานให้กราฟฟิก · ย้ายการ์ด · หาการ์ดไม่เจอ · แจ้งเตือน) · ปุ่มลัด 👤 งานของฉัน · 🔍 รอฉันตรวจ · ⏰ เลยกำหนด"}]},{"id":"20261009-2358","date":"2026-10-10","title":"ช่อง “รับงานจาก บอร์ด Content” เรียงงานที่ยังไม่รับไว้บนสุด","items":[{"ic":"📥","t":"งานที่ต้องกดรับ ขึ้นบนสุด","d":"ในช่อง “รับงานจาก บอร์ด Content” งานที่ยังไม่ได้รับ (มีปุ่ม 📥) อยู่บนสุด ตามด้วยงานที่มีการ์ดชื่อเดียวกันอยู่แล้ว และงานที่ “รับแล้ว” ไว้ล่าง (ในแต่ละกลุ่มเรียงตามวันเดิม)"}]},{"id":"20261009-2337","date":"2026-10-10","title":"การ์ดกราฟฟิกแสดงผู้มอบหมายงานจาก PIC ของ Content + กล่องเตือนเฉพาะหน้า Calendar","items":[{"ic":"👤","t":"ผู้มอบหมายงาน (กราฟฟิก) = PIC ของการ์ด Content","d":"การ์ดกราฟฟิกที่รับมาจาก Content จะแสดง “ผู้มอบหมายงาน” เป็นผู้รับมอบหมาย (PIC) ของการ์ด Content ต้นทางให้เอง (ตามค่าปัจจุบัน) — ทั้งในหน้าการ์ด บนบอร์ด และในหน้าแก้ไข · ถ้าเคยกรอกเอง ใช้ค่าที่กรอกไว้"},{"ic":"⏰","t":"กล่องเตือน “เลยวันโพสต์” ไว้เฉพาะหน้า Calendar","d":"บอร์ด Pipeline ไม่มีกล่องสีเหลืองด้านบนแล้ว · ป้าย ⏰ บนการ์ดในคอลัมน์ “อนุมัติ” ยังอยู่"}]},{"id":"20261009-2320","date":"2026-10-10","title":"ค้นหาการ์ด + กรอง Tag/สินค้า ในบอร์ด Content และกราฟฟิก","items":[{"ic":"🔎","t":"ช่องค้นหาชื่อการ์ด + กรองแท็ก + กรองสินค้า","d":"บอร์ด Content และบอร์ดกราฟฟิกมีปุ่ม 🏷️ แท็ก · 📦 สินค้า (เลือกได้หลายอัน) และช่อง 🔎 ค้นหาคีย์เวิร์ดจากชื่อการ์ด — พิมพ์หลายคำได้ (ต้องมีครบทุกคำ) · ใช้ร่วมกับตัวกรอง PIC/แบรนด์เดิมได้ · มีตัวเลือก “ไม่มีแท็ก/ไม่ระบุสินค้า” และบอกว่าแสดง N จาก M การ์ด"},{"ic":"✨","t":"ช่อง “รับงานจาก บอร์ด Content” (กราฟฟิก)","d":"เปลี่ยนชื่อจาก “จาก Content” · ลบการ์ดที่รับมาแล้ว การ์ดต้นทางใน Content ไม่หาย จะกลับมารอให้กด 📥 รับใหม่ (มีข้อความเตือนตอนลบ) · ตัวกรองใหม่ใช้กับช่องนี้ด้วย"}]}]}</script>
 <script id="update-notice-2026-10-08">
 /* ✨ แจ้งเตือนอัปเดตใหม่ + “มีอะไรใหม่” (2026-10-08)
    • เว็บนี้ฝังรหัสเวอร์ชันไว้ที่ <meta name="npd-build"> (บนสุดของไฟล์) และโน้ตการอัปเดตใน <script type="application/json" id="whatsnew-data">
@@ -20531,7 +20551,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     if(f.brand&&!(c.brand===f.brand||c.brand==='both')) return false;
     if(f.kind&&c.kind!==f.kind) return false;
     if(f.owner&&String(c.owner).split(',').map(function(x){return x.trim();}).indexOf(f.owner)<0) return false;
-    if(f.q){ var q=f.q.toLowerCase(); if((c.title+' '+c.product+' '+c.note+' '+c.tags+' '+c.sku).toLowerCase().indexOf(q)<0) return false; }
+    if(f.q){ var q=f.q.toLowerCase(); if((c.title+' '+c.product+' '+(window.RT?window.RT.toPlain(c.note):c.note)+' '+c.tags+' '+c.sku).toLowerCase().indexOf(q)<0) return false; }
     return true; }
   function cardHtml(c){
     var k=kindOf(c.kind), b=brandOf(c.brand), col=colOf(c.col), late=(!col.done&&c.due&&c.due<today());
@@ -20642,7 +20662,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
       +'<div class="brd-f"><label>เริ่ม</label><input type="date" data-k="start" value="'+esc(c.start)+'"></div>'
       +'<div class="brd-f"><label>กำหนดส่ง</label><input type="date" data-k="due" value="'+esc(c.due)+'"></div>'
       +'<div class="brd-f"><label>ความสำคัญ</label><select data-k="priority">'+opts(PRIO,c.priority)+'</select></div>'
-      +'<div class="brd-f"><label>รายละเอียด</label><textarea data-k="note" placeholder="รายละเอียดงาน / แนวคิด / สิ่งที่ต้องการ">'+esc(c.note)+'</textarea></div>'
+      +'<div class="brd-f"><label>รายละเอียด</label><textarea data-k="note" data-rt="note" placeholder="รายละเอียดงาน / แนวคิด / สิ่งที่ต้องการ">'+esc(c.note)+'</textarea></div>'
       +'<div class="brd-f"><label>แท็ก</label><input type="text" data-k="tags" value="'+esc(c.tags)+'" placeholder="คั่นด้วยคอมมา"></div>'
       +(c.planId?'<div class="brd-f"><label>แผน</label><div><button type="button" class="brd-btn" data-act="plan-open">🚀 เปิดแผนเปิดตัวของการ์ดนี้</button></div></div>':'')
       +'<div class="brd-sec">☑️ เช็คลิสต์</div><div id="brd-chk">'+chk+'</div>'
@@ -21509,6 +21529,357 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     logic:{B:B,states:states,cur:cur,load:load,view:view,syncTab:syncTab}};
   setInterval(function(){ var h=B.host; if(h&&h.el.isConnected&&document.visibilityState==='visible'&&h.el.offsetParent!==null&&!B.loading&&Date.now()-B.loadedAt>60000) load(); },20000);
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initTab); else initTab();
+})();
+</script>
+<script id="rich-text-2026-10-14">
+/* ✍️ Rich-text editor — ตัวแก้ไขข้อความแบบเห็นผลทันที (WYSIWYG) ใช้กับ “รายละเอียดงาน” + “คอมเมนต์” ของการ์ดทุกบอร์ด — 2026-10-14
+   • ใช้งาน: ใส่ data-rt="comment|note" ที่ <textarea> เดิม → โมดูลนี้ซ่อน textarea แล้วสร้างช่องแก้ไขแทนอัตโนมัติ
+     (textarea.value ยังคืนค่าเป็นสตริงที่เก็บ + ตั้งค่าได้ + ยิง event 'input' ให้ → โค้ดเดิมที่อ่าน/ตั้งค่า .value ทำงานต่อได้โดยไม่ต้องแก้)
+   • รูปแบบที่เก็บ: "<!--rt-->" + HTML ที่ผ่านตัวกรอง (แท็กปลอดภัยเท่านั้น: b i u s span[color/background] ul ol li a br div p sub sup blockquote)
+     ข้อความเก่า (ไม่มี prefix) = comment: รูปแบบสัญลักษณ์ **หนา** ==ไฮไลต์== · note: ข้อความล้วน → แปลงเป็นรูปแบบใหม่เมื่อเปิดแก้
+   • RT.view(stored,kind) = HTML สำหรับแสดงผล (กรองซ้ำทุกครั้ง + ลิงก์→ปุ่ม + แท็ก @ชื่อ) · RT.toPlain(stored) = ข้อความล้วน (แจ้งเตือน/ตัวอย่างสั้นๆ/ค้นหา)
+   • เครื่องมือ: ↶ ↷ · B I U S · สีตัวอักษร · สีไฮไลต์ · รายการ •/1. · ลิงก์ · ล้างรูปแบบ · อิโมจิ (หมวด/ค้นหา/ใช้ล่าสุด) · แท็ก @ · Ctrl+Enter ส่ง · Esc ยกเลิก
+   • ทดสอบ: window.RT.sanitize / serialize / toPlain / legacy ฯลฯ เปิดให้เทสต์ */
+(function(){
+  'use strict';
+  if(window.RT) return;
+  var PREFIX='<!--rt-->';
+  var AUTO_COLOR='#010101';   // สี “อัตโนมัติ” (ไม่ตั้งสี) — ตัวกรองจะตัด style นี้ทิ้ง
+  var ALLOW={div:1,p:1,br:1,b:1,strong:1,i:1,em:1,u:1,s:1,strike:1,del:1,span:1,font:1,ul:1,ol:1,li:1,a:1,sub:1,sup:1,blockquote:1};
+  var DROP={script:1,style:1,iframe:1,object:1,embed:1,noscript:1,template:1,textarea:1,select:1,option:1,svg:1,math:1,link:1,meta:1,head:1,title:1,img:1,audio:1,video:1,canvas:1,form:1,input:1,button:1,frame:1,frameset:1,applet:1,base:1};
+  var BLOCK={div:1,p:1,ul:1,ol:1,li:1,blockquote:1};
+
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  var INERT=null; function inert(){ if(!INERT) INERT=document.implementation.createHTMLDocument(''); return INERT; }
+  function parse(html){ var d=document.implementation.createHTMLDocument(''); d.body.innerHTML=String(html==null?'':html); return d.body; }
+
+  /* ---------- สี ---------- */
+  function hex2(n){ n=Math.max(0,Math.min(255,Math.round(+n))); return (n<16?'0':'')+n.toString(16); }
+  function normColor(v){
+    v=String(v||'').trim().toLowerCase(); if(!v) return '';
+    var m=/^#([0-9a-f]{3})$/.exec(v); if(m){ var c=m[1]; return '#'+c[0]+c[0]+c[1]+c[1]+c[2]+c[2]; }
+    if(/^#[0-9a-f]{6}$/.test(v)) return v;
+    m=/^rgba?\(\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*(?:[,/]\s*([\d.]+%?)\s*)?\)$/.exec(v);
+    if(m){ var a=m[4]; if(a!==undefined){ var av=(/%$/.test(a)?parseFloat(a)/100:parseFloat(a)); if(!(av>0.05)) return ''; } return '#'+hex2(m[1])+hex2(m[2])+hex2(m[3]); }
+    return '';
+  }
+  function styleOf(el){ var st={}, s=el.getAttribute&&el.getAttribute('style'); if(!s) return st; String(s).split(';').forEach(function(p){ var i=p.indexOf(':'); if(i>0) st[p.slice(0,i).trim().toLowerCase()]=p.slice(i+1).trim().toLowerCase(); }); return st; }
+  function lum(h){ var r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16); return (0.2126*r+0.7152*g+0.0722*b)/255; }
+
+  /* ---------- ตัวกรอง (sanitize): เหลือเฉพาะแท็ก/แอตทริบิวต์ที่อนุญาต ---------- */
+  function cleanInto(src,out,D){
+    for(var n=src.firstChild;n;n=n.nextSibling){
+      if(n.nodeType===3){ out.appendChild(D.createTextNode(n.nodeValue)); continue; }
+      if(n.nodeType!==1) continue;
+      var tag=n.nodeName.toLowerCase();
+      if(DROP[tag]) continue;
+      if(!ALLOW[tag]){ cleanInto(n,out,D); continue; }
+      var st=styleOf(n), t=({strong:'b',em:'i',strike:'s',del:'s'})[tag]||tag, wrap=[];
+      var color='', bg='';
+      if(tag==='font'){ color=normColor(n.getAttribute('color')||''); t='span'; }
+      if(st.color){ color=normColor(st.color)||color; }
+      if(st['background-color']||st.background){ bg=normColor(st['background-color']||st.background); }
+      if(color===AUTO_COLOR) color='';
+      if(bg&&lum(bg)>0.985) bg='';   // ขาวล้วน = ไม่ใช่ไฮไลต์
+      if(tag==='span'||tag==='font'||tag==='div'||tag==='p'||tag==='b'||tag==='i'||tag==='u'||tag==='s'||tag==='li'||tag==='a'){
+        var fw=st['font-weight']; if(fw&&(fw==='bold'||fw==='bolder'||parseInt(fw,10)>=600)&&tag!=='b') wrap.push('b');
+        if(st['font-style']==='italic'&&tag!=='i') wrap.push('i');
+        var td=(st['text-decoration']||st['text-decoration-line']||'');
+        if(/underline/.test(td)&&tag!=='u') wrap.push('u'); if(/line-through/.test(td)&&tag!=='s') wrap.push('s');
+      }
+      var el;
+      if(t==='span'&&!color&&!bg&&!wrap.length){ cleanInto(n,out,D); continue; }   // span ที่ไม่มีผล → แกะออก
+      el=D.createElement(t);
+      if(t==='span'){ var css=[]; if(color) css.push('color:'+color); if(bg) css.push('background-color:'+bg); if(css.length) el.setAttribute('style',css.join(';')); }
+      else if(color||bg){ var sp=D.createElement('span'); sp.setAttribute('style',(color?'color:'+color+';':'')+(bg?'background-color:'+bg:'')); sp.__inner=true; el.__colorWrap=sp; }
+      if(t==='a'){ var href=String(n.getAttribute('href')||'').trim(); if(!/^(https?:|mailto:|tel:)/i.test(href)){ cleanInto(n,out,D); continue; }
+        el.setAttribute('href',href); el.setAttribute('target','_blank'); el.setAttribute('rel','noopener noreferrer'); }
+      // ห่อด้วยแท็กที่มาจาก style (bold/italic/…)
+      var host=el, inner=el;
+      wrap.forEach(function(w){ var x=D.createElement(w); inner.appendChild(x); inner=x; });
+      if(el.__colorWrap){ inner.appendChild(el.__colorWrap); inner=el.__colorWrap; delete el.__colorWrap; }
+      cleanInto(n,inner,D);
+      if(!(inner.firstChild)&&(t==='span'||t==='b'||t==='i'||t==='u'||t==='s'||t==='sub'||t==='sup'||t==='a')) continue;   // ว่าง → ทิ้ง
+      out.appendChild(host);
+    }
+  }
+  function sanitize(html){
+    var D=document.implementation.createHTMLDocument(''); var src=parse(html), out=D.createElement('div');
+    cleanInto(src,out,D);
+    // ตัด <br>/บล็อกว่างท้ายข้อความ
+    function trimEnd(el){ var l=el.lastChild; while(l){ if(l.nodeType===1&&l.nodeName==='BR'){ el.removeChild(l); l=el.lastChild; continue; }
+        if(l.nodeType===1&&(l.nodeName==='DIV'||l.nodeName==='P')){ trimEnd(l); if(!l.textContent&&!l.querySelector('li')){ el.removeChild(l); l=el.lastChild; continue; } }
+        if(l.nodeType===3&&!l.nodeValue.replace(/ /g,' ').trim()&&el.childNodes.length>1){ el.removeChild(l); l=el.lastChild; continue; }
+        break; } }
+    trimEnd(out);
+    return out.innerHTML;
+  }
+  function isRich(s){ return typeof s==='string'&&s.indexOf(PREFIX)===0; }
+  function strip(s){ return isRich(s)?s.slice(PREFIX.length):String(s==null?'':s); }
+
+  /* ---------- ข้อความล้วน ---------- */
+  function toPlainEl(root){
+    var out='', olN=[];
+    function nl(){ if(out&&out.charAt(out.length-1)!=='\n') out+='\n'; }
+    (function walk(n){
+      for(var c=n.firstChild;c;c=c.nextSibling){
+        if(c.nodeType===3){ out+=c.nodeValue.replace(/ /g,' '); continue; }
+        if(c.nodeType!==1) continue; var tg=c.nodeName.toLowerCase();
+        if(tg==='br'){ out+='\n'; continue; }
+        if(tg==='ol'){ olN.push(0); nl(); walk(c); olN.pop(); nl(); continue; }
+        if(tg==='ul'){ olN.push(-1); nl(); walk(c); olN.pop(); nl(); continue; }
+        if(tg==='li'){ nl(); var k=olN.length?olN[olN.length-1]:-1; if(k>=0){ olN[olN.length-1]=k+1; out+=(k+1)+'. '; } else out+='• '; walk(c); nl(); continue; }
+        if(BLOCK[tg]){ nl(); walk(c); nl(); continue; }
+        walk(c);
+      } })(root);
+    return out.replace(/\n{3,}/g,'\n\n').replace(/[ \t]+\n/g,'\n').trim();
+  }
+  function toPlain(s){ if(s==null) return ''; s=String(s); if(!isRich(s)) return s; return toPlainEl(parse(sanitize(strip(s)))); }
+  function isEmptyHtml(html){ var b=parse(html); return !b.textContent.replace(/ /g,' ').trim() && !b.querySelector('li'); }
+  function serialize(html){ var c=sanitize(html); if(isEmptyHtml(c)) return ''; return PREFIX+c; }
+
+  /* ---------- ข้อความเก่า → HTML ของตัวแก้ไข ---------- */
+  function mdInline(h){
+    return h.replace(/\*\*([^*\n]+?)\*\*/g,'<b>$1</b>').replace(/__([^_\n]+?)__/g,'<u>$1</u>').replace(/~~([^~\n]+?)~~/g,'<s>$1</s>')
+      .replace(/==([^=\n]+?)==/g,'<span style="background-color:#fef08a">$1</span>').replace(/(^|[^*])\*([^*\s][^*\n]*?)\*(?!\*)/g,'$1<i>$2</i>');
+  }
+  function legacyComment(text){
+    var lines=String(text||'').split('\n'), out=[], list=null;
+    function fl(){ if(list){ out.push('<'+list.t+'>'+list.items.map(function(li){ return '<li>'+mdInline(esc(li))+'</li>'; }).join('')+'</'+list.t+'>'); list=null; } }
+    lines.forEach(function(ln){ var m=/^\s*(?:[-•]\s+|(\d+)[.)]\s+)(\S.*)$/.exec(ln);
+      if(m){ var t=m[1]?'ol':'ul'; if(list&&list.t!==t) fl(); if(!list) list={t:t,items:[]}; list.items.push(m[2]); }
+      else { fl(); out.push('<div>'+(ln.trim()?mdInline(esc(ln)):'<br>')+'</div>'); } });
+    fl(); return out.join('');
+  }
+  function legacyNote(text){ return String(text||'').split('\n').map(function(ln){ return '<div>'+(ln.trim()?esc(ln):'<br>')+'</div>'; }).join(''); }
+  function toEditorHtml(stored,kind){ stored=String(stored==null?'':stored); if(!stored.trim()) return ''; if(isRich(stored)) return sanitize(strip(stored)); return kind==='comment'?legacyComment(stored):legacyNote(stored); }
+
+  /* ---------- แสดงผล ---------- */
+  var URLRE=/https?:\/\/[^\s<>"'，。]+/g;
+  function linkLabelOf(u){ return (typeof window.linkLabel==='function')?window.linkLabel(u):(String(u).replace(/^https?:\/\//,'').split(/[\/?#]/)[0]||'ลิงก์'); }
+  function decorateText(text){
+    var out='', last=0, m, any=false; URLRE.lastIndex=0;
+    function plain(seg){ var h=esc(seg); if(typeof window.ntHL==='function'){ var h2=window.ntHL(h); if(h2!==h){ any=true; return h2; } } return h; }
+    while((m=URLRE.exec(text))){ var u=m[0], tail=''; var mt=u.match(/[.,;:!?)\]}]+$/); if(mt){ tail=mt[0]; u=u.slice(0,u.length-tail.length); }
+      out+=plain(text.slice(last,m.index)); any=true;
+      out+='<a class="lnk-btn" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer" title="'+esc(u)+'">🔗 '+esc(linkLabelOf(u))+' <small>↗ เปิดดู</small></a>'+plain(tail); last=m.index+m[0].length; }
+    out+=plain(text.slice(last));
+    return any?out:null;
+  }
+  function decorate(root){
+    var nodes=[]; (function walk(n,inA){ for(var c=n.firstChild;c;c=c.nextSibling){ if(c.nodeType===3){ if(!inA) nodes.push(c); } else if(c.nodeType===1) walk(c,inA||c.nodeName==='A'); } })(root,false);
+    nodes.forEach(function(tn){ var h=decorateText(tn.nodeValue); if(h===null) return; var tmp=root.ownerDocument.createElement('span'); tmp.innerHTML=h; var f=root.ownerDocument.createDocumentFragment(); while(tmp.firstChild) f.appendChild(tmp.firstChild); tn.parentNode.replaceChild(f,tn); });
+  }
+  function view(stored,kind){
+    if(stored==null||!String(stored).trim()) return '';
+    stored=String(stored);
+    if(isRich(stored)){ var root=parse(sanitize(strip(stored))); decorate(root); return '<div class="rt-v">'+root.innerHTML+'</div>'; }
+    if(kind==='comment'&&typeof window.cmRichLegacy==='function') return window.cmRichLegacy(stored);
+    return (typeof window.linkBtnsHtml==='function')?window.linkBtnsHtml(stored):'<span style="white-space:pre-wrap;word-break:break-word;">'+esc(stored)+'</span>';
+  }
+
+  /* ---------- อิโมจิ ---------- */
+  var EMO=[
+   ['😀 ผู้คน','😀 ยิ้ม สนุก smile happy|😃 ยิ้มกว้าง|😄 หัวเราะ ยิ้มตาปิด|😁 ยิ้มฟัน|😆 หัวเราะ ฮา|😅 เหงื่อ ยิ้มแห้ง|🤣 ขำกลิ้ง ฮาสุด lol|😂 ขำน้ำตาไหล ฮา|🙂 ยิ้มเบาๆ|🙃 กลับหัว|😉 ขยิบตา|😊 ยิ้มอาย น่ารัก|😇 นางฟ้า|🥰 รัก หลงรัก love|😍 ตาหัวใจ รักมาก|🤩 ตาดาว ว้าว|😘 จูบ kiss|😗 จุ๊บ|😚 จูบตาปิด|😋 อร่อย yum|😛 แลบลิ้น|😜 ขยิบแลบลิ้น|🤪 ซน บ้าๆ|😝 แลบลิ้นปิดตา|🤑 เงิน รวย money|🤗 กอด hug|🤭 ปิดปากหัวเราะ|🤫 ชู่ เงียบ secret|🤔 คิด สงสัย think|🤨 สงสัย เลิกคิ้ว|😐 เฉย|😑 ไร้อารมณ์|😶 ไม่พูด|😏 ยิ้มมุมปาก|😒 เบื่อ ไม่พอใจ|🙄 กลอกตา|😬 เกร็ง|😌 โล่ง สบาย|😔 เศร้า|😪 ง่วง|😴 หลับ นอน sleep|😷 หน้ากาก ป่วย|🤒 ไข้ ป่วย|🤕 เจ็บ|🤢 คลื่นไส้|🥵 ร้อน|🥶 หนาว|🥴 มึน|😵 เวียนหัว|🤯 ระเบิดหัว ตกใจ|🤠 คาวบอย|🥳 ปาร์ตี้ ฉลอง party|😎 เท่ แว่นดำ cool|🤓 เนิร์ด|😕 งง|😟 กังวล|🙁 เศร้านิดๆ|😮 อึ้ง|😲 ตกใจ|😳 อาย หน้าแดง|🥺 อ้อน ขอร้อง น่าสงสาร|😦 ตกใจ|😨 กลัว|😰 กังวล เหงื่อ|😢 ร้องไห้ เศร้า cry|😭 ร้องไห้หนัก|😱 กรี๊ด ช็อก|😖 ทนไม่ไหว|😞 ผิดหวัง|😓 เหนื่อย เหงื่อ|😩 เหนื่อยหน่าย|😫 หมดแรง|🥱 หาว ง่วง|😤 หงุดหงิด|😡 โกรธ angry|😠 โมโห|🤬 สบถ|😈 ปีศาจ|💀 หัวกะโหลก ตาย|💩 อึ|🤡 ตัวตลก|👻 ผี ผีน้อย|👽 เอเลี่ยน|🤖 หุ่นยนต์ robot|🙈 ไม่มอง ลิงปิดตา|🙉 ลิงปิดหู|🙊 ลิงปิดปาก'],
+   ['👍 มือ','👍 ดี เยี่ยม ถูกใจ like ok|👎 ไม่ดี dislike|👌 โอเค ok|✌️ สองนิ้ว สันติภาพ|🤞 ไขว้นิ้ว หวังว่า|🤟 รัก ILY|🤘 ร็อก|🤙 โทรหา|👈 ชี้ซ้าย|👉 ชี้ขวา|👆 ชี้ขึ้น|👇 ชี้ลง|☝️ ชี้ขึ้นนิ้วเดียว|✋ มือหยุด|🖐️ มือเปิด|👋 โบกมือ สวัสดี hi|🤚 หลังมือ|👏 ปรบมือ ยินดี clap|🙌 ชูมือ ไชโย|👐 เปิดมือ|🤝 จับมือ ตกลง deal|🙏 ขอบคุณ ไหว้ ขอร้อง thank|✍️ เขียน|💪 กล้าม แข็งแรง สู้ๆ|🫶 มือหัวใจ|🫡 วันทยหัตถ์|🫰 นิ้วหัวใจ|👀 ตา มอง|🧠 สมอง ไอเดีย|👑 มงกุฎ ราชินี|💅 ทาเล็บ|🤳 เซลฟี่|💃 เต้น|🕺 เต้น|🙋 ยกมือ|🙆 โอเค|🤷 ไม่รู้ ยักไหล่|🤦 ปวดหัว หน้าผาก'],
+   ['❤️ หัวใจ','❤️ หัวใจแดง รัก love|🧡 หัวใจส้ม|💛 หัวใจเหลือง|💚 หัวใจเขียว|💙 หัวใจน้ำเงิน|💜 หัวใจม่วง|🤎 หัวใจน้ำตาล|🖤 หัวใจดำ|🤍 หัวใจขาว|💖 หัวใจระยิบ|💗 หัวใจโต|💓 หัวใจเต้น|💞 หัวใจหมุน|💕 หัวใจคู่|💘 หัวใจโดนลูกศร|💝 หัวใจริบบิ้น|💔 อกหัก|❣️ หัวใจตกใจ|✨ ประกาย สวย sparkle|⭐ ดาว star|🌟 ดาวเรืองแสง|💫 ดาวหมุน|⚡ ฟ้าผ่า สายฟ้า|🔥 ไฟ ร้อนแรง hot fire|💥 ระเบิด boom|💯 100 เต็ม|✅ ถูก เสร็จแล้ว check done|❌ ผิด ยกเลิก cross|⚠️ เตือน ระวัง warning|❗ ตกใจ สำคัญ|❓ คำถาม|‼️ สำคัญมาก|🆕 ใหม่ new|🔴 วงกลมแดง|🟠 วงกลมส้ม|🟡 วงกลมเหลือง|🟢 วงกลมเขียว|🔵 วงกลมน้ำเงิน|🟣 วงกลมม่วง|⬆️ ลูกศรขึ้น|⬇️ ลูกศรลง|➡️ ลูกศรขวา|⬅️ ลูกศรซ้าย|🔁 วนซ้ำ|🔜 เร็วๆ นี้ soon|📌 ปักหมุด pin|📍 หมุด|🚫 ห้าม|♻️ รีไซเคิล'],
+   ['🌸 ธรรมชาติ','🌸 ดอกซากุระ|🌹 กุหลาบ rose|🌺 ชบา|🌻 ทานตะวัน|🌷 ทิวลิป|🪷 บัว|🌼 ดอกไม้|💐 ช่อดอกไม้|🌿 ใบไม้ สมุนไพร|🍀 ใบโคลเวอร์ โชคดี|🌱 ต้นอ่อน|🌴 ปาล์ม|🌵 กระบองเพชร|🍁 ใบเมเปิล|🍂 ใบไม้ร่วง|🌈 รุ้ง rainbow|☀️ ดวงอาทิตย์ แดด|🌙 พระจันทร์|⭐ ดาว|☁️ เมฆ|🌧️ ฝน|❄️ หิมะ|🌊 คลื่น ทะเล|💧 หยดน้ำ|🔥 ไฟ|🐶 หมา dog|🐱 แมว cat|🐭 หนู|🐰 กระต่าย|🐻 หมี|🐼 แพนด้า|🐨 โคอาล่า|🐯 เสือ|🦁 สิงโต|🐷 หมู|🐸 กบ|🐵 ลิง|🐔 ไก่|🐧 เพนกวิน|🐦 นก|🦄 ยูนิคอร์น|🐝 ผึ้ง|🦋 ผีเสื้อ|🐢 เต่า|🐙 ปลาหมึก|🐠 ปลา|🐬 โลมา|🐳 วาฬ|🦊 จิ้งจอก|🐘 ช้าง|🐒 ลิง'],
+   ['🍔 อาหาร','🍎 แอปเปิ้ล|🍊 ส้ม|🍋 มะนาว|🍌 กล้วย|🍉 แตงโม|🍇 องุ่น|🍓 สตรอว์เบอร์รี่|🍑 พีช|🥭 มะม่วง|🍍 สับปะรด|🥥 มะพร้าว|🥑 อะโวคาโด|🍅 มะเขือเทศ|🥕 แครอท|🌽 ข้าวโพด|🍔 เบอร์เกอร์|🍟 เฟรนช์ฟรายส์|🍕 พิซซ่า|🌭 ฮอตด็อก|🍜 บะหมี่ ก๋วยเตี๋ยว|🍝 สปาเกตตี|🍣 ซูชิ|🍱 เบนโตะ|🍚 ข้าว|🍙 ข้าวปั้น|🍰 เค้ก cake|🎂 เค้กวันเกิด|🍩 โดนัท|🍪 คุกกี้|🍫 ช็อกโกแลต|🍦 ไอศกรีม|☕ กาแฟ coffee|🍵 ชา|🧋 ชานม|🥤 น้ำ|🍺 เบียร์|🍷 ไวน์|🥂 ชนแก้ว ฉลอง'],
+   ['🎉 กิจกรรม','🎉 ปาร์ตี้ ฉลอง party|🎊 ลูกโป่งกระดาษ|🎈 ลูกโป่ง|🎁 ของขวัญ gift|🎀 โบว์ ริบบิ้น|🎂 เค้ก|🏆 ถ้วยรางวัล trophy|🥇 เหรียญทอง|🥈 เหรียญเงิน|🥉 เหรียญทองแดง|🎯 เป้า goal|🎮 เกม game|🎲 ลูกเต๋า|🧩 จิ๊กซอว์|🎨 ศิลปะ สี paint|🎬 ถ่ายหนัง กล้อง|🎤 ไมค์|🎧 หูฟัง|🎵 โน้ต|🎶 เพลง|📸 ถ่ายรูป กล้อง|📷 กล้อง|🎥 วิดีโอ|📱 มือถือ|⚽ ฟุตบอล|🏀 บาสเก็ตบอล|🎾 เทนนิส|🏊 ว่ายน้ำ|🧘 โยคะ|🚴 ปั่นจักรยาน|🏃 วิ่ง|🎃 ฟักทอง ฮาโลวีน halloween|🎄 ต้นคริสต์มาส christmas|🎅 ซานต้า|🪅 ปิญญาต้า|🧧 อั่งเปา|🪔 ตะเกียง'],
+   ['🚗 เดินทาง','🚗 รถ|🚕 แท็กซี่|🚌 รถบัส|🚚 รถบรรทุก ขนส่ง|🛵 มอเตอร์ไซค์|🚲 จักรยาน|✈️ เครื่องบิน|🚀 จรวด launch เปิดตัว|🚢 เรือ|🏠 บ้าน|🏢 ตึก|🏬 ห้าง|🏪 ร้านค้า|🏭 โรงงาน|📦 กล่อง พัสดุ|🛒 ตะกร้า ช้อปปิ้ง|🛍️ ถุงช้อปปิ้ง shopping|🗺️ แผนที่|🧭 เข็มทิศ|⏰ นาฬิกาปลุก|⏳ นาฬิกาทราย|📅 ปฏิทิน|🗓️ ปฏิทินสเปรด|🌏 โลก'],
+   ['💡 ของใช้','💡 หลอดไฟ ไอเดีย idea|🔔 กระดิ่ง แจ้งเตือน|📣 โทรโข่ง ประกาศ|📢 ลำโพง|💬 ข้อความ คุย|💭 ความคิด|🗨️ พูด|📝 จดบันทึก note|📋 คลิปบอร์ด|📎 คลิป แนบ|🔗 ลิงก์ link|✂️ กรรไกร|🖊️ ปากกา|✏️ ดินสอ|📐 ไม้บรรทัด|📏 ไม้บรรทัดตรง|🔍 ค้นหา|🔒 ล็อก|🔓 ปลดล็อก|🔑 กุญแจ|💰 เงิน|💵 ธนบัตร|💳 บัตร|📊 กราฟ|📈 กราฟขึ้น เติบโต|📉 กราฟลง|🗂️ แฟ้ม|📁 โฟลเดอร์|🖼️ รูปภาพ|🧴 ขวดโลชั่น|💄 ลิปสติก lipstick|💅 ทาเล็บ|🪞 กระจก|🧪 หลอดทดลอง|🧬 ดีเอ็นเอ|🧼 สบู่|🪥 แปรงสีฟัน|👗 ชุดเดรส|👜 กระเป๋า|👠 รองเท้า|🕶️ แว่นกันแดด|💎 เพชร|🔮 คริสตัล']
+  ].map(function(c){ var i=c[0].indexOf(' '); return {ic:c[0].slice(0,i), name:c[0].slice(i+1), items:c[1].split('|').map(function(s){ var j=s.indexOf(' '); return j<0?{e:s,k:''}:{e:s.slice(0,j),k:s.slice(j+1)}; })}; });
+  function recentEmo(){ try{ return JSON.parse(localStorage.getItem('rt_emoji_recent')||'[]').filter(function(x){return typeof x==='string';}).slice(0,24); }catch(e){ return []; } }
+  function pushRecent(e){ try{ var a=recentEmo().filter(function(x){return x!==e;}); a.unshift(e); localStorage.setItem('rt_emoji_recent',JSON.stringify(a.slice(0,24))); }catch(x){} }
+
+  /* ---------- สี ---------- */
+  var TEXT_COLORS=['#1f2937','#6b7280','#9ca3af','#dc2626','#ef4444','#db2777','#f472b6','#ea580c','#f59e0b','#ca8a04','#16a34a','#059669','#14b8a6','#0ea5e9','#2563eb','#4f46e5','#7c3aed','#9333ea','#92400e','#0f766e'];
+  var HL_COLORS=['#fef08a','#fde68a','#fed7aa','#fecaca','#fbcfe8','#ddd6fe','#bfdbfe','#bae6fd','#a7f3d0','#e5e7eb'];
+
+  /* ---------- CSS ---------- */
+  function css(){ if(document.getElementById('rt-css')) return; var st=document.createElement('style'); st.id='rt-css'; st.textContent=
+    '.rt-wrap span{flex:0 0 auto !important;min-width:0 !important;}.rt-wrap .rt-b *{flex:0 0 auto !important;}'
+    +'.rt-wrap{position:relative;border:1px solid var(--line,#DDE3EE);border-radius:12px;background:#fff;transition:border-color .15s,box-shadow .15s;}'
+    +'.rt-wrap:focus-within{border-color:#5B8FF9;box-shadow:0 0 0 3px rgba(91,143,249,.16);}'
+    +'.rt-bar{display:flex;flex-wrap:wrap;align-items:center;gap:2px;padding:5px 7px;border-bottom:1px solid #eef1f7;background:#fafbfe;border-radius:12px 12px 0 0;}'
+    +'.rt-b{border:none;background:none;min-width:30px;height:30px;border-radius:8px;cursor:pointer;font:600 14px inherit;color:#3b475c;display:inline-flex;align-items:center;justify-content:center;padding:0 7px;position:relative;}'
+    +'.rt-b:hover{background:#eaf0fb;}.rt-b.on{background:#dbe7ff;color:#1f4fd1;}.rt-b:disabled{opacity:.4;cursor:default;}'
+    +'.rt-b .bar{position:absolute;left:7px;right:7px;bottom:3px;height:3px;border-radius:2px;background:currentColor;}'
+    +'.rt-sep{width:1px;height:20px;background:#dfe5ef;margin:0 4px;}'
+    +'.rt-ed{min-height:84px;max-height:52vh;overflow:auto;padding:10px 12px;outline:none;line-height:1.6;font-size:14px;color:var(--ink,#1f2733);word-break:break-word;}'
+    +'.rt-ed.big{min-height:150px;}'
+    +'.rt-ed:empty::before{content:attr(data-ph);color:#9aa4b5;pointer-events:none;}'
+    +'.rt-ed ul,.rt-ed ol,.rt-v ul,.rt-v ol{margin:4px 0 4px 22px;padding:0;}.rt-ed li,.rt-v li{margin:1px 0;}'
+    +'.rt-ed div,.rt-ed p,.rt-v div,.rt-v p{margin:0;}.rt-ed blockquote,.rt-v blockquote{margin:4px 0;padding-left:10px;border-left:3px solid #cfd8e8;color:#5b6a86;}'
+    +'.rt-ed a,.rt-v a:not(.lnk-btn){color:#2f5bd1;text-decoration:underline;}'
+    +'.rt-v{line-height:1.6;word-break:break-word;}.rt-v .lnk-btn{margin:0 2px;}'
+    +'.rt-pop{position:absolute;z-index:100050;background:#fff;border:1px solid #dfe5ef;border-radius:14px;box-shadow:0 18px 40px -16px rgba(30,45,90,.5);padding:10px;}'
+    +'.rt-sw{display:grid;grid-template-columns:repeat(10,22px);gap:6px;}.rt-sw button{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.14);cursor:pointer;padding:0;}'
+    +'.rt-sw button:hover{transform:scale(1.15);}'
+    +'.rt-pop .rt-row{display:flex;gap:8px;align-items:center;margin-top:9px;font-size:12px;color:#5b6a86;}'
+    +'.rt-pop .rt-row button{border:1px solid #dfe5ef;background:#fff;border-radius:8px;padding:4px 10px;font:600 12px inherit;cursor:pointer;color:#3b475c;}'
+    +'.rt-pop input[type=color]{width:34px;height:26px;padding:1px;border:1px solid #dfe5ef;border-radius:6px;background:#fff;cursor:pointer;}'
+    +'.rt-pop input[type=text]{border:1px solid #dfe5ef;border-radius:8px;padding:6px 9px;font:500 13px inherit;width:100%;box-sizing:border-box;}'
+    +'.rt-emo{width:318px;}.rt-emo .tabs{display:flex;gap:2px;margin:8px 0 4px;flex-wrap:wrap;}.rt-emo .tabs button{border:none;background:none;border-radius:8px;padding:3px 6px;font-size:17px;cursor:pointer;}'
+    +'.rt-emo .tabs button.on{background:#dbe7ff;}.rt-emo .grid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;max-height:210px;overflow:auto;}'
+    +'.rt-emo .grid button{border:none;background:none;font-size:22px;line-height:1;padding:4px 0;border-radius:8px;cursor:pointer;}.rt-emo .grid button:hover{background:#eaf0fb;}'
+    +'.rt-emo .cap{font-size:11px;font-weight:700;color:#9aa4b5;margin:6px 2px 2px;}.rt-emo .none{padding:16px;text-align:center;color:#9aa4b5;font-size:12.5px;}'
+    +'.rt-link{width:300px;}'
+    +'.rt-mention{position:fixed;z-index:100060;background:#fff;border:1px solid #dfe5ef;border-radius:12px;box-shadow:0 16px 36px -14px rgba(30,45,90,.5);padding:4px;min-width:220px;max-height:240px;overflow:auto;}'
+    +'.rt-mention .it{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:8px;cursor:pointer;font-size:13px;}.rt-mention .it.on,.rt-mention .it:hover{background:#eef3ff;}'
+    +'.rt-mention .it small{margin-left:auto;color:#9aa4b5;font-size:11px;}'
+    +'.rt-inl{position:relative;cursor:text;border-radius:10px;padding:4px 8px;margin:-4px -8px;transition:background .12s;}.rt-inl:hover{background:#f3f6fd;}'
+    +'.rt-inl .pen{position:absolute;right:6px;top:4px;opacity:0;font-size:12px;transition:opacity .12s;}.rt-inl:hover .pen{opacity:.7;}'
+    +'.rt-inl .ph{color:#9aa4b5;}'
+    +'.rt-inl-btns{display:flex;gap:8px;margin-top:8px;}.rt-inl-btns .go{border:none;background:#3b7ddd;color:#fff;border-radius:8px;padding:7px 16px;font:700 13px inherit;cursor:pointer;}.rt-inl-btns .no{border:none;background:none;color:#7b8aa3;border-radius:8px;padding:7px 10px;font:600 13px inherit;cursor:pointer;}'
+    +'@media(max-width:520px){.rt-emo{width:min(318px,calc(100vw - 40px));}.rt-sw{grid-template-columns:repeat(8,22px);}}';
+    document.head.appendChild(st); }
+
+  /* ---------- ตัวแก้ไข ---------- */
+  var NATIVE_VALUE=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value');
+  var SEQ=0, INSTS=[];
+  document.addEventListener('selectionchange',function(){ INSTS=INSTS.filter(function(i){ return i.wrap.isConnected; }); INSTS.forEach(function(i){ i._remember(); i._state(); }); });
+  document.addEventListener('mousedown',function(e){ INSTS.forEach(function(i){ if(i.pop&&!i.wrap.contains(e.target)) i.close(); }); });
+  function upgrade(ta){
+    if(!ta||ta._rt||ta.tagName!=='TEXTAREA') return; css();
+    var kind=ta.getAttribute('data-rt')||'note', inst={ta:ta,kind:kind,saved:null,pop:null}, initial=NATIVE_VALUE.get.call(ta);
+    var wrap=document.createElement('div'); wrap.className='rt-wrap'; wrap.id='rt-w'+(++SEQ);
+    var BTN=function(cmd,html,tip,extra){ return '<button type="button" class="rt-b" data-c="'+cmd+'" title="'+tip+'" aria-label="'+tip+'"'+(extra||'')+'>'+html+'</button>'; };
+    wrap.innerHTML='<div class="rt-bar">'
+      +BTN('undo','↶','ย้อนกลับ (Ctrl+Z)')+BTN('redo','↷','ทำซ้ำ (Ctrl+Shift+Z)')+'<span class="rt-sep"></span>'
+      +BTN('bold','<b>B</b>','ตัวหนา (Ctrl+B)')+BTN('italic','<i>I</i>','ตัวเอียง (Ctrl+I)')+BTN('underline','<u>U</u>','ขีดเส้นใต้ (Ctrl+U)')+BTN('strikeThrough','<s>S</s>','ขีดฆ่า')+'<span class="rt-sep"></span>'
+      +BTN('color','<span style="font-weight:800;">A</span><span class="bar" style="color:#dc2626"></span>','สีตัวอักษร')+BTN('hilite','<span style="background:#fef08a;padding:0 4px;border-radius:3px;font-weight:800;">ab</span>','สีไฮไลต์')+'<span class="rt-sep"></span>'
+      +BTN('insertUnorderedList','• ≡','รายการจุด')+BTN('insertOrderedList','1.≡','รายการเรียงเลข')+'<span class="rt-sep"></span>'
+      +BTN('link','🔗','แทรกลิงก์ (Ctrl+K)')+BTN('removeFormat','Tx','ล้างรูปแบบ')+BTN('emoji','😀','อิโมจิ')
+      +'</div><div class="rt-ed'+(ta.classList.contains('fm-big')?' big':'')+'" contenteditable="true" role="textbox" aria-multiline="true" data-ph="'+esc(ta.getAttribute('placeholder')||'พิมพ์ข้อความ…')+'"></div>';
+    ta.parentNode.insertBefore(wrap,ta); ta.style.display='none'; ta.setAttribute('aria-hidden','true');
+    var ed=wrap.querySelector('.rt-ed'); inst.wrap=wrap; inst.ed=ed;
+    ed.innerHTML=toEditorHtml(initial,kind);
+    function stored(){ return serialize(ed.innerHTML); }
+    function fire(){ try{ ta.dispatchEvent(new Event('input',{bubbles:true})); }catch(e){} }
+    function normEmpty(){ if(!ed.textContent.replace(/ /g,' ').trim()&&!ed.querySelector('li')&&ed.innerHTML!=='') { if(!ed.querySelector('b,i,u,s,span,a')||true) ed.innerHTML=''; } }
+    Object.defineProperty(ta,'value',{configurable:true,get:function(){ return stored(); },set:function(v){ ed.innerHTML=toEditorHtml(v,kind); }});
+    Object.defineProperty(ta,'selectionStart',{configurable:true,get:function(){ return 0; }}); Object.defineProperty(ta,'selectionEnd',{configurable:true,get:function(){ return 0; }});
+    ta.setSelectionRange=function(){}; ta.focus=function(){ try{ ed.focus(); placeCaretEnd(); }catch(e){} }; ta._rt=inst;
+    function placeCaretEnd(){ var r=document.createRange(); r.selectNodeContents(ed); r.collapse(false); var s=window.getSelection(); s.removeAllRanges(); s.addRange(r); }
+    inst.focus=function(){ ta.focus(); };
+    /* เลือกข้อความ: จำ range ไว้ใช้ตอนกดปุ่ม/ป๊อปอัป */
+    function remember(){ var s=window.getSelection(); if(s&&s.rangeCount){ var r=s.getRangeAt(0); if(ed.contains(r.commonAncestorContainer)) inst.saved=r.cloneRange(); } }
+    function restore(){ ed.focus(); if(inst.saved){ var s=window.getSelection(); s.removeAllRanges(); s.addRange(inst.saved); } }
+    function updateState(){ if(!wrap.isConnected) return; ['bold','italic','underline','strikeThrough','insertUnorderedList','insertOrderedList'].forEach(function(c){ var b=wrap.querySelector('[data-c="'+c+'"]'); if(!b) return; var on=false; try{ on=document.activeElement===ed&&document.queryCommandState(c); }catch(e){} b.classList.toggle('on',!!on); }); }
+    function exec(cmd,val,css){ restore(); try{ document.execCommand('styleWithCSS',false,!!css); }catch(e){} try{ document.execCommand(cmd,false,val===undefined?null:val); }catch(e){} normEmpty(); remember(); fire(); updateState(); }
+    inst.exec=exec; inst._remember=remember; inst._state=updateState; INSTS.push(inst);
+    /* --- ป๊อปอัป (สี/ลิงก์/อิโมจิ) --- */
+    function closePop(){ if(inst.pop){ inst.pop.remove(); inst.pop=null; } }
+    function openPop(btn,cls,html){ closePop(); var p=document.createElement('div'); p.className='rt-pop '+cls; p.innerHTML=html; wrap.appendChild(p); inst.pop=p;
+      var left=btn.offsetLeft; p.style.top=(btn.offsetTop+btn.offsetHeight+8)+'px'; p.style.left=Math.max(0,Math.min(left,wrap.clientWidth-p.offsetWidth))+'px'; return p; }
+    wrap.addEventListener('mousedown',function(e){ var t=e.target; if(t.closest&&t.closest('.rt-bar,.rt-pop')&&!(t.matches&&t.matches('input[type=text],input[type=color]'))) { remember(); e.preventDefault(); } });
+    function colorPop(btn,mode){
+      var cols=mode==='color'?TEXT_COLORS:HL_COLORS;
+      var p=openPop(btn,'',(mode==='color'?'<div style="font-size:12px;font-weight:700;color:#5b6a86;margin-bottom:6px;">สีตัวอักษร</div>':'<div style="font-size:12px;font-weight:700;color:#5b6a86;margin-bottom:6px;">สีไฮไลต์</div>')
+        +'<div class="rt-sw">'+cols.map(function(c){ return '<button type="button" data-col="'+c+'" style="background:'+c+'" title="'+c+'"></button>'; }).join('')+'</div>'
+        +'<div class="rt-row"><span>สีอื่น</span><input type="color" value="'+(mode==='color'?'#2563eb':'#fef08a')+'" data-custom="1"><button type="button" data-clear="1">'+(mode==='color'?'ล้างสี (ตามปกติ)':'ลบไฮไลต์')+'</button></div>');
+      p.addEventListener('click',function(e){ var b=e.target.closest('[data-col]'), cl=e.target.closest('[data-clear]');
+        if(b){ apply(b.getAttribute('data-col')); } else if(cl){ apply(null); } });
+      var ci=p.querySelector('input[type=color]'); ci.addEventListener('change',function(){ apply(ci.value); });
+      function apply(c){ closePop(); if(mode==='color'){ exec('foreColor',c||AUTO_COLOR,true); if(btn.querySelector('.bar')) btn.querySelector('.bar').style.color=c||'#dc2626'; } else exec('hiliteColor',c||'transparent',true); }
+    }
+    function linkPop(btn){
+      var sel=window.getSelection(), cur=''; try{ var n=sel&&sel.anchorNode; var a=n&&(n.nodeType===1?n:n.parentNode).closest&&(n.nodeType===1?n:n.parentNode).closest('a'); if(a&&ed.contains(a)) cur=a.getAttribute('href')||''; }catch(e){}
+      var p=openPop(btn,'rt-link','<div style="font-size:12px;font-weight:700;color:#5b6a86;margin-bottom:6px;">ลิงก์</div><input type="text" placeholder="https://…" value="'+esc(cur)+'"><div class="rt-row"><button type="button" data-ok="1">ใส่ลิงก์</button>'+(cur?'<button type="button" data-rm="1">เอาลิงก์ออก</button>':'')+'</div>');
+      var inp=p.querySelector('input'); setTimeout(function(){ inp.focus(); inp.select(); },20);
+      function ok(){ var u=inp.value.trim(); if(!u) return; if(!/^(https?:|mailto:|tel:)/i.test(u)) u='https://'+u; closePop(); restore();
+        var s=window.getSelection(); if(s&&s.isCollapsed){ exec('insertHTML','<a href="'+esc(u)+'">'+esc(u)+'</a>&nbsp;'); } else exec('createLink',u); }
+      p.addEventListener('click',function(e){ if(e.target.closest('[data-ok]')) ok(); else if(e.target.closest('[data-rm]')){ closePop(); exec('unlink'); } });
+      inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); ok(); } else if(e.key==='Escape'){ e.preventDefault(); closePop(); restore(); } });
+    }
+    function emojiPop(btn){
+      var tab=0, q='';
+      var p=openPop(btn,'rt-emo','<input type="text" placeholder="🔎 ค้นหาอิโมจิ (เช่น รัก, ไฟ, ขอบคุณ)" data-q="1"><div class="tabs"></div><div class="grid"></div>');
+      var tabs=p.querySelector('.tabs'), grid=p.querySelector('.grid'), qi=p.querySelector('input');
+      function draw(){
+        var rec=recentEmo();
+        tabs.innerHTML=(rec.length?'<button type="button" data-t="r" class="'+(tab==='r'?'on':'')+'" title="ใช้ล่าสุด">🕘</button>':'')+EMO.map(function(c,i){ return '<button type="button" data-t="'+i+'" class="'+(String(tab)===String(i)?'on':'')+'" title="'+esc(c.name)+'">'+c.ic+'</button>'; }).join('');
+        var items=[];
+        if(q){ var ql=q.toLowerCase(); EMO.forEach(function(c){ c.items.forEach(function(it){ if(it.k.toLowerCase().indexOf(ql)>=0||it.e===q) items.push(it.e); }); }); items=items.filter(function(e,i){ return items.indexOf(e)===i; });
+          grid.innerHTML=items.length?items.map(function(e){ return '<button type="button" data-e="'+e+'">'+e+'</button>'; }).join(''):'<div class="none" style="grid-column:1/-1">ไม่พบอิโมจิที่ค้นหา</div>'; return; }
+        if(tab==='r') items=rec; else items=EMO[+tab].items.map(function(it){ return it.e; });
+        grid.innerHTML=items.map(function(e){ return '<button type="button" data-e="'+e+'">'+e+'</button>'; }).join('');
+      }
+      if(recentEmo().length) tab='r'; draw();
+      p.addEventListener('click',function(e){ var t=e.target.closest('[data-t]'), em=e.target.closest('[data-e]'); if(t){ tab=t.getAttribute('data-t'); q=''; qi.value=''; draw(); } else if(em){ var ch=em.getAttribute('data-e'); pushRecent(ch); closePop(); exec('insertText',ch); } });
+      qi.addEventListener('input',function(){ q=qi.value.trim(); draw(); }); setTimeout(function(){ qi.focus(); },20);
+    }
+    wrap.querySelector('.rt-bar').addEventListener('click',function(e){ var b=e.target.closest('[data-c]'); if(!b) return; var c=b.getAttribute('data-c'); if(inst.pop&&(c==='color'||c==='hilite'||c==='link'||c==='emoji')){ var was=inst.pop; closePop(); if(was.__for===c) return; }
+      if(c==='color'||c==='hilite'){ remember(); colorPop(b,c); if(inst.pop) inst.pop.__for=c; return; }
+      if(c==='link'){ remember(); linkPop(b); if(inst.pop) inst.pop.__for=c; return; }
+      if(c==='emoji'){ remember(); emojiPop(b); if(inst.pop) inst.pop.__for=c; return; }
+      closePop(); exec(c); });
+    /* --- แท็ก @ชื่อ --- */
+    var MN={el:null,items:[],idx:0,range:null};
+    function mnClose(){ if(MN.el){ MN.el.remove(); MN.el=null; } MN.items=[]; }
+    function mnQuery(){ var s=window.getSelection(); if(!s||!s.rangeCount||!s.isCollapsed) return null; var r=s.getRangeAt(0), n=r.startContainer; if(n.nodeType!==3||!ed.contains(n)) return null;
+      var before=n.nodeValue.slice(0,r.startOffset), m=before.match(/(^|[\s(])@([^\s@]{0,20})$/); if(!m) return null; return {q:m[2],node:n,end:r.startOffset,start:r.startOffset-m[2].length-1}; }
+    function mnShow(info){
+      var list=(typeof window.ntPeopleList==='function')?window.ntPeopleList():[]; var items=list.filter(function(p){ return !p.disabled&&(!info.q||p.name.indexOf(info.q)>=0); }).slice(0,30);
+      if(!items.length){ mnClose(); return; } MN.items=items; MN.idx=Math.min(MN.idx,items.length-1); MN.info=info;
+      if(!MN.el){ MN.el=document.createElement('div'); MN.el.className='rt-mention'; document.body.appendChild(MN.el);
+        MN.el.addEventListener('mousedown',function(e){ e.preventDefault(); var it=e.target.closest('.it'); if(it) mnPick(+it.getAttribute('data-i')); }); }
+      MN.el.innerHTML=items.map(function(p,i){ return '<div class="it'+(i===MN.idx?' on':'')+'" data-i="'+i+'"><span>'+esc(p.name)+'</span><small>'+esc(p.team||'')+'</small></div>'; }).join('');
+      try{ var s=window.getSelection(), rg=s.getRangeAt(0).cloneRange(), rc=rg.getClientRects()[0]||ed.getBoundingClientRect(); var x=rc.left, y=rc.bottom+4, h=MN.el.offsetHeight; if(y+h>innerHeight-8) y=Math.max(8,rc.top-h-4); MN.el.style.left=Math.min(x,innerWidth-240)+'px'; MN.el.style.top=y+'px'; }catch(e){}
+    }
+    function mnPick(i){ var p=MN.items[i], info=MN.info; if(!p||!info) return; try{ var r=document.createRange(); r.setStart(info.node,info.start); r.setEnd(info.node,info.end); var s=window.getSelection(); s.removeAllRanges(); s.addRange(r); document.execCommand('insertText',false,'@'+p.name+' '); }catch(e){} mnClose(); normEmpty(); remember(); fire(); }
+    ed.addEventListener('input',function(){ normEmpty(); remember(); fire(); updateState(); if(kind!=='nomention'){ var info=mnQuery(); if(info) mnShow(info); else mnClose(); } });
+    ed.addEventListener('blur',function(){ setTimeout(mnClose,160); });
+    ed.addEventListener('keydown',function(e){
+      if(MN.el&&MN.items.length){ if(e.key==='ArrowDown'){ e.preventDefault(); MN.idx=(MN.idx+1)%MN.items.length; mnShow(MN.info); return; } if(e.key==='ArrowUp'){ e.preventDefault(); MN.idx=(MN.idx-1+MN.items.length)%MN.items.length; mnShow(MN.info); return; }
+        if(e.key==='Enter'||e.key==='Tab'){ e.preventDefault(); mnPick(MN.idx); return; } if(e.key==='Escape'){ e.preventDefault(); mnClose(); return; } }
+      if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){ var code=ta.getAttribute('data-rt-submit'); if(code){ e.preventDefault(); try{ (new Function(code)).call(ta); }catch(x){ console.error(x); } } return; }
+      if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&String(e.key).toLowerCase()==='k'){ e.preventDefault(); var lb=wrap.querySelector('[data-c="link"]'); remember(); linkPop(lb); if(inst.pop) inst.pop.__for='link'; return; }
+      if(e.key==='Escape'){ if(inst.pop){ e.preventDefault(); closePop(); return; } var cc=ta.getAttribute('data-rt-cancel'); if(cc){ e.preventDefault(); try{ (new Function(cc)).call(ta); }catch(x){ console.error(x); } } }
+    });
+    ed.addEventListener('paste',function(e){ var cd=e.clipboardData; if(!cd) return; var txt=cd.getData('text/plain'); if(txt==null) return; e.preventDefault(); restore(); try{ document.execCommand('insertText',false,txt.replace(/\r\n?/g,'\n')); }catch(x){} normEmpty(); fire(); });
+    ed.addEventListener('drop',function(e){ if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files.length) e.preventDefault(); });
+    inst.close=closePop; inst.getHtml=function(){ return ed.innerHTML; };
+    return inst;
+  }
+  function scan(root){ (root||document).querySelectorAll('textarea[data-rt]').forEach(function(t){ if(!t._rt) upgrade(t); }); }
+  function boot(){ scan(document); try{ new MutationObserver(function(muts){ var need=false; for(var i=0;i<muts.length&&!need;i++){ var m=muts[i]; for(var j=0;j<m.addedNodes.length;j++){ var n=m.addedNodes[j]; if(n.nodeType===1&&(n.matches&&n.matches('textarea[data-rt]')||n.querySelector&&n.querySelector('textarea[data-rt]'))){ need=true; break; } } } if(need) scan(document); }).observe(document.documentElement,{childList:true,subtree:true}); }catch(e){} }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+
+  /* ---------- “รายละเอียดงาน” กดแก้ไขในที่ (ใช้ร่วมทุกบอร์ด) — บอร์ดลงทะเบียนที่ window.RT_BOARDS[board]={get(id)->note, save(id,value)->bool} ---------- */
+  function noteView(board,id,note){ var v=view(note,'note'); return v||'<span class="ph">+ คลิกเพื่อเพิ่มรายละเอียด…</span>'; }
+  function noteRow(board,id,note,canEdit){
+    var v=view(note,'note');
+    if(!canEdit) return v?'<div class="cc-cd-row"><b>รายละเอียดงาน</b><span>'+v+'</span></div>':'';
+    return '<div class="cc-cd-row"><b>รายละเอียดงาน</b><span><div class="rt-inl" data-board="'+esc(board)+'" data-id="'+esc(id)+'" title="คลิกเพื่อแก้ไข" onclick="RT.noteEdit(this,event)">'+noteView(board,id,note)+'<span class="pen">✏️</span></div></span></div>';
+  }
+  function boardOf(host){ var B=window.RT_BOARDS||{}; return B[host.getAttribute('data-board')]||null; }
+  function noteEdit(host,ev){
+    if(ev&&ev.target&&ev.target.closest&&ev.target.closest('a,button')) return; if(host.getAttribute('data-editing')) return;
+    var b=boardOf(host); if(!b) return; var cur=''; try{ cur=b.get(host.getAttribute('data-id'))||''; }catch(e){}
+    host.setAttribute('data-editing','1'); host.classList.remove('rt-inl'); host.removeAttribute('onclick'); host.removeAttribute('title');
+    host.innerHTML='<textarea data-rt="note" placeholder="พิมพ์รายละเอียดงาน… (Ctrl+Enter = บันทึก · Esc = ยกเลิก)" data-rt-submit="RT.noteSave(this)" data-rt-cancel="RT.noteCancel(this)">'+esc(cur)+'</textarea>'
+      +'<div class="rt-inl-btns"><button type="button" class="go" onclick="RT.noteSave(this)">บันทึก</button><button type="button" class="no" onclick="RT.noteCancel(this)">ยกเลิก</button></div>';
+    scan(host); var ta=host.querySelector('textarea'); if(ta&&ta._rt){ ta._rt.ed.classList.add('big'); setTimeout(function(){ ta.focus(); },30); }
+  }
+  function hostOf(node){ return node.closest?node.closest('[data-board]'):null; }
+  function noteRestore(host){ var b=boardOf(host), id=host.getAttribute('data-id'), note=''; try{ note=b.get(id)||''; }catch(e){}
+    host.removeAttribute('data-editing'); host.classList.add('rt-inl'); host.setAttribute('title','คลิกเพื่อแก้ไข'); host.setAttribute('onclick','RT.noteEdit(this,event)'); host.innerHTML=noteView(host.getAttribute('data-board'),id,note)+'<span class="pen">✏️</span>'; }
+  function noteSave(node){ var host=hostOf(node); if(!host) return; var b=boardOf(host), ta=host.querySelector('textarea'); if(!b||!ta) return; var val=ta.value, ok=false;
+    host.removeAttribute('data-editing');   // บันทึกแล้วหน้าต่างจะวาดใหม่ → อย่าให้ระบบ “จำช่องที่กำลังพิมพ์” เปิดช่องนี้คืน
+    try{ ok=b.save(host.getAttribute('data-id'),val); }catch(e){ console.error(e); ok=false; }
+    if(ok===false){ host.setAttribute('data-editing','1'); return; } if(host.isConnected) noteRestore(host); }
+  function noteCancel(node){ var host=hostOf(node); if(host) noteRestore(host); }
+  /* หน้าต่างการ์ดวาดใหม่ระหว่างกำลังพิมพ์ (ซิงก์เบื้องหลัง) → จำข้อความ+เคอร์เซอร์ของช่องแก้ไขที่เปิดอยู่แล้วเปิดคืนให้ */
+  function noteSnapshot(){ var out=[]; document.querySelectorAll('[data-board][data-editing]').forEach(function(h){ var ta=h.querySelector('textarea'); if(!ta||!ta._rt) return; out.push({board:h.getAttribute('data-board'),id:h.getAttribute('data-id'),val:ta.value,off:caretGet(ta._rt.ed)}); }); return out.length?out:null; }
+  function noteRestoreSnapshot(snap){ (snap||[]).forEach(function(sn){ var h=document.querySelector('[data-board="'+sn.board+'"][data-id="'+sn.id+'"]'); if(!h) return; noteEdit(h,null); var ta=h.querySelector('textarea'); if(ta){ ta.value=sn.val; if(sn.off>=0&&ta._rt){ ta._rt.ed.focus(); caretSet(ta._rt.ed,sn.off); } } }); }
+  /* ตำแหน่งเคอร์เซอร์เป็นลำดับตัวอักษร (ใช้คืนตำแหน่งหลังหน้าต่างวาดใหม่) */
+  function caretGet(ed){ try{ var s=window.getSelection(); if(!s||!s.rangeCount) return -1; var r=s.getRangeAt(0); if(!ed.contains(r.endContainer)) return -1; var pre=document.createRange(); pre.selectNodeContents(ed); pre.setEnd(r.endContainer,r.endOffset); return pre.toString().length; }catch(e){ return -1; } }
+  function caretSet(ed,off){ try{ var w=document.createTreeWalker(ed,NodeFilter.SHOW_TEXT,null), n, left=off, last=null; while((n=w.nextNode())){ last=n; if(left<=n.nodeValue.length){ var r=document.createRange(); r.setStart(n,left); r.collapse(true); var s=window.getSelection(); s.removeAllRanges(); s.addRange(r); return; } left-=n.nodeValue.length; }
+      var r2=document.createRange(); r2.selectNodeContents(ed); r2.collapse(false); var s2=window.getSelection(); s2.removeAllRanges(); s2.addRange(r2); }catch(e){} }
+  window.RT={noteSnapshot:noteSnapshot,noteRestoreSnapshot:noteRestoreSnapshot,noteRow:noteRow,noteEdit:noteEdit,noteSave:noteSave,noteCancel:noteCancel,caretGet:caretGet,caretSet:caretSet,PREFIX:PREFIX,sanitize:sanitize,serialize:serialize,isRich:isRich,toPlain:toPlain,toEditorHtml:toEditorHtml,view:view,upgrade:upgrade,scan:scan,legacyComment:legacyComment,legacyNote:legacyNote,esc:esc,
+    isEmpty:function(s){ return !String(s==null?'':s).trim()||(isRich(s)&&isEmptyHtml(strip(s))); }};
 })();
 </script>
 <script id="restore-view-2026-10-06">
