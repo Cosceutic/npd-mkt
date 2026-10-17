@@ -111,9 +111,10 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
   'use strict';
   var CFG={url:'https://oamvkcjuhnaytthzngci.supabase.co',key:'sb_publishable_I3cAhyK8yroutnMQfPhaFg_uh8impiF'};
   /* ขั้นตอน/ประเภท/แบรนด์ — ให้ตรงกับบอร์ด Branding (ประเภทและความสำคัญที่ทีมแก้เอง ดึงจากฐานข้อมูลมาทับให้) */
-  var COLS=[{k:'idea',t:'ไอเดีย',e:'💡',c:'#f2c94c'},{k:'plan',t:'วางแผน',e:'🗂️',c:'#7cb6e4'},{k:'doing',t:'กำลังทำ',e:'🎬',c:'#ffb454'},
+  var COLS=[{k:'idea',t:'To-do list',e:'📝',c:'#f2c94c'},{k:'plan',t:'วางแผน',e:'🗂️',c:'#7cb6e4'},{k:'doing',t:'กำลังทำ',e:'🎬',c:'#ffb454'},
     {k:'review',t:'รอตรวจ / อนุมัติ',e:'👀',c:'#9b7ef8'},{k:'run',t:'ดำเนินการ',e:'🚀',c:'#5aa0d8'},{k:'done',t:'เสร็จแล้ว',e:'✅',c:'#26a69a',done:true}];
-  var KINDS={theme:['🎨 ธีมรายเดือน','#C06BD6'],launch:['🚀 เปิดตัวสินค้า','#EF5350'],content:['✍️ Content Branding','#E9557F'],boss:['📣 งานที่เจ้านายสั่ง','#F57C00'],todo:['✅ To-Do','#7C5CFC'],
+  var KIND_COLS={coord:['idea','doing','done']};   // ประเภทที่ใช้คอลัมน์แค่บางตัว (ประสานงาน) → แถบขั้นตอนโชว์เฉพาะ 3 ขั้นนี้ (ให้ตรงกับ branding.js)
+  var KINDS={coord:['🤝 ประสานงาน','#1FA3B8'],theme:['🎨 ธีมรายเดือน','#C06BD6'],launch:['🚀 เปิดตัวสินค้า','#EF5350'],content:['✍️ Content Branding','#E9557F'],boss:['📣 งานที่เจ้านายสั่ง','#F57C00'],todo:['✅ To-Do','#7C5CFC'],
     decor:['🏬 Decorate Offline','#26A69A'],display:['🧴 Display','#5B8FF9'],tester:['🧪 Tester','#E89B00'],other:['📌 อื่นๆ','#8a94a6']};
   var PRIO={urgent:['🚨 ด่วนที่สุด','#C62828'],high:['🔥 ด่วน','#EF5350'],important:['⭐ สำคัญ','#F59E0B'],normal:['📌 ปกติ','#5B8FF9'],low:['🌿 ไม่รีบ','#26A69A'],hold:['🧊 พักไว้ก่อน','#8A94A6']};
   var BRANDS={godmami:['Godmami','#ff89bf'],glimmer:['Glimmer Sisters','#385dae'],both:['Godmami × Glimmer Sisters','#7B7F9E']};
@@ -130,6 +131,8 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
   function dayDiff(a,b){ return Math.round((b-a)/86400000); }   // b - a (วัน)
   function ago(v){ var d=/^\d{4}-\d{2}-\d{2}$/.test(String(v))?dayOf(v):new Date(v); if(!d||isNaN(d)) return ''; var t=new Date(); var a=new Date(d.getFullYear(),d.getMonth(),d.getDate()), b=new Date(t.getFullYear(),t.getMonth(),t.getDate()); var n=dayDiff(a,b); return n<=0?'วันนี้':(n===1?'เมื่อวาน':n+' วันที่แล้ว'); }
   function colOf(k){ for(var i=0;i<COLS.length;i++) if(COLS[i].k===k) return COLS[i]; return COLS[0]; }
+  function colsFor(kind){ var a=KIND_COLS[kind]; return a?COLS.filter(function(x){ return a.indexOf(x.k)>=0; }):COLS; }
+  function stepIx(c,L){ var full=colIx(c.col); for(var i=L.length-1;i>=0;i--) if(colIx(L[i].k)<=full) return i; return 0; }   // คอลัมน์ที่ประเภทนี้ไม่ใช้ (ข้อมูลเก่า) → ขั้นที่ใกล้ที่สุดก่อนหน้า
   function colIx(k){ for(var i=0;i<COLS.length;i++) if(COLS[i].k===k) return i; return 0; }
   function opt(list,k,fallback){ var o=S.opts&&S.opts[list]; var it=null; if(o&&o.items) for(var i=0;i<o.items.length;i++) if(o.items[i].k===k) it=o.items[i]; if(it) return [String(it.t||k),String(it.c||'#8a94a6')]; return fallback; }
   function kindOf(k){ return opt('card-kinds',k,KINDS[k]||KINDS.other); }
@@ -189,8 +192,8 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
     if(k) out+='<span class="chip" style="background:'+tint(k[1],.12)+';color:'+k[1]+';border-color:'+tint(k[1],.3)+'">'+esc(k[0])+'</span>';
     if(p) out+='<span class="chip" style="background:'+tint(p[1],.12)+';color:'+p[1]+';border-color:'+tint(p[1],.3)+'">'+esc(p[0])+'</span>';
     return out?'<div class="chips">'+out+'</div>':''; }
-  function stepper(c){ var ix=colIx(c.col), cc=COLS[ix];
-    return '<ol class="st" aria-label="ขั้นตอนของงาน">'+COLS.map(function(x,i){ var cls=i<ix?'past':(i===ix?'cur':'fut');
+  function stepper(c){ var L=colsFor(c.kind), ix=stepIx(c,L), cc=L[ix];
+    return '<ol class="st" aria-label="ขั้นตอนของงาน" style="grid-template-columns:repeat('+L.length+',1fr)">'+L.map(function(x,i){ var cls=i<ix?'past':(i===ix?'cur':'fut');
       return '<li class="'+cls+'" style="--c:'+x.c+';--c2:'+tint(x.c,.22)+'"'+(i===ix?' aria-current="step"':'')+'><div class="dot">'+(i<ix?'✓':x.e)+'</div><div class="lb">'+esc(x.t)+'</div></li>'; }).join('')+'</ol>'
       +'<div class="now" style="--cbg:'+tint(cc.c,.14)+'"><span style="font-size:20px">'+cc.e+'</span><span>'+(cc.done?'<b>เสร็จเรียบร้อยแล้ว</b>':'ตอนนี้อยู่ขั้นตอน <b>'+esc(cc.t)+'</b>')+'</span>'
       +((c.col_at||c.done_at)?'<span class="when">'+(cc.done?'เมื่อ ':'เข้าขั้นนี้เมื่อ ')+esc(fmtDay(cc.done&&c.done_at?c.done_at:c.col_at))+' · '+esc(ago(cc.done&&c.done_at?c.done_at:c.col_at))+'</span>':'')+'</div>'; }
