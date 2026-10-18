@@ -125,6 +125,19 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
   function ts(v){ var d=new Date(v); return isNaN(d)?'':d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear()+' · '+p2(d.getHours())+':'+p2(d.getMinutes()); }
   function money(n){ n=+n||0; return '฿'+n.toLocaleString('en-US',{maximumFractionDigits:2}); }
   function row(k,v){ return '<div class="cx-r"><span>'+k+'</span><b>'+v+'</b></div>'; }
+  /* ประวัติไม่รก: เปลี่ยนสถานะย่อยต่อเนื่องโดยคนเดิมภายใน 10 นาที รวมเหลือรายการสุดท้าย · กลับมาค่าเดิม = ตัดทิ้ง */
+  function collapse(E){ var out=[]; (E||[]).forEach(function(e){ var q=out[out.length-1];
+      if(e.kind==='progress'&&q&&q.kind==='progress'&&q.by===e.by&&Math.abs(new Date(e.at)-new Date(q.at))<=600000){ out[out.length-1]={kind:'progress',from:q.from,to:e.to,note:e.note,at:e.at,by:e.by}; } else out.push(e); });
+    return out.filter(function(e){ return !(e.kind==='progress'&&String(e.from||'')===String(e.to||'')); }); }
+  function safe(u){ u=String(u||'').trim(); return /^https:\/\//i.test(u)?u:''; }
+  function thumbs(L,lbl){ return L.map(function(x){ var u=safe(x.u); return u?'<button type="button" class="cx-th" data-a="lb" data-u="'+esc(u)+'" aria-label="ดูรูปใหญ่"><img src="'+esc(u)+'" alt="" loading="lazy" referrerpolicy="no-referrer"><i>'+esc(lbl)+'</i></button>':''; }).join(''); }
+  function gallery(c){ var A=(c.images||[]).filter(function(x){ return safe(x&&x.u); }), P=(c.proofs||[]).filter(function(x){ return safe(x&&x.u); }), n=A.length+P.length;
+    if(!n){ return c.show_images===false&&+c.proofs_n>0?'<div class="card"><h3 class="cx">รูปและหลักฐาน</h3><div class="cx-s">ผู้ส่งลิงก์ยังไม่เปิดแสดงรูป ('+esc(c.proofs_n)+' รูปหลักฐานในระบบ)</div></div>':''; }
+    var g=function(t,L,lbl){ return L.length?'<div class="cx-gt">'+t+'</div><div class="cx-g">'+thumbs(L,lbl)+'</div>':''; };
+    var by=function(k){ return P.filter(function(x){ return (x.k||'other')===k||(k==='other'&&x.k!=='pay'&&x.k!=='ship'); }); };
+    return '<div class="card"><h3 class="cx">รูปและหลักฐาน ('+n+')</h3>'+g('รูปจากลูกค้า / ประกอบเคส',A,'จากลูกค้า')+g('🧾 หลักฐานการโอน / ชำระเงิน',by('pay'),'สลิปโอน')+g('📦 ใบเสร็จค่าส่ง',by('ship'),'ใบเสร็จค่าส่ง')+g('📎 หลักฐานอื่นๆ',by('other'),'อื่นๆ')+'</div>'; }
+  function lightbox(u){ var o=document.getElementById('cx-lb'); if(!o){ o=document.createElement('div'); o.id='cx-lb'; o.setAttribute('role','dialog'); o.setAttribute('aria-label','รูปใหญ่'); o.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(40,28,20,.88);display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out;'; o.addEventListener('click',function(){ o.hidden=true; o.innerHTML=''; }); document.body.appendChild(o); }
+    o.innerHTML='<img src="'+esc(u)+'" alt="" referrerpolicy="no-referrer" style="max-width:100%;max-height:100%;border-radius:14px;"><a href="'+esc(u)+'" target="_blank" rel="noopener" style="position:absolute;right:16px;top:14px;background:#fff;border-radius:999px;padding:6px 14px;font-size:13px;text-decoration:none;color:#443025;">เปิดรูปต้นฉบับ ↗</a>'; o.hidden=false; }
   function css(){ if(document.getElementById('cx-css')) return; var s=document.createElement('style'); s.id='cx-css'; s.textContent=[
     'body{background:#F6F4F1;color:#443025;font-family:"Anuphan","Sarabun",system-ui,sans-serif;}',
     '.top b{color:#443025;} .card{border-color:#ECE6DF;border-radius:20px;}',
@@ -150,13 +163,16 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
     '.cx-tl{list-style:none;margin:6px 0 0;padding:0 0 0 18px;border-left:2px solid #FFE3EC;}',
     '.cx-tl li{position:relative;padding:0 0 14px 6px;} .cx-tl li::before{content:"";position:absolute;left:-25px;top:6px;width:10px;height:10px;border-radius:50%;background:#FFB7CF;border:2px solid #fff;}',
     '.cx-tl .w{font-size:12px;color:#8A7B6F;} .cx-tl .t{font-weight:600;font-size:14.5px;} .cx-tl .n{font-size:13.5px;color:#6E5B4E;background:#FBF8F5;border-radius:10px;padding:6px 10px;margin-top:4px;white-space:pre-wrap;}',
+    '.cx-g{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px;} .cx-gt{font-size:13px;color:#8A7B6F;margin-top:8px;}',
+    '.cx-th{position:relative;width:104px;height:104px;border:1px solid #ECE6DF;border-radius:14px;overflow:hidden;padding:0;background:#FBF8F5;cursor:zoom-in;} .cx-th img{width:100%;height:100%;object-fit:cover;display:block;}',
+    '.cx-th i{position:absolute;left:4px;bottom:4px;max-width:calc(100% - 8px);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;background:rgba(255,255,255,.93);border-radius:999px;padding:0 7px;font:normal 10.5px/17px "Anuphan",sans-serif;color:#443025;}',
     '.cx-foot{text-align:center;color:#8A7B6F;font-size:12px;margin:18px 0 6px;line-height:1.7;}'].join('\n'); document.head.appendChild(s); }
   function rpc(){ return fetch(CFG.url+'/rest/v1/rpc/cs_share_get',{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.key,Authorization:'Bearer '+CFG.key},cache:'no-store',referrerPolicy:'no-referrer',body:JSON.stringify({p_token:TOK})})
       .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }); }
   function msg(em,h,p){ return '<div class="card msg"><div class="em">'+em+'</div><h2 class="hd">'+h+'</h2><p>'+p+'</p></div>'; }
   function evText(e){ var t=e.to||'';
     if(e.kind==='created') return '📝 เปิดเคส';
-    if(e.kind==='progress') return '🔄 '+esc(t||'—');
+    if(e.kind==='progress') return '🔄 '+esc(t||'ล้างสถานะย่อย');
     if(e.kind==='proof') return '📎 แนบ'+esc(PF[t]||PF.other);
     var M={pending:'📤 ส่งให้หัวหน้าพิจารณา',approved:'✅ หัวหน้าอนุมัติ',rejected:'↩︎ หัวหน้าส่งกลับให้แก้ไข',resolved:'✔ ปิดเคส',cancelled:'🚫 ยกเลิกเคส',inprogress:(e.from==='resolved'?'🔄 เปิดเคสอีกครั้ง':'▶️ เริ่มดำเนินการ'),draft:(e.from==='pending'?'↩︎ ดึงกลับมาแก้ไข':'♻️ กู้เคสกลับมา')};
     return M[t]||esc(t); }
@@ -178,15 +194,17 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
       +row('สินค้า',P.length?P.map(function(p){ return esc(p.name)+(p.sku?' <span style="color:#8A7B6F;font-weight:400">('+esc(p.sku)+')</span>':'')+' × '+esc(p.qty||1)+lots(p.lot); }).join('<br>'):'—')+'</div>';
     h+='<div class="card"><h3 class="cx">ยอดเงินและแนวทางแก้ไข</h3>'+row('ชดใช้ลูกค้า',money(c.amount_comp))+row('ค่าส่งของกลับของลูกค้า',money(c.amount_ship))+row('อื่นๆ'+(c.other_note?' ('+esc(c.other_note)+')':''),money(c.amount_other))+'<div class="cx-r tot"><span>รวมที่ประเมิน</span><b>'+money(tot)+'</b></div>'
       +(O.length?O.map(function(o,i){ return row(o.rec?'★ แนะนำ':'ตัวเลือก '+(i+1),esc(o.type)+(o.amount?' · '+money(o.amount):'')+(o.note?'<div style="font-weight:400;color:#8A7B6F;font-size:13px">'+esc(o.note)+'</div>':'')); }).join(''):'')
-      +(c.chosen?row('ลูกค้าเลือก',esc(c.chosen)):'')+(c.actual_amount!=null?row('ยอดที่จ่ายจริง',money(c.actual_amount)):'')+(c.resolution?row('สรุปการดำเนินการ','<span style="font-weight:400">'+esc(c.resolution)+'</span>'):'')+(+c.proofs_n?row('หลักฐานในระบบ',esc(c.proofs_n)+' รูป'):'')+'</div>';
-    var E=(d.events||[]).slice().reverse();
+      +(c.chosen?row('ลูกค้าเลือก',esc(c.chosen)):'')+(c.actual_amount!=null?row('ยอดที่จ่ายจริง',money(c.actual_amount)):'')+(c.resolution?row('สรุปการดำเนินการ','<span style="font-weight:400">'+esc(c.resolution)+'</span>'):'')+'</div>';
+    h+=gallery(c);
+    var E=collapse(d.events||[]).slice().reverse();
     h+='<div class="card"><h3 class="cx">เรื่องราวของเคส</h3>'+(E.length?'<ul class="cx-tl">'+E.map(function(e){ return '<li><div class="w">'+esc(ts(e.at))+(e.by?' · '+esc(e.by):'')+'</div><div class="t">'+evText(e)+'</div>'+(e.note?'<div class="n">'+esc(e.note)+'</div>':'')+'</li>'; }).join('')+'</ul>':'<div class="cx-s">ยังไม่มีความเคลื่อนไหว</div>')+'</div>';
     h+='<div class="cx-foot">CIL Webboard · Cosceutic Innovation Lab<br>หน้านี้ดูอย่างเดียว · อัปเดตอัตโนมัติ · ข้อมูลเป็นความลับ กรุณาอย่าส่งต่อ</div>';
     app.innerHTML=h; }
   function load(){ if(S.busy) return; S.busy=true; draw();
     rpc().then(function(j){ S.busy=false; if(j&&j.ok){ S.d=j; S.err=''; S.last=Date.now(); } else { S.d=null; S.err=(j&&j.why)||'invalid'; } draw(); })
       .catch(function(e){ S.busy=false; S.err=(e&&e.message)||'error'; draw(); }); }
-  document.addEventListener('click',function(e){ var b=e.target.closest&&e.target.closest('[data-a="rf"]'); if(b) load(); });
+  document.addEventListener('click',function(e){ var b=e.target.closest&&e.target.closest('[data-a="rf"]'); if(b){ load(); return; } var l=e.target.closest&&e.target.closest('[data-a="lb"]'); if(l) lightbox(l.getAttribute('data-u')); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ var o=document.getElementById('cx-lb'); if(o&&!o.hidden){ o.hidden=true; o.innerHTML=''; } } });
   document.addEventListener('visibilitychange',function(){ if(!document.hidden&&S.d) load(); });
   setInterval(function(){ if(!document.hidden&&S.d) load(); },POLL);
   window.__CSSHARE={S:S,load:load,draw:draw};
