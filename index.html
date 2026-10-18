@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="npd-build" content="20261018-1614">
+<meta name="npd-build" content="20261018-1756">
 <script id="npd-gate-2026-10-18">
 /* 🔐 ด่านล็อกอินก่อนเข้าเว็บ — 2026-10-18  (อยู่ใน <head> ก่อนสคริปต์อื่นทั้งหมด)
    • ไม่มี session ล็อกอินเก็บไว้ในเครื่อง → ซ่อนทั้งเว็บ แสดงเฉพาะฟอร์มเข้าสู่ระบบ + หยุดแอปไม่ให้บูต/ไม่ให้ยิงเครือข่าย (สคริปต์หลักมี guard โยน error ที่บรรทัดแรก)
@@ -1751,30 +1751,6 @@ html.bp-panning,html.bp-panning *{cursor:grabbing !important;user-select:none !i
   </div>
   </div>
 
-  <div class="view" id="view-task">
-    <p class="section-title" style="margin-top:0;">ฝากงาน NPD</p>
-    <p class="section-sub">สำหรับทีมอื่นฝากงานทั่วไปที่ไม่ด่วนมาก — กรอกในหน้านี้ได้เลย ไม่ต้องเปิด Sheet</p>
-
-    <div class="panel">
-      <h3>ฝากงานใหม่</h3>
-      <p class="section-sub" style="margin-bottom:10px;">กรอกในฟอร์มด้านล่างได้เลย ส่งแล้วงานจะไปโผล่ใน Task Pipeline ข้างล่าง (อาจต้องรีเฟรชสักครู่)</p>
-      <a id="task-form-link" class="btn-sm primary" href="#" target="_blank" rel="noopener"
-         style="display:inline-block; margin-bottom:12px; padding:9px 18px; text-decoration:none;">เปิดฟอร์มในแท็บใหม่ ↗</a>
-      <iframe id="task-form-frame" src="" width="100%" height="760" frameborder="0" marginheight="0" marginwidth="0" style="border-radius:10px; border:1px solid var(--line);">กำลังโหลดฟอร์ม…</iframe>
-    </div>
-
-    <div class="toolbar" style="margin-top:20px;">
-      <p class="section-title" style="margin:0;">Task Pipeline</p>
-      <select class="filter" id="tk-filter" onchange="renderTaskBoard()">
-        <option value="all">ทุกคน</option>
-        <option value="Peet">Peet</option>
-        <option value="Bonus">Bonus</option>
-        <option value="Ploy">Ploy</option>
-      </select>
-    </div>
-    <div class="kanban" id="task-board"></div>
-  </div>
-
   <div class="view" id="view-workflow">
     <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
       <button class="btn-sm ghost" onclick="backToProcessFromWorkflow()" style="padding:7px 14px;">← กลับ NPD Team</button>
@@ -3045,11 +3021,6 @@ async function npdPendRetry(){
 }
 function updateSig(r){ return [parseSheetDate(r.Date||''),(r.SKU||'').trim(),(r.Track||'').trim(),(r.Stage||'').trim(),(r.Detail||'').trim()].join('|'); }
 
-// -- Task: status overrides keyed by task detail --
-const TASK_OVR_KEY='npd_pending_taskstatus_v1';
-function getTaskOverrides(){ try{ return JSON.parse(localStorage.getItem(TASK_OVR_KEY))||{}; }catch(e){ return {}; } }
-function saveTaskOverrides(o){ try{ localStorage.setItem(TASK_OVR_KEY, JSON.stringify(o)); }catch(e){} }
-
 // -- Notice: add / toggle-active / delete banners --
 const NOTICE_KEY='npd_pending_notices_v1';
 function getNoticeStore(){ try{ const s=JSON.parse(localStorage.getItem(NOTICE_KEY)); if(s) return {edits:s.edits||{}, appends:s.appends||[], deletes:s.deletes||[]}; }catch(e){} return {edits:{},appends:[],deletes:[]}; }
@@ -3057,7 +3028,7 @@ function saveNoticeStore(s){ try{ localStorage.setItem(NOTICE_KEY, JSON.stringif
 
 function totalPending(){
   const n=getNoticeStore();
-  return pendingCount() + getUpdatesLocal().length + Object.keys(getTaskOverrides()).length
+  return pendingCount() + getUpdatesLocal().length
        + Object.keys(n.edits).length + n.appends.length + n.deletes.length;
 }
 
@@ -3350,7 +3321,11 @@ function sbEmail(){ try{ return String((SB_SESSION && SB_SESSION.user && SB_SESS
 const GRAPHIC_ACCOUNTS = ['graphic01@cosceutic.com','graphic.cosmania02@gmail.com','graphic03.cil@gmail.com'];
 function isGraphicAccount(){ try{ return !!(sbLoggedIn() && GRAPHIC_ACCOUNTS.indexOf(sbEmail())>=0); }catch(e){ return false; } }
 window.isGraphicAccount = isGraphicAccount;
-function canEditArea(area){ const list=AREA_EDITORS[area]; return !!(sbLoggedIn() && list && list.indexOf(sbEmail())>=0); }
+function canEditArea(area){ if(area==='content' && typeof window.teamAvail==='function' && window.teamAvail('content')) return window.teamIsEditor('content');
+  if(area==='npd_process' && typeof window.teamAvail==='function' && window.teamAvail('npd')) return window.teamIsEditor('npd');   // ทีม NPD: ใช้ระดับในทีม
+  if(area==='npd_process' && typeof window.teamAvail==='function' && window.teamAvail('npd')) return window.teamIsEditor('npd');   // ทีม NPD: ใช้ระดับในทีม
+  if(area==='npd_process' && typeof window.teamAvail==='function' && window.teamAvail('npd')) return window.teamIsEditor('npd');   // ทีม NPD: ใช้ระดับในทีม   // ทีม Content: ใช้ระดับในทีม (⚙️ ตั้งค่าทีม) แทนรายชื่อในโค้ด
+  const list=AREA_EDITORS[area]; return !!(sbLoggedIn() && list && list.indexOf(sbEmail())>=0); }
 /* ผู้ดูอย่างเดียว: เห็นหน้า NPD Team (ลับ) ได้ แต่ไม่ได้อยู่ในรายชื่อแก้ไข (AREA_EDITORS) — การเขียนข้อมูลของ NPD Process ยังถูกจำกัดด้วย RLS เหมือนเดิม */
 const NPD_PROCESS_VIEWERS = [];   // ผู้ดูอย่างเดียว (ยังไม่มีใคร) — คุณกอล์ฟ thatchapon@ เป็นผู้แก้ไขเต็มสิทธิ์แล้ว (อยู่ใน AREA_EDITORS ทั้ง 4 หมวด)
 function canViewNpdProcess(){ if(typeof window.teamAvail==='function' && window.teamAvail('npd')) return window.teamIsMember('npd'); return canEditArea('npd_process') || !!(sbLoggedIn() && NPD_PROCESS_VIEWERS.indexOf(sbEmail())>=0); }   // NPD Process: ดู = รายชื่อแก้ไข + ผู้ดูอย่างเดียว (ลับ)
@@ -4642,7 +4617,7 @@ async function init(){
   setAppFavicon();
   setupBackToTop();
   document.getElementById('updated-badge').textContent = 'Loading data…';
-  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet(), loadNPRSummaryFromSheet(), loadEventsFromSheet(), loadBannersFromSheet()]);
+  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadNoticesFromSheet(), loadNPRSummaryFromSheet(), loadEventsFromSheet(), loadBannersFromSheet()]);
   renderNotices();
 
   currentYear = new Date().getFullYear();
@@ -4651,8 +4626,6 @@ async function init(){
   renderCatalog();
   renderTeamUpdates();
   initTeamLock();
-  initTaskForm();
-  renderTaskBoard();
   initEditUi();
   startAutoSync();   // keep every open tab in sync with the Sheet without a manual reload
   checkSheetHealth();   // warn loudly if THIS machine can't write to the Sheet
@@ -7271,122 +7244,28 @@ function applyTeamLockState(unlocked){
 function ccApplyLock(){
   const v=document.getElementById('view-content'); if(!v) return;
   const loggedIn = (typeof sbLoggedIn==='function') && sbLoggedIn();
-  const gfx = (typeof isGraphicAccount==='function') && isGraphicAccount();
+  const tAv = (typeof window.teamAvail==='function') && window.teamAvail('content');
+  const gfx = tAv ? !window.teamIsMember('content') : ((typeof isGraphicAccount==='function') && isGraphicAccount());   // ทีม Content: ไม่ใช่สมาชิก = ล็อก · “ดูอย่างเดียว” (เช่นกราฟิก) เปิดดูได้
   v.classList.toggle('cc-locked', !loggedIn || gfx);
   const msg=document.getElementById('cc-lock-msg'), btn=document.getElementById('cc-lock-btn2');
   if(msg && btn){
     if(!loggedIn){ msg.innerHTML='หน้านี้จำกัดเฉพาะทีมงาน — กรุณาเข้าสู่ระบบด้วยบัญชีที่มีสิทธิ์'; btn.textContent='🔑 เข้าสู่ระบบ'; btn.dataset.act='login'; }
+    else if(tAv){ msg.innerHTML='หน้านี้เฉพาะสมาชิกทีม Content — ถ้าต้องใช้งาน ขอให้หัวหน้าทีมเพิ่มชื่อคุณที่ปุ่ม ⚙️ ตั้งค่าทีม'; btn.textContent='🏠 กลับหน้าแรก'; btn.dataset.act='home'; }
+    else if(tAv){ msg.innerHTML='หน้านี้เฉพาะสมาชิกทีม Content — ถ้าต้องใช้งาน ขอให้หัวหน้าทีมเพิ่มชื่อคุณที่ปุ่ม ⚙️ ตั้งค่าทีม'; btn.textContent='🏠 กลับหน้าแรก'; btn.dataset.act='home'; }
+    else if(tAv){ msg.innerHTML='หน้านี้เฉพาะสมาชิกทีม Content — ถ้าต้องใช้งาน ขอให้หัวหน้าทีมเพิ่มชื่อคุณที่ปุ่ม ⚙️ ตั้งค่าทีม'; btn.textContent='🏠 กลับหน้าแรก'; btn.dataset.act='home'; }
+    else if(tAv){ msg.innerHTML='หน้านี้เฉพาะสมาชิกทีม Content — ถ้าต้องใช้งาน ขอให้หัวหน้าทีมเพิ่มชื่อคุณที่ปุ่ม ⚙️ ตั้งค่าทีม'; btn.textContent='🏠 กลับหน้าแรก'; btn.dataset.act='home'; }
     else { msg.innerHTML='หน้านี้จำกัดเฉพาะทีม Content — บัญชีทีมกราฟฟิกไม่มีสิทธิ์เข้าหน้านี้<br>งานจาก Content ที่มอบให้คุณ อยู่ในบอร์ด <b>Graphic Team</b> (คอลัมน์ “✨ จาก Content”)'; btn.textContent='🎨 ไปที่ Graphic Team'; btn.dataset.act='graphic'; }
   }
 }
 function ccLockAction(){
   const b=document.getElementById('cc-lock-btn2'); const act=b&&b.dataset.act;
   if(act==='login'){ if(typeof sbShowLoginModal==='function') sbShowLoginModal(); }
+  else if(act==='home'){ const t=document.querySelector('#nav .tab[data-view="calendar"]'); if(t) t.click(); }
   else { const t=document.querySelector('#nav .tab[data-view="graphic"]'); if(t) t.click(); }
 }
 window.ccLockAction = ccLockAction;
 window.ccApplyLock = ccApplyLock;
 function initTeamLock(){ applyTeamLockState(canViewNpdProcess()); ccApplyLock(); }
-
-/* ---------- Task board (ฝากงาน NPD) ----------
-   Reads the Google Form response tab. Submitting happens through the embedded form
-   (Google handles the write), so no Apps Script is needed. Changing a task's Status
-   is done in the Sheet — a static page can't write back on its own. */
-const TASKS_CSV_URL = "https://docs.google.com/spreadsheets/d/1MnlR0_AyqJ6ZNhhg-zFme77iTNbR6MY_TwshPPpUeG8/export?format=csv&gid=141244138";
-const TASK_FORM_EMBED = "https://docs.google.com/forms/d/e/1FAIpQLSfvlAAWagFrFb6va4vgZVatgbK5VB3qjgAKJf6LVs64o2n7Xg/viewform?embedded=true";
-
-const TASK_STATUSES = ['ยังไม่ได้รับงาน','รับทราบรอตามคิว','กำลังทำ','เรียบร้อยแล้ว'];
-let TASKS = [];
-
-function initTaskForm(){
-  // Strip any editor-only query params (e.g. ?usp=publish-editor) before embedding
-  const base = TASK_FORM_EMBED.split('?')[0];
-  const frame = document.getElementById('task-form-frame');
-  // NOTE: an <iframe src=""> resolves .src to the current page URL, not "" —
-  // so checking !frame.src here always fails silently and the form never loads.
-  if(frame) frame.src = base + '?embedded=true';
-  const link = document.getElementById('task-form-link');
-  if(link) link.href = base;
-}
-
-async function loadTasksFromSheet(){
-  try{
-    const rows = await sbSelect('tasks');
-    TASKS = rows.filter(r=>(r['รายละเอียดงาน']||r.Detail||'').trim()).map((r,i)=>({
-      id: 'row'+i,
-      ts: (r['ประทับเวลา']||'').trim(),
-      created: parseSheetDate((r['ประทับเวลา']||'').split(' ')[0] || r.Created),
-      assignee: (r['NPD ที่ต้องการฝาก']||r.Assignee||'').trim(),
-      requester: (r['ผู้ฝากงาน']||r.Requester||'').trim(),
-      deadline: parseSheetDate(r['Deadline']||''),
-      detail: (r['รายละเอียดงาน']||r.Detail||'').trim(),
-      priority: ((r['ระดับความสำคัญ']||r.Priority||'').match(/★/g)||[]).length
-                || parseInt((r.Priority||'0'),10) || 1,
-      remark: (r['Remark']||'').trim(),
-      status: (r['Status']||'').trim() || TASK_STATUSES[0],
-    }));
-  }catch(err){
-    console.error('Tasks load failed', err);
-    TASKS = [];
-  }
-  // apply local status overrides (and drop ones the Sheet has already caught up to)
-  autoPruneTaskOverrides();
-  const ovr = getTaskOverrides();
-  TASKS.forEach(t=>{ if(ovr[t.detail]!=null) t.status = ovr[t.detail]; });
-}
-function autoPruneTaskOverrides(){
-  const ovr = getTaskOverrides(); let ch=false;
-  Object.keys(ovr).forEach(detail=>{
-    const t = TASKS.find(x=>x.detail===detail);
-    if(t && t.status===ovr[detail]){ delete ovr[detail]; ch=true; }   // Sheet matches → done
-  });
-  if(ch) saveTaskOverrides(ovr);
-}
-function setTaskStatus(detail, status){
-  const ovr = getTaskOverrides(); ovr[detail]=status; saveTaskOverrides(ovr);
-  const t = TASKS.find(x=>x.detail===detail); if(t) t.status=status;
-  renderTaskBoard(); updateSyncStatus(); updateEditControls();
-  syncToSheet('task','update', detail, {Status:status});
-}
-
-function renderTaskBoard(){
-  const board = document.getElementById('task-board');
-  if(!board) return;
-  const filter = (document.getElementById('tk-filter')||{}).value || 'all';
-  const today = todayStr();
-
-  board.innerHTML = TASK_STATUSES.map(status=>{
-    const cards = TASKS
-      .filter(t=>t.status===status && (filter==='all' || t.assignee===filter))
-      .sort((a,b)=> (b.priority-a.priority) || (a.deadline||'9999').localeCompare(b.deadline||'9999'));
-
-    const cardsHtml = cards.map(t=>{
-      const overdue = t.deadline && t.deadline < today && status !== 'เรียบร้อยแล้ว';
-      const stars = '★'.repeat(t.priority) + '☆'.repeat(Math.max(0,3-t.priority));
-      return `<div class="kan-card">
-        <div class="kan-card-top">
-          <span class="kan-who">${esc(t.assignee)||'ยังไม่ระบุ'}</span>
-          <span class="kan-stars" title="ระดับความสำคัญ">${stars}</span>
-        </div>
-        <div class="kan-detail">${esc(t.detail)}</div>
-        <div class="kan-meta">
-          ${t.deadline ? `<div>Deadline: <span class="kan-due ${overdue?'overdue':''}">${t.deadline}${overdue?' (เลยกำหนด)':''}</span></div>` : ''}
-          ${t.requester ? `<div>จาก: ${esc(t.requester)}</div>` : ''}
-          ${t.remark ? `<div>หมายเหตุ: ${esc(t.remark)}</div>` : ''}
-        </div>
-        ${(t.assignee && window.pplStack) ? `<div class="ppl-foot">${window.pplStack(t.assignee,24)}</div>` : ''}
-        ${EDIT_MODE ? `<select class="kan-status-sel" data-detail="${esc(t.detail)}" onchange="setTaskStatus(this.dataset.detail, this.value)">
-          ${TASK_STATUSES.map(s=>`<option value="${esc(s)}"${s===t.status?' selected':''}>${esc(s)}</option>`).join('')}
-        </select>` : ''}
-      </div>`;
-    }).join('');
-
-    return `<div class="kan-col">
-      <div class="kan-col-head">${status}<span class="kan-count">${cards.length}</span></div>
-      ${cardsHtml || '<div class="empty" style="padding:14px 0; font-size:12px;">ไม่มีงาน</div>'}
-    </div>`;
-  }).join('');
-}
 
 /* ---------- Timeline modal ---------- */
 const MILESTONES = [
@@ -10832,8 +10711,8 @@ async function deleteProduct(sku){
 async function postToSheet(payload){
   await sbInit();
   if(!sbLoggedIn()) return { ok:false, error:'ยังไม่ได้เข้าสู่ระบบ (กดปุ่มเข้าสู่ระบบ มุมขวาล่าง)' };
-  const TBL = { products:'products', updates:'updates', task:'tasks', notice:'notice', officestatus:'office', events:'events', banners:'banners', briefs:'briefs', contentideas:'content_ideas', contentcal:'content_calendar', contentcomments:'content_comments', contentmusthave:'content_musthave', brandidentity:'brand_identity', hashtags:'hashtags', quicktasks:'quick_tasks', productstage:'product_stage', roadmapyear:'roadmap_year', ecom:'ecom_content', graphiccards:'graphic_cards', graphicconfig:'graphic_config', notifications:'notifications' };
-  const KEY = { updates:'id', products:'sku', notice:'Message', task:'รายละเอียดงาน', officestatus:(payload.key||'name'), events:'id', banners:'id', briefs:'nprNo', contentideas:'id', contentcal:'id', contentcomments:'id', contentmusthave:'id', brandidentity:'id', hashtags:'id', quicktasks:'id', productstage:'sku', roadmapyear:'id', ecom:'id', graphiccards:'id', graphicconfig:'k', notifications:'id' };
+  const TBL = { products:'products', updates:'updates', notice:'notice', officestatus:'office', events:'events', banners:'banners', briefs:'briefs', contentideas:'content_ideas', contentcal:'content_calendar', contentcomments:'content_comments', contentmusthave:'content_musthave', brandidentity:'brand_identity', hashtags:'hashtags', quicktasks:'quick_tasks', productstage:'product_stage', roadmapyear:'roadmap_year', ecom:'ecom_content', graphiccards:'graphic_cards', graphicconfig:'graphic_config', notifications:'notifications' };
+  const KEY = { updates:'id', products:'sku', notice:'Message', officestatus:(payload.key||'name'), events:'id', banners:'id', briefs:'nprNo', contentideas:'id', contentcal:'id', contentcomments:'id', contentmusthave:'id', brandidentity:'id', hashtags:'id', quicktasks:'id', productstage:'sku', roadmapyear:'id', ecom:'id', graphiccards:'id', graphicconfig:'k', notifications:'id' };
   const table = TBL[payload.target];
   if(!table) return { ok:false, error:'unknown target: '+payload.target };
   const key = KEY[payload.target];
@@ -10904,10 +10783,10 @@ async function pushPendingToSheet(){
   if(!cfg.url){ toast('ยังไม่ได้เข้าสู่ระบบ','err'); return; }
   const store=getPendingStore();
   const edits=Object.keys(store.edits), dels=(store.deletes||[]).slice();
-  const uStore=getUpdatesLocal(), tStore=getTaskOverrides(), nStore=getNoticeStore();
-  const uCnt=uStore.length, tCnt=Object.keys(tStore).length;
+  const uStore=getUpdatesLocal(), nStore=getNoticeStore();
+  const uCnt=uStore.length;
   const nCnt=Object.keys(nStore.edits).length + nStore.appends.length + nStore.deletes.length;
-  const total=edits.length+dels.length+uCnt+tCnt+nCnt;
+  const total=edits.length+dels.length+uCnt+nCnt;
   if(!total){ toast('ไม่มีรายการค้าง','info'); return; }
   toast('กำลังส่ง '+total+' รายการขึ้น Supabase…','info');
   let rejected=0, firstErr='';
@@ -10916,7 +10795,6 @@ async function pushPendingToSheet(){
     for(const sku of edits){ chk(await postToSheet({target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:store.edits[sku]})); }
     for(const sku of dels){ chk(await postToSheet({target:'products',action:'delete',token:cfg.token,keyValue:sku,sku})); }
     for(const e of uStore){ const r=Object.assign({}, e); if(!r['Next Due']) r['Next Due']=(r.NextDue||r.nextDue||''); chk(await postToSheet({target:'updates',action:'append',token:cfg.token,row:r})); }
-    for(const detail of Object.keys(tStore)){ chk(await postToSheet({target:'task',action:'update',token:cfg.token,keyValue:detail,row:{Status:tStore[detail]}})); }
     for(const e of nStore.appends){ chk(await postToSheet({target:'notice',action:'append',token:cfg.token,row:e})); }
     for(const msg of Object.keys(nStore.edits)){ chk(await postToSheet({target:'notice',action:'upsert',token:cfg.token,keyValue:msg,row:nStore.edits[msg]})); }
     for(const msg of nStore.deletes){ chk(await postToSheet({target:'notice',action:'delete',token:cfg.token,keyValue:msg})); }
@@ -10927,11 +10805,11 @@ async function pushPendingToSheet(){
 }
 async function refreshFromSheet(silent){ return reloadEverything(silent); }
 async function reloadEverything(silent){
-  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadTasksFromSheet(), loadNoticesFromSheet(), loadEventsFromSheet(), loadBannersFromSheet(), (typeof loadOfficeStatusFromSheet==='function'?loadOfficeStatusFromSheet():Promise.resolve()), (typeof loadContentIdeasFromSheet==='function'?loadContentIdeasFromSheet():Promise.resolve())]);
+  await Promise.all([loadProductsFromSheet(), loadUpdatesFromSheet(), loadNoticesFromSheet(), loadEventsFromSheet(), loadBannersFromSheet(), (typeof loadOfficeStatusFromSheet==='function'?loadOfficeStatusFromSheet():Promise.resolve()), (typeof loadContentIdeasFromSheet==='function'?loadContentIdeasFromSheet():Promise.resolve())]);
   renderNotices(); renderAll();
   if(typeof renderContentCreator==='function' && document.getElementById('view-content') && document.getElementById('view-content').classList.contains('active')) renderContentCreator();
   if(typeof renderOffice==='function' && document.getElementById('view-office') && document.getElementById('view-office').classList.contains('active')) renderOffice();
-  renderTeamUpdates(); renderTaskBoard();
+  renderTeamUpdates();
   if(typeof renderTrackingCalendar==='function' && document.getElementById('tcal-host')) renderTrackingCalendar();
   if(!silent) toast('รีเฟรชจาก Supabase แล้ว','ok');
 }
@@ -11056,12 +10934,10 @@ async function flushPendingNow(){
   for(const sku of Object.keys(ps.edits)){ const raw=ps.edits[sku]; if(raw && typeof raw.image==='string' && raw.image.length>maxImg) maxImg=raw.image.length; const s=sanitizeRowForSheet(minimizeProductRow(raw)); droppedImg+=s.droppedImg; await send1({target:'products',action:'upsert',token:cfg.token,keyValue:sku,sku,row:s.row}); }
   for(const sku of (ps.deletes||[])){ await send1({target:'products',action:'delete',token:cfg.token,keyValue:sku,sku}); }
   for(const e of getUpdatesLocal()){ const row=Object.assign({}, e); if(!row['Next Due']) row['Next Due']=(row.NextDue||row.nextDue||''); const s=sanitizeRowForSheet(row); droppedImg+=s.droppedImg; await send1({target:'updates',action:'append',token:cfg.token,row:s.row}); }
-  const ts=getTaskOverrides(); for(const d of Object.keys(ts)){ await send1({target:'task',action:'update',token:cfg.token,keyValue:d,row:{Status:ts[d]}}); }
   const ns=getNoticeStore();
   for(const e of ns.appends){ await send1({target:'notice',action:'append',token:cfg.token,row:e}); }
   for(const m of Object.keys(ns.edits)){ await send1({target:'notice',action:'upsert',token:cfg.token,keyValue:m,row:ns.edits[m]}); }
   for(const m of ns.deletes){ await send1({target:'notice',action:'delete',token:cfg.token,keyValue:m}); }
-  saveTaskOverrides({});   // tasks have no auto-prune-on-read; they were just sent
   // Give the Sheet time to commit, then re-read — each loader auto-prunes its pending.
   if(banner) banner.innerHTML='⏳ ส่งแล้ว กำลังตรวจยืนยันกับ Supabase…';
   await new Promise(r=>setTimeout(r, 5000));
@@ -11109,14 +10985,12 @@ async function clearLocalEdits(){
   if(!(await uiConfirm('ล้างข้อมูลที่แก้ในเครื่องนี้ทั้งหมด (สินค้า/บันทึก/สถานะงาน/ประกาศ) แล้วใช้ค่าจาก Supabase?\n(ข้อมูลที่ยังไม่ได้ซิงค์จะหายไป)'))) return;
   savePendingStore({edits:{}, deletes:[]});
   saveUpdatesLocal([]);
-  saveTaskOverrides({});
   saveNoticeStore({edits:{},appends:[],deletes:[]});
   rebuildProducts();
   if(typeof rebuildUpdateLogs==='function') rebuildUpdateLogs();
   if(typeof rebuildNotices==='function') rebuildNotices();
   renderAll(); renderNotices();
   if(typeof renderTeamUpdates==='function') renderTeamUpdates();
-  if(typeof renderTaskBoard==='function') renderTaskBoard();
   toast('ล้างข้อมูลในเครื่องแล้ว','ok');
 }
 
@@ -12317,12 +12191,25 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function ofcParseDate(s){ if(!s) return null; if(typeof parseSheetDate==='function'){var iso=parseSheetDate(s); if(iso) return new Date(iso+'T00:00:00');} var d=new Date(s); return isNaN(d)?null:d; }
   // รายชื่อทีมทั้งหมด (ใช้เป็นตัวเลือก dropdown PIC ของ Event/Task)
   window.ofcAllNames=function(){ try{ return OFC_ROOMS.reduce(function(a,r){ (r.members||[]).forEach(function(m){ if(m.n) a.push(m.n); }); return a; },[]); }catch(e){ return []; } };
+  /* CIL Team แบบเข้ม: คนนอกทีม NPD ดูงานของคนอื่น → เหลือรายละเอียดเฉพาะงานจาก To-Do · งานอื่นเป็นแค่ตัวเลข (locked) */
+  function ofcLockList(a){ return (a||[]).map(function(t){ return (t&&(t._src==='todo'||t.locked))?t:{locked:true,p:'',s:'',due:'',nd:'',sku:'',days:t?t.days:null}; }); }
+  function ofcLockedRow(ts){ var n=(ts||[]).filter(function(t){ return t&&t.locked; }).length; return n?'<div class="ofc-task ofc-task-locked"><div><p class="ofc-pn">🔒 อีก '+n+' งานของทีม</p><div class="ofc-stg">รายละเอียดเฉพาะสมาชิกทีมที่เกี่ยวข้อง</div></div></div>':''; }
+  /* CIL Team แบบเข้ม: คนนอกทีม NPD ดูงานของคนอื่น → เหลือรายละเอียดเฉพาะงานจาก To-Do · งานอื่นเป็นแค่ตัวเลข (locked) */
+  function ofcLockList(a){ return (a||[]).map(function(t){ return (t&&(t._src==='todo'||t.locked))?t:{locked:true,p:'',s:'',due:'',nd:'',sku:'',days:t?t.days:null}; }); }
+  function ofcLockedRow(ts){ var n=(ts||[]).filter(function(t){ return t&&t.locked; }).length; return n?'<div class="ofc-task ofc-task-locked"><div><p class="ofc-pn">🔒 อีก '+n+' งานของทีม</p><div class="ofc-stg">รายละเอียดเฉพาะสมาชิกทีมที่เกี่ยวข้อง</div></div></div>':''; }
+  /* CIL Team แบบเข้ม: คนนอกทีม NPD ดูงานของคนอื่น → เหลือรายละเอียดเฉพาะงานจาก To-Do · งานอื่นเป็นแค่ตัวเลข (locked) */
+  function ofcLockList(a){ return (a||[]).map(function(t){ return (t&&(t._src==='todo'||t.locked))?t:{locked:true,p:'',s:'',due:'',nd:'',sku:'',days:t?t.days:null}; }); }
+  function ofcLockedRow(ts){ var n=(ts||[]).filter(function(t){ return t&&t.locked; }).length; return n?'<div class="ofc-task ofc-task-locked"><div><p class="ofc-pn">🔒 อีก '+n+' งานของทีม</p><div class="ofc-stg">รายละเอียดเฉพาะสมาชิกทีมที่เกี่ยวข้อง</div></div></div>':''; }
+  window.ofcTasksPub=function(p){ return ofcTasks(p); }; window.ofcStatusKeyPub=function(t){ return ofcStatusKey(t); };   // ให้เทสต์/โมดูลอื่นเรียกได้
   function ofcTasks(person){
+    var STRICT=(typeof window.teamOfficeStrict==='function')&&!!person&&window.teamOfficeStrict(person.n);
+    var STRICT=(typeof window.teamOfficeStrict==='function')&&!!person&&window.teamOfficeStrict(person.n);
+    var STRICT=(typeof window.teamOfficeStrict==='function')&&!!person&&window.teamOfficeStrict(person.n);
     // ทีมกราฟฟิก: นับ "งานค้าง" จากบอร์ด Pipeline ของกราฟฟิกเท่านั้น (ไม่รวมงาน Content/อื่นๆ)
     if(person && person.role==='Graphic'){
       var g=[]; if(typeof window.gfxBoardTasksFor==='function'){ try{ g=window.gfxBoardTasksFor(person.n)||[]; }catch(e){} }
       g.sort(function(a,b){ if(a.days==null&&b.days==null) return 0; if(a.days==null) return 1; if(b.days==null) return -1; return a.days-b.days; });
-      return g;
+      return STRICT?ofcLockList(g):g;
     }
     const done=/เรียบร้อย|เสร็จ|ได้ของ|ชำระเงินแล้ว|ยกเลิก|ปิดงาน|จบงาน|ส่งมอบ/;
     const logs=(typeof UPDATE_LOGS!=='undefined'&&UPDATE_LOGS)||[];
@@ -12337,7 +12224,9 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     });
     const today=new Date(); today.setHours(0,0,0,0);
     const out=[];
-    Object.keys(bySku).forEach(function(sku){ var l=bySku[sku].log;
+    var __nc=STRICT&&(typeof window.teamNpdCounts==='function')?window.teamNpdCounts():null;   // จำนวนงาน NPD จากเซิร์ฟเวอร์ (ตัวเลขเท่านั้น)
+    if(__nc){ var __c=__nc[window.teamNameKey(person.n)]; if(__c){ var __dd=null; if(__c.due){ var __d=ofcParseDate(__c.due); if(__d) __dd=Math.round((__d-today)/86400000); } for(var __i=0;__i<__c.n;__i++) out.push({locked:true,p:'',s:'',due:'',nd:'',sku:'',days:__i===0?__dd:null}); } }
+    if(!__nc) Object.keys(bySku).forEach(function(sku){ var l=bySku[sku].log;
       var who=((l.pic||'')+' '+(l.updatedBy||''));
       if(who.indexOf(person.n)<0) return;      // item's CURRENT owner must be this person
       if(done.test(l.stage||'')) return;        // current stage is a done stage → cleared
@@ -12347,7 +12236,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       out.push({p:l.productName||l.sku, sku:l.sku, s:[l.subCategory,l.stage].filter(Boolean).join(' · ')||l.stage||l.note||'อัปเดตงาน', due:due, days:days, nd:l.nextDueDetail||'', _open:{k:'sku',sku:l.sku}});
     });
     // งานจาก To-Do (มอบหมายให้คนนี้) — เชื่อมเข้าเกมส์ออฟฟิศด้วย
-    if(typeof window.qtOfficeTasks==='function'){ try{ (window.qtOfficeTasks(person.n)||[]).forEach(function(q){ out.push(q); }); }catch(e){} }
+    if(typeof window.qtOfficeTasks==='function'){ try{ (window.qtOfficeTasks(person.n)||[]).forEach(function(q){ q._src='todo'; out.push(q); }); }catch(e){} }
     // งานจากหน้า Content (PIC/ผู้ตรวจ/ผู้ติดตาม = คนนี้) — โชว์ในเกมส์ด้วย
     if(typeof window.ccOfficeTasks==='function'){ try{ (window.ccOfficeTasks(person.n)||[]).forEach(function(q){ out.push(q); }); }catch(e){} }
     // งานจากบอร์ด Graphic Team (PIC/ผู้ติดตาม = คนนี้ และยังไม่อยู่คอลัมน์เสร็จแล้ว) → โชว์ในออฟฟิศด้วย
@@ -12367,7 +12256,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       });
     }catch(e){}
     out.sort(function(a,b){ if(a.days==null&&b.days==null) return 0; if(a.days==null) return 1; if(b.days==null) return -1; return a.days-b.days; });
-    return out;
+    return STRICT?ofcLockList(out):out;
   }
   function ofcStatusKey(tasks){
     if(!tasks.length) return 'free';
@@ -12522,7 +12411,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     if(!tasks.length){
       h+='<div class="ofc-empty"><div class="ofc-em">🎉</div><div style="font-family:Mitr;font-weight:600;margin-top:6px">ไม่มีงานค้างเลย!</div><div style="font-size:12px;margin-top:2px">เคลียร์งานหมดแล้ว เก่งมาก 💖</div></div>';
     } else {
-      h+='<div class="ofc-tasks">'+tasks.map(function(t,ti){var x=ofcDl(t.days); var canOpen=!!t._open; return '<div class="ofc-task'+(canOpen?' ofc-task-open':'')+'"'+(canOpen?' onclick="ofcOpenTask('+i+','+ti+')" title="กดเพื่อเปิด/แก้ไขงานนี้" style="cursor:pointer;"':'')+'><div><p class="ofc-pn">'+ofcE(t.p)+(canOpen?' <span class="ofc-task-edit">✏️ แก้ไข</span>':'')+'</p><div class="ofc-stg">'+(t.sku?'<span class="ofc-sku">'+ofcE(t.sku)+'</span> ':'')+'📋 '+ofcE(t.s)+'</div>'+(t.nd?'<div class="ofc-stg" style="color:#c9821f;font-weight:600;margin-top:2px">⏰ ถัดไป: '+ofcE(t.nd)+'</div>':'')+'</div><div class="ofc-chip">'+(t.due?'<div class="ofc-due">กำหนด '+t.due+'</div>':'')+'<div class="ofc-dl '+x.c+'">'+x.t+'</div></div></div>';}).join('')+'</div>';
+      h+='<div class="ofc-tasks">'+tasks.map(function(t,ti){if(t.locked) return ''; var x=ofcDl(t.days); var canOpen=!!t._open; return '<div class="ofc-task'+(canOpen?' ofc-task-open':'')+'"'+(canOpen?' onclick="ofcOpenTask('+i+','+ti+')" title="กดเพื่อเปิด/แก้ไขงานนี้" style="cursor:pointer;"':'')+'><div><p class="ofc-pn">'+ofcE(t.p)+(canOpen?' <span class="ofc-task-edit">✏️ แก้ไข</span>':'')+'</p><div class="ofc-stg">'+(t.sku?'<span class="ofc-sku">'+ofcE(t.sku)+'</span> ':'')+'📋 '+ofcE(t.s)+'</div>'+(t.nd?'<div class="ofc-stg" style="color:#c9821f;font-weight:600;margin-top:2px">⏰ ถัดไป: '+ofcE(t.nd)+'</div>':'')+'</div><div class="ofc-chip">'+(t.due?'<div class="ofc-due">กำหนด '+t.due+'</div>':'')+'<div class="ofc-dl '+x.c+'">'+x.t+'</div></div></div>';}).join('')+ofcLockedRow(tasks)+'</div>';
     }
     var unlocked=true;   // หน้าออฟฟิศแก้ได้เลย ไม่ต้องใส่รหัส
     var curE=c.emoji||st.mood;
@@ -12687,7 +12576,8 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   function teamUnlocked(){ return (typeof isTeamUnlocked==='function') && isTeamUnlocked(); }
   function unlocked(){ return teamUnlocked() && (typeof canEditArea==='function') && canEditArea('content'); }
   // คอมเมนต์ในการ์ด: ทีม Content + บัญชีกราฟฟิก (กราฟฟิกแก้ Content ไม่ได้ แต่ต้องคุยงานในการ์ดได้)
-  function canComment(){ return unlocked() || (typeof isGraphicAccount==='function' && isGraphicAccount()) || (typeof isDataSupportAccount==='function' && isDataSupportAccount()) || (typeof canEditArea==='function' && canEditArea('npd_process')); }   // เข้าสู่ระบบ + อยู่ในรายชื่อผู้แก้ Content
+  function canComment(){ if(typeof window.teamAvail==='function' && window.teamAvail('content') && window.teamAvail('npd')) return window.teamIsMember('content') || window.teamIsMember('npd') || ((typeof isDataSupportAccount==='function') && isDataSupportAccount());   // ตรงกับกฎฐานข้อมูล is_comment_member()
+    return unlocked() || (typeof isGraphicAccount==='function' && isGraphicAccount()) || (typeof isDataSupportAccount==='function' && isDataSupportAccount()) || (typeof canEditArea==='function' && canEditArea('npd_process')); }   // เข้าสู่ระบบ + อยู่ในรายชื่อผู้แก้ Content
   window.ccUnlock=function(){
     if(typeof toast==='function') toast('กรุณาเข้าสู่ระบบ (ปุ่มมุมขวาล่าง) เพื่อแก้ไข · แก้แล้วทีมจะเห็นตรงกัน','info');
     if(typeof sbShowLoginModal==='function') sbShowLoginModal();
@@ -13982,8 +13872,9 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   window.plQuickToggle=function(k){ plQuick[k]=!plQuick[k]; renderPipeline(); };
   /* ❓ วิธีใช้บอร์ด — หน้าอธิบายสั้นๆ (เส้นทางการ์ด + สถานการณ์ที่เจอบ่อย + ปุ่มลัด) · จุดสีชมพูที่ปุ่มจนกว่าจะเปิดอ่านครั้งแรก (จำต่อเครื่อง) */
   /* ★ ทุกครั้งที่ฟีเจอร์บอร์ด/ฟอร์ม Content เปลี่ยน: แก้เนื้อหาด้านล่าง + เพิ่มบรรทัดบนสุดของ CC_HELP_LOG + เปลี่ยน CC_HELP_REV (release.py จะเตือนถ้าลืม) */
-  var CC_HELP_KEY='npd_pl_help_v1', CC_HELP_REV='2026-10-18.1';
+  var CC_HELP_KEY='npd_pl_help_v1', CC_HELP_REV='2026-10-18.2';
   var CC_HELP_LOG=[{d:'18 ต.ค. 2026',items:[
+    ['ปรับ','<b>สิทธิ์แก้ไขตามระดับในทีม</b> — หัวหน้า/สมาชิกทีม Content แก้การ์ดได้ · ระดับ <b>ดูอย่างเดียว</b> (เช่นทีมกราฟิก) เปิดเมนูดูและคอมเมนต์ได้แต่แก้ไม่ได้ · คนนอกทีมเปิดไม่ได้ · <b>คอมเมนต์การ์ด</b> อ่าน/เขียนได้เฉพาะทีม Content + ทีม NPD + Data Support'],
     ['ใหม่','<b>👥 ทีมและสิทธิ์</b> — เมนู Content Creator เห็นเฉพาะสมาชิกทีม Content · หัวหน้า (พลอย แนน) กดปุ่ม <b>⚙️ ตั้งค่าทีม</b> ที่หัวเมนูเพื่อเพิ่ม/ลบสมาชิกและเปลี่ยนระดับ · <b>สิทธิ์แก้ไขข้อมูลจริง</b>ยังตามรายชื่อเดิมไปก่อน จะผูกกับระดับในขั้นถัดไป']]},{d:'17 ต.ค. 2026',items:[
     ['ปรับ','<b>ไม่มีป๊อปอัปของเบราว์เซอร์อีกแล้ว</b> — ถามยืนยัน/พิมพ์ชื่อเป็นกล่องในหน้า · <b>ช่องเลือกสินค้า/ชื่อ</b> เป็นรายการในแอป พิมพ์ค้นหาได้ทั้งชื่อและรหัส SKU (↑↓ + Enter เลือก)']]},{d:'16 ต.ค. 2026',items:[
     ['ใหม่','ช่อง <b>Pillar</b> ใหม่ = เสาหลักของแบรนด์ (Godmami 10 · Glimmer Sisters 10) เลือกจากรายการ + ปุ่ม 💡 อธิบายเสาหลัก · “เสาหลัก” เดิมเปลี่ยนชื่อเป็น <b>Objective</b> (อยู่ก่อน Pillar)'],
@@ -21934,7 +21825,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   document.addEventListener('dragend',hide,true);
 })();
 </script>
-<script type="application/json" id="whatsnew-data">{"id":"20261018-1614","date":"2026-10-18","title":"ทีมและสิทธิ์: เมนู NPD / Content เห็นเฉพาะสมาชิกทีม","items":[{"ic":"👥","t":"เมนู NPD Team เห็นเฉพาะสมาชิกทีม NPD — หัวหน้าตั้งค่าทีมเองได้","d":"คนนอกทีมไม่เห็นเมนู NPD Team อีกต่อไป · หัวหน้า (จ๋า พลอย แพรว) กดปุ่ม “⚙️ ตั้งค่าทีม” ที่หัวเมนู เพื่อเพิ่ม/ลบสมาชิกและเปลี่ยนระดับ (หัวหน้า · สมาชิก · ดูอย่างเดียว) โดยไม่ต้องรัน SQL","g":"npd"},{"ic":"👥","t":"เมนู Content Creator เห็นเฉพาะสมาชิกทีม Content — หัวหน้าตั้งค่าทีมเองได้","d":"หัวหน้า (พลอย แนน) เห็นปุ่ม “⚙️ ตั้งค่าทีม” ที่หัวเมนู เพื่อเพิ่ม/ลบสมาชิกและเปลี่ยนระดับ · คนนอกทีมไม่เห็นเมนูนี้","g":"content"},{"ic":"👥","t":"Branding: มีหัวหน้าทีม และปุ่ม “⚙️ ตั้งค่าทีม” จัดการสมาชิก","d":"หัวหน้า (พลอย แพรว จ๋า) เพิ่ม/ลบสมาชิกและกำหนดหัวหน้าได้เองที่หัวเมนู Branding","g":"branding"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว — เรื่องทีมและสิทธิ์ (NPD Team · Content · Branding)","d":"ปุ่ม ❓ วิธีใช้ของทั้งสามเมนูมีหมายเหตุเรื่องการเห็นเมนูเฉพาะสมาชิกและปุ่มตั้งค่าทีม และลงบันทึกในประวัติแล้ว","g":"npd"}],"history":[{"id":"20261018-1444","date":"2026-10-18","title":"Sales Team: ตั้งค่าเห็นเฉพาะหัวหน้า","items":[{"ic":"⚙️","t":"แท็บ “ตั้งค่า” ของ Sales Team เห็นเฉพาะหัวหน้าและผู้ดูแล","d":"เซลส์และผู้ดูเห็นแค่ “เคสทั้งหมด” กับ “แดชบอร์ด” · หัวหน้า/ผู้ดูแลเห็นแท็บตั้งค่า (รายการตัวเลือก สมาชิก กติการับเรื่อง อีเมลแจ้งเตือน) เหมือนเดิม","g":"sales"},{"ic":"📘","t":"วิธีใช้ Sales Team อัปเดตแล้ว — เรื่องแท็บตั้งค่า","d":"ปุ่ม ❓ วิธีใช้ของ Sales Team ระบุว่าตั้งค่าเห็นเฉพาะหัวหน้าและผู้ดูแล และลงบันทึกในประวัติแล้ว","g":"sales"}]},{"id":"20261018-024626","date":"2026-10-18","title":"ต้องเข้าสู่ระบบก่อนเปิดเว็บ","items":[{"ic":"🔐","t":"ต้องเข้าสู่ระบบก่อนเปิดเว็บ — คนที่ไม่ได้ล็อกอินจะเห็นแค่หน้าเข้าสู่ระบบ","d":"เปิดเว็บแล้วไม่เห็นเมนู ข้อมูล หรือรูปจนกว่าจะล็อกอิน · ลิงก์ที่มีเลขเคส/หน้าที่แนบมา ล็อกอินแล้วเปิดตรงหน้านั้นให้ · ไม่มีบัญชีหรือลืมรหัสผ่านให้ขอผู้ดูแลระบบ (ทีม NPD)","g":"sys"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว — เพิ่มเรื่องการเข้าสู่ระบบ","d":"ปุ่ม ❓ วิธีใช้ NPD Team มีหมายเหตุว่าทุกคนต้องเข้าสู่ระบบก่อนเปิดเว็บ และลงบันทึกในประวัติการเปลี่ยนแปลง","g":"npd"}]},{"id":"20261018-0031","date":"2026-10-18","title":"อีเมลแจ้งเตือน: ไม่ค้างเมื่อส่งไม่ได้ + ทางส่งผ่าน Google Apps Script","items":[{"ic":"🛠️","t":"ปุ่ม “ส่งอีเมลทดสอบ” ไม่ค้างอีกต่อไป — รอไม่เกิน 60 วินาที แล้วบอกสาเหตุ","d":"ถ้าตัวส่งอีเมลไม่ตอบ ระบบจะแจ้งข้อความ “ไม่ตอบภายใน 60 วินาที” แทนการค้างเงียบๆ · ปุ่มกลับมากดได้ทันที","g":"sales"},{"ic":"✉️","t":"ส่งอีเมลผ่าน Google Apps Script ได้แล้ว (ไม่ต้องใช้รหัสผ่านแอป ไม่ต้องตั้ง DNS)","d":"เพิ่มทางส่งใหม่ที่ใช้การเชื่อมต่อเว็บปกติ จึงไม่ติดเรื่องพอร์ต SMTP · มีโค้ดฟังก์ชันเวอร์ชันใหม่ (วางทับของเดิมใน Supabase) และคู่มือตั้งค่าแบบมีภาพที่เขียนใหม่ให้ทำตามทีละขั้น","g":"sales"}]},{"id":"20261017-2342","date":"2026-10-17","title":"อีเมลแจ้งเตือน: บอกสาเหตุจริงเมื่อส่งไม่สำเร็จ","items":[{"ic":"🛠️","t":"ปุ่ม “ส่งอีเมลทดสอบ” และการส่งอีเมลอัตโนมัติ แสดงเหตุผลจริงเมื่อส่งไม่สำเร็จ","d":"แทนข้อความกลางๆ “non-2xx” ตอนนี้บอกสาเหตุจากตัวส่งอีเมลพร้อมรหัส HTTP (เช่น ยังไม่ได้ใส่ค่าลับ · รหัสแอปไม่ผ่าน · ยังไม่ได้รัน SQL) · มีโค้ดฟังก์ชันส่งอีเมลเวอร์ชันใหม่ที่ตอบข้อผิดพลาดชัดเจนขึ้น (วางทับของเดิมใน Supabase ได้) และคู่มือตั้งค่าอีเมลแบบมีภาพ","g":"sales"}]},{"id":"20261017-2252","date":"2026-10-17","title":"เมนูใหม่ 🤝 Sales Team (Customer Service): เคส · อนุมัติ/ส่งต่อ · ขอความเห็น · เวลา · แดชบอร์ด · อีเมล","items":[{"ic":"🤝","t":"เมนูใหม่ Sales Team — ชี้ที่แท็บแล้วเลือกหัวข้อ","d":"ชี้ที่แท็บ “🤝 Sales Team” (มือถือ: แตะ) จะมีเมนูย่อย 🎧 Customer Service · 🛒 Online · 🏬 Offline (Online/Offline ยังว่าง รอเพิ่มฟังก์ชัน) · เห็นเฉพาะสมาชิกทีมเซลส์ที่ผู้ดูแลเพิ่มไว้ในหน้า ⚙️ ตั้งค่า (ต้องรัน SQL ไฟล์ cs-2026-10-18.sql ก่อน 1 ครั้ง)","g":"sales"},{"ic":"🎧","t":"Customer Service — เซลส์เปิดเคสร้องเรียน ส่งหัวหน้าอนุมัติก่อนดำเนินการ","d":"กรอก: ช่องทางที่ลูกค้าร้องเรียน · แพลตฟอร์ม · เลขคำสั่งซื้อ · วันที่ · ดาวที่ลูกค้ากด · ข้อความลูกค้า · แนบรูป (วางภาพจากคลิปบอร์ดได้) · ประเภทการร้องเรียน/ความเสียหาย · สินค้า (เลือกจาก Product Info หรือกรอกเองถ้าไม่มีในระบบ) · ยอดชดใช้ + ค่าส่งของกลับของลูกค้า + อื่นๆ · ตัวเลือกที่จะเสนอลูกค้า → กดส่งให้หัวหน้าอนุมัติ → หัวหน้าอนุมัติหรือส่งกลับพร้อมเหตุผล (มีแจ้งเตือน 🔔) → ดำเนินการ → บันทึกว่าลูกค้าเลือกอะไร + ยอดจ่ายจริง → ปิดเคส · ทุกเคสมีประวัติและคอมเมนต์ · สิทธิ์บังคับที่ฐานข้อมูล","g":"sales"},{"ic":"📊","t":"แดชบอร์ด Customer Service: รายวัน / สัปดาห์ / เดือน / ไตรมาส / ปี + ปัญหารายสินค้า","d":"เลือกช่วงเวลาแล้วกด ‹ › เลื่อนดูย้อนหลัง · เทียบกับช่วงก่อนหน้า · กราฟจำนวนเคสและยอดที่ต้องรับผิดชอบ · แบ่งตามประเภทร้องเรียน/ความเสียหาย/แพลตฟอร์ม/ช่องทาง · ดาวที่ลูกค้าให้ · ตารางปัญหาและยอดรับผิดชอบ “รายสินค้า” (กดแถวเพื่อดูเคสของสินค้านั้น) · ส่งออก CSV ได้","g":"sales"},{"ic":"💬","t":"ส่งต่อแบบปรึกษา — ขอความเห็นจากหัวหน้า แล้วรอคำตอบ","d":"ในเคสกด “💬 ขอความเห็น” → เลือกถามหัวหน้าคนที่เจาะจง หรือ “คนไหนก็ได้” → พิมพ์คำถาม → ส่ง · คนที่ถูกถามได้แจ้งเตือน 🔔 และตอบที่หน้าเคส · เคสเดินต่อได้ ไม่ต้องหยุดรอ · ผู้ขอ/หัวหน้ายกเลิกคำขอได้ถ้ายังไม่มีคนตอบ · ในรายการเคสมีป้าย “💬 รอความเห็น” + ตัวกรอง + การ์ดสรุป (หัวหน้าเห็นว่ามีกี่รายการรอตน) · ทุกคำถาม/คำตอบเข้าประวัติของเคส","g":"sales"},{"ic":"⏱️","t":"การ์ด “เวลา” ในเคส — เปิดเคส · ส่งอนุมัติ · หัวหน้า action ครั้งแรก (ใคร เมื่อไร ตอบภายในเท่าไร) · เริ่มทำ · ปิดเคส","d":"ฐานข้อมูลจดเวลาให้เองทุกขั้น (ใครแก้เองไม่ได้) · สรุปบรรทัดเดียว “ใช้เวลารวม = รอหัวหน้า + รอความเห็น + พนักงานดำเนินการ” เพื่อรู้ว่าพนักงานใช้เวลาจริงเท่าไร (ไม่รวมช่วงรอหัวหน้า/รอความเห็น) · เคสที่ยังรอหัวหน้าจะขึ้น “รอมาแล้ว …” แบบสดๆ","g":"sales"},{"ic":"📊","t":"แดชบอร์ดหมวดใหม่ “เวลาในการเคลียร์เคส”","d":"ปิดเคสเฉลี่ย/มัธยฐาน · เวลาพนักงานจริง · หัวหน้า action ครั้งแรกเฉลี่ย · รอความเห็นเฉลี่ย · % ปิดภายใน 1 วัน · กราฟปิดเคสภายใน 4 ชม./1 วัน/3 วัน/7 วัน · ตารางรายพนักงาน (เคลียร์เร็วแค่ไหน) และรายหัวหน้า (action/ตอบความเห็นเร็วแค่ไหน) · ส่งออก CSV มีเวลาครบทุกคอลัมน์ · ใช้ได้ทั้งรายวัน/สัปดาห์/เดือน/ไตรมาส/ปี","g":"sales"},{"ic":"🎯","t":"ผู้รับเรื่อง + ส่งต่อ — เคสไปที่หัวหน้าคนแรกก่อน ไม่แน่ใจกดส่งต่อ","d":"ส่งอนุมัติแล้วเคสไปที่หัวหน้าคนแรกที่ตั้งไว้ (สมายด์) · เคสประเภท แพ้ / ระคายเคือง ส่งตรงถึงพลอย · ไม่แน่ใจกด “↪︎ ส่งต่อ” ให้พลอยหรือแนน พร้อมเหตุผล · ผู้รับได้แจ้งเตือนและอีเมล · ระบบจดว่าส่งต่อกี่ครั้ง เมื่อไร · หัวหน้าท่านอื่นอนุมัติแทนกันได้ · แก้กติกาได้ที่ ⚙️ ตั้งค่า → กติการับเรื่อง","g":"sales"},{"ic":"👁","t":"สิทธิ์ “ผู้ดู” สำหรับทีมที่ทำงานข้ามทีม (เช่น Branding)","d":"ดูเคสและแดชบอร์ด คอมเมนต์ และตอบเมื่อถูกขอความเห็นได้ แต่เปิดเคสไม่ได้ · ผู้ดูแลเพิ่มสมาชิกและเลือกสิทธิ์ได้ที่ ⚙️ ตั้งค่า","g":"sales"},{"ic":"✉️","t":"อีเมลแจ้งเตือนแบบทางการ (ภาษาไทย) ทุกเหตุการณ์ของเคส","d":"ขออนุมัติ · ส่งต่อ · อนุมัติ · ส่งกลับแก้ไข · ปิดเคส · ขอความเห็น · ตอบความเห็น → อีเมลถึงผู้เกี่ยวข้อง (นอกเหนือจากกระดิ่ง 🔔) · มีเลขที่เคส ตารางสรุป ปุ่มเปิดเคส และข้อความรักษาความลับ · เปิด/ปิดแต่ละเหตุการณ์ ดูตัวอย่าง และส่งทดสอบได้ที่ ⚙️ ตั้งค่า → อีเมลแจ้งเตือน · ต้องติดตั้งตัวส่งอีเมลครั้งเดียวที่ Supabase (ดูคู่มือในหน้าตั้งค่า) — ก่อนติดตั้งเว็บทำงานปกติ แค่ยังไม่ส่งอีเมล","g":"sales"},{"ic":"🗄️","t":"ต้องรัน SQL 1 ครั้ง (ไฟล์ cs-2026-10-18.sql)","d":"ไฟล์เดียวครอบคลุมทุกอย่างของเมนู Sales Team (เคส · ขอความเห็น · จับเวลา · ผู้รับเรื่อง · สมาชิกตั้งต้น · บันทึกอีเมล) — รันซ้ำปลอดภัย ข้อมูลเดิมไม่หาย · เคสที่เปิดไว้ก่อนหน้าจะไม่มีเวลาหัวหน้าย้อนหลัง","g":"sales"},{"ic":"🗓️","t":"แท็บ Branding Plan ย้ายมาอยู่ “หน้าสุด” ของเมนู","d":"คนนอกทีมที่ล็อกอิน/ไม่ล็อกอิน จะเห็น 🗓️ Branding Plan เป็นแท็บแรกทันที (สมาชิกทีม Branding ยังเห็น 🏷️ Branding เป็นแท็บแรกเหมือนเดิม)","g":"branding"},{"ic":"📘","t":"วิธีใช้ Customer Service เพิ่มแล้ว","d":"กดปุ่ม ❓ วิธีใช้ ในหน้า Sales Team — เปิดเคส · อนุมัติ/ส่งกลับ/ส่งต่อ · ขอความเห็นและเวลา · ปิดเคส · แดชบอร์ด · ตั้งค่า/สมาชิก/สิทธิ์/อีเมล","g":"sales"}]},{"id":"20261017-1837","date":"2026-10-17","title":"Branding: 📦 คลังงาน · หัวคอลัมน์เปลี่ยนสี/แก้ชื่อ · ปุ่ม ✓ เก็บงาน · ลิงก์ที่พิมพ์ค้างไม่หาย","items":[{"ic":"🎨","t":"หัวคอลัมน์ในบอร์ด Branding เปลี่ยนสีและแก้ชื่อได้","d":"กดปุ่ม ⋮ ที่หัวคอลัมน์ → ✏️ แก้ชื่อคอลัมน์ (ใส่อีโมจินำหน้าได้) · เลือกสีหัวคอลัมน์จาก 10 สี หรือ “เลือกสีเอง” · ↩ คืนชื่อและสีเดิม · ระบบจำให้ทั้งทีมเห็นเหมือนกัน · ชื่อใหม่ใช้ในหน้าต่างการ์ด ประวัติ และแจ้งเตือนด้วย · ลิงก์แชร์ให้คนนอกใช้ชื่อ/สีที่แก้ด้วย (ต้องรัน SQL แชร์ซ้ำ 1 ครั้ง — รันไฟล์เดิม branding-share-2026-10-17.sql อีกรอบ ปลอดภัย)","g":"branding"},{"ic":"✓","t":"ปุ่มวงกลม ✓ บนการ์ด = เก็บงาน","d":"ที่มุมขวาบนของทุกการ์ดมีวงกลม ✓ — กดทีเดียวการ์ดย้ายไปคอลัมน์ “เสร็จแล้ว” (ลงเวลาเสร็จ · ชื่อขีดฆ่า · วงกลมเขียว) · กดอีกครั้ง = เปิดงานอีกครั้ง กลับคอลัมน์เดิม · ในหน้าต่างการ์ดก็มีปุ่ม ✓ เก็บงาน ที่หัวการ์ด · ผู้ติดตามได้แจ้งเตือนเหมือนการย้ายปกติ · ใช้ได้กับงานประสานงานด้วย","g":"branding"},{"ic":"🛟","t":"พิมพ์ลิงก์ / รายการเช็กลิสต์ไว้แต่ลืมกด “＋ เพิ่ม” ไม่หายอีก","d":"ทันทีที่พิมพ์ ปุ่ม ＋ เพิ่ม เปลี่ยนเป็นสีฟ้าเตือน · ถ้าปิดการ์ด กดแชร์ หรือกดสร้างการ์ด ระบบเพิ่มลิงก์/รายการที่พิมพ์ค้างไว้ให้เอง","g":"branding"},{"ic":"📦","t":"คลังงาน — เก็บการ์ดที่เสร็จแล้วออกจากบอร์ด แต่กดดูได้เสมอ","d":"การ์ดในคอลัมน์ “เสร็จแล้ว” มีปุ่ม 📦 ข้างวงกลม ✓ — กดแล้วการ์ดหายจากบอร์ด (เก็บเข้าคลัง) · เก็บทีละหลายใบ: ปุ่ม “📦 เก็บทั้งหมดเข้าคลัง” ใต้คอลัมน์เสร็จแล้ว · ดูของในคลังที่ปุ่ม “📦 คลังงาน” บนแถบด้านบน (บอกจำนวนใบ): รายการเรียงตามเดือนที่เก็บ ค้นหาได้ กดการ์ดเพื่อเปิดดู/แก้ไข/แชร์ลิงก์ได้ตามปกติ · “↩ นำกลับบอร์ด” ได้ทุกเมื่อ · ลิงก์ที่แชร์ให้คนนอกยังใช้ได้ (ขึ้นว่าเสร็จแล้ว) · ต้องรัน SQL 1 บรรทัดก่อน (ไฟล์ branding-archive-2026-10-17.sql)","g":"branding"},{"ic":"📘","t":"วิธีใช้ Branding อัปเดตแล้ว","d":"กดปุ่ม ❓ วิธีใช้ — มีหัวข้อใหม่ “📦 คลังงาน (เก็บการ์ดที่เสร็จแล้ว)”","g":"branding"}]},{"id":"20261017-1651","date":"2026-10-17","title":"ห้อง MKT ภาพใหม่ — ป้ายชื่อและกล่องข้อความจัดตำแหน่งใหม่ ไม่ทับตัวละคร","items":[{"ic":"📣","t":"เปลี่ยนภาพห้องทำงานจำลอง Marketing เป็นภาพใหม่","d":"ใน CIL Team → ห้องทำงานจำลอง → Marketing เป็นภาพห้องใหม่ (โทนพีชชมพู ฉากถ่ายคอนเทนต์ใหญ่ขึ้น) · ป้ายชื่อทั้ง 7 คน (แนน ออม สมายด์ เอ หรา เลิฟ สเปียร์) และกล่องข้อความสถานะจัดตำแหน่งใหม่ตามตัวละครในภาพ ไม่ทับหน้าหรือตัวของใคร ไม่ทับกันเอง ตรวจแล้วทั้งจอใหญ่ จอแล็ปท็อป หน้าต่างเล็ก และมือถือ · ต้องอัปโหลดไฟล์ภาพ Office/mkt-v2.jpg ด้วย (ถ้ายังไม่ได้อัป ระบบจะใช้ภาพเก่าไปก่อน)","g":"cil"}]},{"id":"20261017-1514","date":"2026-10-17","title":"แก้: พิมพ์ข้อความสถานะ (CIL Team) / ชื่องานด่วน (Branding) แล้วข้อความหายเวลาหน้าเว็บอัปเดต","items":[{"ic":"⌨️","t":"ช่อง “ข้อความสั้นๆ” ในสถานะของฉัน (CIL Team) พิมพ์แล้วไม่หายอีก","d":"เดิมทุกครั้งที่ใครออนไลน์/ออฟไลน์หรือข้อมูลบอร์ดเปลี่ยน ระบบวาดบอร์ดใหม่ทั้งก้อน ช่องที่กำลังพิมพ์ถูกสร้างใหม่ ข้อความหายและเคอร์เซอร์เด้งออก — ตอนนี้ช่องพิมพ์อยู่ที่เดิม ข้อความ/เคอร์เซอร์/โฟกัสไม่หาย ส่วนอื่นของบอร์ดยังอัปเดตสดตามปกติ · ถ้าไม่มีอะไรเปลี่ยนจริงๆ ก็ไม่วาดซ้ำ จึงไม่กระตุกเด้งเหมือนเดิม · ข้อความที่พิมพ์ค้างแต่ยังไม่กดบันทึกก็ไม่ถูกทับ","g":"cil"},{"ic":"⚡","t":"ช่อง “⚡ พิมพ์ชื่องาน / To-Do” ในบอร์ด Branding พิมพ์ค้างแล้วไม่หาย","d":"บอร์ด Branding โหลดข้อมูลสดทุกราว 15 วินาที เดิมข้อความที่พิมพ์ค้างในช่องเพิ่มการ์ดด่วนหายตอนโหลด — แก้แล้ว ทุกคอลัมน์เก็บข้อความที่พิมพ์ค้างไว้ พร้อมโฟกัสและเคอร์เซอร์","g":"branding"}]},{"id":"20261017-1217","date":"2026-10-17","title":"ลิงก์แชร์คนนอกสั้นลง + ปุ่มคัดลอกได้ “ชื่อการ์ด + ลิงก์” พร้อมส่งไลน์","items":[{"ic":"🔗","t":"ลิงก์แชร์ให้คนนอก สั้นลง — ยาวไม่ถึงครึ่งของเดิม","d":"ลิงก์ที่สร้างใหม่สั้นลงมาก (เดิมยาวกว่า 110 ตัวอักษร ตอนนี้ราว 68) แต่ยังเดาไม่ได้เหมือนเดิม · ลิงก์ยาวที่ส่งไปแล้วยังใช้ได้ ไม่ต้องเปลี่ยน · อยากได้แบบสั้นให้กด ♻️ สร้างลิงก์ใหม่ (ลิงก์เก่าจะเปิดไม่ได้) · ไม่ต้องรัน SQL เพิ่ม","g":"branding"},{"ic":"📋","t":"ปุ่ม “คัดลอกส่งไลน์” — ได้ชื่อการ์ดพร้อมลิงก์","d":"กดสร้างลิงก์หรือกด 📋 คัดลอกส่งไลน์ จะได้ข้อความ 2 บรรทัด: “📋 ชื่อการ์ด” แล้วตามด้วยลิงก์บรรทัดล่าง วางในไลน์ได้เลย · ถ้าอยากได้เฉพาะลิงก์ กด 🔗 เฉพาะลิงก์ · วิธีใช้ Branding อัปเดตแล้ว","g":"branding"}]},{"id":"20261017-1208","date":"2026-10-17","title":"Branding: คอลัมน์ “To-do list” + ประเภทงาน “ประสานงาน” (3 คอลัมน์)","items":[{"ic":"📝","t":"คอลัมน์แรกของบอร์ด Branding เปลี่ยนชื่อเป็น “To-do list”","d":"จาก “ไอเดีย / Brief” เป็น “📝 To-do list” — การ์ดเดิมที่อยู่คอลัมน์นี้ย้ายตามชื่อใหม่อัตโนมัติ ไม่ต้องทำอะไร · ในลิงก์แชร์ให้คนนอกก็ขึ้นชื่อ To-do list เหมือนกัน","g":"branding"},{"ic":"🤝","t":"ประเภทงานใหม่ “ประสานงาน” — ใช้แค่ 3 คอลัมน์: To-do list · กำลังทำ · เสร็จแล้ว","d":"เลือกประเภท 🤝 ประสานงาน ในการ์ด → เลือกคอลัมน์ได้แค่ 3 ตัวนี้ (ถ้าการ์ดอยู่คอลัมน์อื่น ระบบย้ายให้ใกล้ที่สุดพร้อมแจ้ง) · ลากไปคอลัมน์อื่นไม่ได้ · เลือกตัวกรองประเภท “ประสานงาน” บนบอร์ด จะเห็นบอร์ดแค่ 3 คอลัมน์ · ลิงก์แชร์ให้คนนอกดูโชว์ Timeline แค่ 3 ขั้น (To-do list → กำลังทำ → เสร็จแล้ว) ดูง่าย ไม่ซับซ้อน · ต้องอัปโหลดไฟล์ share.html ใหม่ด้วย","g":"branding"},{"ic":"📘","t":"วิธีใช้ Branding อัปเดตแล้ว","d":"กดปุ่ม ❓ วิธีใช้ — มีหัวข้อใหม่ “🤝 งานประสานงาน (ใช้แค่ 3 คอลัมน์)”","g":"branding"}]},{"id":"20261017-0013","date":"2026-10-17","title":"Life Style (Game + Fortune ดูดวงไพ่ยิปซี) · เว็บอัปเดตให้เองตอนสลับกลับมาที่แท็บ","items":[{"ic":"🌈","t":"เมนู Game เปลี่ยนชื่อเป็น “Life Style” — ชี้แล้วมีเมนูย่อย Game · Fortune","d":"เอาเมาส์ชี้ที่ Life Style จะมีเมนูย่อยเลื่อนลงมา: 🎮 Game (เกมของทีมเหมือนเดิมทั้งหมด) และ 🔮 Fortune (ดูดวง) · กดที่ชื่อ Life Style ตรงๆ = เข้า Game เหมือนเดิม · บนมือถือ แตะที่ Life Style เพื่อเปิดเมนูย่อย แล้วเลือกอีกที · ใช้คีย์บอร์ดได้ (Enter / ↑↓ / Esc)","g":"life"},{"ic":"🔮","t":"Fortune: ดูดวงไพ่ยิปซี รายวัน · รายสัปดาห์ · รายเดือน","d":"ตั้งสมาธิแล้วแตะไพ่คว่ำเพื่อเปิด — รายวัน 1 ใบ · รายสัปดาห์ 3 ใบ (ต้น/กลาง/ปลายสัปดาห์) · รายเดือน 5 ใบ (ภาพรวม + 4 สัปดาห์) · ไพ่ครบ 22 ใบ (Major Arcana) ทั้งตั้งตรงและกลับหัว · ได้คำทำนายภาพรวม ความรัก งาน/การเงิน คำแนะนำ + สรุปพลังงานช่วงนั้น สีมงคล เลขนำโชค · ไพ่ของแต่ละวัน/สัปดาห์/เดือนเป็นชุดเดียวต่อคน รีเฟรชแล้วได้ใบเดิม พรุ่งนี้ได้ใบใหม่ · กดคัดลอกคำทำนายส่งในไลน์ได้ · เพื่อความบันเทิง · แบบดูดวงอื่นๆ จะเพิ่มต่อภายหลัง","g":"life"},{"ic":"🔄","t":"อัปเดตให้เองตอนสลับกลับมาที่แท็บ — ไม่ต้องกดทุกครั้ง","d":"มีเวอร์ชันใหม่ → พอสลับกลับมาที่แท็บนี้ เว็บรีโหลดให้เอง แล้วขึ้นการ์ด “อัปเดตแล้ว ✓” ให้ดูว่ามีอะไรใหม่ · จะ “ไม่” รีโหลดให้ถ้ากำลังพิมพ์อยู่ มีหน้าต่าง/ป๊อปอัปเปิดอยู่ หรือกด ✕ “ไว้ทีหลัง” ไว้ (ข้อความที่พิมพ์ค้างไม่หาย) · ถ้าใช้งานอยู่หน้าเดิมต่อเนื่อง จะเห็นแถบ “มีอัปเดตใหม่” ให้กดเอง","g":"sys"}]},{"id":"20261016-2315","date":"2026-10-17","title":"แก้ป๊อปอัปเตือนอัปเดตซ้ำ 2 รอบ + ดีไซน์ใหม่โทนฟ้า NPD","items":[{"ic":"🔔","t":"ป๊อปอัปเตือนอัปเดตไม่ซ้ำ 2 รอบอีกแล้ว","d":"เดิมมีตัวเตือนอัปเดต 2 ระบบทำงานซ้อนกัน (แถบ “มีเวอร์ชันใหม่ของเว็บ” ด้านบน + แถบ “มีอัปเดตใหม่” ด้านล่าง) เหลือระบบเดียว · กดอัปเดตจากแถบแล้ว ไม่มีการ์ด “อัปเดตแล้ว” เด้งซ้ำ · การ์ดไม่ขึ้นพร้อมแถบ · เปิดหลายแท็บ กด “ไว้ทีหลัง” ที่แท็บหนึ่ง อีกแท็บปิดตาม · เว็บไม่รีโหลดเองตอนสลับกลับมาที่แท็บอีกแล้ว (กันข้อความที่พิมพ์ค้างหาย) — กดอัปเดตเองเมื่อพร้อม","g":"sys"},{"ic":"🎨","t":"ป๊อปอัปเตือนอัปเดต ดีไซน์ใหม่ โทนฟ้า NPD","d":"แถบ “มีอัปเดตใหม่” เป็นไล่สีฟ้าเดียวกับหัวเว็บ ตัวหนังสือขาว ปุ่ม “ดูว่ามีอะไรใหม่ · อัปเดตเลย” ชัดเจน · การ์ด “อัปเดตแล้ว ✓” สีขาวเส้นฟ้า อยู่กลางล่างเหมือนกัน · บนมือถือปุ่มลงไปอยู่แถวที่สอง ไม่ล้นจอ","g":"sys"}]},{"id":"20261016-2224","date":"2026-10-17","title":"หน้าต่าง “มีอะไรใหม่” ดีไซน์ใหม่ — แยกหัวข้อตามเมนู/ฝ่าย","items":[{"ic":"✨","t":"หน้าต่าง “มีอะไรใหม่” ดีไซน์ใหม่ เรียบ ทันสมัย โทนฟ้า NPD","d":"รายการอัปเดตแบ่งเป็นหัวข้อตามเมนู/ฝ่าย (ทั้งระบบ · Branding · NPD Team · Content · Graphic · E-Commerce · …) แต่ละหัวข้อบอกจำนวนรายการ · มีแถบกดกรองดูเฉพาะฝ่ายของตัวเอง · อัปเดตก่อนหน้าก็แบ่งกลุ่มและติดป้ายฝ่ายให้ · ใช้ได้ดีทั้งบนจอใหญ่และมือถือ","g":"sys"}]},{"id":"20261016-2215","date":"2026-10-17","title":"แนบรูป/ไฟล์จากเครื่องในการ์ด Branding + การ์ดใหม่ที่ลืมกดสร้างไม่หายอีก + ปุ่มเพิ่มผู้ติดตามหาง่ายขึ้น","items":[{"ic":"📎","t":"แนบรูป / ไฟล์ PDF จากเครื่องในการ์ด Branding","d":"เปิดการ์ด → ส่วน “ลิงก์ / ไฟล์อ้างอิง” → กด “📎 แนบรูป / ไฟล์” เลือกจากเครื่องได้หลายไฟล์พร้อมกัน (ไม่เกิน 15 MB ต่อไฟล์) · รูปขึ้นเป็นรูปย่อ กดเปิดดูใหญ่ได้ · ใช้ที่เก็บไฟล์เดียวกับบอร์ด Graphic/Content ไม่ต้องรัน SQL · รูปที่แนบจะโชว์ในลิงก์แชร์ให้คนนอกด้วยโดยไม่ต้องตั้งสิทธิ์ Google Drive · แนบเป็นลิงก์ Drive/Canva/Figma ได้เหมือนเดิม"},{"ic":"🛟","t":"การ์ดใหม่ที่ลืมกด “➕ สร้างการ์ด” ไม่หายอีกแล้ว","d":"พิมพ์ชื่อการ์ดแล้วปิดหน้าต่าง (✕ / Esc / คลิกนอกกรอบ) ระบบบันทึกการ์ดให้ · ถ้าบันทึกไม่สำเร็จ หน้าต่างยังอยู่พร้อมสิ่งที่พิมพ์ ไม่ทิ้งงาน · ถ้ายังไม่ได้พิมพ์ชื่อ ปิดแล้วไม่สร้างอะไร"},{"ic":"👁","t":"ปุ่ม “＋ เพิ่มผู้ติดตาม / ผู้สั่งงาน” หาง่ายขึ้น","d":"ป้ายชื่อแถวอยู่บรรทัดเดียวกับปุ่ม ไม่ลอยกลางแถวจนดูเหมือนเป็นของแถวผู้รับผิดชอบ · ปุ่มเป็นสีฟ้าเส้นประเด่นขึ้น"},{"ic":"📘","t":"วิธีใช้ Branding อัปเดตแล้ว","d":"กดปุ่ม ❓ วิธีใช้ — มีหัวข้อ “📎 แนบรูป / ไฟล์ ในการ์ด” และบรรทัดใหม่เรื่องการ์ดใหม่ที่บันทึกให้อัตโนมัติ"}]},{"id":"20261016-2156","date":"2026-10-17","title":"แก้: ปุ่ม “＋ เพิ่มผู้ติดตาม / ผู้สั่งงาน” ในการ์ด Branding หาง่ายขึ้น","items":[{"ic":"👁","t":"ปุ่มเพิ่มผู้ติดตาม / ผู้สั่งงาน เห็นชัดขึ้น","d":"ป้ายชื่อแถว (ผู้ติดตาม / ผู้สั่งงาน · ผู้รับผิดชอบ · แท็ก) อยู่บรรทัดเดียวกับปุ่มแล้ว ไม่ลอยอยู่กลางแถวจนดูเหมือนปุ่มเป็นของแถวผู้รับผิดชอบ · ปุ่มเป็นสีฟ้าเส้นประเด่นขึ้น — กด “＋ เพิ่มผู้ติดตาม / ผู้สั่งงาน” แล้วเลือกชื่อหรือพิมพ์ชื่อใหม่ + Enter"}]}]}</script>
+<script type="application/json" id="whatsnew-data">{"id":"20261018-1756","date":"2026-10-18","title":"ข้อมูล NPD / Content เฉพาะทีม + CIL Team แบบเข้ม","items":[{"ic":"🔒","t":"ข้อมูลงาน NPD อ่าน/แก้ได้เฉพาะทีม NPD","d":"ความคืบหน้า บรีฟ NPR แก้ได้เฉพาะหัวหน้า/สมาชิกทีม NPD · คนนอกทีมเห็นเฉพาะงานที่ตัวเองเป็นผู้รับผิดชอบ (กระดิ่งเตือนกำหนดส่งยังทำงาน) · Product Stage / Roadmap อ่านได้ทีม NPD · Content · Sales","g":"npd"},{"ic":"🏢","t":"CIL Team: คนนอกทีม NPD เห็นแค่จำนวนงาน + งานจาก To-Do","d":"กดชื่อคนแล้วเห็นจำนวนงานค้างรวม · รายละเอียดแสดงเฉพาะงานจาก To-Do ที่มีคนสั่ง · งานอื่นขึ้นเป็น “🔒 อีก N งานของทีม” · ทีม NPD และแผงของตัวเองเห็นครบเหมือนเดิม","g":"sys"},{"ic":"🔒","t":"ข้อมูล Content อ่านได้เฉพาะสมาชิกทีม Content · แก้ได้เฉพาะหัวหน้า/สมาชิก","d":"ระดับ “ดูอย่างเดียว” (เช่นทีมกราฟิก) เปิดเมนู Content ดูการ์ดและคอมเมนต์ได้ แต่แก้ไม่ได้ · หัวหน้าเพิ่มสมาชิกที่ “⚙️ ตั้งค่าทีม” แล้วสิทธิ์แก้ไขตามระดับทันที · คอมเมนต์การ์ดอ่าน/เขียนได้เฉพาะทีม Content + ทีม NPD + Data Support","g":"content"},{"ic":"🧹","t":"ล้างโค้ดหน้า “ฝากงาน NPD” ที่เลิกใช้แล้วออกจากเว็บ","d":"หน้านี้ไม่มีในเมนูมานานแล้ว — เอาโค้ดที่ค้างอยู่ออกทั้งหมด ไม่กระทบการใช้งาน (To-Do list ยังอยู่เหมือนเดิม)","g":"npd"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว — NPD Team และ Content (ข้อมูลเฉพาะทีม · สิทธิ์ตามระดับ · CIL Team)","d":"ปุ่ม ❓ วิธีใช้ของ NPD Team และ Content ลงบันทึกการเปลี่ยนแปลงรอบนี้แล้ว","g":"npd"}],"history":[{"id":"20261018-1614","date":"2026-10-18","title":"ทีมและสิทธิ์: เมนู NPD / Content เห็นเฉพาะสมาชิกทีม","items":[{"ic":"👥","t":"เมนู NPD Team เห็นเฉพาะสมาชิกทีม NPD — หัวหน้าตั้งค่าทีมเองได้","d":"คนนอกทีมไม่เห็นเมนู NPD Team อีกต่อไป · หัวหน้า (จ๋า พลอย แพรว) กดปุ่ม “⚙️ ตั้งค่าทีม” ที่หัวเมนู เพื่อเพิ่ม/ลบสมาชิกและเปลี่ยนระดับ (หัวหน้า · สมาชิก · ดูอย่างเดียว) โดยไม่ต้องรัน SQL","g":"npd"},{"ic":"👥","t":"เมนู Content Creator เห็นเฉพาะสมาชิกทีม Content — หัวหน้าตั้งค่าทีมเองได้","d":"หัวหน้า (พลอย แนน) เห็นปุ่ม “⚙️ ตั้งค่าทีม” ที่หัวเมนู เพื่อเพิ่ม/ลบสมาชิกและเปลี่ยนระดับ · คนนอกทีมไม่เห็นเมนูนี้","g":"content"},{"ic":"👥","t":"Branding: มีหัวหน้าทีม และปุ่ม “⚙️ ตั้งค่าทีม” จัดการสมาชิก","d":"หัวหน้า (พลอย แพรว จ๋า) เพิ่ม/ลบสมาชิกและกำหนดหัวหน้าได้เองที่หัวเมนู Branding","g":"branding"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว — เรื่องทีมและสิทธิ์ (NPD Team · Content · Branding)","d":"ปุ่ม ❓ วิธีใช้ของทั้งสามเมนูมีหมายเหตุเรื่องการเห็นเมนูเฉพาะสมาชิกและปุ่มตั้งค่าทีม และลงบันทึกในประวัติแล้ว","g":"npd"}]},{"id":"20261018-1444","date":"2026-10-18","title":"Sales Team: ตั้งค่าเห็นเฉพาะหัวหน้า","items":[{"ic":"⚙️","t":"แท็บ “ตั้งค่า” ของ Sales Team เห็นเฉพาะหัวหน้าและผู้ดูแล","d":"เซลส์และผู้ดูเห็นแค่ “เคสทั้งหมด” กับ “แดชบอร์ด” · หัวหน้า/ผู้ดูแลเห็นแท็บตั้งค่า (รายการตัวเลือก สมาชิก กติการับเรื่อง อีเมลแจ้งเตือน) เหมือนเดิม","g":"sales"},{"ic":"📘","t":"วิธีใช้ Sales Team อัปเดตแล้ว — เรื่องแท็บตั้งค่า","d":"ปุ่ม ❓ วิธีใช้ของ Sales Team ระบุว่าตั้งค่าเห็นเฉพาะหัวหน้าและผู้ดูแล และลงบันทึกในประวัติแล้ว","g":"sales"}]},{"id":"20261018-024626","date":"2026-10-18","title":"ต้องเข้าสู่ระบบก่อนเปิดเว็บ","items":[{"ic":"🔐","t":"ต้องเข้าสู่ระบบก่อนเปิดเว็บ — คนที่ไม่ได้ล็อกอินจะเห็นแค่หน้าเข้าสู่ระบบ","d":"เปิดเว็บแล้วไม่เห็นเมนู ข้อมูล หรือรูปจนกว่าจะล็อกอิน · ลิงก์ที่มีเลขเคส/หน้าที่แนบมา ล็อกอินแล้วเปิดตรงหน้านั้นให้ · ไม่มีบัญชีหรือลืมรหัสผ่านให้ขอผู้ดูแลระบบ (ทีม NPD)","g":"sys"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว — เพิ่มเรื่องการเข้าสู่ระบบ","d":"ปุ่ม ❓ วิธีใช้ NPD Team มีหมายเหตุว่าทุกคนต้องเข้าสู่ระบบก่อนเปิดเว็บ และลงบันทึกในประวัติการเปลี่ยนแปลง","g":"npd"}]},{"id":"20261018-0031","date":"2026-10-18","title":"อีเมลแจ้งเตือน: ไม่ค้างเมื่อส่งไม่ได้ + ทางส่งผ่าน Google Apps Script","items":[{"ic":"🛠️","t":"ปุ่ม “ส่งอีเมลทดสอบ” ไม่ค้างอีกต่อไป — รอไม่เกิน 60 วินาที แล้วบอกสาเหตุ","d":"ถ้าตัวส่งอีเมลไม่ตอบ ระบบจะแจ้งข้อความ “ไม่ตอบภายใน 60 วินาที” แทนการค้างเงียบๆ · ปุ่มกลับมากดได้ทันที","g":"sales"},{"ic":"✉️","t":"ส่งอีเมลผ่าน Google Apps Script ได้แล้ว (ไม่ต้องใช้รหัสผ่านแอป ไม่ต้องตั้ง DNS)","d":"เพิ่มทางส่งใหม่ที่ใช้การเชื่อมต่อเว็บปกติ จึงไม่ติดเรื่องพอร์ต SMTP · มีโค้ดฟังก์ชันเวอร์ชันใหม่ (วางทับของเดิมใน Supabase) และคู่มือตั้งค่าแบบมีภาพที่เขียนใหม่ให้ทำตามทีละขั้น","g":"sales"}]},{"id":"20261017-2342","date":"2026-10-17","title":"อีเมลแจ้งเตือน: บอกสาเหตุจริงเมื่อส่งไม่สำเร็จ","items":[{"ic":"🛠️","t":"ปุ่ม “ส่งอีเมลทดสอบ” และการส่งอีเมลอัตโนมัติ แสดงเหตุผลจริงเมื่อส่งไม่สำเร็จ","d":"แทนข้อความกลางๆ “non-2xx” ตอนนี้บอกสาเหตุจากตัวส่งอีเมลพร้อมรหัส HTTP (เช่น ยังไม่ได้ใส่ค่าลับ · รหัสแอปไม่ผ่าน · ยังไม่ได้รัน SQL) · มีโค้ดฟังก์ชันส่งอีเมลเวอร์ชันใหม่ที่ตอบข้อผิดพลาดชัดเจนขึ้น (วางทับของเดิมใน Supabase ได้) และคู่มือตั้งค่าอีเมลแบบมีภาพ","g":"sales"}]},{"id":"20261017-2252","date":"2026-10-17","title":"เมนูใหม่ 🤝 Sales Team (Customer Service): เคส · อนุมัติ/ส่งต่อ · ขอความเห็น · เวลา · แดชบอร์ด · อีเมล","items":[{"ic":"🤝","t":"เมนูใหม่ Sales Team — ชี้ที่แท็บแล้วเลือกหัวข้อ","d":"ชี้ที่แท็บ “🤝 Sales Team” (มือถือ: แตะ) จะมีเมนูย่อย 🎧 Customer Service · 🛒 Online · 🏬 Offline (Online/Offline ยังว่าง รอเพิ่มฟังก์ชัน) · เห็นเฉพาะสมาชิกทีมเซลส์ที่ผู้ดูแลเพิ่มไว้ในหน้า ⚙️ ตั้งค่า (ต้องรัน SQL ไฟล์ cs-2026-10-18.sql ก่อน 1 ครั้ง)","g":"sales"},{"ic":"🎧","t":"Customer Service — เซลส์เปิดเคสร้องเรียน ส่งหัวหน้าอนุมัติก่อนดำเนินการ","d":"กรอก: ช่องทางที่ลูกค้าร้องเรียน · แพลตฟอร์ม · เลขคำสั่งซื้อ · วันที่ · ดาวที่ลูกค้ากด · ข้อความลูกค้า · แนบรูป (วางภาพจากคลิปบอร์ดได้) · ประเภทการร้องเรียน/ความเสียหาย · สินค้า (เลือกจาก Product Info หรือกรอกเองถ้าไม่มีในระบบ) · ยอดชดใช้ + ค่าส่งของกลับของลูกค้า + อื่นๆ · ตัวเลือกที่จะเสนอลูกค้า → กดส่งให้หัวหน้าอนุมัติ → หัวหน้าอนุมัติหรือส่งกลับพร้อมเหตุผล (มีแจ้งเตือน 🔔) → ดำเนินการ → บันทึกว่าลูกค้าเลือกอะไร + ยอดจ่ายจริง → ปิดเคส · ทุกเคสมีประวัติและคอมเมนต์ · สิทธิ์บังคับที่ฐานข้อมูล","g":"sales"},{"ic":"📊","t":"แดชบอร์ด Customer Service: รายวัน / สัปดาห์ / เดือน / ไตรมาส / ปี + ปัญหารายสินค้า","d":"เลือกช่วงเวลาแล้วกด ‹ › เลื่อนดูย้อนหลัง · เทียบกับช่วงก่อนหน้า · กราฟจำนวนเคสและยอดที่ต้องรับผิดชอบ · แบ่งตามประเภทร้องเรียน/ความเสียหาย/แพลตฟอร์ม/ช่องทาง · ดาวที่ลูกค้าให้ · ตารางปัญหาและยอดรับผิดชอบ “รายสินค้า” (กดแถวเพื่อดูเคสของสินค้านั้น) · ส่งออก CSV ได้","g":"sales"},{"ic":"💬","t":"ส่งต่อแบบปรึกษา — ขอความเห็นจากหัวหน้า แล้วรอคำตอบ","d":"ในเคสกด “💬 ขอความเห็น” → เลือกถามหัวหน้าคนที่เจาะจง หรือ “คนไหนก็ได้” → พิมพ์คำถาม → ส่ง · คนที่ถูกถามได้แจ้งเตือน 🔔 และตอบที่หน้าเคส · เคสเดินต่อได้ ไม่ต้องหยุดรอ · ผู้ขอ/หัวหน้ายกเลิกคำขอได้ถ้ายังไม่มีคนตอบ · ในรายการเคสมีป้าย “💬 รอความเห็น” + ตัวกรอง + การ์ดสรุป (หัวหน้าเห็นว่ามีกี่รายการรอตน) · ทุกคำถาม/คำตอบเข้าประวัติของเคส","g":"sales"},{"ic":"⏱️","t":"การ์ด “เวลา” ในเคส — เปิดเคส · ส่งอนุมัติ · หัวหน้า action ครั้งแรก (ใคร เมื่อไร ตอบภายในเท่าไร) · เริ่มทำ · ปิดเคส","d":"ฐานข้อมูลจดเวลาให้เองทุกขั้น (ใครแก้เองไม่ได้) · สรุปบรรทัดเดียว “ใช้เวลารวม = รอหัวหน้า + รอความเห็น + พนักงานดำเนินการ” เพื่อรู้ว่าพนักงานใช้เวลาจริงเท่าไร (ไม่รวมช่วงรอหัวหน้า/รอความเห็น) · เคสที่ยังรอหัวหน้าจะขึ้น “รอมาแล้ว …” แบบสดๆ","g":"sales"},{"ic":"📊","t":"แดชบอร์ดหมวดใหม่ “เวลาในการเคลียร์เคส”","d":"ปิดเคสเฉลี่ย/มัธยฐาน · เวลาพนักงานจริง · หัวหน้า action ครั้งแรกเฉลี่ย · รอความเห็นเฉลี่ย · % ปิดภายใน 1 วัน · กราฟปิดเคสภายใน 4 ชม./1 วัน/3 วัน/7 วัน · ตารางรายพนักงาน (เคลียร์เร็วแค่ไหน) และรายหัวหน้า (action/ตอบความเห็นเร็วแค่ไหน) · ส่งออก CSV มีเวลาครบทุกคอลัมน์ · ใช้ได้ทั้งรายวัน/สัปดาห์/เดือน/ไตรมาส/ปี","g":"sales"},{"ic":"🎯","t":"ผู้รับเรื่อง + ส่งต่อ — เคสไปที่หัวหน้าคนแรกก่อน ไม่แน่ใจกดส่งต่อ","d":"ส่งอนุมัติแล้วเคสไปที่หัวหน้าคนแรกที่ตั้งไว้ (สมายด์) · เคสประเภท แพ้ / ระคายเคือง ส่งตรงถึงพลอย · ไม่แน่ใจกด “↪︎ ส่งต่อ” ให้พลอยหรือแนน พร้อมเหตุผล · ผู้รับได้แจ้งเตือนและอีเมล · ระบบจดว่าส่งต่อกี่ครั้ง เมื่อไร · หัวหน้าท่านอื่นอนุมัติแทนกันได้ · แก้กติกาได้ที่ ⚙️ ตั้งค่า → กติการับเรื่อง","g":"sales"},{"ic":"👁","t":"สิทธิ์ “ผู้ดู” สำหรับทีมที่ทำงานข้ามทีม (เช่น Branding)","d":"ดูเคสและแดชบอร์ด คอมเมนต์ และตอบเมื่อถูกขอความเห็นได้ แต่เปิดเคสไม่ได้ · ผู้ดูแลเพิ่มสมาชิกและเลือกสิทธิ์ได้ที่ ⚙️ ตั้งค่า","g":"sales"},{"ic":"✉️","t":"อีเมลแจ้งเตือนแบบทางการ (ภาษาไทย) ทุกเหตุการณ์ของเคส","d":"ขออนุมัติ · ส่งต่อ · อนุมัติ · ส่งกลับแก้ไข · ปิดเคส · ขอความเห็น · ตอบความเห็น → อีเมลถึงผู้เกี่ยวข้อง (นอกเหนือจากกระดิ่ง 🔔) · มีเลขที่เคส ตารางสรุป ปุ่มเปิดเคส และข้อความรักษาความลับ · เปิด/ปิดแต่ละเหตุการณ์ ดูตัวอย่าง และส่งทดสอบได้ที่ ⚙️ ตั้งค่า → อีเมลแจ้งเตือน · ต้องติดตั้งตัวส่งอีเมลครั้งเดียวที่ Supabase (ดูคู่มือในหน้าตั้งค่า) — ก่อนติดตั้งเว็บทำงานปกติ แค่ยังไม่ส่งอีเมล","g":"sales"},{"ic":"🗄️","t":"ต้องรัน SQL 1 ครั้ง (ไฟล์ cs-2026-10-18.sql)","d":"ไฟล์เดียวครอบคลุมทุกอย่างของเมนู Sales Team (เคส · ขอความเห็น · จับเวลา · ผู้รับเรื่อง · สมาชิกตั้งต้น · บันทึกอีเมล) — รันซ้ำปลอดภัย ข้อมูลเดิมไม่หาย · เคสที่เปิดไว้ก่อนหน้าจะไม่มีเวลาหัวหน้าย้อนหลัง","g":"sales"},{"ic":"🗓️","t":"แท็บ Branding Plan ย้ายมาอยู่ “หน้าสุด” ของเมนู","d":"คนนอกทีมที่ล็อกอิน/ไม่ล็อกอิน จะเห็น 🗓️ Branding Plan เป็นแท็บแรกทันที (สมาชิกทีม Branding ยังเห็น 🏷️ Branding เป็นแท็บแรกเหมือนเดิม)","g":"branding"},{"ic":"📘","t":"วิธีใช้ Customer Service เพิ่มแล้ว","d":"กดปุ่ม ❓ วิธีใช้ ในหน้า Sales Team — เปิดเคส · อนุมัติ/ส่งกลับ/ส่งต่อ · ขอความเห็นและเวลา · ปิดเคส · แดชบอร์ด · ตั้งค่า/สมาชิก/สิทธิ์/อีเมล","g":"sales"}]},{"id":"20261017-1837","date":"2026-10-17","title":"Branding: 📦 คลังงาน · หัวคอลัมน์เปลี่ยนสี/แก้ชื่อ · ปุ่ม ✓ เก็บงาน · ลิงก์ที่พิมพ์ค้างไม่หาย","items":[{"ic":"🎨","t":"หัวคอลัมน์ในบอร์ด Branding เปลี่ยนสีและแก้ชื่อได้","d":"กดปุ่ม ⋮ ที่หัวคอลัมน์ → ✏️ แก้ชื่อคอลัมน์ (ใส่อีโมจินำหน้าได้) · เลือกสีหัวคอลัมน์จาก 10 สี หรือ “เลือกสีเอง” · ↩ คืนชื่อและสีเดิม · ระบบจำให้ทั้งทีมเห็นเหมือนกัน · ชื่อใหม่ใช้ในหน้าต่างการ์ด ประวัติ และแจ้งเตือนด้วย · ลิงก์แชร์ให้คนนอกใช้ชื่อ/สีที่แก้ด้วย (ต้องรัน SQL แชร์ซ้ำ 1 ครั้ง — รันไฟล์เดิม branding-share-2026-10-17.sql อีกรอบ ปลอดภัย)","g":"branding"},{"ic":"✓","t":"ปุ่มวงกลม ✓ บนการ์ด = เก็บงาน","d":"ที่มุมขวาบนของทุกการ์ดมีวงกลม ✓ — กดทีเดียวการ์ดย้ายไปคอลัมน์ “เสร็จแล้ว” (ลงเวลาเสร็จ · ชื่อขีดฆ่า · วงกลมเขียว) · กดอีกครั้ง = เปิดงานอีกครั้ง กลับคอลัมน์เดิม · ในหน้าต่างการ์ดก็มีปุ่ม ✓ เก็บงาน ที่หัวการ์ด · ผู้ติดตามได้แจ้งเตือนเหมือนการย้ายปกติ · ใช้ได้กับงานประสานงานด้วย","g":"branding"},{"ic":"🛟","t":"พิมพ์ลิงก์ / รายการเช็กลิสต์ไว้แต่ลืมกด “＋ เพิ่ม” ไม่หายอีก","d":"ทันทีที่พิมพ์ ปุ่ม ＋ เพิ่ม เปลี่ยนเป็นสีฟ้าเตือน · ถ้าปิดการ์ด กดแชร์ หรือกดสร้างการ์ด ระบบเพิ่มลิงก์/รายการที่พิมพ์ค้างไว้ให้เอง","g":"branding"},{"ic":"📦","t":"คลังงาน — เก็บการ์ดที่เสร็จแล้วออกจากบอร์ด แต่กดดูได้เสมอ","d":"การ์ดในคอลัมน์ “เสร็จแล้ว” มีปุ่ม 📦 ข้างวงกลม ✓ — กดแล้วการ์ดหายจากบอร์ด (เก็บเข้าคลัง) · เก็บทีละหลายใบ: ปุ่ม “📦 เก็บทั้งหมดเข้าคลัง” ใต้คอลัมน์เสร็จแล้ว · ดูของในคลังที่ปุ่ม “📦 คลังงาน” บนแถบด้านบน (บอกจำนวนใบ): รายการเรียงตามเดือนที่เก็บ ค้นหาได้ กดการ์ดเพื่อเปิดดู/แก้ไข/แชร์ลิงก์ได้ตามปกติ · “↩ นำกลับบอร์ด” ได้ทุกเมื่อ · ลิงก์ที่แชร์ให้คนนอกยังใช้ได้ (ขึ้นว่าเสร็จแล้ว) · ต้องรัน SQL 1 บรรทัดก่อน (ไฟล์ branding-archive-2026-10-17.sql)","g":"branding"},{"ic":"📘","t":"วิธีใช้ Branding อัปเดตแล้ว","d":"กดปุ่ม ❓ วิธีใช้ — มีหัวข้อใหม่ “📦 คลังงาน (เก็บการ์ดที่เสร็จแล้ว)”","g":"branding"}]},{"id":"20261017-1651","date":"2026-10-17","title":"ห้อง MKT ภาพใหม่ — ป้ายชื่อและกล่องข้อความจัดตำแหน่งใหม่ ไม่ทับตัวละคร","items":[{"ic":"📣","t":"เปลี่ยนภาพห้องทำงานจำลอง Marketing เป็นภาพใหม่","d":"ใน CIL Team → ห้องทำงานจำลอง → Marketing เป็นภาพห้องใหม่ (โทนพีชชมพู ฉากถ่ายคอนเทนต์ใหญ่ขึ้น) · ป้ายชื่อทั้ง 7 คน (แนน ออม สมายด์ เอ หรา เลิฟ สเปียร์) และกล่องข้อความสถานะจัดตำแหน่งใหม่ตามตัวละครในภาพ ไม่ทับหน้าหรือตัวของใคร ไม่ทับกันเอง ตรวจแล้วทั้งจอใหญ่ จอแล็ปท็อป หน้าต่างเล็ก และมือถือ · ต้องอัปโหลดไฟล์ภาพ Office/mkt-v2.jpg ด้วย (ถ้ายังไม่ได้อัป ระบบจะใช้ภาพเก่าไปก่อน)","g":"cil"}]},{"id":"20261017-1514","date":"2026-10-17","title":"แก้: พิมพ์ข้อความสถานะ (CIL Team) / ชื่องานด่วน (Branding) แล้วข้อความหายเวลาหน้าเว็บอัปเดต","items":[{"ic":"⌨️","t":"ช่อง “ข้อความสั้นๆ” ในสถานะของฉัน (CIL Team) พิมพ์แล้วไม่หายอีก","d":"เดิมทุกครั้งที่ใครออนไลน์/ออฟไลน์หรือข้อมูลบอร์ดเปลี่ยน ระบบวาดบอร์ดใหม่ทั้งก้อน ช่องที่กำลังพิมพ์ถูกสร้างใหม่ ข้อความหายและเคอร์เซอร์เด้งออก — ตอนนี้ช่องพิมพ์อยู่ที่เดิม ข้อความ/เคอร์เซอร์/โฟกัสไม่หาย ส่วนอื่นของบอร์ดยังอัปเดตสดตามปกติ · ถ้าไม่มีอะไรเปลี่ยนจริงๆ ก็ไม่วาดซ้ำ จึงไม่กระตุกเด้งเหมือนเดิม · ข้อความที่พิมพ์ค้างแต่ยังไม่กดบันทึกก็ไม่ถูกทับ","g":"cil"},{"ic":"⚡","t":"ช่อง “⚡ พิมพ์ชื่องาน / To-Do” ในบอร์ด Branding พิมพ์ค้างแล้วไม่หาย","d":"บอร์ด Branding โหลดข้อมูลสดทุกราว 15 วินาที เดิมข้อความที่พิมพ์ค้างในช่องเพิ่มการ์ดด่วนหายตอนโหลด — แก้แล้ว ทุกคอลัมน์เก็บข้อความที่พิมพ์ค้างไว้ พร้อมโฟกัสและเคอร์เซอร์","g":"branding"}]},{"id":"20261017-1217","date":"2026-10-17","title":"ลิงก์แชร์คนนอกสั้นลง + ปุ่มคัดลอกได้ “ชื่อการ์ด + ลิงก์” พร้อมส่งไลน์","items":[{"ic":"🔗","t":"ลิงก์แชร์ให้คนนอก สั้นลง — ยาวไม่ถึงครึ่งของเดิม","d":"ลิงก์ที่สร้างใหม่สั้นลงมาก (เดิมยาวกว่า 110 ตัวอักษร ตอนนี้ราว 68) แต่ยังเดาไม่ได้เหมือนเดิม · ลิงก์ยาวที่ส่งไปแล้วยังใช้ได้ ไม่ต้องเปลี่ยน · อยากได้แบบสั้นให้กด ♻️ สร้างลิงก์ใหม่ (ลิงก์เก่าจะเปิดไม่ได้) · ไม่ต้องรัน SQL เพิ่ม","g":"branding"},{"ic":"📋","t":"ปุ่ม “คัดลอกส่งไลน์” — ได้ชื่อการ์ดพร้อมลิงก์","d":"กดสร้างลิงก์หรือกด 📋 คัดลอกส่งไลน์ จะได้ข้อความ 2 บรรทัด: “📋 ชื่อการ์ด” แล้วตามด้วยลิงก์บรรทัดล่าง วางในไลน์ได้เลย · ถ้าอยากได้เฉพาะลิงก์ กด 🔗 เฉพาะลิงก์ · วิธีใช้ Branding อัปเดตแล้ว","g":"branding"}]},{"id":"20261017-1208","date":"2026-10-17","title":"Branding: คอลัมน์ “To-do list” + ประเภทงาน “ประสานงาน” (3 คอลัมน์)","items":[{"ic":"📝","t":"คอลัมน์แรกของบอร์ด Branding เปลี่ยนชื่อเป็น “To-do list”","d":"จาก “ไอเดีย / Brief” เป็น “📝 To-do list” — การ์ดเดิมที่อยู่คอลัมน์นี้ย้ายตามชื่อใหม่อัตโนมัติ ไม่ต้องทำอะไร · ในลิงก์แชร์ให้คนนอกก็ขึ้นชื่อ To-do list เหมือนกัน","g":"branding"},{"ic":"🤝","t":"ประเภทงานใหม่ “ประสานงาน” — ใช้แค่ 3 คอลัมน์: To-do list · กำลังทำ · เสร็จแล้ว","d":"เลือกประเภท 🤝 ประสานงาน ในการ์ด → เลือกคอลัมน์ได้แค่ 3 ตัวนี้ (ถ้าการ์ดอยู่คอลัมน์อื่น ระบบย้ายให้ใกล้ที่สุดพร้อมแจ้ง) · ลากไปคอลัมน์อื่นไม่ได้ · เลือกตัวกรองประเภท “ประสานงาน” บนบอร์ด จะเห็นบอร์ดแค่ 3 คอลัมน์ · ลิงก์แชร์ให้คนนอกดูโชว์ Timeline แค่ 3 ขั้น (To-do list → กำลังทำ → เสร็จแล้ว) ดูง่าย ไม่ซับซ้อน · ต้องอัปโหลดไฟล์ share.html ใหม่ด้วย","g":"branding"},{"ic":"📘","t":"วิธีใช้ Branding อัปเดตแล้ว","d":"กดปุ่ม ❓ วิธีใช้ — มีหัวข้อใหม่ “🤝 งานประสานงาน (ใช้แค่ 3 คอลัมน์)”","g":"branding"}]},{"id":"20261017-0013","date":"2026-10-17","title":"Life Style (Game + Fortune ดูดวงไพ่ยิปซี) · เว็บอัปเดตให้เองตอนสลับกลับมาที่แท็บ","items":[{"ic":"🌈","t":"เมนู Game เปลี่ยนชื่อเป็น “Life Style” — ชี้แล้วมีเมนูย่อย Game · Fortune","d":"เอาเมาส์ชี้ที่ Life Style จะมีเมนูย่อยเลื่อนลงมา: 🎮 Game (เกมของทีมเหมือนเดิมทั้งหมด) และ 🔮 Fortune (ดูดวง) · กดที่ชื่อ Life Style ตรงๆ = เข้า Game เหมือนเดิม · บนมือถือ แตะที่ Life Style เพื่อเปิดเมนูย่อย แล้วเลือกอีกที · ใช้คีย์บอร์ดได้ (Enter / ↑↓ / Esc)","g":"life"},{"ic":"🔮","t":"Fortune: ดูดวงไพ่ยิปซี รายวัน · รายสัปดาห์ · รายเดือน","d":"ตั้งสมาธิแล้วแตะไพ่คว่ำเพื่อเปิด — รายวัน 1 ใบ · รายสัปดาห์ 3 ใบ (ต้น/กลาง/ปลายสัปดาห์) · รายเดือน 5 ใบ (ภาพรวม + 4 สัปดาห์) · ไพ่ครบ 22 ใบ (Major Arcana) ทั้งตั้งตรงและกลับหัว · ได้คำทำนายภาพรวม ความรัก งาน/การเงิน คำแนะนำ + สรุปพลังงานช่วงนั้น สีมงคล เลขนำโชค · ไพ่ของแต่ละวัน/สัปดาห์/เดือนเป็นชุดเดียวต่อคน รีเฟรชแล้วได้ใบเดิม พรุ่งนี้ได้ใบใหม่ · กดคัดลอกคำทำนายส่งในไลน์ได้ · เพื่อความบันเทิง · แบบดูดวงอื่นๆ จะเพิ่มต่อภายหลัง","g":"life"},{"ic":"🔄","t":"อัปเดตให้เองตอนสลับกลับมาที่แท็บ — ไม่ต้องกดทุกครั้ง","d":"มีเวอร์ชันใหม่ → พอสลับกลับมาที่แท็บนี้ เว็บรีโหลดให้เอง แล้วขึ้นการ์ด “อัปเดตแล้ว ✓” ให้ดูว่ามีอะไรใหม่ · จะ “ไม่” รีโหลดให้ถ้ากำลังพิมพ์อยู่ มีหน้าต่าง/ป๊อปอัปเปิดอยู่ หรือกด ✕ “ไว้ทีหลัง” ไว้ (ข้อความที่พิมพ์ค้างไม่หาย) · ถ้าใช้งานอยู่หน้าเดิมต่อเนื่อง จะเห็นแถบ “มีอัปเดตใหม่” ให้กดเอง","g":"sys"}]},{"id":"20261016-2315","date":"2026-10-17","title":"แก้ป๊อปอัปเตือนอัปเดตซ้ำ 2 รอบ + ดีไซน์ใหม่โทนฟ้า NPD","items":[{"ic":"🔔","t":"ป๊อปอัปเตือนอัปเดตไม่ซ้ำ 2 รอบอีกแล้ว","d":"เดิมมีตัวเตือนอัปเดต 2 ระบบทำงานซ้อนกัน (แถบ “มีเวอร์ชันใหม่ของเว็บ” ด้านบน + แถบ “มีอัปเดตใหม่” ด้านล่าง) เหลือระบบเดียว · กดอัปเดตจากแถบแล้ว ไม่มีการ์ด “อัปเดตแล้ว” เด้งซ้ำ · การ์ดไม่ขึ้นพร้อมแถบ · เปิดหลายแท็บ กด “ไว้ทีหลัง” ที่แท็บหนึ่ง อีกแท็บปิดตาม · เว็บไม่รีโหลดเองตอนสลับกลับมาที่แท็บอีกแล้ว (กันข้อความที่พิมพ์ค้างหาย) — กดอัปเดตเองเมื่อพร้อม","g":"sys"},{"ic":"🎨","t":"ป๊อปอัปเตือนอัปเดต ดีไซน์ใหม่ โทนฟ้า NPD","d":"แถบ “มีอัปเดตใหม่” เป็นไล่สีฟ้าเดียวกับหัวเว็บ ตัวหนังสือขาว ปุ่ม “ดูว่ามีอะไรใหม่ · อัปเดตเลย” ชัดเจน · การ์ด “อัปเดตแล้ว ✓” สีขาวเส้นฟ้า อยู่กลางล่างเหมือนกัน · บนมือถือปุ่มลงไปอยู่แถวที่สอง ไม่ล้นจอ","g":"sys"}]},{"id":"20261016-2224","date":"2026-10-17","title":"หน้าต่าง “มีอะไรใหม่” ดีไซน์ใหม่ — แยกหัวข้อตามเมนู/ฝ่าย","items":[{"ic":"✨","t":"หน้าต่าง “มีอะไรใหม่” ดีไซน์ใหม่ เรียบ ทันสมัย โทนฟ้า NPD","d":"รายการอัปเดตแบ่งเป็นหัวข้อตามเมนู/ฝ่าย (ทั้งระบบ · Branding · NPD Team · Content · Graphic · E-Commerce · …) แต่ละหัวข้อบอกจำนวนรายการ · มีแถบกดกรองดูเฉพาะฝ่ายของตัวเอง · อัปเดตก่อนหน้าก็แบ่งกลุ่มและติดป้ายฝ่ายให้ · ใช้ได้ดีทั้งบนจอใหญ่และมือถือ","g":"sys"}]},{"id":"20261016-2215","date":"2026-10-17","title":"แนบรูป/ไฟล์จากเครื่องในการ์ด Branding + การ์ดใหม่ที่ลืมกดสร้างไม่หายอีก + ปุ่มเพิ่มผู้ติดตามหาง่ายขึ้น","items":[{"ic":"📎","t":"แนบรูป / ไฟล์ PDF จากเครื่องในการ์ด Branding","d":"เปิดการ์ด → ส่วน “ลิงก์ / ไฟล์อ้างอิง” → กด “📎 แนบรูป / ไฟล์” เลือกจากเครื่องได้หลายไฟล์พร้อมกัน (ไม่เกิน 15 MB ต่อไฟล์) · รูปขึ้นเป็นรูปย่อ กดเปิดดูใหญ่ได้ · ใช้ที่เก็บไฟล์เดียวกับบอร์ด Graphic/Content ไม่ต้องรัน SQL · รูปที่แนบจะโชว์ในลิงก์แชร์ให้คนนอกด้วยโดยไม่ต้องตั้งสิทธิ์ Google Drive · แนบเป็นลิงก์ Drive/Canva/Figma ได้เหมือนเดิม"},{"ic":"🛟","t":"การ์ดใหม่ที่ลืมกด “➕ สร้างการ์ด” ไม่หายอีกแล้ว","d":"พิมพ์ชื่อการ์ดแล้วปิดหน้าต่าง (✕ / Esc / คลิกนอกกรอบ) ระบบบันทึกการ์ดให้ · ถ้าบันทึกไม่สำเร็จ หน้าต่างยังอยู่พร้อมสิ่งที่พิมพ์ ไม่ทิ้งงาน · ถ้ายังไม่ได้พิมพ์ชื่อ ปิดแล้วไม่สร้างอะไร"},{"ic":"👁","t":"ปุ่ม “＋ เพิ่มผู้ติดตาม / ผู้สั่งงาน” หาง่ายขึ้น","d":"ป้ายชื่อแถวอยู่บรรทัดเดียวกับปุ่ม ไม่ลอยกลางแถวจนดูเหมือนเป็นของแถวผู้รับผิดชอบ · ปุ่มเป็นสีฟ้าเส้นประเด่นขึ้น"},{"ic":"📘","t":"วิธีใช้ Branding อัปเดตแล้ว","d":"กดปุ่ม ❓ วิธีใช้ — มีหัวข้อ “📎 แนบรูป / ไฟล์ ในการ์ด” และบรรทัดใหม่เรื่องการ์ดใหม่ที่บันทึกให้อัตโนมัติ"}]}]}</script>
 <script id="update-notice-2026-10-08">
 /* ✨ แจ้งเตือนอัปเดตใหม่ + “มีอะไรใหม่” (2026-10-08)
    • เว็บนี้ฝังรหัสเวอร์ชันไว้ที่ <meta name="npd-build"> (บนสุดของไฟล์) และโน้ตการอัปเดตใน <script type="application/json" id="whatsnew-data">
@@ -25033,9 +24924,11 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
    ทุกครั้งที่ฟีเจอร์ส่วนนี้เปลี่ยน ให้ทำ 3 อย่าง:  (1) แก้เนื้อหาใน sections()  (2) เพิ่มรายการบนสุดของ LOG  (3) เปลี่ยน REV
    → ปุ่ม ❓ จะมีจุดชมพูให้ทุกคนเห็นว่าวิธีใช้อัปเดต (release.py จะเตือนถ้า REV ไม่เปลี่ยนตั้งแต่รอบก่อน) */
 (function(){
-  var REV='2026-10-18.2', KEY='npd_team_help_seen_rev';
+  var REV='2026-10-18.3', KEY='npd_team_help_seen_rev';
   var LOG=[
     {d:'18 ต.ค. 2026', items:[
+      ['ปรับ','<b>🔒 ข้อมูล NPD เฉพาะทีม</b> — ความคืบหน้า บรีฟ NPR อ่าน/แก้ได้เฉพาะทีม NPD (แก้ได้ = หัวหน้า/สมาชิก · ดูอย่างเดียว = ดูได้แต่แก้ไม่ได้) · คนนอกทีมเห็นเฉพาะงานที่ตัวเองเป็นผู้รับผิดชอบ (กระดิ่งยังเตือนกำหนดส่งให้) · Product Stage / Roadmap อ่านได้ทีม NPD · Content · Sales'],
+      ['ปรับ','<b>CIL Team แบบเข้ม</b> — คนนอกทีม NPD กดดูงานค้างของคนอื่น เห็นแค่ <b>จำนวนงาน</b> + รายละเอียดงานจาก To-Do · งานอื่นขึ้นเป็น “🔒 อีก N งานของทีม” · ทีม NPD เห็นครบเหมือนเดิม'],
       ['ใหม่','<b>👥 ทีมและสิทธิ์</b> — เมนู NPD Team เห็นเฉพาะสมาชิกทีม · หัวหน้า (จ๋า พลอย แพรว) กดปุ่ม <b>⚙️ ตั้งค่าทีม</b> ที่หัวเมนูเพื่อเพิ่ม/ลบสมาชิกและเปลี่ยนระดับ (หัวหน้า · สมาชิก · ดูอย่างเดียว) · <b>สิทธิ์แก้ไขข้อมูลจริง</b>จะผูกกับระดับนี้ในขั้นถัดไป'],
       ['ใหม่','<b>ต้องเข้าสู่ระบบก่อนเปิดเว็บ</b> — คนที่ไม่ได้ล็อกอินจะเห็นแค่หน้าเข้าสู่ระบบ ไม่เห็นเมนูหรือข้อมูล · ไม่มีบัญชีหรือลืมรหัสผ่าน ให้ขอผู้ดูแลระบบ (ทีม NPD) · กดออกจากระบบแล้วกลับมาที่หน้าเข้าสู่ระบบ'],
     ]},
@@ -26542,13 +26435,14 @@ var CSMAIL=(function(){
    • รายชื่อสมาชิก/ระดับ (หัวหน้า · สมาชิก · ดูอย่างเดียว) เก็บในฐานข้อมูล: team_members (npd, content) และ branding_members (+คอลัมน์ role)
    • คนนอกทีม: เมนู NPD Team / Content Creator หายจากแถบเมนู (Branding ซ่อนเองอยู่แล้ว) · หัวหน้าเห็นปุ่ม “⚙️ ตั้งค่าทีม” ที่หัวเมนู → เพิ่ม/ลบสมาชิก เปลี่ยนระดับ
    • ถ้ายังไม่ได้รัน SQL (ไม่มีตาราง team_members) โมดูลนี้ “ไม่ทำอะไร” — เมนูทำงานเหมือนเดิมทุกอย่าง
-   • ขั้นนี้ยังไม่ล็อกข้อมูลของตาราง (RLS ของ NPD/Content ยังเป็นกฎเดิม) — สิทธิ์แก้ไขจริงยังตามรายชื่อเดิมไปก่อน
+   • Content / NPD: สิทธิ์แก้ไข = ระดับในทีม (หัวหน้า/สมาชิก) ทั้งในเว็บและฐานข้อมูล (team-lock-content / team-lock-npd SQL)
+   • CIL Team แบบเข้ม: คนนอกทีม NPD เห็นรายละเอียดเฉพาะงานจาก To-Do · งานอื่นเป็นตัวเลข (จำนวนงาน NPD มาจาก npd_office_counts())
    API: window.teamAvail(k) · teamRole(k) · teamIsMember(k) · teamIsEditor(k) · teamIsHead(k)  (k = 'npd' | 'content' | 'branding') */
 (function(){
   if(window.__teams) return;
   var T={
-    npd:    {k:'npd',    t:'NPD Team',        ic:'🧪', tab:'#nav .tab[data-view="team"]',    table:'team_members',    roles:['head','member','viewer'], anchor:'#view-team .npd-head',     gate:true,  note:true},
-    content:{k:'content',t:'Content Creator', ic:'✨', tab:'#nav .tab[data-view="content"]', table:'team_members',    roles:['head','member','viewer'], anchor:'#view-content .cc-head',   gate:true,  note:true},
+    npd:    {k:'npd',    t:'NPD Team',        ic:'🧪', tab:'#nav .tab[data-view="team"]',    table:'team_members',    roles:['head','member','viewer'], anchor:'#view-team .npd-head',     gate:true,  note:false},
+    content:{k:'content',t:'Content Creator', ic:'✨', tab:'#nav .tab[data-view="content"]', table:'team_members',    roles:['head','member','viewer'], anchor:'#view-content .cc-head',   gate:true,  note:false},
     branding:{k:'branding',t:'Branding',      ic:'🏷️', tab:'#nav-branding',                  table:'branding_members',roles:['head','member'],          anchor:'#view-branding .brd-head', gate:false, note:false}
   };
   var KEYS=['npd','content','branding'];
@@ -26584,6 +26478,7 @@ var CSMAIL=(function(){
       var rows={npd:[],content:[],branding:[]}, un={};
       try{ (await dbSel('team_members')).forEach(function(r){ if(rows[r.team]) rows[r.team].push(norm(r)); }); }catch(e){ if(isMissing(e)){ un.npd=un.content=true; } else { throw e; } }
       try{ rows.branding=(await dbSel('branding_members')).map(norm); }catch(e){ if(isMissing(e)) un.branding=true; else throw e; }
+      if(S.who!==who){ NC.map=null; NC.at=0; }
       S.rows=rows; S.unavail=un; S.who=who; S.ready=true; S.err='';
     }catch(e){ S.ready=false; S.err=String((e&&e.message)||e); try{ console.warn('teams: โหลดรายชื่อไม่สำเร็จ —',S.err); }catch(x){} }
     S.loading=false; apply();
@@ -26594,6 +26489,23 @@ var CSMAIL=(function(){
   window.teamIsMember=function(k){ return !!window.teamRole(k); };
   window.teamIsEditor=function(k){ var r=window.teamRole(k); return r==='head'||r==='member'; };
   window.teamIsHead=function(k){ return window.teamRole(k)==='head'; };
+
+  /* ---------- CIL Team แบบเข้ม (คนนอกทีม NPD) ---------- */
+  // ชื่อ → รูปมาตรฐาน (ตรงกับ npd_name() ในฐานข้อมูล): ตัดช่องว่าง · ตัวเล็ก · 'ไอซ์' = 'ไอซ์GP'
+  window.teamNameKey=function(n){ var x=String(n==null?'':n).replace(/\s+/g,'').toLowerCase(); return x==='ไอซ์'?'ไอซ์gp':x; };
+  function myKeys(){ var em=me(), out={}; try{ var m=(window.QT_EMAIL_MAP_PUB||{})[em]; if(m) out[window.teamNameKey(m)]=1; }catch(e){}
+    KEYS.forEach(function(k){ (S.rows[k]||[]).forEach(function(r){ if(r.email===em&&r.nick) out[window.teamNameKey(r.nick)]=1; }); }); return out; }
+  // true = ผู้ดูอยู่นอกทีม NPD และกำลังดูงานของ “คนอื่น” → เห็นรายละเอียดเฉพาะงานจาก To-Do
+  window.teamOfficeStrict=function(personName){ if(!window.teamAvail('npd')||window.teamIsMember('npd')) return false; return !myKeys()[window.teamNameKey(personName)]; };
+  var NC={map:null,at:0,busy:false,missing:false};
+  async function loadCounts(){ NC.busy=true;
+    try{ var rows; if(window.__tmDb&&window.__tmDb.rpc) rows=await window.__tmDb.rpc('npd_office_counts'); else { var c=await client(); var r=await c.rpc('npd_office_counts'); if(r.error) throw r.error; rows=r.data||[]; }
+      var m={}; (rows||[]).forEach(function(x){ m[window.teamNameKey(x.person)]={n:+x.n||0, due:x.next_due||null}; }); NC.map=m; NC.missing=false; }
+    catch(e){ NC.map=null; NC.missing=isMissing(e)||/function|not exist|404/i.test(String((e&&e.message)||e)); }
+    NC.at=Date.now(); NC.busy=false;
+    try{ var v=document.getElementById('view-office'); if(v&&v.classList.contains('active')&&typeof window.renderOffice==='function') window.renderOffice(); }catch(e){} }
+  // จำนวนงาน NPD ที่ค้างของแต่ละคน (เฉพาะคนนอกทีม NPD) — null = ยังไม่พร้อม/ยังไม่ได้รัน SQL (หน้าออฟฟิศจะนับจากข้อมูลในเครื่องแทน แต่ไม่แสดงรายละเอียด)
+  window.teamNpdCounts=function(){ if(!window.teamAvail('npd')||window.teamIsMember('npd')) return null; if(!NC.busy&&Date.now()-NC.at>60000) loadCounts(); return NC.map; };
 
   /* ---------- ซ่อนเมนูจากคนนอกทีม + ปุ่มตั้งค่าของหัวหน้า ---------- */
   function blocked(k){ return !!(T[k].gate&&window.teamAvail(k)&&!window.teamIsMember(k)); }
@@ -26696,7 +26608,7 @@ var CSMAIL=(function(){
     document.addEventListener('visibilitychange',function(){ if(!document.hidden&&S.ready&&Date.now()-(S.at||0)>60000){ S.at=Date.now(); S.loading=false; load(); } });
     var bv=$('view-branding'); if(bv&&window.MutationObserver){ var raf=0; new MutationObserver(function(){ if(raf) return; raf=requestAnimationFrame(function(){ raf=0; try{ mountGears(); }catch(e){} }); }).observe(bv,{childList:true}); }
     ['team','content'].forEach(function(v){ var tab=document.querySelector('#nav .tab[data-view="'+v+'"]'); if(tab) tab.addEventListener('click',function(){ setTimeout(mountGears,60); }); }); }
-  window.__teams={S:S,T:T,load:load,apply:apply,openSettings:openSettings,close:closeSettings};
+  window.__teams={S:S,T:T,NC:NC,load:load,apply:apply,openSettings:openSettings,close:closeSettings,loadCounts:loadCounts};
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(start,700); }); else setTimeout(start,700);
 })();
 </script>
