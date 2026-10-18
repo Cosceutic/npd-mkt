@@ -107,12 +107,106 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
 <div class="wrap" id="app"><div class="card"><div class="sk" style="width:40%"></div><div class="sk" style="height:26px;width:80%"></div><div class="sk"></div><div class="sk" style="width:70%"></div></div></div>
 <noscript><div class="wrap"><div class="card msg"><div class="em">🔒</div><h2>ต้องเปิด JavaScript</h2><p>หน้านี้ต้องใช้ JavaScript เพื่อแสดงสถานะงาน</p></div></div></noscript>
 <script>
+/* 🔗 สรุปเคสร้องเรียน (Customer Service) สำหรับคนนอก — เปิดด้วย share.html#cs=<token> · ดูอย่างเดียว · อ่านผ่าน cs_share_get ตัวเดียว */
 (function(){
   'use strict';
+  var mt=/(?:^|[#&])cs=([0-9a-f]{40,80})(?:&|$)/i.exec(String(location.hash||''));
+  if(!mt) return;
+  window.__CS_SHARE=true;
+  var CFG={url:'https://oamvkcjuhnaytthzngci.supabase.co',key:'sb_publishable_I3cAhyK8yroutnMQfPhaFg_uh8impiF'}, TOK=mt[1].toLowerCase(), POLL=60000;
+  var S={d:null,err:'',busy:false,last:0};
+  var MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  var ST={draft:['ฉบับร่าง','#F1ECE6','#6E5B4E'],pending:['รอหัวหน้าพิจารณา','#FFE3EC','#9C3D63'],rejected:['ส่งกลับแก้ไข','#FDE8E4','#A3352B'],approved:['อนุมัติแล้ว','#E3F4EC','#1F6B4A'],inprogress:['กำลังดำเนินการ','#FFF6D6','#6B4E0E'],resolved:['เสร็จสิ้น','#E3F4EC','#1F6B4A'],cancelled:['ยกเลิก','#F1ECE6','#6E5B4E']};
+  var STEP=['เปิดเคส','รออนุมัติ','อนุมัติ','ดำเนินการ','เสร็จสิ้น'], STEP_IX={draft:0,rejected:0,pending:1,approved:2,inprogress:3,resolved:4};
+  var PF={pay:'หลักฐานการโอน / ชำระเงิน',ship:'ใบเสร็จค่าส่งจากลูกค้า',other:'หลักฐานอื่นๆ'};
+  function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function p2(n){ return n<10?'0'+n:''+n; }
+  function day(v){ var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(v||'')); return m?(+m[3])+' '+MON[+m[2]-1]+' '+m[1]:''; }
+  function ts(v){ var d=new Date(v); return isNaN(d)?'':d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear()+' · '+p2(d.getHours())+':'+p2(d.getMinutes()); }
+  function money(n){ n=+n||0; return '฿'+n.toLocaleString('en-US',{maximumFractionDigits:2}); }
+  function row(k,v){ return '<div class="cx-r"><span>'+k+'</span><b>'+v+'</b></div>'; }
+  function css(){ if(document.getElementById('cx-css')) return; var s=document.createElement('style'); s.id='cx-css'; s.textContent=[
+    'body{background:#F6F4F1;color:#443025;font-family:"Anuphan","Sarabun",system-ui,sans-serif;}',
+    '.top b{color:#443025;} .card{border-color:#ECE6DF;border-radius:20px;}',
+    '.cx-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px;font-size:13px;color:#8A7B6F;}',
+    '.cx-no{font-weight:600;color:#443025;letter-spacing:.3px;}',
+    '.cx-pill{display:inline-block;border-radius:999px;padding:3px 12px;font-size:12.5px;font-weight:600;}',
+    '.cx-t{font-family:"Anuphan",sans-serif;font-weight:600;font-size:24px;line-height:1.3;margin:0 0 4px;color:#443025;}',
+    '.cx-s{color:#8A7B6F;font-size:13.5px;}',
+    '.cx-st{display:flex;margin:20px 0 4px;padding:0;list-style:none;}',
+    '.cx-st li{flex:1;text-align:center;position:relative;font-size:12px;color:#B3A69B;}',
+    '.cx-st li i{display:block;width:14px;height:14px;border-radius:50%;margin:0 auto 6px;background:#ECE6DF;position:relative;z-index:1;}',
+    '.cx-st li::before{content:"";position:absolute;top:6px;left:-50%;width:100%;height:2px;background:#ECE6DF;}',
+    '.cx-st li:first-child::before{display:none;}',
+    '.cx-st li.on{color:#443025;} .cx-st li.on i{background:#FF91C0;} .cx-st li.on::before{background:#FFB7CF;}',
+    '.cx-st li.cur{font-weight:600;} .cx-st li.cur i{box-shadow:0 0 0 4px #FFE3EC;}',
+    'h3.cx{font-family:"Anuphan",sans-serif;font-size:15px;font-weight:600;margin:0 0 6px;color:#443025;}',
+    '.cx-r{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-top:1px solid #ECE6DF;font-size:14px;}',
+    '.cx-r span{color:#8A7B6F;flex:none;max-width:45%;} .cx-r b{font-weight:500;text-align:right;}',
+    '.cx-r.tot b{font-size:18px;font-weight:600;}',
+    '.cx-lot{display:inline-block;padding:0 8px;margin:2px 0 0 4px;border-radius:999px;background:#FFF6D6;color:#6B4E0E;font-size:12px;font-weight:600;}',
+    '.cx-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:14px 0 4px;}',
+    '.cx-kpi div{border-radius:14px;padding:10px 14px;} .cx-kpi small{display:block;font-size:12px;} .cx-kpi b{font-size:16px;font-weight:600;}',
+    '.cx-tl{list-style:none;margin:6px 0 0;padding:0 0 0 18px;border-left:2px solid #FFE3EC;}',
+    '.cx-tl li{position:relative;padding:0 0 14px 6px;} .cx-tl li::before{content:"";position:absolute;left:-25px;top:6px;width:10px;height:10px;border-radius:50%;background:#FFB7CF;border:2px solid #fff;}',
+    '.cx-tl .w{font-size:12px;color:#8A7B6F;} .cx-tl .t{font-weight:600;font-size:14.5px;} .cx-tl .n{font-size:13.5px;color:#6E5B4E;background:#FBF8F5;border-radius:10px;padding:6px 10px;margin-top:4px;white-space:pre-wrap;}',
+    '.cx-foot{text-align:center;color:#8A7B6F;font-size:12px;margin:18px 0 6px;line-height:1.7;}'].join('\n'); document.head.appendChild(s); }
+  function rpc(){ return fetch(CFG.url+'/rest/v1/rpc/cs_share_get',{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.key,Authorization:'Bearer '+CFG.key},cache:'no-store',referrerPolicy:'no-referrer',body:JSON.stringify({p_token:TOK})})
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }); }
+  function msg(em,h,p){ return '<div class="card msg"><div class="em">'+em+'</div><h2 class="hd">'+h+'</h2><p>'+p+'</p></div>'; }
+  function evText(e){ var t=e.to||'';
+    if(e.kind==='created') return '📝 เปิดเคส';
+    if(e.kind==='progress') return '🔄 '+esc(t||'—');
+    if(e.kind==='proof') return '📎 แนบ'+esc(PF[t]||PF.other);
+    var M={pending:'📤 ส่งให้หัวหน้าพิจารณา',approved:'✅ หัวหน้าอนุมัติ',rejected:'↩︎ หัวหน้าส่งกลับให้แก้ไข',resolved:'✔ ปิดเคส',cancelled:'🚫 ยกเลิกเคส',inprogress:(e.from==='resolved'?'🔄 เปิดเคสอีกครั้ง':'▶️ เริ่มดำเนินการ'),draft:(e.from==='pending'?'↩︎ ดึงกลับมาแก้ไข':'♻️ กู้เคสกลับมา')};
+    return M[t]||esc(t); }
+  function draw(){ var app=document.getElementById('app'); if(!app) return; css();
+    if(!S.d&&!S.err) return;   /* ยังโหลดครั้งแรก — คงโครงหน้ารอไว้ */
+    if(S.err&&!S.d){ app.innerHTML=S.err==='closed'?msg('🔒','ลิงก์นี้ถูกปิดแล้ว','ผู้ส่งปิดลิงก์สรุปเคสนี้แล้ว หากต้องการดูข้อมูล กรุณาติดต่อผู้ประสานงานของบริษัท')
+        :(S.err==='invalid'||S.err==='gone')?msg('🔍','ไม่พบเคสนี้','ลิงก์ไม่ถูกต้อง หรือเคสถูกลบไปแล้ว กรุณาติดต่อผู้ประสานงานของบริษัท')
+        :msg('⚠️','โหลดข้อมูลไม่สำเร็จ','ลองรีเฟรชหน้านี้อีกครั้ง ('+esc(S.err)+')'); return; }
+    var d=S.d, c=d.case||{}, st=ST[c.status]||ST.draft, ix=STEP_IX[c.status], P=(c.products||[]).filter(function(p){ return p&&p.name; }), O=(c.options||[]).filter(function(o){ return o&&o.type; });
+    document.title='สรุปเคส '+(c.no||'');
+    var tot=(+c.amount_comp||0)+(+c.amount_ship||0)+(+c.amount_other||0), done=c.status==='resolved';
+    var lots=function(s){ return String(s||'').split(/\s*,\s*/).filter(Boolean).map(function(x){ return '<span class="cx-lot">Lot '+esc(x)+'</span>'; }).join(''); };
+    var h='<div class="top"><b>📋 สรุปเคสร้องเรียน</b><span class="rt">'+(S.last?'<span>อัปเดต '+p2(new Date(S.last).getHours())+':'+p2(new Date(S.last).getMinutes())+' น.</span>':'')+'<button type="button" class="rf" data-a="rf"'+(S.busy?' disabled':'')+'>↻ รีเฟรช</button></span></div>';
+    h+='<div class="card"><div class="cx-h"><span class="cx-no">'+esc(c.no)+'</span><span class="cx-pill" style="background:'+st[1]+';color:'+st[2]+'">'+st[0]+'</span>'+(c.status==='inprogress'&&c.progress?'<span class="cx-pill" style="background:#FFF6D6;color:#6B4E0E">🔄 '+esc(c.progress)+'</span>':'')+'</div>'
+      +'<h1 class="cx-t">'+esc(c.complaint_type||'เคสร้องเรียนลูกค้า')+'</h1><div class="cx-s">'+esc(day(c.case_date))+(c.platform?' · '+esc(c.platform):'')+(P[0]?' · '+esc(P[0].name)+(P.length>1?' และอีก '+(P.length-1)+' รายการ':''):'')+'</div>'
+      +(ix!=null?'<ol class="cx-st">'+STEP.map(function(s,i){ return '<li class="'+(i<=ix?'on':'')+(i===ix?' cur':'')+'"><i></i>'+s+'</li>'; }).join('')+'</ol>':'')
+      +(done?'<div class="cx-kpi"><div style="background:#FFF6D6;color:#6B4E0E"><small>ยอดจ่ายจริง</small><b>'+money(c.actual_amount!=null?c.actual_amount:tot)+'</b></div><div style="background:#E3F4EC;color:#1F6B4A"><small>ลูกค้าเลือก</small><b>'+esc(c.chosen||'—')+'</b></div><div style="background:#FFE3EC;color:#9C3D63"><small>ปิดเคสเมื่อ</small><b>'+esc(ts(c.resolved_at)||'—')+'</b></div></div>':'')+'</div>';
+    h+='<div class="card"><h3 class="cx">ข้อมูลเคส</h3>'+row('วันที่ร้องเรียน',esc(day(c.case_date))||'—')+row('แพลตฟอร์ม / ช่องทาง',esc(c.platform||'—')+(c.channel?' · '+esc(c.channel):''))+row('เลขคำสั่งซื้อ',esc(c.order_no||'—'))+(c.customer?row('ลูกค้า',esc(c.customer)):'')+(c.damage_type?row('ประเภทความเสียหาย',esc(c.damage_type)):'')
+      +row('สินค้า',P.length?P.map(function(p){ return esc(p.name)+(p.sku?' <span style="color:#8A7B6F;font-weight:400">('+esc(p.sku)+')</span>':'')+' × '+esc(p.qty||1)+lots(p.lot); }).join('<br>'):'—')+'</div>';
+    h+='<div class="card"><h3 class="cx">ยอดเงินและแนวทางแก้ไข</h3>'+row('ชดใช้ลูกค้า',money(c.amount_comp))+row('ค่าส่งของกลับของลูกค้า',money(c.amount_ship))+row('อื่นๆ'+(c.other_note?' ('+esc(c.other_note)+')':''),money(c.amount_other))+'<div class="cx-r tot"><span>รวมที่ประเมิน</span><b>'+money(tot)+'</b></div>'
+      +(O.length?O.map(function(o,i){ return row(o.rec?'★ แนะนำ':'ตัวเลือก '+(i+1),esc(o.type)+(o.amount?' · '+money(o.amount):'')+(o.note?'<div style="font-weight:400;color:#8A7B6F;font-size:13px">'+esc(o.note)+'</div>':'')); }).join(''):'')
+      +(c.chosen?row('ลูกค้าเลือก',esc(c.chosen)):'')+(c.actual_amount!=null?row('ยอดที่จ่ายจริง',money(c.actual_amount)):'')+(c.resolution?row('สรุปการดำเนินการ','<span style="font-weight:400">'+esc(c.resolution)+'</span>'):'')+(+c.proofs_n?row('หลักฐานในระบบ',esc(c.proofs_n)+' รูป'):'')+'</div>';
+    var E=(d.events||[]).slice().reverse();
+    h+='<div class="card"><h3 class="cx">เรื่องราวของเคส</h3>'+(E.length?'<ul class="cx-tl">'+E.map(function(e){ return '<li><div class="w">'+esc(ts(e.at))+(e.by?' · '+esc(e.by):'')+'</div><div class="t">'+evText(e)+'</div>'+(e.note?'<div class="n">'+esc(e.note)+'</div>':'')+'</li>'; }).join('')+'</ul>':'<div class="cx-s">ยังไม่มีความเคลื่อนไหว</div>')+'</div>';
+    h+='<div class="cx-foot">CIL Webboard · Cosceutic Innovation Lab<br>หน้านี้ดูอย่างเดียว · อัปเดตอัตโนมัติ · ข้อมูลเป็นความลับ กรุณาอย่าส่งต่อ</div>';
+    app.innerHTML=h; }
+  function load(){ if(S.busy) return; S.busy=true; draw();
+    rpc().then(function(j){ S.busy=false; if(j&&j.ok){ S.d=j; S.err=''; S.last=Date.now(); } else { S.d=null; S.err=(j&&j.why)||'invalid'; } draw(); })
+      .catch(function(e){ S.busy=false; S.err=(e&&e.message)||'error'; draw(); }); }
+  document.addEventListener('click',function(e){ var b=e.target.closest&&e.target.closest('[data-a="rf"]'); if(b) load(); });
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden&&S.d) load(); });
+  setInterval(function(){ if(!document.hidden&&S.d) load(); },POLL);
+  window.__CSSHARE={S:S,load:load,draw:draw};
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',load); else load();
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+  if(window.__CS_SHARE) return;   /* ลิงก์สรุปเคส Customer Service (#cs=…) ใช้สคริปต์ด้านบนแทน */
   var CFG={url:'https://oamvkcjuhnaytthzngci.supabase.co',key:'sb_publishable_I3cAhyK8yroutnMQfPhaFg_uh8impiF'};
   /* ขั้นตอน/ประเภท/แบรนด์ — ให้ตรงกับบอร์ด Branding (ประเภทและความสำคัญที่ทีมแก้เอง ดึงจากฐานข้อมูลมาทับให้) */
   var COLS=[{k:'idea',t:'To-do list',e:'📝',c:'#f2c94c'},{k:'plan',t:'วางแผน',e:'🗂️',c:'#7cb6e4'},{k:'doing',t:'กำลังทำ',e:'🎬',c:'#ffb454'},
     {k:'review',t:'รอตรวจ / อนุมัติ',e:'👀',c:'#9b7ef8'},{k:'run',t:'ดำเนินการ',e:'🚀',c:'#5aa0d8'},{k:'done',t:'เสร็จแล้ว',e:'✅',c:'#26a69a',done:true}];
+  var COLS_DEF=COLS.map(function(x){ return {k:x.k,t:x.t,e:x.e,c:x.c}; });
+  var EMO=/^((?:\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*)|[\u2600-\u27BF]\uFE0F?)\s*/u;
+  function applyColOpts(opts){ COLS_DEF.forEach(function(d,i){ COLS[i].t=d.t; COLS[i].e=d.e; COLS[i].c=d.c; });   // ชื่อ/สีหัวคอลัมน์ที่ทีมแก้เอง (card-cols) — ไม่มี = ใช้ค่าตั้งต้น
+    var it=opts&&opts['card-cols']&&opts['card-cols'].items; if(!Array.isArray(it)) return;
+    it.forEach(function(x){ if(!x||!x.k) return; COLS.forEach(function(c){ if(c.k!==x.k) return; var nm=String(x.t||'').trim(); if(nm){ var m=EMO.exec(nm); if(m){ c.e=m[1]; nm=nm.slice(m[0].length).trim(); } if(nm) c.t=nm; }
+      if(/^#[0-9a-f]{6}$/i.test(x.hc||'')) c.c=x.hc; }); }); }
   var KIND_COLS={coord:['idea','doing','done']};   // ประเภทที่ใช้คอลัมน์แค่บางตัว (ประสานงาน) → แถบขั้นตอนโชว์เฉพาะ 3 ขั้นนี้ (ให้ตรงกับ branding.js)
   var KINDS={coord:['🤝 ประสานงาน','#1FA3B8'],theme:['🎨 ธีมรายเดือน','#C06BD6'],launch:['🚀 เปิดตัวสินค้า','#EF5350'],content:['✍️ Content Branding','#E9557F'],boss:['📣 งานที่เจ้านายสั่ง','#F57C00'],todo:['✅ To-Do','#7C5CFC'],
     decor:['🏬 Decorate Offline','#26A69A'],display:['🧴 Display','#5B8FF9'],tester:['🧪 Tester','#E89B00'],other:['📌 อื่นๆ','#8a94a6']};
@@ -177,7 +271,7 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
       if(r===null||r===undefined){ S.err='invalid'; S.cur=null; S.main=null; }
       else if(r.closed){ S.err='closed'; S.cur=null; S.main=null; }
       else if(r.gone){ if(S.view){ S.err='gone-card'; S.cur=null; } else { S.err='gone'; S.cur=null; S.main=null; } }
-      else if(r.ok){ S.err=''; S.opts=r.opts||{}; S.cur=r; if(r.is_main) S.main=r; }
+      else if(r.ok){ S.err=''; S.opts=r.opts||{}; applyColOpts(S.opts); S.cur=r; if(r.is_main) S.main=r; }
       else { S.err='invalid'; }
       draw();
     }).catch(function(e){ if(seq!==S.seq) return; S.busy=false; if(S.cur||S.main){ S.stale=true; } else { S.err='net'; } draw(); });
