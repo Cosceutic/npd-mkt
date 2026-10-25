@@ -139,6 +139,9 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
   function hm(v){ var m=/^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(String(v==null?'':v).trim()); return m&&+m[1]<24&&+m[2]<60?p2(+m[1])+':'+m[2]:''; }
   function gen(v){ v=String(v==null?'':v).trim(); if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return dmy(v); if(!/^\d{4}-\d{2}-\d{2}T/.test(v)) return ''; var t=new Date(v); return isNaN(t)?'':t.getDate()+' '+MON[t.getMonth()]+' '+(t.getFullYear()+543)+' · '+p2(t.getHours())+':'+p2(t.getMinutes())+' น.'; }
   function safeUrl(u){ u=String(u==null?'':u).trim(); if(!u||u.length>2000||/[\s\u0000-\u001F]/.test(u)||!/^https?:\/\//i.test(u)) return ''; try{ var x=new URL(u); if((x.protocol!=='http:'&&x.protocol!=='https:')||!x.hostname) return ''; }catch(e){ return ''; } return u; }
+  function hostOf(u){ try{ return new URL(u).hostname.replace(/^www\./i,'').toLowerCase(); }catch(e){ return ''; } }
+  function prov(h){ if(h==='canva.com'||h==='canva.link'||/\.canva\.com$/.test(h)) return ['🎨','Canva']; if(h==='drive.google.com'||h==='docs.google.com') return ['📁','Drive']; return ['🔗',h]; }   /* ไอคอน/ชื่อที่มาตามโฮสต์ */
+  function assets(v){ return arr(v,40).map(function(a){ a=obj(a); var raw=str(a.url!=null?a.url:a.u), ok=safeUrl(raw), host=ok?hostOf(ok):'', p=ok?prov(host):['','']; return {img:a.kind==='image'&&!!ok,label:one(a.label,120),url:ok||one(raw,300),ok:!!ok,host:host,ic:p[0],prov:p[1]}; }).filter(function(a){ return a.label||a.url; }); }   /* kind:image + URL http(s) = รูปย่อ · ที่เหลือ = ลิงก์ (ไม่ใช่ http(s) = ข้อความเฉยๆ) */
   function links(v){ return arr(v).map(function(x){ x=obj(x); var raw=str(x.url!=null?x.url:x.u), ok=safeUrl(raw); return {label:one(x.label!=null?x.label:x.t),url:ok||one(raw,300),ok:!!ok}; }).filter(function(x){ return x.label||x.url; }); }
 
   /* ---------- จัดข้อมูลให้เป็นรูปเดียว (ใช้ทั้งวาดหน้าและสร้างข้อความสำหรับคัดลอก → สองอย่างตรงกันเสมอ) ---------- */
@@ -146,7 +149,7 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
     m.brand=one(d.brand); m.title=one(d.title); m.campaign=one(d.campaign); m.creator=one(d.creator);
     m.steps=STEPS.map(function(s){ var dt=dmy(D[s[0]]); return dt?{k:s[0],ic:s[1],label:s[2],date:dt,time:s[0]==='post'?hm(D.postTime):''}:null; }).filter(Boolean);
     m.platforms=chips(d.platforms); m.jobTypes=chips(d.jobTypes); m.objectives=chips(d.objectives);
-    m.idea=str(d.idea);
+    m.idea=str(d.idea); m.assets=assets(d.assets);
     m.products=arr(d.products,30).map(function(p){ p=obj(p); var b=obj(p.brief); return {name:one(p.name),usp:str(b.usp),audience:str(b.audience),say:str(b.say),dont:str(b.dont),tags:one(b.hashtags,1000).split(/[\s,]+/).filter(Boolean).slice(0,40),links:links(b.links)}; })
       .filter(function(p){ return p.name||p.usp||p.audience||p.say||p.dont||p.tags.length||p.links.length; });
     m.rights=arr(d.rights,30).map(function(r){ r=obj(r); var n=(typeof r.days==='number'||(typeof r.days==='string'&&r.days.trim()!==''))?+r.days:0; return {label:one(r.label),v:(r.v==='y'||r.v==='n'||r.v==='a')?r.v:'',days:(isFinite(n)&&n>0&&n<=36500)?Math.round(n):0}; }).filter(function(r){ return r.label; });
@@ -160,6 +163,7 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
     if(m.steps.length) B(['📅 กำหนดการ'].concat(m.steps.map(function(x){ return '- '+x.label+': '+x.date+(x.time?' เวลา '+x.time+' น.':''); })));
     var t=[]; if(m.platforms.length) t.push('แพลตฟอร์ม: '+m.platforms.join(', ')); if(m.jobTypes.length) t.push('รูปแบบงาน: '+m.jobTypes.join(', ')); if(m.objectives.length) t.push('วัตถุประสงค์: '+m.objectives.join(', ')); if(t.length) B(['🎯 งานนี้'].concat(t));
     if(m.idea) B(['💡 ไอเดีย / บรีฟ',m.idea]);
+    if(m.assets.length) B(['🖼️ ภาพ / ลิงก์ประกอบบรีฟ'].concat(m.assets.map(function(a){ return '- '+(a.label&&a.url?a.label+': '+a.url:(a.label||a.url)); })));
     if(m.products.length){ var p=['📦 สินค้า + Product Brief']; m.products.forEach(function(x,i){ if(i) p.push(''); p.push((m.products.length>1?(i+1)+'. ':'')+(x.name||'สินค้า'));
         if(x.usp) p.push(kv('จุดเด่น (USP)',x.usp)); if(x.audience) p.push(kv('กลุ่มเป้าหมาย',x.audience)); if(x.say) p.push(kv('✓ ควรพูด',x.say)); if(x.dont) p.push(kv('✗ ห้ามพูด',x.dont)); if(x.tags.length) p.push('แฮชแท็ก: '+x.tags.join(' '));
         if(x.links.length){ p.push('ลิงก์:'); x.links.forEach(function(l){ p.push('  '+linkTxt(l)); }); } }); B(p); }
@@ -175,6 +179,12 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
   function linkItem(x){
     if(x.ok) return '<a class="kb-lk" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer nofollow"><span class="kb-lm">'+(x.label?'<span class="kb-lt">'+esc(x.label)+'</span><span class="kb-lu">'+esc(x.url)+'</span>':'<span class="kb-lt kb-lt1">'+esc(x.url)+'</span>')+'</span><span class="kb-go" aria-hidden="true">↗</span></a>';
     return '<div class="kb-lk kb-lx"><span class="kb-lm">'+(x.label?'<span class="kb-lt">'+esc(x.label)+'</span>':'')+(x.url?'<span class="kb-lu">'+esc(x.url)+'</span>':'')+'</span></div>'; }
+  function thumb(a){ return '<a class="kb-th" href="'+esc(a.url)+'" target="_blank" rel="noopener noreferrer nofollow"><span class="kb-tb"><img class="kb-thi" src="'+esc(a.url)+'" alt="'+esc(a.label)+'" loading="lazy" decoding="async" referrerpolicy="no-referrer"></span>'+(a.label?'<span class="kb-tc">'+esc(a.label)+'</span>':'')+'</a>'; }
+  function chip(a){
+    if(a.ok) return '<a class="kb-ch" href="'+esc(a.url)+'" target="_blank" rel="noopener noreferrer nofollow"><span class="kb-ci" aria-hidden="true">'+a.ic+'</span><span class="kb-ct">'+esc(a.label||a.host)+'</span>'+(a.label?'<small class="kb-cp">'+esc(a.prov)+'</small>':'')+'</a>';
+    return '<span class="kb-ch kb-lx"><span class="kb-lm">'+(a.label?'<span class="kb-lt">'+esc(a.label)+'</span>':'')+(a.url?'<span class="kb-lu">'+esc(a.url)+'</span>':'')+'</span></span>'; }
+  function assetsHtml(L){ var im=L.filter(function(a){ return a.img; }), rest=L.filter(function(a){ return !a.img; });
+    return (im.length?'<div class="kb-gal">'+im.map(thumb).join('')+'</div>':'')+(rest.length?'<div class="kb-chips">'+rest.map(chip).join('')+'</div>':''); }
   function sec(k,ic,cls,title,body){ return '<section class="kb-card" data-sec="'+k+'" aria-labelledby="kb-h-'+k+'"><h2 class="kb-h" id="kb-h-'+k+'"><span class="kb-ic '+cls+'" aria-hidden="true">'+ic+'</span>'+title+'</h2>'+body+'</section>'; }
   function prodHtml(x,i,n){
     var f=function(k,v){ return v?'<div class="kb-f"><div class="kb-fl">'+k+'</div><div class="kb-tx">'+esc(v)+'</div></div>':''; };
@@ -193,6 +203,7 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
     if(m.steps.length){ n++; h+=sec('dates','📅','c-sun','กำหนดการ','<ol class="kb-steps">'+m.steps.map(function(x){ return '<li class="kb-st s-'+x.k+'"><span class="e" aria-hidden="true">'+x.ic+'</span><small>'+esc(x.label)+'</small><b>'+esc(x.date)+'</b>'+(x.time?'<i>เวลา '+esc(x.time)+' น.</i>':'')+'</li>'; }).join('')+'</ol>'); }
     if(m.platforms.length||m.jobTypes.length||m.objectives.length){ n++; h+=sec('task','🎯','c-blue','งานนี้',grp('แพลตฟอร์ม',m.platforms,'')+grp('รูปแบบงาน',m.jobTypes,'pk')+grp('วัตถุประสงค์',m.objectives,'mt')); }
     if(m.idea){ n++; h+=sec('idea','💡','c-sun','ไอเดีย / บรีฟ','<div class="kb-note"><div class="kb-tx">'+esc(m.idea)+'</div></div>'); }
+    if(m.assets.length){ n++; h+=sec('assets','🖼️','c-pink','ภาพ / ลิงก์ประกอบบรีฟ',assetsHtml(m.assets)); }
     if(m.products.length){ n++; h+=sec('products','📦','c-mint','สินค้า + Product Brief',m.products.map(function(x,i){ return prodHtml(x,i,m.products.length); }).join('')); }
     if(m.rights.length){ n++; h+=sec('rights','📜','c-pink','สิทธิ์ใช้ผลงาน','<ul class="kb-rt">'+m.rights.map(function(r){ return '<li><span class="kb-rl">'+esc(r.label)+'</span><span class="kb-pill '+(r.v||'u')+'">'+(r.v?esc(RT[r.v]):'ยังไม่ระบุ')+(r.days?' <small>· '+esc(r.days)+' วัน</small>':'')+'</span></li>'; }).join('')+'</ul>'); }
     if(m.links.length){ n++; h+=sec('links','🔗','c-aqua','ลิงก์','<div class="kb-ls">'+m.links.map(linkItem).join('')+'</div>'); }
@@ -220,7 +231,7 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
     '.kb-btn{border:1px solid #FFB7CF;background:#FFB7CF;color:#443025;border-radius:999px;padding:8px 16px;font-size:14px;font-weight:600;}',
     '.kb-btn:hover{background:#FFA6C4;border-color:#FFA6C4;} .kb-btn.alt{background:#fff;border-color:#E6DCD1;} .kb-btn.alt:hover{background:#FBF8F5;}',
     '.kb-msg{font-size:13px;color:#2B6B54;min-width:0;overflow-wrap:anywhere;}',
-    '.kb-btn:focus-visible,.kb-rf:focus-visible,.kb-lk:focus-visible{outline:3px solid #A9DCE3;outline-offset:2px;}',
+    '.kb-btn:focus-visible,.kb-rf:focus-visible,.kb-lk:focus-visible,.kb-th:focus-visible,.kb-ch:focus-visible{outline:3px solid #A9DCE3;outline-offset:2px;}',
     '.kb-h{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;line-height:1.3;margin:0 0 14px;}',
     '.kb-ic{flex:none;width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:16px;line-height:1;}',
     '.c-sun{background:#F7E27A;} .c-blue{background:#BED1E8;} .c-pink{background:#FFB7CF;} .c-mint{background:#a2d7c3;} .c-aqua{background:#A9DCE3;}',
@@ -257,12 +268,21 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
     '.kb-lt{display:block;font-weight:600;font-size:14.5px;overflow-wrap:anywhere;} .kb-lt1{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
     '.kb-lu{display:block;font-size:12px;color:#8A7B6F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
     '.kb-go{flex:none;color:#8A7B6F;font-size:15px;}',
+    '.kb-gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;} .kb-gal+.kb-chips{margin-top:12px;}',
+    '.kb-th{display:block;min-width:0;border:1px solid #EFE7DE;border-radius:14px;overflow:hidden;background:#fff;color:#443025;text-decoration:none;} a.kb-th:hover{background:#FBF8F5;}',
+    '.kb-tb{display:block;aspect-ratio:4/3;background:#F4EFE9;overflow:hidden;}',
+    '.kb-thi{display:block;width:100%;height:100%;object-fit:cover;}',
+    '.kb-tc{display:block;padding:6px 10px;font-size:12.5px;color:#7A6A5E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
+    '.kb-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:100%;height:100%;color:#8A7B6F;font-size:24px;line-height:1;} .kb-ph small{font-size:12px;font-weight:600;}',
+    '.kb-ch{display:inline-flex;align-items:center;gap:7px;max-width:100%;min-width:0;border:1px solid #DDE7F1;background:#F7FAFD;border-radius:20px;padding:6px 14px;font-size:13.5px;font-weight:600;line-height:1.4;color:#443025;text-decoration:none;} a.kb-ch:hover{background:#EEF4FA;}',
+    '.kb-ch.kb-lx{border-radius:12px;border-color:#EFE7DE;background:#FBF8F5;font-weight:500;}',
+    '.kb-ci{flex:none;} .kb-ct{min-width:0;overflow-wrap:anywhere;} .kb-cp{flex:none;font-size:12px;font-weight:500;color:#8A7B6F;}',
     '.kb-empty{text-align:center;color:#8A7B6F;}',
     '.kb-foot{text-align:center;color:#8A7B6F;font-size:12px;line-height:1.7;margin:18px 0 6px;}',
     '.kb-nf{text-align:center;padding:48px 20px 52px;margin-top:8vh;}',
     '.kb-nfe{font-size:44px;line-height:1;margin-bottom:12px;} .kb-nfh{font-size:20px;font-weight:700;margin:0 0 6px;} .kb-nf p{margin:0;color:#8A7B6F;}',
     '@media (max-width:480px){.kb-card{padding:16px 14px 18px;border-radius:16px;}.kb-hd{padding-top:24px;}.kb-t{font-size:22px;}.kb-h{font-size:16px;}.kb-pd{padding:12px;}}',
-    '@media print{body{background:#fff !important;}#app.wrap{max-width:none;padding:0;}.kb-noprint{display:none !important;}.kb-card{border-color:#CFC6BC;border-radius:10px;}.kb-hd::before{display:none;}.kb-pd,.kb-st,.kb-rt li,.kb-lk{break-inside:avoid;}.kb-lu{white-space:normal;overflow-wrap:anywhere;}}'
+    '@media print{body{background:#fff !important;}#app.wrap{max-width:none;padding:0;}.kb-noprint{display:none !important;}.kb-card{border-color:#CFC6BC;border-radius:10px;}.kb-hd::before{display:none;}.kb-pd,.kb-st,.kb-rt li,.kb-lk,.kb-th,.kb-ch{break-inside:avoid;}.kb-lu{white-space:normal;overflow-wrap:anywhere;}}'
     ].join('\n'); document.head.appendChild(s); }
   function draw(){ var app=document.getElementById('app'); if(!app) return; css();
     if(S.err){ S.m=null; S.text=''; app.innerHTML=nf(); document.title='Task Brief'; return; }
@@ -290,6 +310,9 @@ details.dn summary{cursor:pointer;color:var(--soft);font-size:13.5px;padding:6px
   function copyText(t){ var fb=function(){ try{ var ta=document.createElement('textarea'); ta.value=t; ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;font-size:16px;'; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,t.length); var ok=document.execCommand('copy'); document.body.removeChild(ta); return !!ok; }catch(e){ return false; } };
     try{ if(navigator.clipboard&&navigator.clipboard.writeText) return navigator.clipboard.writeText(t).then(function(){ return true; },function(){ return fb(); }); }catch(e){}
     return Promise.resolve(fb()); }
+  /* รูปที่โหลดไม่ได้ → ช่องสี่เหลี่ยมกลางๆ ที่ยังกดเปิดลิงก์ได้ (ฟังด้วย JS · ไม่มี onerror ใน HTML) */
+  document.addEventListener('error',function(e){ var im=e.target; if(!im||im.tagName!=='IMG'||!im.classList||!im.classList.contains('kb-thi')) return; var a=im.closest('.kb-th'), box=im.parentNode; if(!a||!box) return;
+    a.classList.add('kb-th-x'); var ph=document.createElement('span'), i1=document.createElement('span'), sm=document.createElement('small'); ph.className='kb-ph'; i1.textContent='🖼️'; sm.textContent='เปิดรูป ↗'; ph.appendChild(i1); ph.appendChild(sm); box.replaceChild(ph,im); },true);
   document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('[data-kb]'); if(!b) return; var a=b.getAttribute('data-kb');
     if(a==='rf'){ if(!S.busy&&TOK_OK.test(S.tok)) load(); }
     else if(a==='copy'){ if(!S.text) return; copyText(S.text).then(function(ok){ say(ok?'✓ คัดลอกแล้ว — วางในแชตหรือโน้ตได้เลย':'คัดลอกไม่สำเร็จ — ลองกดค้างที่ข้อความแล้วเลือกคัดลอก'); }); }
