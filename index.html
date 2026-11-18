@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="npd-build" content="20261117-1112">
+<meta name="npd-build" content="20261117-1642">
 <script id="npd-gate-2026-10-18">
 /* 🔐 ด่านล็อกอินก่อนเข้าเว็บ — 2026-10-18  (อยู่ใน <head> ก่อนสคริปต์อื่นทั้งหมด)
    • ไม่มี session ล็อกอินเก็บไว้ในเครื่อง → ซ่อนทั้งเว็บ แสดงเฉพาะฟอร์มเข้าสู่ระบบ + หยุดแอปไม่ให้บูต/ไม่ให้ยิงเครือข่าย (สคริปต์หลักมี guard โยน error ที่บรรทัดแรก)
@@ -3584,6 +3584,7 @@ function canEditArea(area){ if(area==='content' && typeof window.teamAvail==='fu
   if(area==='npd_process' && typeof window.teamAvail==='function' && window.teamAvail('npd')) return window.teamIsEditor('npd');   // ทีม NPD: ใช้ระดับในทีม
   if(area==='npd_process' && typeof window.teamAvail==='function' && window.teamAvail('npd')) return window.teamIsEditor('npd');   // ทีม NPD: ใช้ระดับในทีม
   if(area==='npd_process' && typeof window.teamAvail==='function' && window.teamAvail('npd')) return window.teamIsEditor('npd');   // ทีม NPD: ใช้ระดับในทีม   // ทีม Content: ใช้ระดับในทีม (⚙️ ตั้งค่าทีม) แทนรายชื่อในโค้ด
+  if(area==='ecom' && typeof window.teamAvail==='function' && window.teamAvail('ecom')) return window.teamIsEditor('ecom');   /*ecomteam-1117*/ // E-Commerce: ใช้รายชื่อในตาราง (team_members team='ecom') เมื่อรัน ecom-team SQL แล้ว · ยังไม่รัน = AREA_EDITORS.ecom เหมือนเดิม
   const list=AREA_EDITORS[area]; return !!(sbLoggedIn() && list && list.indexOf(sbEmail())>=0); }
 /* ผู้ดูอย่างเดียว: เห็นหน้า NPD Team (ลับ) ได้ แต่ไม่ได้อยู่ในรายชื่อแก้ไข (AREA_EDITORS) — การเขียนข้อมูลของ NPD Process ยังถูกจำกัดด้วย RLS เหมือนเดิม */
 const NPD_PROCESS_VIEWERS = [];   // ผู้ดูอย่างเดียว (ยังไม่มีใคร) — คุณกอล์ฟ thatchapon@ เป็นผู้แก้ไขเต็มสิทธิ์แล้ว (อยู่ใน AREA_EDITORS ทั้ง 4 หมวด)
@@ -14496,8 +14497,11 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
   window.plQuickToggle=function(k){ plQuick[k]=!plQuick[k]; renderPipeline(); };
   /* ❓ วิธีใช้บอร์ด — หน้าอธิบายสั้นๆ (เส้นทางการ์ด + สถานการณ์ที่เจอบ่อย + ปุ่มลัด) · จุดสีชมพูที่ปุ่มจนกว่าจะเปิดอ่านครั้งแรก (จำต่อเครื่อง) */
   /* ★ ทุกครั้งที่ฟีเจอร์บอร์ด/ฟอร์ม Content เปลี่ยน: แก้เนื้อหาด้านล่าง + เพิ่มบรรทัดบนสุดของ CC_HELP_LOG + เปลี่ยน CC_HELP_REV (release.py จะเตือนถ้าลืม) */
-  var CC_HELP_KEY='npd_pl_help_v1', CC_HELP_REV='2026-11-16.2';
-  var CC_HELP_LOG=[{d:'16 พ.ย. 2026',items:[
+  var CC_HELP_KEY='npd_pl_help_v1', CC_HELP_REV='2026-11-17.2';
+  var CC_HELP_LOG=[{d:'17 พ.ย. 2026',items:[
+    ['ใหม่','<b>🛒 สิทธิ์แก้ไข E-Commerce ปรับเองได้</b> — หัวหน้าทีม E-Commerce กด <b>⚙️ ตั้งค่าทีม</b> ที่หัวข้อหน้า E-Commerce Content เพื่อเพิ่ม/ลบคน เปลี่ยนระดับ (หัวหน้า · สมาชิก) ได้เอง ไม่ต้องรอแก้โค้ด · แอดมินระบบแก้ได้ที่ <b>🛡️ สิทธิ์ → E-Commerce Content → ✏️ แก้ที่นี่</b> · ทุกคนที่ล็อกอินยัง <b>ดู</b> บอร์ดได้เหมือนเดิม — เฉพาะ <b>แก้ไข</b> เท่านั้นที่ต้องอยู่ในรายชื่อ'],
+    ['ใหม่','<b>🔔 แจ้งเตือนการ์ดเรียบง่ายขึ้น + กระดิ่งที่หัวคอลัมน์</b> — (1) <b>คอมเมนต์ / ส่งรูป</b>: แจ้งเตือนเฉพาะ<b>คนที่ถูกแท็ก @</b> (ไม่แจ้งทุกคนในการ์ดเหมือนเดิม) · (2) <b>ย้ายการ์ด</b>: แจ้งเตือนเฉพาะคอลัมน์ที่ <b>เปิดกระดิ่ง 🔔</b> ที่หัวคอลัมน์ — ค่าเริ่มต้นเปิดที่ Brief · รอตรวจ · แก้ไข (ตีกลับ) · อนุมัติ/เสร็จ ส่วนคอลัมน์อื่นปิด (🔕) กดกระดิ่งเพื่อเปิด/ปิดได้ทุกคอลัมน์ ตั้งแล้วทั้งทีมเห็นเหมือนกัน (Graphic ตั้งแยกตามบอร์ดของแต่ละคน) · (3) <b>ถูกแท็ก @ แจ้งเตือนเสมอ</b> ไม่ว่ากระดิ่งตั้งไว้อย่างไร · ใช้กับ Content · Graphic · E-Com · Branding (KOL / Sales Team / แชท ยังแจ้งเหมือนเดิม)'],
+  ]},{d:'16 พ.ย. 2026',items:[
     ['ใหม่','<b>🏷️ ช่องแท็กใหม่ — พิมพ์แล้วมีรายการแนะนำ</b> — พิมพ์ในช่องแท็ก (Content · Graphic · E-Com · Branding · To-Do) แล้วระบบดึงแท็กที่ตรงมาให้เลือก (ตัวอักษรที่ตรงไฮไลต์ · เรียงตัวที่ใช้บ่อยก่อน · ใช้ลูกศร ↑↓ + Enter หรือคลิกเลือก · Esc ปิดรายการ) ไม่มีแท็กที่ต้องการก็กด “สร้างแท็กใหม่” · แท็กเยอะ: แถวด่วนเหลือ <b>ใช้บ่อย</b> 8 อัน + ปุ่ม <b>ดูทั้งหมด</b> เปิดแผงค้นหา (เรียงตามใช้บ่อย หรือ ก–ฮ / A–Z) · พิมพ์ชื่อซ้ำแต่ต่างตัวพิมพ์เล็ก/ใหญ่ จะใช้แท็กเดิมให้ ไม่เกิดแท็กซ้ำ'],
     ['ใหม่','<b>🖼️ แทรกรูปในเนื้อหาได้แล้ว</b> — ในช่องคอมเมนต์และ “รายละเอียดงาน (บรีฟ)” กดปุ่ม <b>🖼️</b> บนแถบเครื่องมือเพื่อเลือกรูป (หลายรูปพร้อมกันได้) หรือกด <b>Ctrl+V</b> วางรูปที่แคปไว้ได้เลย · รูปแทรกตรงตำแหน่งเคอร์เซอร์ คลิกที่รูปเพื่อดูเต็ม · ถ้ารูปยังอัปไม่เสร็จ ปุ่มส่ง/บันทึกจะรอให้ก่อน (ใช้ได้กับการ์ด Content · Graphic · E-Com · Branding)'],
     ['ใหม่','<b>✏️ แก้ชื่อการ์ดจากหัวการ์ดได้</b> — เปิดการ์ด (Content · Graphic · E-Com) แล้วคลิกที่ชื่อด้านบน พิมพ์ชื่อใหม่ → Enter หรือคลิกที่อื่นเพื่อบันทึก · Esc = ยกเลิก (Content ต้องอยู่ในโหมดแก้ไข 🔓) · การ์ด Branding แก้ชื่อในช่องชื่อการ์ดได้เหมือนเดิม'],
@@ -14537,7 +14541,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       +'<details><summary>↔️ ย้ายการ์ดยังไง</summary><ul><li>ลากการ์ดไปวางที่คอลัมน์ใหม่ (วางบนการ์ดอื่นเพื่อจัดลำดับ)</li><li>หรือกดปุ่มลัดบนการ์ด เช่น “ไป Brief →” “ส่งตรวจ 👀” “อนุมัติ ✅” “โพสต์แล้ว 🚀”</li><li>หรือเลือกคอลัมน์จากเมนูล่างสุดของการ์ด</li></ul></details>'
       +'<details><summary>🔎 หาการ์ดไม่เจอ</summary><ul><li>ดูแถบตัวกรองด้านบน: PIC · แท็ก · สินค้า · ช่องค้นหา — ตัวไหนถูกเลือกไว้ การ์ดที่ไม่ตรงจะถูกซ่อน (จะมีข้อความ “แสดง N จาก M การ์ด”)</li><li>การ์ดที่ไม่มี PIC อยู่ใต้ตัวเลือก “— ไม่ระบุ PIC —”</li><li>กด “ล้างตัวกรอง/ล้างค้นหา” เพื่อกลับมาเห็นทั้งหมด</li><li>การ์ดอาจถูกระบบเลื่อนสถานะให้เอง เช่น กราฟฟิกรับงานแล้วเลื่อนเป็น “กำลังผลิต”</li></ul></details>'
       +'<details><summary>⏰ แถบ “สิ่งที่ต้องตาม” คืออะไร</summary><ul><li><b>เลยกำหนดส่ง</b> = เลยวันส่งงานแล้วแต่ยังไม่อนุมัติ → ต้องเร่งหรือขยายเวลา</li><li><b>เลยวันโพสต์</b> (หน้า Calendar) = อนุมัติแล้วแต่วันโพสต์ผ่านไป → ถ้าโพสต์แล้วให้ย้ายเป็น “โพสต์แล้ว”</li><li>กดแถบเพื่อกาง/ซ่อนรายการ กดชื่อการ์ดเพื่อเปิด</li></ul></details>'
-      +'<details><summary>💬 คุยงานและแจ้งเตือน</summary><ul><li>เปิดการ์ด → ช่อง “ความคิดเห็น” ด้านขวา</li><li>พิมพ์ <b>@</b> ตามด้วยชื่อ เพื่อแท็กคน (เขาจะได้แจ้งเตือนที่กระดิ่ง 🔔)</li><li>การ์ดที่ส่งให้กราฟฟิกแล้ว คอมเมนต์เห็นตรงกันทั้งสองทีม</li></ul></details>'
+      +'<details><summary>💬 คุยงานและแจ้งเตือน</summary><ul><li>เปิดการ์ด → ช่อง “ความคิดเห็น” ด้านขวา</li><li>พิมพ์ <b>@</b> ตามด้วยชื่อ เพื่อแท็กคน (เขาจะได้แจ้งเตือนที่กระดิ่ง 🔔) — <b>คอมเมนต์/ส่งรูปแจ้งเฉพาะคนที่ถูกแท็ก</b> ไม่แจ้งคนอื่นในการ์ด</li><li>ย้ายการ์ดแล้วจะแจ้งเตือน<b>เฉพาะคอลัมน์ที่เปิดกระดิ่ง 🔔</b> ที่หัวคอลัมน์ (เปิดไว้ให้ Brief · รอตรวจสอบ · แก้ไข · อนุมัติ) — กดกระดิ่งเพื่อเปิด/ปิด ตั้งแล้วทั้งทีมเหมือนกัน · <b>ถูกแท็ก @ แจ้งเสมอ</b> ไม่ขึ้นกับกระดิ่ง</li><li>การ์ดที่ส่งให้กราฟฟิกแล้ว คอมเมนต์เห็นตรงกันทั้งสองทีม</li></ul></details>'
       +'<details><summary>📣 การ์ดที่มาจากแผนแคมเปญ Branding</summary><ul><li>การ์ดที่ทีม Branding ส่งมาจาก “แผนแคมเปญ” ขึ้นที่คอลัมน์ <b>Planning</b> ของบอร์ด (และในปฏิทินตามวันที่ลงที่ตั้งไว้) พร้อม <b>แท็กชื่อแคมเปญ</b> (กรองด้วยปุ่ม “🏷️ แท็ก” ได้) และบรีฟแคมเปญในรายละเอียดการ์ด</li><li>หัวหน้า Content ได้แจ้งเตือน 📣 ตอนที่มีการ์ดเข้ามา — กดแล้วเปิดการ์ดใบแรก</li><li>เป็นการ์ดใหม่ที่แยกจากแผน: ตั้งผู้รับมอบหมาย (PIC) · ผู้ตรวจ · วันถ่าย ได้เอง แล้วย้ายไป Brief เมื่อพร้อมส่งกราฟฟิก · ถ้า Branding แก้แผนทีหลัง การ์ดฝั่งนี้ไม่เปลี่ยน</li></ul></details>'
       +'<details><summary>📝 บันทึกร่าง (ยังกรอกไม่ครบ)</summary><ul><li>ในฟอร์ม “➕ เพิ่มโพสต์ลงปฏิทิน” กด <b>📝 บันทึกร่าง</b> (ข้าง ยกเลิก / 💾 บันทึก) — กรอกแค่ 1 ช่องก็เก็บได้ ไม่ตรวจช่องบังคับ</li><li><b>ฉบับร่างเห็นเฉพาะคุณคนเดียว</b> (ระบบล็อกตามอีเมลที่ล็อกอิน — หัวหน้าก็ไม่เห็น) · ไม่นับในบอร์ด แดชบอร์ด และไม่ส่งแจ้งเตือนถึงใครจนกว่าจะบันทึกจริง</li><li>ถ้าใส่ <b>วันที่ลง</b> ไว้ ร่างจะขึ้นในปฏิทินของคุณเป็นกรอบเส้นประ 📝 (กดเพื่อเปิดแก้ต่อ) · ทุกร่าง (รวมที่ไม่มีวันที่) เปิดได้จากปุ่ม <b>📝 ฉบับร่างของฉัน</b> ที่หัวปฏิทิน (ปุ่มโผล่เมื่อมีร่าง)</li><li>พร้อมแล้ว: เปิดร่าง → เติมให้ครบ → กด <b>💾 บันทึก</b> = ลงปฏิทินจริงและแจ้งเตือนตามปกติ · ร่างใบนั้นหายไปเอง · ไม่ใช้แล้วกด 🗑️ ลบได้</li><li>อย่าสับสนกับ “📝 รอบแก้ไข (Draft)” ในฟอร์ม (นั่นคือวันส่งงานรอบแก้ ไม่ใช่ฉบับร่างของโพสต์)</li></ul></details>'
       +'<details><summary>📝 กรอกการ์ดให้ครบ (ฟอร์มสร้าง/แก้ไขการ์ด)</summary><ul><li>ช่องที่มีดาวแดง <span style="color:#e53935;font-weight:700;">*</span> <b>ต้องกรอกทุกช่อง</b> จึงจะกดบันทึกได้ — ถ้าขาด ช่องนั้นขึ้นสีแดง มีกล่องแจ้งด้านล่าง กดชื่อช่องเพื่อเด้งไปกรอกได้เลย · ตัวนับ “ช่องที่ต้องกรอก x/y” อยู่ท้ายฟอร์ม</li><li><b>ไม่บังคับ:</b> ดึงจากไอเดีย · 🎨 PIC Graphic · 📷 แผนถ่ายงาน · 📝 รอบแก้ไข (Draft) · เป้าหมาย (Goal)</li><li><b>Objective</b> = จุดประสงค์ของโพสต์ · <b>Pillar</b> = เสาหลักเนื้อหาของแบรนด์นั้น (เลือกแบรนด์ก่อน รายการจะเปลี่ยนตามแบรนด์) กด 💡 อธิบายเสาหลัก เพื่อดูความหมายแต่ละข้อ</li><li><b>📦 สินค้าที่เกี่ยวข้อง</b> ติ๊กได้หลายรายการ หรือเปิดสวิตช์ <b>ไม่เจาะจงสินค้า</b> ถ้าโพสต์ไม่โฟกัสสินค้า (ระบบเก็บเป็นชื่อแบรนด์)</li><li>แผนถ่าย 📷 / แผนตัดต่อ 💻 อยู่ในการ์ด (✏️ แก้ไข) — งานประเภท AW · AW Flagship · Motion ไม่มีแผนส่วนนี้ · 💻 แผนตัดต่อบังคับกรอกเมื่อแสดงอยู่</li></ul></details>'
@@ -14589,7 +14593,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       return '<div class="cc-pl-col" data-status="'+s+'"'+(canEdit?' ondragover="plDragOver(event)" ondragleave="plDragLeave(event)" ondrop="plDrop(event,\''+s+'\')"':'')+'>'
         +(function(){ var hs=window.hdrStyle?window.hdrStyle(CC_HDR[s]):{head:'',name:'',count:'',more:''};
           return '<div class="cc-pl-colhead"'+hs.head+'><span class="cc-pl-dot" style="background:'+st.c+'"></span><span class="cc-pl-colname"'+hs.name+'>'+e2(st.t)+'</span><span class="cc-pl-colcount"'+hs.count+'>'+sp.open.length+'</span>'
-            +(canEdit?'<button type="button" class="gfx-colmore" title="เปลี่ยนสีหัวคอลัมน์" aria-label="เปลี่ยนสีหัวคอลัมน์" aria-haspopup="menu"'+hs.more+' onclick="ccHdrMenu(event,\''+s+'\')">⋮</button>':'')+'</div>'; })()
+            +(canEdit&&window.ntColBtn?window.ntColBtn('content','',s,st.t,false,hs.more):'')+(canEdit?'<button type="button" class="gfx-colmore" title="เปลี่ยนสีหัวคอลัมน์" aria-label="เปลี่ยนสีหัวคอลัมน์" aria-haspopup="menu"'+hs.more+' onclick="ccHdrMenu(event,\''+s+'\')">⋮</button>':'')+'</div>'; })()
         +(CC_COL_HINT[s]?'<div class="cc-pl-colsub">'+e2(CC_COL_HINT[s])+'</div>':'')
         +'<div class="cc-pl-cards">'+cards+'</div>'+addC+'</div>';
     }).join('')+'</div>';
@@ -14777,7 +14781,7 @@ const OFC_ASSETS={"bgMkt":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
     rebuildCAL(); renderPipeline();
     if(typeof toast==='function') toast(newStatus==='revise'?('ตีกลับให้แก้ (ครั้งที่ '+base.reviseCount+')'):('ย้ายไป “'+CAL_STATUS[newStatus].t+'” แล้ว'),'ok');
     calSync(base,'upsert',before).then(function(r){   // แจ้งเตือนเมื่อบันทึกสำเร็จจริงเท่านั้น (ถ้าสถานะถูกเปลี่ยนไปก่อนหน้า = ไม่แจ้ง)
-      if(r && r.ok && !r.conflict){ try{ if(typeof ntContentMoved==='function') ntContentMoved(base, newStatus==='revise'?('ตีกลับให้แก้ (ครั้งที่ '+base.reviseCount+')'+revNote):('ย้ายไป '+CAL_STATUS[newStatus].t)); }catch(e){} }
+      if(r && r.ok && !r.conflict){ try{ if(typeof ntContentMoved==='function' && (!window.ntColGate||window.ntColGate('content','',newStatus,CAL_STATUS[newStatus].t,false))) ntContentMoved(base, newStatus==='revise'?('ตีกลับให้แก้ (ครั้งที่ '+base.reviseCount+')'+revNote):('ย้ายไป '+CAL_STATUS[newStatus].t)); }catch(e){} }
     });
   };
   // เลื่อนสถานะการ์ด Content แบบอัตโนมัติจากระบบ (เช่น ทีมกราฟฟิกรับงาน/ทำเสร็จ) — ไม่ผ่าน gate unlocked()
@@ -17578,7 +17582,7 @@ details.fm-more[open]{padding-bottom:6px;}
       return '<div class="cc-pl-col" data-status="'+s+'"'+(canEd?' ondragover="ecomDragOver(event)" ondragleave="ecomDragLeave(event)" ondrop="ecomDrop(event,\''+s+'\')"':'')+'>'
         +(function(){ var hc=st.hc||'', fg=hc?ecomTextOn(hc):''; var dark=(fg==='#1f2937');
           return '<div class="cc-pl-colhead"'+(hc?' style="background:'+hc+';color:'+fg+';"':'')+'><span class="cc-pl-dot" style="background:'+st.c+'"></span><span class="cc-pl-colname"'+(hc?' style="color:'+fg+'"':'')+'>'+E(st.t)+'</span><span class="cc-pl-colcount"'+(dark?' style="background:rgba(0,0,0,.12);color:#1f2937;"':'')+'>'+list.length+'</span>'
-            +(canEd?'<button type="button" class="gfx-colmore" title="จัดการคอลัมน์ (ชื่อ · สี · เลื่อน · ลบ)" aria-label="จัดการคอลัมน์" aria-haspopup="menu"'+(dark?' style="color:#1f2937"':'')+' onclick="ecomColMenu(event,\''+AJ(s)+'\')">⋮</button>':'')+'</div>'; })()
+            +(canEd&&window.ntColBtn?window.ntColBtn('ecom','',s,st.t,!!st.done,(dark?' style="color:#1f2937"':'')):'')+(canEd?'<button type="button" class="gfx-colmore" title="จัดการคอลัมน์ (ชื่อ · สี · เลื่อน · ลบ)" aria-label="จัดการคอลัมน์" aria-haspopup="menu"'+(dark?' style="color:#1f2937"':'')+' onclick="ecomColMenu(event,\''+AJ(s)+'\')">⋮</button>':'')+'</div>'; })()
         +'<div class="cc-pl-cards">'+cards+'</div>'+addC+'</div>';
     }).join('')+(canEd?'<div class="cc-pl-col" style="background:transparent;border:2px dashed var(--line,#CBD5E8);box-shadow:none;min-width:200px;flex:0 0 200px;display:flex;align-items:flex-start;justify-content:center;padding-top:14px;"><button type="button" onclick="ecomAddCol()" style="border:none;background:#fff;border-radius:10px;padding:9px 16px;font-size:13.5px;font-weight:700;color:#3F6DB5;cursor:pointer;box-shadow:0 2px 8px rgba(60,100,190,.15);">➕ เพิ่มคอลัมน์</button></div>':'')+'</div>';
   };
@@ -17611,7 +17615,7 @@ details.fm-more[open]{padding-bottom:6px;}
       +((dateStr||draftStr||cmn||chkStr||doneStr||av)?'<div class="cc-pl-meta">'+dateStr+draftStr+chkStr+cmn+doneStr+(av?'<span class="cc-pl-av">'+av+'</span>':'')+'</div>':'')
       +actions+'</div>';
   }
-  window.ecomMove=function(id,ns){ if(!ecomCanEdit()||!ECOM_STATUS[ns]) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||c.status===ns) return; c.status=ns; if(ecomIsDone(ns)){ if(!c.doneAt) c.doneAt=nowStamp(); } else { c.doneAt=''; } c.updatedAt=TS(); ecomUpsertLocal(c); ecomReRender(); if(typeof toast==='function') toast('ย้ายไป “'+ECOM_STATUS[ns].t+'” แล้ว','ok'); ecomSync(c); try{ if(typeof ntEcomMoved==='function') ntEcomMoved(c, ECOM_STATUS[ns].t); }catch(e){} };
+  window.ecomMove=function(id,ns){ if(!ecomCanEdit()||!ECOM_STATUS[ns]) return; var c=ECOM.find(function(x){return x.id===id;}); if(!c||c.status===ns) return; c.status=ns; if(ecomIsDone(ns)){ if(!c.doneAt) c.doneAt=nowStamp(); } else { c.doneAt=''; } c.updatedAt=TS(); ecomUpsertLocal(c); ecomReRender(); if(typeof toast==='function') toast('ย้ายไป “'+ECOM_STATUS[ns].t+'” แล้ว','ok'); ecomSync(c); try{ if(typeof ntEcomMoved==='function' && (!window.ntColGate||window.ntColGate('ecom','',ns,ECOM_STATUS[ns].t,!!ECOM_STATUS[ns].done))) ntEcomMoved(c, ECOM_STATUS[ns].t); }catch(e){} };
   window.ecomDel=function(id){ if(!ecomCanEdit()) return; var c=ECOM.find(function(x){return x.id===id;});
     ecomDialog({title:'🗑️ ลบการ์ด',message:'ลบการ์ด <b>“'+E((c&&c.title)||'')+'”</b> ?<br><span style="color:var(--ink-soft);">ลบแล้วทั้งทีมจะไม่เห็นการ์ดนี้</span>',okText:'ลบการ์ด',danger:true}).then(function(ok){ if(ok==null) return;
       ECOM=ECOM.filter(function(x){return x.id!==id;}); ecomSaveLocal(ECOM); ecomReRender(); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(cfg.url){ try{ postToSheet({target:'ecom',action:'delete',keyValue:id}); }catch(e){} } if(typeof toast==='function') toast('ลบแล้ว','ok'); }); };
@@ -17775,7 +17779,7 @@ details.fm-more[open]{padding-bottom:6px;}
     if(!dragged||!target) return;
     var changed=[], statusChanged=(dragged.status!==target.status);
     if(dragged.status!==target.status){ dragged.status=target.status; if(ECOM_STATUS[dragged.status]&&ECOM_STATUS[dragged.status].done!==undefined){} if(ecomIsDone(dragged.status)){ if(!dragged.doneAt) dragged.doneAt=nowStamp(); } else { dragged.doneAt=''; } changed.push(dragged);
-      try{ if(typeof ntEcomMoved==='function' && ECOM_STATUS[dragged.status]) ntEcomMoved(dragged, ECOM_STATUS[dragged.status].t); }catch(e){} }
+      try{ if(typeof ntEcomMoved==='function' && ECOM_STATUS[dragged.status] && (!window.ntColGate||window.ntColGate('ecom','',dragged.status,ECOM_STATUS[dragged.status].t,!!ECOM_STATUS[dragged.status].done))) ntEcomMoved(dragged, ECOM_STATUS[dragged.status].t); }catch(e){} }
     var colCards=ECOM.filter(function(x){return x.status===target.status && x.id!==draggedId;});
     colCards.sort(function(a,b){ var pa=(a.pos==null?1e9:a.pos), pb=(b.pos==null?1e9:b.pos); return pa-pb; });
     var ti=colCards.findIndex(function(x){return x.id===targetId;}); if(ti<0) ti=colCards.length; else if(after) ti=ti+1;
@@ -18336,7 +18340,7 @@ details.fm-more[open]{padding-bottom:6px;}
       var addC=canEd?'<button class="cc-pl-add" onclick="gfxAddIn(\''+AJ(c.key)+'\')">➕ เพิ่มการ์ด</button>':'';
       return '<div class="cc-pl-col" data-status="'+E(c.key)+'"'+(canEd?' ondragover="gfxDragOver(event)" ondragleave="gfxDragLeave(event)" ondrop="gfxDrop(event,\''+AJ(c.key)+'\')"':'')+'>'
         +(function(){ var hs=window.hdrStyle?window.hdrStyle(c.hc):{head:'',name:'',count:'',more:''};
-          return '<div class="cc-pl-colhead"'+hs.head+'><span class="cc-pl-dot" style="background:'+(c.color||'#7cb6e4')+'"></span><span class="cc-pl-colname"'+hs.name+'>'+E(c.title)+(c.nocount?' <span style="font-size:9.5px;font-weight:700;color:#9aa4b5;background:#eef1f7;border-radius:5px;padding:0 5px;">ไม่นับ</span>':'')+gfxBallBadge(p,c)+'</span><span class="cc-pl-colcount"'+hs.count+'>'+sp.open.length+'</span>'+(canEd?'<button type="button" class="gfx-colmore" title="จัดการคอลัมน์ (ชื่อ · สี · เลื่อน · ลบ)" aria-label="จัดการคอลัมน์" aria-haspopup="menu"'+hs.more+' onclick="gfxColMenu(event,\''+AJ(c.key)+'\')">⋮</button>':'')+'</div>'; })()
+          return '<div class="cc-pl-colhead"'+hs.head+'><span class="cc-pl-dot" style="background:'+(c.color||'#7cb6e4')+'"></span><span class="cc-pl-colname"'+hs.name+'>'+E(c.title)+(c.nocount?' <span style="font-size:9.5px;font-weight:700;color:#9aa4b5;background:#eef1f7;border-radius:5px;padding:0 5px;">ไม่นับ</span>':'')+gfxBallBadge(p,c)+'</span><span class="cc-pl-colcount"'+hs.count+'>'+sp.open.length+'</span>'+(canEd&&!c.nocount&&window.ntColBtn?window.ntColBtn('graphic',p,c.key,c.title,!!c.done,hs.more):'')+(canEd?'<button type="button" class="gfx-colmore" title="จัดการคอลัมน์ (ชื่อ · สี · เลื่อน · ลบ)" aria-label="จัดการคอลัมน์" aria-haspopup="menu"'+hs.more+' onclick="gfxColMenu(event,\''+AJ(c.key)+'\')">⋮</button>':'')+'</div>'; })()
         +tools+'<div class="cc-pl-cards">'+cardsHtml+'</div>'+addC+'</div>';
     }).join('')+(canEd?'<div class="cc-pl-col" style="background:transparent;border:none;box-shadow:none;min-width:150px;"><button class="cc-pl-add" style="border-style:dashed;height:44px;" onclick="gfxAddCol()">➕ เพิ่มคอลัมน์</button></div>':'')+'</div>';
     main.innerHTML=filterBar+board;
@@ -18482,7 +18486,7 @@ details.fm-more[open]{padding-bottom:6px;}
     gfxUpsertLocal(card); gfxReRender(); TOAST('รับงานเข้าบอร์ดแล้ว 📥 (อยู่คอลัมน์ “'+String((gfxColDef(p,col)||{}).title||'แรก').replace(/^[^A-Za-zก-๙]+/,'')+'”)','ok'); gfxSyncCard(card);
     // เชื่อม Content Pipeline: รับงาน → การ์ด Content เลื่อนไป 🎬 กำลังผลิต อัตโนมัติ (เฉพาะถ้ายังอยู่ 📝 บรีฟ)
     try{ if(typeof window.plSetStatus==='function') window.plSetStatus(cid,'production',['brief'],'กราฟฟิกรับงานเข้าบอร์ด'); }catch(e){}
-    try{ if(typeof ntAssigned==='function') ntAssigned('content', cid, post.title, [post.owner, post.reviewer, post.followers], p+' รับงานเข้าบอร์ดกราฟฟิกแล้ว (เริ่มผลิต)'); }catch(e){}
+    try{ if(typeof ntAssigned==='function' && (!window.ntColGate||window.ntColGate('content','','production','🎬 กำลังผลิต',false))) ntAssigned('content', cid, post.title, [post.owner, post.reviewer, post.followers], p+' รับงานเข้าบอร์ดกราฟฟิกแล้ว (เริ่มผลิต)'); }catch(e){}
     gfxRefreshContentSoon(card);
   };
   // บัญชีกราฟฟิกแก้ Content ตรงๆ ไม่ได้ → ฐานข้อมูลซิงก์สถานะให้ (trigger) แล้วค่อยโหลดการ์ด Content ใหม่เพื่อเห็นผล
@@ -18614,7 +18618,7 @@ details.fm-more[open]{padding-bottom:6px;}
     if(def.done){ if(!c.doneAt) c.doneAt=nowStamp(); } else { c.doneAt=''; } c.updatedAt=TS(); gfxUpsertLocal(c); gfxReRender(); TOAST('ย้ายไป “'+def.title+'” แล้ว','ok'); gfxSyncCard(c);
     // เชื่อม Content Pipeline: การ์ดที่รับมาจาก Content เข้าคอลัมน์ "เสร็จแล้ว" → Content เลื่อนไป ✅ อนุมัติ · ย้ายออก → กลับ 🎬 กำลังผลิต
     if(c.srcContent && typeof window.plSetStatus==='function'){ try{ if(def.done) window.plSetStatus(c.srcContent,'approved',['brief','production','review','revise'],'กราฟฟิกย้ายงานเข้า “เสร็จแล้ว”'); else window.plSetStatus(c.srcContent,'production',['approved'],'กราฟฟิกย้ายงานออกจาก “เสร็จแล้ว”'); }catch(e){} }
-    try{ if(typeof ntGfxMoved==='function') ntGfxMoved(c, def.title, !!def.done); }catch(e){}
+    try{ if(typeof ntGfxMoved==='function' && (!window.ntColGate||window.ntColGate('graphic',c.person,nk,def.title,!!def.done))) ntGfxMoved(c, def.title, !!def.done); }catch(e){}
     gfxRefreshContentSoon(c);
   };
   window.gfxDel=async function(id){ if(!gfxCanEdit()) return; var c=GFX.find(function(x){return x.id===id;}); if(!(await uiConfirm('ลบการ์ด “'+((c&&c.title)||'')+'” ?'+((c&&c.srcContent)?'\n\n(การ์ดต้นทางใน Content ไม่หาย — จะกลับไปรอในช่อง “รับงานจาก บอร์ด Content” ให้กด 📥 รับใหม่ได้)':'')))) return; GFX=GFX.filter(function(x){return x.id!==id;}); gfxSaveCardsLocal(); gfxReRender(); var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(cfg.url){ try{ postToSheet({target:'graphiccards',action:'delete',keyValue:id}); }catch(e){} } TOAST('ลบแล้ว','ok'); };
@@ -18845,7 +18849,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var changed=[], colChanged=(dragged.col!==target.col);
     if(dragged.col!==target.col){ dragged.col=target.col; dragged.colAt=nowStamp(); delete GFX_MOVES[dragged.id]; if(gfxIsEcomBriefCol(p,dragged.col)) dragged.ecom='1'; if(gfxIsDoneCol(p,dragged.col)){ if(!dragged.doneAt) dragged.doneAt=nowStamp(); } else { dragged.doneAt=''; } changed.push(dragged);
       if(dragged.srcContent && typeof window.plSetStatus==='function'){ try{ if(gfxIsDoneCol(p,dragged.col)) window.plSetStatus(dragged.srcContent,'approved',['brief','production','review','revise'],'กราฟฟิกย้ายงานเข้า “เสร็จแล้ว”'); else window.plSetStatus(dragged.srcContent,'production',['approved'],'กราฟฟิกย้ายงานออกจาก “เสร็จแล้ว”'); }catch(e){} }
-      try{ if(typeof ntGfxMoved==='function'){ var gd=gfxColDef(p,dragged.col); ntGfxMoved(dragged, gd?gd.title:'', gfxIsDoneCol(p,dragged.col)); } }catch(e){}
+      try{ if(typeof ntGfxMoved==='function'){ var gd=gfxColDef(p,dragged.col); if(!window.ntColGate||window.ntColGate('graphic',p,dragged.col,gd?gd.title:'',gfxIsDoneCol(p,dragged.col))) ntGfxMoved(dragged, gd?gd.title:'', gfxIsDoneCol(p,dragged.col)); } }catch(e){}
       gfxRefreshContentSoon(dragged);
     }
     var colCards=gfxCardsOf(p).filter(function(x){return x.col===target.col && x.id!==draggedId;});
@@ -19031,7 +19035,7 @@ details.fm-more[open]{padding-bottom:6px;}
       var el=document.createElement('div'); el.id='nt-ask'; el.setAttribute('role','dialog');
       el.style.cssText='position:fixed;right:18px;bottom:76px;z-index:9998;max-width:340px;background:#fff;border:1px solid #E7ECF5;border-radius:16px;padding:14px 16px;box-shadow:0 18px 40px -14px rgba(40,54,110,.45);font-family:Sarabun,sans-serif;';
       el.innerHTML='<div style="font-weight:700;font-size:14.5px;margin-bottom:4px;">'+(force?'🔔 มีแจ้งเตือนเข้ามาตอนคุณอยู่แท็บอื่น':'🔔 ให้เด้งเตือนตอนอยู่แท็บอื่นไหม?')+'</div>'
-        +'<div style="font-size:13px;color:#6b7794;line-height:1.5;margin-bottom:10px;">ถ้ามีคนแท็ก คอมเมนต์ หรือย้ายงานของคุณ จะเด้งที่มุมจอทันที แม้กำลังเปิดเว็บอื่นอยู่ (ต้องเปิดแท็บเว็บนี้ค้างไว้)</div>'
+        +'<div style="font-size:13px;color:#6b7794;line-height:1.5;margin-bottom:10px;">ถ้ามีคนแท็กคุณ หรือมีงานของคุณถูกย้ายเข้าคอลัมน์สำคัญ จะเด้งที่มุมจอทันที แม้กำลังเปิดเว็บอื่นอยู่ (ต้องเปิดแท็บเว็บนี้ค้างไว้)</div>'
         +'<div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" id="nt-ask-no" style="border:1px solid #dfe4ee;background:#fff;color:#5b6472;border-radius:9px;padding:7px 14px;font-weight:600;cursor:pointer;">ไว้ทีหลัง</button><button type="button" id="nt-ask-yes" style="border:none;background:#2F6DA8;color:#fff;border-radius:9px;padding:7px 16px;font-weight:700;cursor:pointer;">เปิดแจ้งเตือน</button></div>';
       document.body.appendChild(el);
       document.getElementById('nt-ask-no').onclick=function(){ try{ localStorage.setItem(ASK_KEY,String(Date.now())); }catch(e){} askRemove(); };
@@ -19137,9 +19141,7 @@ details.fm-more[open]{padding-bottom:6px;}
     var info=cardInfo(cardId), men=mentionedNames(text);
     var snippet=String(text||'').replace(/\s+/g,' ').trim().slice(0,120) || '(แนบรูป/ลิงก์)';
     if(men.length) window.ntEmit({kind:'mention',board:info.board,refId:cardId,title:info.title,body:snippet,names:men});
-    var rev=info.reviewerOnly||[];   // ผู้ตรวจ → ไม่แจ้งเตือนทุกคอมเมนต์ · ได้เฉพาะตอนถูกแท็ก @ (ส่งไปทาง mention ด้านบนแล้ว)
-    var rel=info.names.filter(function(n){ var k=normName(n); return men.indexOf(k)<0 && rev.indexOf(k)<0; });
-    window.ntEmit({kind:'comment',board:info.board,refId:cardId,title:info.title,body:snippet,names:rel});
+    /*ntcol-1117*/ // เดิมส่ง “คอมเมนต์ใหม่” ให้ทุกคนที่เกี่ยวข้องกับการ์ด → เปลี่ยนเป็นแจ้งเฉพาะคนที่ถูกแท็ก @ (ด้านบน) · ส่งรูป/ไฟล์ = คอมเมนต์เหมือนกัน
     var um=unmappedMentions(text);
     if(um.length && typeof toast==='function') toast('แท็ก '+um.join(', ')+' แล้ว แต่ยังไม่ได้ผูกอีเมล จึงไม่ได้รับแจ้งเตือน','info');
   };
@@ -19855,6 +19857,84 @@ details.fm-more[open]{padding-bottom:6px;}
   window.liveEnsureRealtime=ensureRealtime;
   sbInit().then(function(){ setTimeout(ensureRealtime,4000); }).catch(function(){});
   setInterval(ensureRealtime,60000);
+})();
+</script>
+<style id="ntcol-2026-11-17">
+/* ปุ่มกระดิ่งที่หัวคอลัมน์ (ntcol-1117) — หน้าตาเหมือนปุ่ม ⋮ ของหัวคอลัมน์ · ปิดอยู่จะจางลง */
+.nt-colbell{ flex:0 0 auto; border:none; background:rgba(255,255,255,.18); color:#fff; width:26px; height:26px; border-radius:7px; font-size:13px; line-height:1; cursor:pointer; padding:0; }
+.nt-colbell:hover,.nt-colbell:focus-visible{ background:rgba(255,255,255,.34); }
+.nt-colbell:not(.on){ opacity:.55; }
+.nt-colbell.on{ outline:1.5px solid rgba(255,255,255,.55); outline-offset:-1.5px; }
+</style>
+<script id="ntcol-module-2026-11-17">
+/* กระดิ่งรายคอลัมน์ (Content / Graphic / E-Com / Branding) — ตั้งว่า “การ์ดถูกย้ายเข้าคอลัมน์นี้ → แจ้งเตือนคนที่เกี่ยวข้องไหม”
+   • ค่าเริ่มต้น: เปิดเฉพาะคอลัมน์ Brief / รอตรวจ / แก้ไข(ตีกลับ) / อนุมัติ-เสร็จ (เดาจากชื่อคอลัมน์ + ธง done) — คอลัมน์อื่นปิด
+   • กดกระดิ่งที่หัวคอลัมน์เพื่อเปิด/ปิด · ใช้ร่วมทั้งทีม: graphic_config k='ntcol::<บอร์ด>::<(คนของบอร์ดกราฟฟิก::)คอลัมน์>' v='1'|'0' (ไม่ต้องมี SQL ใหม่)
+   • คอมเมนต์/ส่งรูป → แจ้งเฉพาะคนที่ถูกแท็ก @ · ถูกแท็ก @ แจ้งเตือนเสมอ ไม่ผ่านกระดิ่งนี้ (กันกรณีตั้งแล้วแท็กไม่เด้ง) */
+(function(){
+  var LKEY='npd_ntcol_v1', M={}, RECENT={}, lastLoad=0, loading=false;
+  try{ var _m=JSON.parse(localStorage.getItem(LKEY)||'{}'); if(_m && typeof _m==='object') M=_m; }catch(e){ M={}; }
+  function persist(){ try{ localStorage.setItem(LKEY,JSON.stringify(M)); }catch(e){} }
+  function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function cid(b,s,k){ return String(b)+'::'+(s?String(s)+'::':'')+String(k); }
+  /* ค่าเริ่มต้น: ธง done หรือชื่อคอลัมน์เป็น Brief / ตรวจ / แก้ไข / ตีกลับ / อนุมัติ / เสร็จ */
+  var DEF_RE=/brief|บรีฟ|ตรวจ|review|แก้ไข|ตีกลับ|revis|approv|อนุมัติ|เสร็จ|done/i;
+  function defOn(t,d){ return !!d || DEF_RE.test(String(t||'')); }
+  window.ntColOn=function(b,s,k,t,d){
+    var i=cid(b,s,k);
+    if(Object.prototype.hasOwnProperty.call(M,i)) return M[i]===1 || M[i]==='1';
+    return defOn(t,d);
+  };
+  /* ใช้เป็นประตูหน้าการส่งแจ้งเตือน “ย้ายการ์ด” — ถ้าโมดูลนี้ไม่อยู่/พัง ให้แจ้งเหมือนเดิม (ไม่ทำให้แจ้งเตือนหาย) */
+  window.ntColGate=function(b,s,k,t,d){ try{ return window.ntColOn(b,s,k,t,d); }catch(e){ return true; } };
+  function tip(on){ return on?'แจ้งเตือนเมื่อการ์ดถูกย้ายเข้าคอลัมน์นี้: เปิดอยู่ (กดเพื่อปิด) · ถูกแท็ก @ แจ้งเตือนเสมอ':'แจ้งเตือนเมื่อการ์ดถูกย้ายเข้าคอลัมน์นี้: ปิดอยู่ (กดเพื่อเปิด) · ถูกแท็ก @ ยังแจ้งเตือนเสมอ'; }
+  window.ntColBtn=function(b,s,k,t,d,styleAttr){
+    var on=window.ntColOn(b,s,k,t,d);
+    return '<button type="button" class="nt-colbell'+(on?' on':'')+'" data-b="'+esc(b)+'" data-s="'+esc(s||'')+'" data-k="'+esc(k)+'" data-t="'+esc(t||'')+'" data-d="'+(d?1:0)+'" title="'+esc(tip(on))+'" aria-label="กระดิ่งแจ้งเตือนการย้ายการ์ดเข้า '+esc(t||k)+'" aria-pressed="'+(on?'true':'false')+'"'+(styleAttr||'')+'>'+(on?'🔔':'🔕')+'</button>';
+  };
+  function sync(){
+    [].forEach.call(document.querySelectorAll('.nt-colbell'),function(btn){
+      var on=window.ntColOn(btn.getAttribute('data-b'),btn.getAttribute('data-s'),btn.getAttribute('data-k'),btn.getAttribute('data-t'),btn.getAttribute('data-d')==='1');
+      btn.classList.toggle('on',on); btn.textContent=on?'🔔':'🔕'; btn.title=tip(on); btn.setAttribute('aria-pressed',on?'true':'false');
+    });
+  }
+  function canWrite(){ try{ return typeof sbLoggedIn==='function' && sbLoggedIn(); }catch(e){ return false; } }
+  function save(i,v){
+    if(!canWrite() || typeof postToSheet!=='function') return;
+    var cfg=(typeof getWriteConfig==='function')?getWriteConfig():{url:''}; if(!cfg.url) return;
+    var k='ntcol::'+i;
+    try{ var pr=postToSheet({target:'graphicconfig',action:'upsert',keyValue:k,row:{k:k,v:String(v),updatedAt:(typeof todayStr==='function'?todayStr():''),updatedBy:(typeof sbEmail==='function'?sbEmail():'')}});
+      if(pr && pr.then) pr.then(function(r){ if(r && r.ok===false && typeof toast==='function') toast('❌ ฐานข้อมูลไม่รับการบันทึกกระดิ่ง: '+(r.error||'ไม่ทราบสาเหตุ')+' — เก็บในเครื่องไว้ก่อน (ทีมยังไม่เห็น)','err'); },function(){}); }catch(e){}
+  }
+  function toggle(btn){
+    var b=btn.getAttribute('data-b'), s=btn.getAttribute('data-s'), k=btn.getAttribute('data-k'), t=btn.getAttribute('data-t'), d=btn.getAttribute('data-d')==='1';
+    var i=cid(b,s,k), nv=window.ntColOn(b,s,k,t,d)?0:1;
+    M[i]=nv; RECENT[i]=Date.now(); persist(); sync();
+    if(typeof toast==='function') toast(nv?('🔔 เปิดแจ้งเตือน: ย้ายการ์ดเข้า “'+t+'” จะแจ้งคนที่เกี่ยวข้อง'):('🔕 ปิดแจ้งเตือน: ย้ายการ์ดเข้า “'+t+'” ไม่แจ้งแล้ว (ถูกแท็ก @ ยังแจ้งเสมอ)'),'ok');
+    save(i,nv);
+  }
+  document.addEventListener('click',function(e){
+    var btn=e.target && e.target.closest && e.target.closest('.nt-colbell'); if(!btn) return;
+    e.preventDefault(); e.stopPropagation(); toggle(btn);
+  },true);
+  async function load(force){
+    if(loading || typeof sbSelect!=='function' || !canWrite()) return;
+    if(!force && Date.now()-lastLoad<20000) return;
+    loading=true; lastLoad=Date.now();
+    try{
+      var rows=await sbSelect('graphic_config','k=like.'+encodeURIComponent('ntcol::*')), m={};
+      (rows||[]).forEach(function(r){ var k=String(r.k||r.K||''); if(k.indexOf('ntcol::')!==0) return; var v=String(r.v==null?(r.V==null?'':r.V):r.v); if(v==='1'||v==='0') m[k.slice(7)]=+v; });
+      var now=Date.now();
+      Object.keys(RECENT).forEach(function(i){ if(now-RECENT[i]<30000){ if(Object.prototype.hasOwnProperty.call(M,i)) m[i]=M[i]; } else delete RECENT[i]; });   // ที่เพิ่งกดเอง 30 วิ → ยึดค่าในเครื่องก่อน
+      M=m; persist(); sync();
+    }catch(e){}
+    loading=false;
+  }
+  window.ntColLoad=load;
+  if(window.__TEST) window.__ntcolT={get:function(){ return JSON.parse(JSON.stringify(M)); }, set:function(o){ M=o||{}; sync(); }};
+  setTimeout(function(){ load(true); },2800);
+  setInterval(function(){ if(!document.hidden) load(false); },90000);
+  document.addEventListener('click',function(e){ var t=e.target; if(t && t.closest && t.closest('#nav .tab')) setTimeout(function(){ load(false); },500); },true);
 })();
 </script>
 <script id="chk-module-2026-10-05">
@@ -22581,7 +22661,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   document.addEventListener('dragend',hide,true);
 })();
 </script>
-<script type="application/json" id="whatsnew-data">{"id":"20261117-1112","date":"2026-11-16","title":"การ์ด: แทรกรูปในเนื้อหา · แก้ชื่อที่หัวการ์ด · ช่องแท็กใหม่ · Copy ขึ้นบนสุด · ปุ่ม Graphic ขึ้นบน · หน้าต่างแก้ไขกว้างขึ้น","items":[{"ic":"🖼️","t":"แทรกรูปในเนื้อหาคอมเมนต์และรายละเอียดงาน (บรีฟ) ได้แล้ว","d":"ปุ่ม 🖼️ บนแถบเครื่องมือ (เลือกได้หลายรูป) หรือวางรูปด้วย Ctrl+V · รูปแทรกตรงตำแหน่งเคอร์เซอร์ คลิกดูเต็มได้ · ใช้ได้กับการ์ด Content · Graphic · E-Com · Branding · ถ้ารูปยังอัปไม่เสร็จ ปุ่มส่ง/บันทึกจะรอให้","g":"sys"},{"ic":"✏️","t":"แก้ชื่อการ์ดจากหัวการ์ดได้ (Content · Graphic · E-Com)","d":"เปิดการ์ดแล้วคลิกที่ชื่อด้านบน พิมพ์ชื่อใหม่ → Enter หรือคลิกที่อื่นเพื่อบันทึก · Esc ยกเลิก · Content ต้องอยู่ในโหมดแก้ไข · Branding แก้ชื่อในช่องชื่อการ์ดได้อยู่แล้ว","g":"sys"},{"ic":"🏷️","t":"ช่องแท็กใหม่: พิมพ์แล้วมีรายการแนะนำ · แท็กเยอะไม่รก","d":"พิมพ์ในช่องแท็กแล้วระบบดึงแท็กที่ตรงมาให้เลือก (ไฮไลต์ตัวที่ตรง · เรียงที่ใช้บ่อยก่อน · ลูกศร ↑↓ + Enter) · แท็กเยอะแสดงแค่ “ใช้บ่อย” 8 อัน + ปุ่ม “ดูทั้งหมด” (แผงค้นหา เรียงใช้บ่อย หรือ ก–ฮ) · พิมพ์ซ้ำต่างตัวพิมพ์ใช้แท็กเดิม ไม่เกิดแท็กซ้ำ · ใช้กับ Content · Graphic · E-Com · Branding · To-Do","g":"sys"},{"ic":"📋","t":"Copy สร้างใหม่ → ใบใหม่อยู่บนสุดของคอลัมน์ · ปุ่มการ์ด Graphic ย้ายขึ้นบน","d":"Graphic และ E-Com: การ์ดที่ Copy ใหม่จะอยู่บนสุดของคอลัมน์ · การ์ด Graphic: ปุ่ม แก้ไขรายละเอียด / Copy สร้างใหม่ อยู่ใต้รายละเอียดงาน (เหมือน Content) ลบการ์ดอยู่ล่างสุด · หน้าต่างแก้ไขการ์ด Content / Graphic / E-Com กว้างขึ้น","g":"sys"},{"ic":"📘","t":"วิธีใช้ NPD Team · Content · Branding อัปเดตแล้ว","d":"ประวัติการเปลี่ยนแปลง 16 พ.ย. เพิ่มรายการเรื่องแทรกรูป · แก้ชื่อที่หัวการ์ด · ช่องแท็กใหม่ · Copy ขึ้นบนสุด · หน้าต่างแก้ไขกว้างขึ้น (กด ❓)","g":"npd"}],"history":[{"id":"20261116-2046","date":"2026-11-16","title":"แก้บั๊ก: ส่งคอมเมนต์แล้วคอมเมนต์ในการ์ดหายไปชั่วคราว","items":[{"ic":"🛟","t":"แก้บั๊ก: ส่งคอมเมนต์แล้วคอมเมนต์ในการ์ดหายไปชั่วคราว","d":"เดิมหลังกดส่งคอมเมนต์ ราว 6 วินาทีต่อมาความคิดเห็น/ไฟล์ในการ์ดจะขึ้น 0 อยู่หลายวินาทีแล้วค่อยกลับมา (การ์ด Content · Graphic · E-Com) — เพราะตารางคอมเมนต์โตเกินเพดาน 1,000 แถวที่ฐานข้อมูลตอบต่อครั้ง ระบบจึงโหลดได้ไม่ครบ · ตอนนี้โหลดครบทุกแถว (ดึงทีละหน้า) และถ้าหน้าจอไม่ตรงกับข้อมูลล่าสุดจะวาดใหม่ให้เอง · ตารางอื่นที่โตเกิน 1,000 แถวได้รับการแก้เหมือนกัน","g":"sys"},{"ic":"📘","t":"วิธีใช้ NPD Team อัปเดตแล้ว","d":"ประวัติการเปลี่ยนแปลง 16 พ.ย. เพิ่มรายการ “แก้บั๊กคอมเมนต์หายชั่วคราว” (กด ❓ ดูรายการเปลี่ยนแปลงล่าสุด)","g":"npd"}]},{"id":"20261116-1635","date":"2026-11-16","title":"หน้าทำงานกว้างเต็มจอเพิ่ม: NPD Team · Branding · Branding Plan · Sales Team","items":[{"ic":"↔️","t":"หน้าทำงานกว้างเต็มจอเพิ่ม — NPD Team · Branding Team · Branding Plan · Sales Team","d":"ไม่เหลือที่ว่างสองข้างจอ (เหมือน Product Info และปฏิทิน NPD & MKT ที่ปรับก่อนหน้านี้) · Sales Team และ Branding Plan ปลดเพดานความกว้างของตัวหน้าเองด้วย · หน้า CIL Team และ Life Style ยังจัดกลางจอเหมือนเดิม","g":"sys"},{"ic":"📘","t":"วิธีใช้ NPD Team อัปเดตแล้ว","d":"ประวัติการเปลี่ยนแปลง 16 พ.ย. เพิ่มรายการ “หน้ากว้างเต็มจอเพิ่ม” (กด ❓ ดูรายการเปลี่ยนแปลงล่าสุด)","g":"npd"}]},{"id":"20261116-1312","date":"2026-11-16","title":"Product Info หน้าตาใหม่ · ตัวกรองปีที่เข้าสต็อก · กว้างเต็มจอ","items":[{"ic":"🔎","t":"Product Info หน้าตาใหม่ + ตัวกรอง “ปีที่สินค้าเข้าสต็อก”","d":"ปุ่มและตัวกรองเป็นแบบไอคอนเส้น กดง่ายขึ้น (แบรนด์ · ปี · เรียงตาม เป็นแถบสลับเลือก) · ช่องค้นหาใหญ่ขึ้นพร้อมปุ่ม ✕ ล้างคำค้น · เพิ่มตัวกรองปีที่สินค้าเข้าสต็อก (นับจากวัน Product on Stock — ใช้วันจริงถ้ามี ไม่งั้นวันกำหนด · มีจำนวน SKU กำกับ · ใช้ร่วมกับแบรนด์/คอลเลกชัน/ค้นหาได้) · ปุ่มบนการ์ดสินค้าและแถบแก้ไขหน้าตาใหม่ · หน้า Product Info และปฏิทิน NPD & MKT กว้างเต็มจอ ไม่เหลือที่ว่างสองข้าง","g":"sys"},{"ic":"📘","t":"วิธีใช้ NPD Team อัปเดตแล้ว","d":"หัวข้อใหม่ “🔎 Product Info (ตัวกรอง · ปีที่เข้าสต็อก)” — วิธีใช้ตัวกรองปีและช่องค้นหาใหม่ (กด ❓ แล้วดูหัวข้อนี้)","g":"npd"}]},{"id":"20261116-1154","date":"2026-11-16","title":"⏰ งานค้างอัปเดต — เตือนทีมให้อัปเดตวันจริงในปฏิทิน NPD & MKT","items":[{"ic":"⏰","t":"งานค้างอัปเดต — เตือนให้อัปเดต “วันจริง” ของ milestone ในปฏิทิน NPD & MKT","d":"milestone ที่ถึง/เลยกำหนดแล้วแต่ยังไม่มีวันจริง จะมีวงชมพู + ⚠ ในปฏิทิน (ทุกคนเห็น) · คนที่แก้ไขสินค้าได้เห็นป้าย “⚠ ค้างอัปเดต N งาน” ข้างปุ่มเลื่อนเดือน + ป๊อปอัปวันละครั้งตอนเปิดเว็บ (ถ้ามีงานของตัวเองค้าง) · กดป้ายเปิดรายการแล้วกด เสร็จแล้ว (วันนี้) / วันอื่น / เลื่อนกำหนด (เลือกวันใหม่เอง) / ไม่เกี่ยวข้อง ได้เลย ไม่ต้องเปิดสินค้า · สินค้าหลาย SKU รวมเป็นแถวเดียว · งานฝั่ง NPD เตือนเจ้าของโปรเจกต์ (npdOwner) · งานฝั่ง MKT เตือนคนที่แอดมิน/หัวหน้าตั้งไว้ต่อ milestone (⚙️ ในหน้ารายการ) · ค้างเกิน 30 วันไม่นับในป้ายและป๊อปอัป · ไม่นับสินค้าที่หยุดขาย","g":"sys"},{"ic":"📘","t":"วิธีใช้ NPD Team อัปเดตแล้ว","d":"หัวข้อใหม่ “⏰ งานค้างอัปเดต (เตือนให้อัปเดตวันจริง)” — ค้างคืออะไร · ที่ไหนเห็น · ปุ่มในรายการ · ใครได้รับเตือน · การตั้งผู้รับเตือนฝั่ง MKT (กด ❓ แล้วดูหัวข้อนี้)","g":"npd"}]},{"id":"20261115-2302","date":"2026-11-15","title":"ประกาศ — ป๊อปอัปแจ้งทุกคน (เลื่อนกำหนดสินค้าเข้าสต็อก ฯลฯ)","items":[{"ic":"📢","t":"ประกาศ — ป๊อปอัปแจ้งทุกคน (เช่น เลื่อนกำหนดสินค้าเข้าสต็อกช้าลง/เร็วขึ้น)","d":"ป๊อปอัปหน้าตาแบบเตือนพักบ่าย 3 สำหรับแจ้งเรื่องทั่วไป · มีธีมสีให้เลือก 7 แบบ (เลื่อนกำหนดสินค้าเข้าสต็อกช้าลง · เข้าสต็อกเร็วขึ้น · ข่าวดี · สำคัญ · นัดหมาย · ปรับปรุงระบบ · ทั่วไป) หรือแนบรูปเอง · ตั้งได้ว่าเด้งกี่วัน และเด้งบ่อยแค่ไหน (ครั้งเดียวต่อคน · วันละครั้ง · ทุกครั้งที่เปิดเว็บ · ทุกครั้งที่เข้าหน้า NPD & MKT Calendar) · ให้ใครเห็น (ทุกคน/บางทีม/บางคน) · ต้องกดรับทราบหรือไม่ (ดูรายชื่อคนที่รับทราบแล้วได้) · ผู้ตั้งประกาศ = เฉพาะคนที่ได้รับอนุญาต (พลอยเพิ่มคนได้) · ปุ่ม 📢 ที่แถบซ้ายล่างขึ้นเฉพาะผู้ตั้งประกาศ · ต้องรัน SQL announcements 1 ไฟล์ก่อนอัปโหลด (ยังไม่รัน = ไม่มีป๊อปอัป ที่เหลือใช้ได้ปกติ)","g":"sys"},{"ic":"📘","t":"วิธีใช้ NPD Team อัปเดตแล้ว","d":"หัวข้อใหม่ “📢 ประกาศ (ป๊อปอัปแจ้งทุกคน)” — คนทั่วไปจะเห็นอะไร · ผู้ตั้งประกาศตั้งค่าอย่างไร (ธีม ความถี่ วันที่ ใครเห็น ต้องรับทราบ) · เจ้าของเพิ่มผู้ตั้งประกาศอย่างไร · และข้อควรรู้ว่าประกาศไม่ใช่ข้อมูลลับ","g":"npd"}]},{"id":"20261115-1910","date":"2026-11-15","title":"Customer Service: Trial No. ของสินค้าในเคส + แจ้งเตือน NPD · กระดิ่งแจ้งเตือนย้ายไปมุมขวาบน","items":[{"ic":"🔔","t":"กระดิ่งแจ้งเตือนย้ายไปมุมขวาบน","d":"เดิมอยู่ซ้ายล่างของแถบเมนู กดยาก ตอนนี้เป็นปุ่มกลมที่มุมขวาบนของหน้าจอ (หน้าที่มีปุ่ม ❓ กระดิ่งอยู่ซ้ายปุ่ม ❓) · กดแล้วรายการแจ้งเตือนเปิดลงมาใต้ปุ่ม · บนมือถืออยู่ในแถบบนข้างปุ่ม ❓ · ปุ่ม ✨ สิทธิ์ บัญชี ยังอยู่ในแถบซ้ายที่เดิม","g":"sys"},{"ic":"🧪","t":"หน้าเคส: คอลัมน์ Trial No. ของสินค้า (✓ มี / ⚠ ยังไม่มี)","d":"ตารางสินค้าในเคสมีคอลัมน์ Trial No. ตรวจจาก Product Info ให้เองทุกครั้งที่บันทึกเคส หรือกด “🔄 ตรวจ Trial No.” · คนที่มีสิทธิ์ดู Trial No. (รายชื่อเดียวกับปุ่ม 🔐 ใน Product Info) เห็นตัวเลขและกดเลขเพื่อติ๊กออก (ไม่เกี่ยวกับเคสนี้) ได้ · คนอื่นเห็นแค่ มี/ไม่มี เลขและต้นทุนไม่ถูกส่งไปที่เบราว์เซอร์ของคนอื่น · แดชบอร์ดรายสินค้ามีคอลัมน์ Trial No. ด้วย · ต้องรัน SQL cs-trials 1 ไฟล์ก่อนอัปโหลด (ยังไม่รัน = คอลัมน์ไม่ขึ้น ที่เหลือใช้ได้ปกติ)","g":"sales"},{"ic":"🔔","t":"สินค้าในเคสไม่มี Trial No. → กระดิ่งถึงเจ้าของโปรเจกต์ NPD","d":"ถ้าสินค้ามีใน Product Info แต่ยังไม่มี Trial No. ระบบส่งกระดิ่ง “🧪 ยังไม่มี Trial No.” ถึงเจ้าของโปรเจกต์ NPD ของสินค้านั้น (มาจากบรีฟ NPR หรือกรอกในฟอร์มสินค้า) · ยังไม่มีเจ้าของ = แจ้งทั้งทีม NPD · แจ้งครั้งเดียวต่อเคสและสินค้า ไม่เตือนซ้ำ · รหัสที่กรอกเองและไม่มีใน Product Info ไม่แจ้ง (ขึ้นว่า “ไม่พบใน Product Info”)","g":"sales"},{"ic":"📘","t":"วิธีใช้ Sales Team อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ มีหัวข้อใหม่ “Trial No. ของสินค้าในเคส” อธิบายคอลัมน์ Trial No. ปุ่มตรวจใหม่ ใครเห็นตัวเลข และการแจ้งเตือน NPD","g":"sales"},{"ic":"📘","t":"วิธีใช้ NPD Team อัปเดตแล้ว","d":"หัวข้อ “5) เชื่อมบรีฟ NPR กับ Product Info” อธิบายกระดิ่ง “ยังไม่มี Trial No.” ที่เจ้าของโปรเจกต์ NPD จะได้รับจากเคสร้องเรียน · และบอกว่ากระดิ่งย้ายไปมุมขวาบน (ในรายการ “อะไรใหม่” + หัวข้อแจ้งเตือนที่กระดิ่ง)","g":"npd"}]},{"id":"20261115-000137","date":"2026-11-15","title":"เชื่อมบรีฟ NPR กับ Product Info + Customer Service: สินค้าแยกรายตัว · แก้ Barcode/ปัญหาหลังอนุมัติได้","items":[{"ic":"🔗","t":"บรีฟ NPR: เลือก SKU ของแต่ละสี แล้วผูกกับ Product Info ให้อัตโนมัติ","d":"ตาราง SKU ในบรีฟมีคอลัมน์ “SKU (จาก Product Info)” พิมพ์หรือเลือกสินค้า (ใต้ช่องบอกว่าพบสินค้า · มี/ยังไม่มี Barcode · เตือนถ้าผูกกับบรีฟอื่นอยู่) · กดบันทึกบรีฟ หรือปุ่ม “🔗 ซิงก์ SKU กับ Product Info” → ใส่ NPR No. + เจ้าของโปรเจกต์ให้สินค้า และส่ง Formula No. (Trial No.) ของแต่ละสีเป็นรายการ Trial No. ให้เอง · ซิงก์ได้เฉพาะผู้แก้ไขทีม NPD · หน้าพิมพ์บรีฟแสดงรหัส SKU ต่อท้ายชื่อสี · ต้องรัน SQL brief-link 1 ไฟล์ก่อนอัปโหลด","g":"npd"},{"ic":"🏷️","t":"Product Info: ขึ้น “🔗 บรีฟ NPR-xxx · NPD เจ้าของ” บนการ์ดและหน้า Info","d":"ทุกทีมเห็นว่าสินค้านี้มาจากบรีฟไหนและใครเป็นเจ้าของโปรเจกต์ NPD (ทีม NPD กดชิปเพื่อเปิดบรีฟได้) · ฟอร์มแก้ไขสินค้ามีช่อง NPR No. และเจ้าของโปรเจกต์ NPD แก้เองได้ · ส่งออก Excel เลือกสองคอลัมน์นี้ได้ · Trial No. ที่มาจากบรีฟมีป้าย “ซิงก์จากบรีฟ” ในรายการลับ (เห็นเฉพาะผู้มีสิทธิ์ดู Trial No. เหมือนเดิม) และเลขที่คนกรอกเองไม่ถูกทับ","g":"product"},{"ic":"📘","t":"วิธีใช้ NPD Team อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ มีหัวข้อใหม่ “5) เชื่อมบรีฟ NPR กับ Product Info” อธิบายขั้นตอนผูก SKU และ Trial No.","g":"npd"},{"ic":"📦","t":"แจ้งปัญหา: ใส่สินค้าที่มีปัญหาแยกเป็นรายการได้","d":"ฟอร์มแจ้งปัญหา (ขั้น ①) มีส่วน “สินค้าที่มีปัญหา” แยกรายตัว: ชื่อสินค้า · จำนวน · รหัสสินค้า (SKU) · Barcode · Lot · และปัญหาของสินค้านั้น (เลือกจากรายการเดียวกับประเภทการร้องเรียน หรือพิมพ์เอง) · เลือกจาก Product Info แล้วรหัสกับ Barcode เติมให้เอง · พิมพ์ SKU หรือ Barcode ที่มีในระบบก็เติมให้ · ไม่บังคับในขั้น ① · ขั้น ② ใช้รายการเดียวกัน","g":"sales"},{"ic":"🖼️","t":"แดชบอร์ดรายสินค้า: มีรูป รหัสสินค้า Barcode","d":"ตาราง “ปัญหาและยอดรับผิดชอบรายสินค้า” แสดงรูปสินค้า (จาก Product Info) · รหัสสินค้า · Barcode · “ปัญหาหลัก” นับจากปัญหาที่ระบุในแต่ละสินค้า · หน้าเคสมีรูป Barcode และปัญหารายสินค้า · ค้นหาเคสด้วย Barcode ได้ · ไฟล์ CSV/Excel มี Barcode กับปัญหารายสินค้า","g":"sales"},{"ic":"🔓","t":"แก้ Barcode / ปัญหาของสินค้าหลังอนุมัติได้เลย","d":"เดิมแก้สินค้าหลังหัวหน้าอนุมัติแล้วเคสจะกลับไปรออนุมัติใหม่ · ตอนนี้ Barcode และปัญหาของสินค้าแก้ได้เหมือนเลข Lot (ไม่ต้องขออนุมัติใหม่) · แก้ชื่อ รหัสสินค้า จำนวน ยอดเงิน ตัวเลือก หรือข้อความตอบลูกค้า ยังต้องขออนุมัติใหม่เหมือนเดิม · ต้องรัน SQL รอบ 9 (cs-update-r9) 1 ไฟล์ก่อนอัปโหลด","g":"sales"},{"ic":"📘","t":"วิธีใช้ Sales Team อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ อธิบายรายการสินค้าแยกรายตัว (รหัส Barcode ปัญหา) และตารางสินค้าในแดชบอร์ดที่มีรูปแล้ว","g":"sales"}]},{"id":"20261110-2315","date":"2026-11-10","title":"Customer Service: เคส 3 ขั้น แจ้งปัญหา → ส่งหัวหน้า → อัปเดตงาน","items":[{"ic":"🧭","t":"เคสร้องเรียนเป็น 3 ขั้น: แจ้งปัญหา → ส่งหัวหน้า → อัปเดตงาน","d":"① กด “＋ แจ้งปัญหาใหม่” กรอกแค่แพลตฟอร์มกับเรื่องที่พบ เคสขึ้น “รอประสานงาน” และทุกคนในทีมได้แจ้งเตือน 🔔 ② ไปคุยกับลูกค้า แล้วเปิดเคสกรอกให้ครบ (มีเช็กลิสต์ความพร้อม) ก่อนส่งหัวหน้า ③ อัปเดตงานจนปิดเคส · สถานะ “ฉบับร่าง” เปลี่ยนชื่อเป็น “รอประสานงาน” · อีเมล “เคสใหม่” ยังส่งตอนส่งหัวหน้าเหมือนเดิม","g":"sales"},{"ic":"💬","t":"ช่อง “จะตอบลูกค้าอย่างไร” — หัวหน้าเห็นก่อนอนุมัติ","d":"พิมพ์ข้อความที่จะตอบลูกค้า หรือกด “✨ ร่างข้อความให้” จากตัวเลือกที่เลือก · หัวหน้าเห็นและแก้ได้ตอนอนุมัติ · อนุมัติแล้วมีปุ่ม 📋 คัดลอกไปวางตอบลูกค้า · ถ้าแก้ข้อความหลังอนุมัติ เคสจะกลับไปรอหัวหน้าอนุมัติใหม่ (ต้องรัน SQL รอบ 8 ก่อน)","g":"sales"},{"ic":"👀","t":"หน้าเคสแยกตามหน้าที่ + เคสที่ปิดแล้วดูเป็นไทม์ไลน์","d":"ผู้เปิดเคสเห็นปุ่มแก้ไขรายส่วนและกล่องอัปเดตงาน · หัวหน้า/ผู้ดูเห็นใบสรุปอ่านอย่างเดียว มีแค่ปุ่มตัดสินใจ · เคสที่ปิดแล้วกด 👁 ดูรายละเอียด เห็นไทม์ไลน์ทั้งเคสอ่านง่าย (ไม่มีปุ่มแก้ไข — หัวหน้ากด “เปิดเคสอีกครั้ง” ถ้าต้องแก้)","g":"sales"},{"ic":"↩︎","t":"ส่งกลับแก้ไขแบบเลือกส่วน + 💬 ถามตรงจุด","d":"หัวหน้าเลือกว่าต้องแก้ส่วนไหนและเขียนเหตุผล (บังคับ) ผู้เปิดเคสเห็นส่วนนั้นขึ้นกรอบแดง “ต้องแก้” · ปุ่ม 💬 ถามตรงจุด ที่ข้อความตอบลูกค้า/ตัวเลือก/ยอดเงิน/สินค้า เติมชื่อส่วนไปอ้างถึงในความเห็นให้","g":"sales"},{"ic":"📘","t":"วิธีใช้ Customer Service อัปเดตแล้ว","d":"ปุ่ม ❓ ของเมนู Sales Team เพิ่มรายการ 3 ขั้นตอน ช่องตอบลูกค้า หน้าเคสตามหน้าที่ และการส่งกลับแบบเลือกส่วน","g":"sys"}]},{"id":"20261109-1033","date":"2026-11-09","title":"รีเฟรชแล้วอยู่ที่เดิม + แก้ข้อความหน้าเข้าสู่ระบบ","items":[{"ic":"🔄","t":"รีเฟรชแล้วกลับมาที่เดิม รวมหน้าต่างที่เปิดค้างไว้","d":"กด F5 / รีเฟรช แล้วระบบจะพากลับมาที่หน้าเดิม เมนูย่อยเดิม และ “หน้าต่างที่เปิดค้างไว้” เช่น ข้อมูลสินค้า (Info) · ไทม์ไลน์สินค้า · รายละเอียดกิจกรรมปฏิทิน · ป๊อปอัปรายวัน · งาน/คำขอ/ครีเอเตอร์ใน KOL & Affiliate · เดือนที่ดูอยู่ในปฏิทิน และตำแหน่งที่เลื่อนหน้าไว้ (การ์ดและเคส Customer Service เดิมจำได้อยู่แล้ว) · ถ้าข้อมูลโหลดช้า ระบบจะรอแล้วเปิดให้เอง · ลิงก์ที่เปิดมาตอนยังไม่ได้ล็อกอินจะไม่หายหลังล็อกอิน · ข้อความที่พิมพ์ค้างในฟอร์มที่ยังไม่ได้บันทึกจะไม่กลับมา","g":"sys"},{"ic":"🔑","t":"หน้าเข้าสู่ระบบ: แก้ข้อความใต้ปุ่มให้ชัดเจน","d":"ข้อความใต้ปุ่มเปลี่ยนเป็น “ยังไม่มีบัญชี? ติดต่อผู้ดูแลระบบ” และ “ลืมรหัสผ่าน? ติดต่อผู้ดูแลระบบ” (คนที่ล็อกอินอยู่แล้วเปลี่ยนรหัสผ่านเองได้ที่เมนูบัญชี)","g":"sys"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ของ NPD Team เพิ่มรายการ “รีเฟรชแล้วอยู่ที่เดิมมากขึ้น”","g":"sys"}]},{"id":"20261109-0041","date":"2026-11-09","title":"ทุกคนเปลี่ยนรหัสผ่านของตัวเองได้","items":[{"ic":"🔑","t":"เปลี่ยนรหัสผ่านเองได้ จากเมนูบัญชี","d":"กดที่ปุ่มชื่อ/รูปของตัวเอง (มุมบนขวา หรือปุ่มคนในแถบเมนูซ้าย) → “🔑 เปลี่ยนรหัสผ่าน” · ใส่รหัสผ่านปัจจุบันยืนยัน แล้วตั้งรหัสใหม่ 2 ครั้ง (อย่างน้อย 8 ตัวอักษร) · ติ๊กออกจากระบบอุปกรณ์อื่นได้ · ระบบไม่เก็บรหัสผ่านไว้ที่ไหน · ถ้าลืมรหัสผ่านปัจจุบัน ยังต้องให้ผู้ดูแลรีเซ็ตให้","g":"sys"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ของ NPD Team เพิ่มรายการ “เปลี่ยนรหัสผ่านของตัวเองได้แล้ว”","g":"sys"}]},{"id":"20261108-230849","date":"2026-11-08","title":"ห้อง Graphic: ภาพใหม่ + บีมแทนเหมียว (ผูกอีเมล graphic04.cil@gmail.com)","items":[{"ic":"🎨","t":"ห้อง Graphic (CIL Team → ห้องทำงานจำลอง) เปลี่ยนภาพ และชื่อเป็น “บีม”","d":"เหมียวลาออก → บีมเข้าแทน: ป้ายชื่อและรูปประจำตัวในห้อง Graphic เปลี่ยนเป็นบีม · ภาพห้องใหม่ (คนที่ 4 เป็นบีม) · อีเมลของคนอื่นไม่เปลี่ยน · รายชื่อตั้งต้นของบอร์ด Graphic ใช้ชื่อบีม","g":"sys"},{"ic":"📧","t":"บีมผูกกับอีเมล graphic04.cil@gmail.com","d":"คอมเมนต์ การแท็ก @ การแจ้งเตือน และ “ฉันคือใคร” จากอีเมลนี้ขึ้นชื่อ “บีม” · เป็นบัญชีกราฟิกเหมือนเมษา/น้ำฝน/ไอซ์ GP (หน้า Content เป็นหน้าล็อกแบบเดียวกัน) · สิทธิ์ฝั่งฐานข้อมูลของบัญชีนี้ไม่ได้ถูกแก้ในรอบนี้","g":"sys"}]},{"id":"20261108-2233","date":"2026-11-08","title":"หน้า Info: กลับมาใช้ปุ่ม “คัดลอกรวมทั้ง N SKU” แยกจากปุ่ม “คัดลอกข้อความ”","items":[{"ic":"↩️","t":"ย้อนการเปลี่ยนปุ่มคัดลอกข้อความ — กลับเป็นแบบเดิม","d":"ปุ่ม “📋 คัดลอกข้อความ” ในหน้า Info กลับมาคัดลอกข้อมูลของ SKU ที่เปิดอยู่เหมือนเดิม · สินค้าที่มีหลาย SKU มีปุ่ม “📋 คัดลอกรวมทั้ง N SKU” แยกต่างหากสำหรับคัดลอกข้อมูลรวมทั้งกลุ่ม (จำนวน SKU · รหัส/Barcode ทุกตัว · ข้อมูลที่เหมือนกัน · ไม่มีต้นทุน/Trial No.) · หน้า Info ยังบอก “สินค้านี้มี N SKU / เฉด” ตามเดิม","g":"sys"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ของ NPD Team แก้ข้อความเรื่องปุ่มคัดลอกในหน้า Info ให้ตรงกับแบบที่ใช้อยู่","g":"sys"}]},{"id":"20261108-2225","date":"2026-11-08","title":"หน้า Info: ปุ่ม “คัดลอกข้อความ” ของสินค้าหลาย SKU คัดลอกข้อมูลรวมทั้งกลุ่ม","items":[{"ic":"📋","t":"คัดลอกข้อความในหน้า Info ไม่ดึง SKU เดียวมาแล้ว","d":"สินค้าที่มีหลาย SKU: ปุ่ม “📋 คัดลอกข้อความ (รวมทั้ง N SKU)” คัดลอกข้อมูลรวมทั้งกลุ่ม — ชื่อสินค้ารวม · จำนวน SKU · ค่าที่เหมือนกันขึ้นครั้งเดียว · รายการ SKU/Barcode ทุกตัว (ค่าที่ต่างกันขึ้นต่อ SKU) · ไม่ดึงชื่อสี/รหัส/บาร์โค้ดของตัวใดตัวหนึ่งมาเป็นตัวแทนอีก · ไม่มีต้นทุน/Trial No. · สินค้าที่มี SKU เดียวคัดลอกเหมือนเดิม · เอาปุ่ม “คัดลอกรวมทั้ง N SKU” ที่ซ้ำออกแล้ว","g":"sys"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ของ NPD Team แก้รายการ “คัดลอกข้อมูลรวม · ส่งออก Excel · ต้นทุน/Trial No.” ให้ตรงกับปุ่มคัดลอกข้อความที่เปลี่ยนไป","g":"sys"}]},{"id":"20261108-2158","date":"2026-11-08","title":"Product Info: คัดลอกข้อมูลรวมในหน้า Info · ส่งออก Excel ติ๊กเลือกหมวด/สินค้า/SKU","items":[{"ic":"🧩","t":"หน้า Info บอกว่าสินค้ามีกี่ SKU + คัดลอกรวมทั้งกลุ่ม","d":"ในหน้า Info ของสินค้าที่มีหลาย SKU ขึ้น “สินค้านี้มี N SKU / เฉด” พร้อมรายการรหัส + Barcode ทุกตัว และปุ่ม “📋 คัดลอกรวมทั้ง N SKU” คัดลอกข้อมูลทั้งกลุ่มครั้งเดียว (ค่าที่เหมือนกันขึ้นครั้งเดียว ค่าที่ต่างกันขึ้นต่อ SKU · ไม่มีต้นทุน/Trial No.) · เอาปุ่ม “คัดลอก SKU ที่แสดง / คัดลอก SKU” ที่เคยอยู่บนการ์ดและป๊อปอัปเฉดออกแล้ว","g":"sys"},{"ic":"⬇️","t":"ส่งออก Excel: ติ๊กเลือกหมวด / สินค้า / SKU ได้โดยตรง","d":"หน้าต่างส่งออกเป็นรายการให้ติ๊ก หมวด → สินค้า → SKU (กด ▸ เลือกทีละ SKU) มีช่องค้นหา ปุ่มเลือกทั้งหมด/ล้าง · เลิกใช้ตัวเลือก “ตามที่เห็นอยู่/ทั้งหมด” ที่ขัดกับการเลือกหมวด · ตัดคอลัมน์ “ราคา (Price)” ที่ซ้ำกับ RRP/MRP · เพิ่มคอลัมน์ “จำนวน SKU ในกลุ่มสินค้า” · จำคอลัมน์ที่เลือกไว้ครั้งหน้า","g":"sys"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ของ NPD Team แก้รายการ “คัดลอกข้อมูลรวม · ส่งออก Excel · ต้นทุน/Trial No.” ให้ตรงกับของใหม่","g":"sys"}]},{"id":"20261108-2132","date":"2026-11-08","title":"Product Info: คัดลอก SKU รวม · ส่งออก Excel เลือกคอลัมน์ · ต้นทุน/Trial No. (คุมสิทธิ์)","items":[{"ic":"📋","t":"คัดลอก SKU หลายรหัสในครั้งเดียว","d":"การ์ดสินค้าที่มีหลาย SKU มีปุ่ม “📋 คัดลอก SKU” คัดลอกรหัสทั้งกลุ่ม (บรรทัดละรหัส) · ในป๊อปอัป “ดูทั้ง N SKU / เฉด” คัดลอก SKU ทั้งหมด หรือคัดลอกเป็นตาราง (SKU · ชื่อ · Barcode วางลง Excel ได้เลย) · ปุ่ม “📋 คัดลอก SKU ที่แสดง” คัดลอกตามตัวกรอง/ค้นหาที่เห็นอยู่","g":"sys"},{"ic":"⬇️","t":"ส่งออก Excel รายชื่อสินค้า เลือกได้เอง","d":"ปุ่ม “⬇️ ส่งออก Excel” ในหน้า Product Info — เลือกขอบเขต (ที่เห็นอยู่ / ทั้งหมด) · หมวด · แบรนด์ · ติ๊กเลือกคอลัมน์ที่ต้องการ (SKU ชื่อ Barcode แบรนด์ ประเภท หมวด Collection ราคา Lot EXP ลิงก์ ไมล์สโตน ฯลฯ) · จำที่เลือกไว้ครั้งหน้า · ตัวเลขเป็นเลขจริง","g":"sys"},{"ic":"🔐","t":"ต้นทุนสินค้า + Trial No. (1 SKU ใส่ได้หลาย Trial No.)","d":"ฟอร์มแก้ไขสินค้ามีส่วน “🔐 ข้อมูลลับ” — ต้นทุนสินค้า และ Trial No. หลายรหัสต่อ 1 SKU (เช่น อายแชโดว์ 3 สี = 3 รหัส) · เห็นเฉพาะรายชื่อที่ผู้ดูแลกำหนด (ปุ่ม “🔐 สิทธิ์ดูต้นทุน/Trial No.” ติ๊กเพิ่ม/ลดคน) · คนที่เห็นได้และแก้ Product Info ได้ก็กรอก/แก้ได้ · คนนอกรายชื่อไม่เห็นเลย ทั้งในเว็บและไฟล์ Excel (ฐานข้อมูลบังคับให้จริง) · ต้องรัน SQL product-private-2026-11-08 ก่อนจึงจะใช้ส่วนนี้ได้","g":"sys"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ของ NPD Team เพิ่มรายการ “คัดลอก SKU รวม · ส่งออก Excel · ต้นทุน/Trial No.”","g":"sys"}]}]}</script>
+<script type="application/json" id="whatsnew-data">{"id":"20261117-1642","date":"2026-11-17","title":"แจ้งเตือนการ์ดเรียบง่ายขึ้น · สิทธิ์ E-Commerce ปรับเองได้ · ช่องแท็กใหม่","items":[{"ic":"🔔","t":"แจ้งเตือนการ์ด: คอมเมนต์/ส่งรูปแจ้งเฉพาะคนที่ถูกแท็ก @","d":"ใช้กับ Content · Graphic · E-Com · Branding — คอมเมนต์ธรรมดาที่ไม่แท็กใคร ไม่แจ้งเตือนใครแล้ว (เดิมแจ้งทุกคนที่เกี่ยวกับการ์ด) · พิมพ์ @ชื่อ เพื่อให้คนนั้นได้กระดิ่ง · KOL / Sales Team / แชท ยังแจ้งแบบเดิม","g":"sys"},{"ic":"🔕","t":"กระดิ่งที่หัวคอลัมน์: เลือกได้ว่าย้ายการ์ดเข้าคอลัมน์ไหนแล้วจะแจ้งเตือน","d":"ค่าเริ่มต้นเปิดเฉพาะ Brief · รอตรวจ · แก้ไข (ตีกลับ) · อนุมัติ/เสร็จ (คอลัมน์อื่นปิด) — กดกระดิ่ง 🔔/🔕 ที่หัวคอลัมน์เพื่อเปิด/ปิด ตั้งแล้วทั้งทีมเห็นเหมือนกัน (Graphic ตั้งแยกตามบอร์ดของแต่ละคน) · ถูกแท็ก @ แจ้งเตือนเสมอ ไม่ขึ้นกับกระดิ่ง (ไม่มีกรณีตั้งแล้วแท็กไม่เด้ง)","g":"sys"},{"ic":"🛒","t":"สิทธิ์แก้ไข E-Commerce ปรับเองได้ในเว็บ","d":"หัวหน้าทีม E-Commerce กด ⚙️ ตั้งค่าทีม ที่หัวข้อหน้า E-Commerce Content เพื่อเพิ่ม/ลบคน เปลี่ยนระดับ (หัวหน้า · สมาชิก) · แอดมินแก้ที่ 🛡️ สิทธิ์ → E-Commerce Content ได้ · ทุกคนที่ล็อกอินยังดูบอร์ดได้ (ต้องรัน SQL ecom-team หนึ่งครั้งก่อนเริ่มใช้)","g":"sys"},{"ic":"🏷️","t":"ช่องแท็กใหม่ — พิมพ์แล้วมีรายการแนะนำ แท็กเยอะไม่รก","d":"พิมพ์ในช่องแท็กแล้วระบบดึงแท็กที่ตรงมาให้เลือก (ไฮไลต์ตัวที่ตรง · เรียงตัวที่ใช้บ่อยก่อน) · แท็กเยอะแสดงเฉพาะ “ใช้บ่อย” 8 อัน + ปุ่ม “ดูทั้งหมด” เปิดแผงค้นหา","g":"sys"},{"ic":"📘","t":"📘 วิธีใช้อัปเดตแล้ว — เรื่องแจ้งเตือนการ์ดและกระดิ่งที่หัวคอลัมน์","d":"ปุ่ม ❓ วิธีใช้ของ NPD Team · Content Creator · Branding มีรายการ “แจ้งเตือนการ์ดเรียบง่ายขึ้น” · “สิทธิ์แก้ไข E-Commerce ปรับเองได้” และหัวข้อ “คุยงานและแจ้งเตือน” ปรับใหม่","g":"sys"}],"history":[{"id":"20261116-2046","date":"2026-11-16","title":"แก้บั๊ก: ส่งคอมเมนต์แล้วคอมเมนต์ในการ์ดหายไปชั่วคราว","items":[{"ic":"🛟","t":"แก้บั๊ก: ส่งคอมเมนต์แล้วคอมเมนต์ในการ์ดหายไปชั่วคราว","d":"เดิมหลังกดส่งคอมเมนต์ ราว 6 วินาทีต่อมาความคิดเห็น/ไฟล์ในการ์ดจะขึ้น 0 อยู่หลายวินาทีแล้วค่อยกลับมา (การ์ด Content · Graphic · E-Com) — เพราะตารางคอมเมนต์โตเกินเพดาน 1,000 แถวที่ฐานข้อมูลตอบต่อครั้ง ระบบจึงโหลดได้ไม่ครบ · ตอนนี้โหลดครบทุกแถว (ดึงทีละหน้า) และถ้าหน้าจอไม่ตรงกับข้อมูลล่าสุดจะวาดใหม่ให้เอง · ตารางอื่นที่โตเกิน 1,000 แถวได้รับการแก้เหมือนกัน","g":"sys"},{"ic":"📘","t":"วิธีใช้ NPD Team อัปเดตแล้ว","d":"ประวัติการเปลี่ยนแปลง 16 พ.ย. เพิ่มรายการ “แก้บั๊กคอมเมนต์หายชั่วคราว” (กด ❓ ดูรายการเปลี่ยนแปลงล่าสุด)","g":"npd"}]},{"id":"20261116-1635","date":"2026-11-16","title":"หน้าทำงานกว้างเต็มจอเพิ่ม: NPD Team · Branding · Branding Plan · Sales Team","items":[{"ic":"↔️","t":"หน้าทำงานกว้างเต็มจอเพิ่ม — NPD Team · Branding Team · Branding Plan · Sales Team","d":"ไม่เหลือที่ว่างสองข้างจอ (เหมือน Product Info และปฏิทิน NPD & MKT ที่ปรับก่อนหน้านี้) · Sales Team และ Branding Plan ปลดเพดานความกว้างของตัวหน้าเองด้วย · หน้า CIL Team และ Life Style ยังจัดกลางจอเหมือนเดิม","g":"sys"},{"ic":"📘","t":"วิธีใช้ NPD Team อัปเดตแล้ว","d":"ประวัติการเปลี่ยนแปลง 16 พ.ย. เพิ่มรายการ “หน้ากว้างเต็มจอเพิ่ม” (กด ❓ ดูรายการเปลี่ยนแปลงล่าสุด)","g":"npd"}]},{"id":"20261116-1312","date":"2026-11-16","title":"Product Info หน้าตาใหม่ · ตัวกรองปีที่เข้าสต็อก · กว้างเต็มจอ","items":[{"ic":"🔎","t":"Product Info หน้าตาใหม่ + ตัวกรอง “ปีที่สินค้าเข้าสต็อก”","d":"ปุ่มและตัวกรองเป็นแบบไอคอนเส้น กดง่ายขึ้น (แบรนด์ · ปี · เรียงตาม เป็นแถบสลับเลือก) · ช่องค้นหาใหญ่ขึ้นพร้อมปุ่ม ✕ ล้างคำค้น · เพิ่มตัวกรองปีที่สินค้าเข้าสต็อก (นับจากวัน Product on Stock — ใช้วันจริงถ้ามี ไม่งั้นวันกำหนด · มีจำนวน SKU กำกับ · ใช้ร่วมกับแบรนด์/คอลเลกชัน/ค้นหาได้) · ปุ่มบนการ์ดสินค้าและแถบแก้ไขหน้าตาใหม่ · หน้า Product Info และปฏิทิน NPD & MKT กว้างเต็มจอ ไม่เหลือที่ว่างสองข้าง","g":"sys"},{"ic":"📘","t":"วิธีใช้ NPD Team อัปเดตแล้ว","d":"หัวข้อใหม่ “🔎 Product Info (ตัวกรอง · ปีที่เข้าสต็อก)” — วิธีใช้ตัวกรองปีและช่องค้นหาใหม่ (กด ❓ แล้วดูหัวข้อนี้)","g":"npd"}]},{"id":"20261116-1154","date":"2026-11-16","title":"⏰ งานค้างอัปเดต — เตือนทีมให้อัปเดตวันจริงในปฏิทิน NPD & MKT","items":[{"ic":"⏰","t":"งานค้างอัปเดต — เตือนให้อัปเดต “วันจริง” ของ milestone ในปฏิทิน NPD & MKT","d":"milestone ที่ถึง/เลยกำหนดแล้วแต่ยังไม่มีวันจริง จะมีวงชมพู + ⚠ ในปฏิทิน (ทุกคนเห็น) · คนที่แก้ไขสินค้าได้เห็นป้าย “⚠ ค้างอัปเดต N งาน” ข้างปุ่มเลื่อนเดือน + ป๊อปอัปวันละครั้งตอนเปิดเว็บ (ถ้ามีงานของตัวเองค้าง) · กดป้ายเปิดรายการแล้วกด เสร็จแล้ว (วันนี้) / วันอื่น / เลื่อนกำหนด (เลือกวันใหม่เอง) / ไม่เกี่ยวข้อง ได้เลย ไม่ต้องเปิดสินค้า · สินค้าหลาย SKU รวมเป็นแถวเดียว · งานฝั่ง NPD เตือนเจ้าของโปรเจกต์ (npdOwner) · งานฝั่ง MKT เตือนคนที่แอดมิน/หัวหน้าตั้งไว้ต่อ milestone (⚙️ ในหน้ารายการ) · ค้างเกิน 30 วันไม่นับในป้ายและป๊อปอัป · ไม่นับสินค้าที่หยุดขาย","g":"sys"},{"ic":"📘","t":"วิธีใช้ NPD Team อัปเดตแล้ว","d":"หัวข้อใหม่ “⏰ งานค้างอัปเดต (เตือนให้อัปเดตวันจริง)” — ค้างคืออะไร · ที่ไหนเห็น · ปุ่มในรายการ · ใครได้รับเตือน · การตั้งผู้รับเตือนฝั่ง MKT (กด ❓ แล้วดูหัวข้อนี้)","g":"npd"}]},{"id":"20261115-2302","date":"2026-11-15","title":"ประกาศ — ป๊อปอัปแจ้งทุกคน (เลื่อนกำหนดสินค้าเข้าสต็อก ฯลฯ)","items":[{"ic":"📢","t":"ประกาศ — ป๊อปอัปแจ้งทุกคน (เช่น เลื่อนกำหนดสินค้าเข้าสต็อกช้าลง/เร็วขึ้น)","d":"ป๊อปอัปหน้าตาแบบเตือนพักบ่าย 3 สำหรับแจ้งเรื่องทั่วไป · มีธีมสีให้เลือก 7 แบบ (เลื่อนกำหนดสินค้าเข้าสต็อกช้าลง · เข้าสต็อกเร็วขึ้น · ข่าวดี · สำคัญ · นัดหมาย · ปรับปรุงระบบ · ทั่วไป) หรือแนบรูปเอง · ตั้งได้ว่าเด้งกี่วัน และเด้งบ่อยแค่ไหน (ครั้งเดียวต่อคน · วันละครั้ง · ทุกครั้งที่เปิดเว็บ · ทุกครั้งที่เข้าหน้า NPD & MKT Calendar) · ให้ใครเห็น (ทุกคน/บางทีม/บางคน) · ต้องกดรับทราบหรือไม่ (ดูรายชื่อคนที่รับทราบแล้วได้) · ผู้ตั้งประกาศ = เฉพาะคนที่ได้รับอนุญาต (พลอยเพิ่มคนได้) · ปุ่ม 📢 ที่แถบซ้ายล่างขึ้นเฉพาะผู้ตั้งประกาศ · ต้องรัน SQL announcements 1 ไฟล์ก่อนอัปโหลด (ยังไม่รัน = ไม่มีป๊อปอัป ที่เหลือใช้ได้ปกติ)","g":"sys"},{"ic":"📘","t":"วิธีใช้ NPD Team อัปเดตแล้ว","d":"หัวข้อใหม่ “📢 ประกาศ (ป๊อปอัปแจ้งทุกคน)” — คนทั่วไปจะเห็นอะไร · ผู้ตั้งประกาศตั้งค่าอย่างไร (ธีม ความถี่ วันที่ ใครเห็น ต้องรับทราบ) · เจ้าของเพิ่มผู้ตั้งประกาศอย่างไร · และข้อควรรู้ว่าประกาศไม่ใช่ข้อมูลลับ","g":"npd"}]},{"id":"20261115-1910","date":"2026-11-15","title":"Customer Service: Trial No. ของสินค้าในเคส + แจ้งเตือน NPD · กระดิ่งแจ้งเตือนย้ายไปมุมขวาบน","items":[{"ic":"🔔","t":"กระดิ่งแจ้งเตือนย้ายไปมุมขวาบน","d":"เดิมอยู่ซ้ายล่างของแถบเมนู กดยาก ตอนนี้เป็นปุ่มกลมที่มุมขวาบนของหน้าจอ (หน้าที่มีปุ่ม ❓ กระดิ่งอยู่ซ้ายปุ่ม ❓) · กดแล้วรายการแจ้งเตือนเปิดลงมาใต้ปุ่ม · บนมือถืออยู่ในแถบบนข้างปุ่ม ❓ · ปุ่ม ✨ สิทธิ์ บัญชี ยังอยู่ในแถบซ้ายที่เดิม","g":"sys"},{"ic":"🧪","t":"หน้าเคส: คอลัมน์ Trial No. ของสินค้า (✓ มี / ⚠ ยังไม่มี)","d":"ตารางสินค้าในเคสมีคอลัมน์ Trial No. ตรวจจาก Product Info ให้เองทุกครั้งที่บันทึกเคส หรือกด “🔄 ตรวจ Trial No.” · คนที่มีสิทธิ์ดู Trial No. (รายชื่อเดียวกับปุ่ม 🔐 ใน Product Info) เห็นตัวเลขและกดเลขเพื่อติ๊กออก (ไม่เกี่ยวกับเคสนี้) ได้ · คนอื่นเห็นแค่ มี/ไม่มี เลขและต้นทุนไม่ถูกส่งไปที่เบราว์เซอร์ของคนอื่น · แดชบอร์ดรายสินค้ามีคอลัมน์ Trial No. ด้วย · ต้องรัน SQL cs-trials 1 ไฟล์ก่อนอัปโหลด (ยังไม่รัน = คอลัมน์ไม่ขึ้น ที่เหลือใช้ได้ปกติ)","g":"sales"},{"ic":"🔔","t":"สินค้าในเคสไม่มี Trial No. → กระดิ่งถึงเจ้าของโปรเจกต์ NPD","d":"ถ้าสินค้ามีใน Product Info แต่ยังไม่มี Trial No. ระบบส่งกระดิ่ง “🧪 ยังไม่มี Trial No.” ถึงเจ้าของโปรเจกต์ NPD ของสินค้านั้น (มาจากบรีฟ NPR หรือกรอกในฟอร์มสินค้า) · ยังไม่มีเจ้าของ = แจ้งทั้งทีม NPD · แจ้งครั้งเดียวต่อเคสและสินค้า ไม่เตือนซ้ำ · รหัสที่กรอกเองและไม่มีใน Product Info ไม่แจ้ง (ขึ้นว่า “ไม่พบใน Product Info”)","g":"sales"},{"ic":"📘","t":"วิธีใช้ Sales Team อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ มีหัวข้อใหม่ “Trial No. ของสินค้าในเคส” อธิบายคอลัมน์ Trial No. ปุ่มตรวจใหม่ ใครเห็นตัวเลข และการแจ้งเตือน NPD","g":"sales"},{"ic":"📘","t":"วิธีใช้ NPD Team อัปเดตแล้ว","d":"หัวข้อ “5) เชื่อมบรีฟ NPR กับ Product Info” อธิบายกระดิ่ง “ยังไม่มี Trial No.” ที่เจ้าของโปรเจกต์ NPD จะได้รับจากเคสร้องเรียน · และบอกว่ากระดิ่งย้ายไปมุมขวาบน (ในรายการ “อะไรใหม่” + หัวข้อแจ้งเตือนที่กระดิ่ง)","g":"npd"}]},{"id":"20261115-000137","date":"2026-11-15","title":"เชื่อมบรีฟ NPR กับ Product Info + Customer Service: สินค้าแยกรายตัว · แก้ Barcode/ปัญหาหลังอนุมัติได้","items":[{"ic":"🔗","t":"บรีฟ NPR: เลือก SKU ของแต่ละสี แล้วผูกกับ Product Info ให้อัตโนมัติ","d":"ตาราง SKU ในบรีฟมีคอลัมน์ “SKU (จาก Product Info)” พิมพ์หรือเลือกสินค้า (ใต้ช่องบอกว่าพบสินค้า · มี/ยังไม่มี Barcode · เตือนถ้าผูกกับบรีฟอื่นอยู่) · กดบันทึกบรีฟ หรือปุ่ม “🔗 ซิงก์ SKU กับ Product Info” → ใส่ NPR No. + เจ้าของโปรเจกต์ให้สินค้า และส่ง Formula No. (Trial No.) ของแต่ละสีเป็นรายการ Trial No. ให้เอง · ซิงก์ได้เฉพาะผู้แก้ไขทีม NPD · หน้าพิมพ์บรีฟแสดงรหัส SKU ต่อท้ายชื่อสี · ต้องรัน SQL brief-link 1 ไฟล์ก่อนอัปโหลด","g":"npd"},{"ic":"🏷️","t":"Product Info: ขึ้น “🔗 บรีฟ NPR-xxx · NPD เจ้าของ” บนการ์ดและหน้า Info","d":"ทุกทีมเห็นว่าสินค้านี้มาจากบรีฟไหนและใครเป็นเจ้าของโปรเจกต์ NPD (ทีม NPD กดชิปเพื่อเปิดบรีฟได้) · ฟอร์มแก้ไขสินค้ามีช่อง NPR No. และเจ้าของโปรเจกต์ NPD แก้เองได้ · ส่งออก Excel เลือกสองคอลัมน์นี้ได้ · Trial No. ที่มาจากบรีฟมีป้าย “ซิงก์จากบรีฟ” ในรายการลับ (เห็นเฉพาะผู้มีสิทธิ์ดู Trial No. เหมือนเดิม) และเลขที่คนกรอกเองไม่ถูกทับ","g":"product"},{"ic":"📘","t":"วิธีใช้ NPD Team อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ มีหัวข้อใหม่ “5) เชื่อมบรีฟ NPR กับ Product Info” อธิบายขั้นตอนผูก SKU และ Trial No.","g":"npd"},{"ic":"📦","t":"แจ้งปัญหา: ใส่สินค้าที่มีปัญหาแยกเป็นรายการได้","d":"ฟอร์มแจ้งปัญหา (ขั้น ①) มีส่วน “สินค้าที่มีปัญหา” แยกรายตัว: ชื่อสินค้า · จำนวน · รหัสสินค้า (SKU) · Barcode · Lot · และปัญหาของสินค้านั้น (เลือกจากรายการเดียวกับประเภทการร้องเรียน หรือพิมพ์เอง) · เลือกจาก Product Info แล้วรหัสกับ Barcode เติมให้เอง · พิมพ์ SKU หรือ Barcode ที่มีในระบบก็เติมให้ · ไม่บังคับในขั้น ① · ขั้น ② ใช้รายการเดียวกัน","g":"sales"},{"ic":"🖼️","t":"แดชบอร์ดรายสินค้า: มีรูป รหัสสินค้า Barcode","d":"ตาราง “ปัญหาและยอดรับผิดชอบรายสินค้า” แสดงรูปสินค้า (จาก Product Info) · รหัสสินค้า · Barcode · “ปัญหาหลัก” นับจากปัญหาที่ระบุในแต่ละสินค้า · หน้าเคสมีรูป Barcode และปัญหารายสินค้า · ค้นหาเคสด้วย Barcode ได้ · ไฟล์ CSV/Excel มี Barcode กับปัญหารายสินค้า","g":"sales"},{"ic":"🔓","t":"แก้ Barcode / ปัญหาของสินค้าหลังอนุมัติได้เลย","d":"เดิมแก้สินค้าหลังหัวหน้าอนุมัติแล้วเคสจะกลับไปรออนุมัติใหม่ · ตอนนี้ Barcode และปัญหาของสินค้าแก้ได้เหมือนเลข Lot (ไม่ต้องขออนุมัติใหม่) · แก้ชื่อ รหัสสินค้า จำนวน ยอดเงิน ตัวเลือก หรือข้อความตอบลูกค้า ยังต้องขออนุมัติใหม่เหมือนเดิม · ต้องรัน SQL รอบ 9 (cs-update-r9) 1 ไฟล์ก่อนอัปโหลด","g":"sales"},{"ic":"📘","t":"วิธีใช้ Sales Team อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ อธิบายรายการสินค้าแยกรายตัว (รหัส Barcode ปัญหา) และตารางสินค้าในแดชบอร์ดที่มีรูปแล้ว","g":"sales"}]},{"id":"20261110-2315","date":"2026-11-10","title":"Customer Service: เคส 3 ขั้น แจ้งปัญหา → ส่งหัวหน้า → อัปเดตงาน","items":[{"ic":"🧭","t":"เคสร้องเรียนเป็น 3 ขั้น: แจ้งปัญหา → ส่งหัวหน้า → อัปเดตงาน","d":"① กด “＋ แจ้งปัญหาใหม่” กรอกแค่แพลตฟอร์มกับเรื่องที่พบ เคสขึ้น “รอประสานงาน” และทุกคนในทีมได้แจ้งเตือน 🔔 ② ไปคุยกับลูกค้า แล้วเปิดเคสกรอกให้ครบ (มีเช็กลิสต์ความพร้อม) ก่อนส่งหัวหน้า ③ อัปเดตงานจนปิดเคส · สถานะ “ฉบับร่าง” เปลี่ยนชื่อเป็น “รอประสานงาน” · อีเมล “เคสใหม่” ยังส่งตอนส่งหัวหน้าเหมือนเดิม","g":"sales"},{"ic":"💬","t":"ช่อง “จะตอบลูกค้าอย่างไร” — หัวหน้าเห็นก่อนอนุมัติ","d":"พิมพ์ข้อความที่จะตอบลูกค้า หรือกด “✨ ร่างข้อความให้” จากตัวเลือกที่เลือก · หัวหน้าเห็นและแก้ได้ตอนอนุมัติ · อนุมัติแล้วมีปุ่ม 📋 คัดลอกไปวางตอบลูกค้า · ถ้าแก้ข้อความหลังอนุมัติ เคสจะกลับไปรอหัวหน้าอนุมัติใหม่ (ต้องรัน SQL รอบ 8 ก่อน)","g":"sales"},{"ic":"👀","t":"หน้าเคสแยกตามหน้าที่ + เคสที่ปิดแล้วดูเป็นไทม์ไลน์","d":"ผู้เปิดเคสเห็นปุ่มแก้ไขรายส่วนและกล่องอัปเดตงาน · หัวหน้า/ผู้ดูเห็นใบสรุปอ่านอย่างเดียว มีแค่ปุ่มตัดสินใจ · เคสที่ปิดแล้วกด 👁 ดูรายละเอียด เห็นไทม์ไลน์ทั้งเคสอ่านง่าย (ไม่มีปุ่มแก้ไข — หัวหน้ากด “เปิดเคสอีกครั้ง” ถ้าต้องแก้)","g":"sales"},{"ic":"↩︎","t":"ส่งกลับแก้ไขแบบเลือกส่วน + 💬 ถามตรงจุด","d":"หัวหน้าเลือกว่าต้องแก้ส่วนไหนและเขียนเหตุผล (บังคับ) ผู้เปิดเคสเห็นส่วนนั้นขึ้นกรอบแดง “ต้องแก้” · ปุ่ม 💬 ถามตรงจุด ที่ข้อความตอบลูกค้า/ตัวเลือก/ยอดเงิน/สินค้า เติมชื่อส่วนไปอ้างถึงในความเห็นให้","g":"sales"},{"ic":"📘","t":"วิธีใช้ Customer Service อัปเดตแล้ว","d":"ปุ่ม ❓ ของเมนู Sales Team เพิ่มรายการ 3 ขั้นตอน ช่องตอบลูกค้า หน้าเคสตามหน้าที่ และการส่งกลับแบบเลือกส่วน","g":"sys"}]},{"id":"20261109-1033","date":"2026-11-09","title":"รีเฟรชแล้วอยู่ที่เดิม + แก้ข้อความหน้าเข้าสู่ระบบ","items":[{"ic":"🔄","t":"รีเฟรชแล้วกลับมาที่เดิม รวมหน้าต่างที่เปิดค้างไว้","d":"กด F5 / รีเฟรช แล้วระบบจะพากลับมาที่หน้าเดิม เมนูย่อยเดิม และ “หน้าต่างที่เปิดค้างไว้” เช่น ข้อมูลสินค้า (Info) · ไทม์ไลน์สินค้า · รายละเอียดกิจกรรมปฏิทิน · ป๊อปอัปรายวัน · งาน/คำขอ/ครีเอเตอร์ใน KOL & Affiliate · เดือนที่ดูอยู่ในปฏิทิน และตำแหน่งที่เลื่อนหน้าไว้ (การ์ดและเคส Customer Service เดิมจำได้อยู่แล้ว) · ถ้าข้อมูลโหลดช้า ระบบจะรอแล้วเปิดให้เอง · ลิงก์ที่เปิดมาตอนยังไม่ได้ล็อกอินจะไม่หายหลังล็อกอิน · ข้อความที่พิมพ์ค้างในฟอร์มที่ยังไม่ได้บันทึกจะไม่กลับมา","g":"sys"},{"ic":"🔑","t":"หน้าเข้าสู่ระบบ: แก้ข้อความใต้ปุ่มให้ชัดเจน","d":"ข้อความใต้ปุ่มเปลี่ยนเป็น “ยังไม่มีบัญชี? ติดต่อผู้ดูแลระบบ” และ “ลืมรหัสผ่าน? ติดต่อผู้ดูแลระบบ” (คนที่ล็อกอินอยู่แล้วเปลี่ยนรหัสผ่านเองได้ที่เมนูบัญชี)","g":"sys"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ของ NPD Team เพิ่มรายการ “รีเฟรชแล้วอยู่ที่เดิมมากขึ้น”","g":"sys"}]},{"id":"20261109-0041","date":"2026-11-09","title":"ทุกคนเปลี่ยนรหัสผ่านของตัวเองได้","items":[{"ic":"🔑","t":"เปลี่ยนรหัสผ่านเองได้ จากเมนูบัญชี","d":"กดที่ปุ่มชื่อ/รูปของตัวเอง (มุมบนขวา หรือปุ่มคนในแถบเมนูซ้าย) → “🔑 เปลี่ยนรหัสผ่าน” · ใส่รหัสผ่านปัจจุบันยืนยัน แล้วตั้งรหัสใหม่ 2 ครั้ง (อย่างน้อย 8 ตัวอักษร) · ติ๊กออกจากระบบอุปกรณ์อื่นได้ · ระบบไม่เก็บรหัสผ่านไว้ที่ไหน · ถ้าลืมรหัสผ่านปัจจุบัน ยังต้องให้ผู้ดูแลรีเซ็ตให้","g":"sys"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ของ NPD Team เพิ่มรายการ “เปลี่ยนรหัสผ่านของตัวเองได้แล้ว”","g":"sys"}]},{"id":"20261108-230849","date":"2026-11-08","title":"ห้อง Graphic: ภาพใหม่ + บีมแทนเหมียว (ผูกอีเมล graphic04.cil@gmail.com)","items":[{"ic":"🎨","t":"ห้อง Graphic (CIL Team → ห้องทำงานจำลอง) เปลี่ยนภาพ และชื่อเป็น “บีม”","d":"เหมียวลาออก → บีมเข้าแทน: ป้ายชื่อและรูปประจำตัวในห้อง Graphic เปลี่ยนเป็นบีม · ภาพห้องใหม่ (คนที่ 4 เป็นบีม) · อีเมลของคนอื่นไม่เปลี่ยน · รายชื่อตั้งต้นของบอร์ด Graphic ใช้ชื่อบีม","g":"sys"},{"ic":"📧","t":"บีมผูกกับอีเมล graphic04.cil@gmail.com","d":"คอมเมนต์ การแท็ก @ การแจ้งเตือน และ “ฉันคือใคร” จากอีเมลนี้ขึ้นชื่อ “บีม” · เป็นบัญชีกราฟิกเหมือนเมษา/น้ำฝน/ไอซ์ GP (หน้า Content เป็นหน้าล็อกแบบเดียวกัน) · สิทธิ์ฝั่งฐานข้อมูลของบัญชีนี้ไม่ได้ถูกแก้ในรอบนี้","g":"sys"}]},{"id":"20261108-2233","date":"2026-11-08","title":"หน้า Info: กลับมาใช้ปุ่ม “คัดลอกรวมทั้ง N SKU” แยกจากปุ่ม “คัดลอกข้อความ”","items":[{"ic":"↩️","t":"ย้อนการเปลี่ยนปุ่มคัดลอกข้อความ — กลับเป็นแบบเดิม","d":"ปุ่ม “📋 คัดลอกข้อความ” ในหน้า Info กลับมาคัดลอกข้อมูลของ SKU ที่เปิดอยู่เหมือนเดิม · สินค้าที่มีหลาย SKU มีปุ่ม “📋 คัดลอกรวมทั้ง N SKU” แยกต่างหากสำหรับคัดลอกข้อมูลรวมทั้งกลุ่ม (จำนวน SKU · รหัส/Barcode ทุกตัว · ข้อมูลที่เหมือนกัน · ไม่มีต้นทุน/Trial No.) · หน้า Info ยังบอก “สินค้านี้มี N SKU / เฉด” ตามเดิม","g":"sys"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ของ NPD Team แก้ข้อความเรื่องปุ่มคัดลอกในหน้า Info ให้ตรงกับแบบที่ใช้อยู่","g":"sys"}]},{"id":"20261108-2225","date":"2026-11-08","title":"หน้า Info: ปุ่ม “คัดลอกข้อความ” ของสินค้าหลาย SKU คัดลอกข้อมูลรวมทั้งกลุ่ม","items":[{"ic":"📋","t":"คัดลอกข้อความในหน้า Info ไม่ดึง SKU เดียวมาแล้ว","d":"สินค้าที่มีหลาย SKU: ปุ่ม “📋 คัดลอกข้อความ (รวมทั้ง N SKU)” คัดลอกข้อมูลรวมทั้งกลุ่ม — ชื่อสินค้ารวม · จำนวน SKU · ค่าที่เหมือนกันขึ้นครั้งเดียว · รายการ SKU/Barcode ทุกตัว (ค่าที่ต่างกันขึ้นต่อ SKU) · ไม่ดึงชื่อสี/รหัส/บาร์โค้ดของตัวใดตัวหนึ่งมาเป็นตัวแทนอีก · ไม่มีต้นทุน/Trial No. · สินค้าที่มี SKU เดียวคัดลอกเหมือนเดิม · เอาปุ่ม “คัดลอกรวมทั้ง N SKU” ที่ซ้ำออกแล้ว","g":"sys"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ของ NPD Team แก้รายการ “คัดลอกข้อมูลรวม · ส่งออก Excel · ต้นทุน/Trial No.” ให้ตรงกับปุ่มคัดลอกข้อความที่เปลี่ยนไป","g":"sys"}]},{"id":"20261108-2158","date":"2026-11-08","title":"Product Info: คัดลอกข้อมูลรวมในหน้า Info · ส่งออก Excel ติ๊กเลือกหมวด/สินค้า/SKU","items":[{"ic":"🧩","t":"หน้า Info บอกว่าสินค้ามีกี่ SKU + คัดลอกรวมทั้งกลุ่ม","d":"ในหน้า Info ของสินค้าที่มีหลาย SKU ขึ้น “สินค้านี้มี N SKU / เฉด” พร้อมรายการรหัส + Barcode ทุกตัว และปุ่ม “📋 คัดลอกรวมทั้ง N SKU” คัดลอกข้อมูลทั้งกลุ่มครั้งเดียว (ค่าที่เหมือนกันขึ้นครั้งเดียว ค่าที่ต่างกันขึ้นต่อ SKU · ไม่มีต้นทุน/Trial No.) · เอาปุ่ม “คัดลอก SKU ที่แสดง / คัดลอก SKU” ที่เคยอยู่บนการ์ดและป๊อปอัปเฉดออกแล้ว","g":"sys"},{"ic":"⬇️","t":"ส่งออก Excel: ติ๊กเลือกหมวด / สินค้า / SKU ได้โดยตรง","d":"หน้าต่างส่งออกเป็นรายการให้ติ๊ก หมวด → สินค้า → SKU (กด ▸ เลือกทีละ SKU) มีช่องค้นหา ปุ่มเลือกทั้งหมด/ล้าง · เลิกใช้ตัวเลือก “ตามที่เห็นอยู่/ทั้งหมด” ที่ขัดกับการเลือกหมวด · ตัดคอลัมน์ “ราคา (Price)” ที่ซ้ำกับ RRP/MRP · เพิ่มคอลัมน์ “จำนวน SKU ในกลุ่มสินค้า” · จำคอลัมน์ที่เลือกไว้ครั้งหน้า","g":"sys"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ของ NPD Team แก้รายการ “คัดลอกข้อมูลรวม · ส่งออก Excel · ต้นทุน/Trial No.” ให้ตรงกับของใหม่","g":"sys"}]},{"id":"20261108-2132","date":"2026-11-08","title":"Product Info: คัดลอก SKU รวม · ส่งออก Excel เลือกคอลัมน์ · ต้นทุน/Trial No. (คุมสิทธิ์)","items":[{"ic":"📋","t":"คัดลอก SKU หลายรหัสในครั้งเดียว","d":"การ์ดสินค้าที่มีหลาย SKU มีปุ่ม “📋 คัดลอก SKU” คัดลอกรหัสทั้งกลุ่ม (บรรทัดละรหัส) · ในป๊อปอัป “ดูทั้ง N SKU / เฉด” คัดลอก SKU ทั้งหมด หรือคัดลอกเป็นตาราง (SKU · ชื่อ · Barcode วางลง Excel ได้เลย) · ปุ่ม “📋 คัดลอก SKU ที่แสดง” คัดลอกตามตัวกรอง/ค้นหาที่เห็นอยู่","g":"sys"},{"ic":"⬇️","t":"ส่งออก Excel รายชื่อสินค้า เลือกได้เอง","d":"ปุ่ม “⬇️ ส่งออก Excel” ในหน้า Product Info — เลือกขอบเขต (ที่เห็นอยู่ / ทั้งหมด) · หมวด · แบรนด์ · ติ๊กเลือกคอลัมน์ที่ต้องการ (SKU ชื่อ Barcode แบรนด์ ประเภท หมวด Collection ราคา Lot EXP ลิงก์ ไมล์สโตน ฯลฯ) · จำที่เลือกไว้ครั้งหน้า · ตัวเลขเป็นเลขจริง","g":"sys"},{"ic":"🔐","t":"ต้นทุนสินค้า + Trial No. (1 SKU ใส่ได้หลาย Trial No.)","d":"ฟอร์มแก้ไขสินค้ามีส่วน “🔐 ข้อมูลลับ” — ต้นทุนสินค้า และ Trial No. หลายรหัสต่อ 1 SKU (เช่น อายแชโดว์ 3 สี = 3 รหัส) · เห็นเฉพาะรายชื่อที่ผู้ดูแลกำหนด (ปุ่ม “🔐 สิทธิ์ดูต้นทุน/Trial No.” ติ๊กเพิ่ม/ลดคน) · คนที่เห็นได้และแก้ Product Info ได้ก็กรอก/แก้ได้ · คนนอกรายชื่อไม่เห็นเลย ทั้งในเว็บและไฟล์ Excel (ฐานข้อมูลบังคับให้จริง) · ต้องรัน SQL product-private-2026-11-08 ก่อนจึงจะใช้ส่วนนี้ได้","g":"sys"},{"ic":"📘","t":"วิธีใช้อัปเดตแล้ว","d":"ปุ่ม ❓ วิธีใช้ของ NPD Team เพิ่มรายการ “คัดลอก SKU รวม · ส่งออก Excel · ต้นทุน/Trial No.”","g":"sys"}]}]}</script>
 <script id="update-notice-2026-10-08">
 /* ✨ แจ้งเตือนอัปเดตใหม่ + “มีอะไรใหม่” (2026-10-08)
    • เว็บนี้ฝังรหัสเวอร์ชันไว้ที่ <meta name="npd-build"> (บนสุดของไฟล์) และโน้ตการอัปเดตใน <script type="application/json" id="whatsnew-data">
@@ -23185,6 +23265,9 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
       (only||[].concat(splitN(c.owner),splitN(c.followers))).forEach(function(n){ if(n&&pool.indexOf(n)>=0&&names.indexOf(n)<0) names.push(n); });
       if(!names.length) return;
       window.ntEmit({kind:kind,board:'branding',refId:c.id,title:c.title||'(ไม่มีชื่อ)',body:body,names:names}); }catch(e){} }
+  /*ntcol-1117*/ function colBell(k){ try{ var cd=colOf(k); return typeof window.ntColGate!=='function' || window.ntColGate('branding','',k,cd.t,!!cd.done); }catch(e){ return true; } }   // กระดิ่งหัวคอลัมน์ (ตั้งเป็นทีม) — ย้ายการ์ดเข้าคอลัมน์ที่ปิดกระดิ่ง = ไม่แจ้งเตือน
+  function mentionedNicks(text){ text=String(text||''); var out=[]; if(text.indexOf('@')<0) return out; var ns=S.members.map(function(m){ return m.nick; }).filter(Boolean).sort(function(a,b){ return b.length-a.length; });
+    ns.forEach(function(n){ if(text.indexOf('@'+n)>=0 && out.indexOf(n)<0){ out.push(n); text=text.split('@'+n).join(' '); } }); return out; }   // ชื่อยาวก่อน กัน @เอก ไปตรงกับ @เอ
   function notifyAssign(c){
     if(!S.ed||S.ed.card.id!==c.id) return; var sn=S.ed.snap||{owner:'',followers:''}, ow=[], fo=[];
     splitN(c.owner).forEach(function(n){ if(splitN(sn.owner).indexOf(n)<0) ow.push(n); });
@@ -23526,6 +23609,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
       return '<div class="cc-pl-col" data-status="'+c.k+'" ondragover="brdDragOver(event)" ondragleave="brdDragLeave(event)" ondrop="brdDrop(event,\''+c.k+'\')">'
         +(function(){ var hs=window.hdrStyle?window.hdrStyle(c.hc):{head:'',name:'',count:'',more:''};
           return '<div class="cc-pl-colhead"'+hs.head+'><span class="cc-pl-dot" style="background:'+c.c+'"></span><span class="cc-pl-colname"'+hs.name+'>'+esc(c.t)+'</span><span class="cc-pl-colcount"'+hs.count+'>'+list.length+'</span>'
+            +(S.member&&window.ntColBtn?window.ntColBtn('branding','',c.k,c.t,!!c.done,hs.more):'')
             +'<button type="button" class="gfx-colmore" title="แก้ชื่อ / เปลี่ยนสีหัวคอลัมน์" aria-label="แก้ชื่อหรือเปลี่ยนสีหัวคอลัมน์ '+esc(c.t)+'" aria-haspopup="menu"'+hs.more+' onclick="brdColMenu(event,\''+c.k+'\')">⋮</button></div>'; })()
         +'<div class="cc-pl-cards">'+cards+'</div>'
         +(c.done&&all?'<button type="button" class="brd-archall" data-arch-all="1" title="เก็บการ์ดที่เสร็จแล้วทั้งหมดเข้าคลัง (ซ่อนจากบอร์ด ดูได้เสมอที่ 📦 คลังงาน)">📦 เก็บทั้งหมดเข้าคลัง ('+all+')</button>':'')
@@ -23585,7 +23669,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     c.col=colKey; c.pos=np; if(from!==colKey){ c.colAt=new Date().toISOString(); delete S.mv[id]; }
     var done=!!colOf(colKey).done; if(done){ if(!c.doneAt) c.doneAt=(typeof window.nowStamp==='function'?window.nowStamp():stamp(new Date())); } else c.doneAt='';
     renderBoardOnly();
-    try{ await upsertCard(c); if(from!==colKey){ var cn=colOf(colKey).t.replace(/^\S+\s/,''); if(!quiet) say('ย้ายไป “'+cn+'” แล้ว','ok'); notifyCard(c,'status','🔁 '+myNick()+' ย้ายไป “'+cn+'”'); } }
+    try{ await upsertCard(c); if(from!==colKey){ var cn=colOf(colKey).t.replace(/^\S+\s/,''); if(!quiet) say('ย้ายไป “'+cn+'” แล้ว','ok'); if(colBell(colKey)) notifyCard(c,'status','🔁 '+myNick()+' ย้ายไป “'+cn+'”'); } }
     catch(e){ say('บันทึกการย้ายไม่สำเร็จ: '+((e&&e.message)||e)+' — โหลดใหม่','err'); loadAll(true); } }
 
   /* ---------- หน้าต่างการ์ด ---------- */
@@ -23650,7 +23734,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   function setStatus(t){ var s=$('brd-st'); if(s) s.textContent=t; }
   async function persist(now){
     if(!S.ed||S.ed.isNew) return; var c=S.ed.card; setStatus('กำลังบันทึก…');
-    try{ await upsertCard(c); mergeCard(c); setStatus('บันทึกแล้ว ✓'); renderBoardOnly(); notifyAssign(c); if(S.ed&&S.ed.movedFrom){ S.ed.movedFrom=null; notifyCard(c,'status','🔁 '+myNick()+' ย้ายไป “'+colOf(c.col).t.replace(/^\S+\s/,'')+'”'); } }
+    try{ await upsertCard(c); mergeCard(c); setStatus('บันทึกแล้ว ✓'); renderBoardOnly(); notifyAssign(c); if(S.ed&&S.ed.movedFrom){ S.ed.movedFrom=null; if(colBell(c.col)) notifyCard(c,'status','🔁 '+myNick()+' ย้ายไป “'+colOf(c.col).t.replace(/^\S+\s/,'')+'”'); } }
     catch(e){ setStatus('บันทึกไม่สำเร็จ'); say('บันทึกการ์ดไม่สำเร็จ: '+((e&&e.message)||e),'err'); } }
   function queueSave(){ if(!S.ed||S.ed.isNew) return; setStatus('มีการแก้ไข…'); clearTimeout(S.saveT); S.saveT=setTimeout(function(){ S.saveT=null; persist(); },700); }
   function opts(list,sel,blank){ return (blank?'<option value="">'+esc(blank)+'</option>':'')+list.map(function(x){ return '<option value="'+esc(x.k)+'"'+(sel===x.k?' selected':'')+'>'+esc(x.t)+'</option>'; }).join(''); }
@@ -23723,7 +23807,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
     var right='<div class="bm-r">'
       +'<div class="bm-sec" style="margin-top:0;">💬 คอมเมนต์ <span id="brd-cm-n" class="bm-pc"></span></div>'
       +(isNew?'<div class="bm-hint">สร้างการ์ดก่อน แล้วค่อยคุยกันในการ์ดได้</div>'
-        :'<div id="brd-cms"><div class="bm-hint">กำลังโหลด…</div></div><textarea id="brd-cm-new" class="bm-cm" placeholder="พิมพ์คอมเมนต์… (Ctrl+Enter เพื่อส่ง)"></textarea><div style="text-align:right;margin-top:8px;"><button type="button" class="brd-btn pri" data-act="cm-add">ส่งคอมเมนต์</button></div>'
+        :'<div id="brd-cms"><div class="bm-hint">กำลังโหลด…</div></div><textarea id="brd-cm-new" class="bm-cm" placeholder="พิมพ์คอมเมนต์… (พิมพ์ @ชื่อ เพื่อแจ้งเตือนคนนั้น · Ctrl+Enter เพื่อส่ง)"></textarea><div style="text-align:right;margin-top:8px;"><button type="button" class="brd-btn pri" data-act="cm-add">ส่งคอมเมนต์</button></div>'
         +'<div class="bm-sec">🕘 ประวัติย้ายคอลัมน์</div><div id="brd-mvs"><div class="bm-hint">กำลังโหลด…</div></div>')
       +'</div>';
     var head='<div class="bm-top"><span class="bm-crumb">🏷️ '+(isNew?'การ์ดใหม่':'การ์ด Branding')+'</span><span class="bm-st" id="brd-st">'+(isNew?'ยังไม่ได้บันทึก — กด ➕ สร้างการ์ด (หรือปิดหน้าต่าง ระบบบันทึกให้)':'บันทึกอัตโนมัติ')+'</span><span class="bm-sp"></span>'
@@ -23906,7 +23990,7 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
   async function loadComments(id){ try{ var rows=await dbSel('branding_comments',{eq:{card_id:id},order:[['created_at',true]]}); S.cm[id]=rows; S.cmN[id]=rows.length; }catch(e){ S.cm[id]='na'; }
     if(S.ed&&S.ed.card.id===id){ var b=$('brd-cms'); if(b) b.innerHTML=cmHtml(id); var n=$('brd-cm-n'); if(n&&Array.isArray(S.cm[id])) n.textContent=S.cm[id].length?'('+S.cm[id].length+')':''; } }
   async function addComment(){ var i=$('brd-cm-new'); if(!i||!S.ed||S.ed.isNew) return; var body=String(i.value||'').trim(); if(!body) return; var id=S.ed.card.id;
-    try{ await dbIns('branding_comments',{card_id:id,body:body,author:me()}); i.value=''; await loadComments(id); renderBoardOnly(); notifyCard(S.ed?S.ed.card:byId(id),'comment','💬 '+myNick()+': '+body.replace(/\s+/g,' ').slice(0,120)); }catch(e){ say('ส่งคอมเมนต์ไม่สำเร็จ: '+((e&&e.message)||e),'err'); } }
+    try{ await dbIns('branding_comments',{card_id:id,body:body,author:me()}); i.value=''; await loadComments(id); renderBoardOnly(); var _men=mentionedNicks(body); if(_men.length) notifyCard(S.ed?S.ed.card:byId(id),'mention','💬 '+myNick()+': '+body.replace(/\s+/g,' ').slice(0,120),_men); }catch(e){ say('ส่งคอมเมนต์ไม่สำเร็จ: '+((e&&e.message)||e),'err'); } }
   async function delComment(cid){ if(!S.ed) return; var id=S.ed.card.id; if(!(await uiConfirm('ลบคอมเมนต์นี้?'))) return; try{ await dbDel('branding_comments',{id:cid}); await loadComments(id); }catch(e){ say('ลบไม่สำเร็จ: '+((e&&e.message)||e),'err'); } }
   function colTitle(k){ for(var i=0;i<COLS.length;i++) if(COLS[i].k===k) return COLS[i].t; return k||''; }
   async function loadMoves(id){ var rows; try{ rows=await dbSel('branding_card_moves',{eq:{card_id:id},order:[['moved_at',false]],limit:12}); S.mv[id]=rows; }catch(e){ S.mv[id]='na'; }
@@ -24043,8 +24127,10 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
       if(++tries<70) setTimeout(go,500); else say('ไม่พบการ์ดนี้ (อาจถูกลบไปแล้ว)','info'); })(); };
 
   /* ---------- ❓ วิธีใช้การ์ด Branding (อัปเดตทุกครั้งที่ฟีเจอร์ส่วนนี้เปลี่ยน: แก้เนื้อหา + เพิ่มบรรทัดใน HLP_LOG + เปลี่ยน HLP_REV) ---------- */
-  var HLP_REV='2026-11-16.1', HLP_KEY='brd_help_seen_rev';
-  var HLP_LOG=[{d:'16 พ.ย. 2026',items:[
+  var HLP_REV='2026-11-17.1', HLP_KEY='brd_help_seen_rev';
+  var HLP_LOG=[{d:'17 พ.ย. 2026',items:[
+    ['ใหม่','<b>🔔 แจ้งเตือนการ์ดเรียบง่ายขึ้น + กระดิ่งที่หัวคอลัมน์</b> — (1) <b>คอมเมนต์ / ส่งรูป</b>: แจ้งเตือนเฉพาะ<b>คนที่ถูกแท็ก @</b> (ไม่แจ้งทุกคนในการ์ดเหมือนเดิม) · (2) <b>ย้ายการ์ด</b>: แจ้งเตือนเฉพาะคอลัมน์ที่ <b>เปิดกระดิ่ง 🔔</b> ที่หัวคอลัมน์ — ค่าเริ่มต้นเปิดที่ Brief · รอตรวจ · แก้ไข (ตีกลับ) · อนุมัติ/เสร็จ ส่วนคอลัมน์อื่นปิด (🔕) กดกระดิ่งเพื่อเปิด/ปิดได้ทุกคอลัมน์ ตั้งแล้วทั้งทีมเห็นเหมือนกัน (Graphic ตั้งแยกตามบอร์ดของแต่ละคน) · (3) <b>ถูกแท็ก @ แจ้งเตือนเสมอ</b> ไม่ว่ากระดิ่งตั้งไว้อย่างไร · ใช้กับ Content · Graphic · E-Com · Branding (KOL / Sales Team / แชท ยังแจ้งเหมือนเดิม)'],
+  ]},{d:'16 พ.ย. 2026',items:[
     ['ใหม่','<b>🏷️ ช่องแท็กใหม่ — พิมพ์แล้วมีรายการแนะนำ</b> — พิมพ์ในช่องแท็ก (Content · Graphic · E-Com · Branding · To-Do) แล้วระบบดึงแท็กที่ตรงมาให้เลือก (ตัวอักษรที่ตรงไฮไลต์ · เรียงตัวที่ใช้บ่อยก่อน · ใช้ลูกศร ↑↓ + Enter หรือคลิกเลือก · Esc ปิดรายการ) ไม่มีแท็กที่ต้องการก็กด “สร้างแท็กใหม่” · แท็กเยอะ: แถวด่วนเหลือ <b>ใช้บ่อย</b> 8 อัน + ปุ่ม <b>ดูทั้งหมด</b> เปิดแผงค้นหา (เรียงตามใช้บ่อย หรือ ก–ฮ / A–Z) · พิมพ์ชื่อซ้ำแต่ต่างตัวพิมพ์เล็ก/ใหญ่ จะใช้แท็กเดิมให้ ไม่เกิดแท็กซ้ำ'],
   ]},{d:'30 ต.ค. 2026',items:[
     ['ใหม่','<b>🔍 กดรูปแล้วดูในหน้าเว็บเลย</b> — รูป Ref. Mood & Tone · รูป Decorate · รูป Display · รูปแนบในการ์ด กดแล้วเปิดเป็นหน้าต่างดูรูปในหน้าเดิม (ไม่เด้งไปแท็บใหม่) · ปุ่ม ◀ ▶ หรือลูกศรบนคีย์บอร์ดเลื่อนดูรูปอื่นในชุดเดียวกัน · Esc ปิด · กด Ctrl/⌘ ค้างแล้วคลิก = เปิดแท็บใหม่ตามเดิม'],
@@ -25916,8 +26002,12 @@ main:has(#view-graphic.active), main:has(#view-ecom.active), main:has(#view-cont
    ทุกครั้งที่ฟีเจอร์ส่วนนี้เปลี่ยน ให้ทำ 3 อย่าง:  (1) แก้เนื้อหาใน sections()  (2) เพิ่มรายการบนสุดของ LOG  (3) เปลี่ยน REV
    → ปุ่ม ❓ จะมีจุดชมพูให้ทุกคนเห็นว่าวิธีใช้อัปเดต (release.py จะเตือนถ้า REV ไม่เปลี่ยนตั้งแต่รอบก่อน) */
 (function(){
-  var REV='2026-11-16.6', KEY='npd_team_help_seen_rev';
+  var REV='2026-11-17.2', KEY='npd_team_help_seen_rev';
   var LOG=[
+    {d:'17 พ.ย. 2026', items:[
+      ['ใหม่','<b>🛒 สิทธิ์แก้ไข E-Commerce ปรับเองได้</b> — หัวหน้าทีม E-Commerce กด <b>⚙️ ตั้งค่าทีม</b> ที่หัวข้อหน้า E-Commerce Content เพื่อเพิ่ม/ลบคน เปลี่ยนระดับ (หัวหน้า · สมาชิก) ได้เอง ไม่ต้องรอแก้โค้ด · แอดมินระบบแก้ได้ที่ <b>🛡️ สิทธิ์ → E-Commerce Content → ✏️ แก้ที่นี่</b> · ทุกคนที่ล็อกอินยัง <b>ดู</b> บอร์ดได้เหมือนเดิม — เฉพาะ <b>แก้ไข</b> เท่านั้นที่ต้องอยู่ในรายชื่อ'],
+      ['ใหม่','<b>🔔 แจ้งเตือนการ์ดเรียบง่ายขึ้น + กระดิ่งที่หัวคอลัมน์</b> — (1) <b>คอมเมนต์ / ส่งรูป</b>: แจ้งเตือนเฉพาะ<b>คนที่ถูกแท็ก @</b> (ไม่แจ้งทุกคนในการ์ดเหมือนเดิม) · (2) <b>ย้ายการ์ด</b>: แจ้งเตือนเฉพาะคอลัมน์ที่ <b>เปิดกระดิ่ง 🔔</b> ที่หัวคอลัมน์ — ค่าเริ่มต้นเปิดที่ Brief · รอตรวจ · แก้ไข (ตีกลับ) · อนุมัติ/เสร็จ ส่วนคอลัมน์อื่นปิด (🔕) กดกระดิ่งเพื่อเปิด/ปิดได้ทุกคอลัมน์ ตั้งแล้วทั้งทีมเห็นเหมือนกัน (Graphic ตั้งแยกตามบอร์ดของแต่ละคน) · (3) <b>ถูกแท็ก @ แจ้งเตือนเสมอ</b> ไม่ว่ากระดิ่งตั้งไว้อย่างไร · ใช้กับ Content · Graphic · E-Com · Branding (KOL / Sales Team / แชท ยังแจ้งเหมือนเดิม)'],
+    ]},
     {d:'16 พ.ย. 2026', items:[
       ['ใหม่','<b>🏷️ ช่องแท็กใหม่ — พิมพ์แล้วมีรายการแนะนำ</b> — พิมพ์ในช่องแท็ก (Content · Graphic · E-Com · Branding · To-Do) แล้วระบบดึงแท็กที่ตรงมาให้เลือก (ตัวอักษรที่ตรงไฮไลต์ · เรียงตัวที่ใช้บ่อยก่อน · ใช้ลูกศร ↑↓ + Enter หรือคลิกเลือก · Esc ปิดรายการ) ไม่มีแท็กที่ต้องการก็กด “สร้างแท็กใหม่” · แท็กเยอะ: แถวด่วนเหลือ <b>ใช้บ่อย</b> 8 อัน + ปุ่ม <b>ดูทั้งหมด</b> เปิดแผงค้นหา (เรียงตามใช้บ่อย หรือ ก–ฮ / A–Z) · พิมพ์ชื่อซ้ำแต่ต่างตัวพิมพ์เล็ก/ใหญ่ จะใช้แท็กเดิมให้ ไม่เกิดแท็กซ้ำ'],
       ['ใหม่','<b>🖼️ แทรกรูปในเนื้อหาได้แล้ว</b> — ในช่องคอมเมนต์และ “รายละเอียดงาน (บรีฟ)” กดปุ่ม <b>🖼️</b> บนแถบเครื่องมือเพื่อเลือกรูป (หลายรูปพร้อมกันได้) หรือกด <b>Ctrl+V</b> วางรูปที่แคปไว้ได้เลย · รูปแทรกตรงตำแหน่งเคอร์เซอร์ คลิกที่รูปเพื่อดูเต็ม · ถ้ารูปยังอัปไม่เสร็จ ปุ่มส่ง/บันทึกจะรอให้ก่อน (ใช้ได้กับการ์ด Content · Graphic · E-Com · Branding)'],
@@ -28152,17 +28242,19 @@ var CSMAIL=(function(){
    • ถ้ายังไม่ได้รัน SQL (ไม่มีตาราง team_members) โมดูลนี้ “ไม่ทำอะไร” — เมนูทำงานเหมือนเดิมทุกอย่าง
    • Content / NPD: สิทธิ์แก้ไข = ระดับในทีม (หัวหน้า/สมาชิก) ทั้งในเว็บและฐานข้อมูล (team-lock-content / team-lock-npd SQL)
    • CIL Team แบบเข้ม: คนนอกทีม NPD เห็นรายละเอียดเฉพาะงานจาก To-Do · งานอื่นเป็นตัวเลข (จำนวนงาน NPD มาจาก npd_office_counts())
+   • E-Commerce Content (ecom, ทีมแบบ “ใครแก้ไขได้”): ทุกคนที่ล็อกอินยังดูได้ · ใช้ตารางต่อเมื่อมีหัวหน้า ≥ 1 คน ไม่งั้นใช้ AREA_EDITORS.ecom (ecom-team-2026-11-17.sql)
    API: window.teamAvail(k) · teamRole(k) · teamIsMember(k) · teamIsEditor(k) · teamIsHead(k)  (k = 'npd' | 'content' | 'branding') */
 (function(){
   if(window.__teams) return;
   var T={
     npd:    {k:'npd',    t:'NPD Team',        ic:'🧪', tab:'#nav .tab[data-view="team"]',    table:'team_members',    roles:['head','member','viewer'], anchor:'#view-team .npd-head',     gate:true,  note:false},
     content:{k:'content',t:'Content Creator', ic:'✨', tab:'#nav .tab[data-view="content"]', table:'team_members',    roles:['head','member','viewer'], anchor:'#view-content .cc-head',   gate:true,  note:false},
+    ecom:   {k:'ecom',   t:'E-Commerce Content', ic:'🛒', tab:'#nav .tab[data-view="ecom"]', table:'team_members', roles:['head','member'], anchor:'#view-ecom h2', gate:false, note:false, edit:true},   /*ecomteam-1117*/ // ทุกคนที่ล็อกอินดูได้ · ทีมนี้ = ใครแก้ไขได้
     branding:{k:'branding',t:'Branding',      ic:'🏷️', tab:'#nav-branding',                  table:'branding_members',roles:['head','member'],          anchor:'#view-branding .brd-head', gate:false, note:false}
   };
-  var KEYS=['npd','content','branding'];
+  var KEYS=['npd','content','ecom','branding'];
   var RL={head:'หัวหน้า',member:'สมาชิก (แก้ไขได้)',viewer:'ดูอย่างเดียว (คอมเมนต์ได้)'};
-  var S={ready:false,unavail:{},who:'',rows:{npd:[],content:[],branding:[]},loading:false,k:'',err:''};
+  var S={ready:false,unavail:{},who:'',rows:{npd:[],content:[],ecom:[],branding:[]},loading:false,k:'',err:''};
 
   function $(id){ return document.getElementById(id); }
   function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -28190,8 +28282,9 @@ var CSMAIL=(function(){
     if(S.loading) return; if(!loggedIn()){ S.ready=false; S.who=''; apply(); return; }
     S.loading=true; var who=me();
     try{
-      var rows={npd:[],content:[],branding:[]}, un={};
+      var rows={npd:[],content:[],ecom:[],branding:[]}, un={};
       try{ (await dbSel('team_members')).forEach(function(r){ if(rows[r.team]) rows[r.team].push(norm(r)); }); }catch(e){ if(isMissing(e)){ un.npd=un.content=true; } else { throw e; } }
+      if(!rows.ecom.some(function(r){ return r.role==='head'; })) un.ecom=true;   // ยังไม่รัน ecom-team SQL (ไม่มีหัวหน้า E-Com ในตาราง) → ใช้รายชื่อในโค้ดเหมือนเดิม
       try{ rows.branding=(await dbSel('branding_members')).map(norm); }catch(e){ if(isMissing(e)) un.branding=true; else throw e; }
       if(S.who!==who){ NC.map=null; NC.at=0; }
       S.rows=rows; S.unavail=un; S.who=who; S.ready=true; S.err='';
@@ -28238,6 +28331,7 @@ var CSMAIL=(function(){
       b.innerHTML='<span>⚙️</span> ตั้งค่าทีม'; b.addEventListener('click',function(){ openSettings(k); }); a.appendChild(b); });
   }
   function apply(){ try{ applyNav(); mountGears(); }catch(e){}
+    try{ var sg=(window.teamAvail('ecom')?'1':'0')+window.teamRole('ecom'); if(sg!==S.esig){ var first=(S.esig===undefined); S.esig=sg; if(!first&&typeof window.renderEcomBoard==='function'&&document.getElementById('ecom-host')) window.renderEcomBoard(); } }catch(e){}
     try{ if(typeof window.initTeamLock==='function') window.initTeamLock(); }catch(e){} }
   function installGuards(){
     KEYS.forEach(function(k){ if(!T[k].gate) return; var el=document.querySelector(T[k].tab); if(!el||el.__tmG) return; el.__tmG=1;
@@ -28254,13 +28348,13 @@ var CSMAIL=(function(){
       return '<div class="tm-row"><div class="tm-who"><b>'+esc(nm)+(self?' <span class="tm-me">คุณ</span>':'')+'</b><small>'+esc(r.email)+'</small></div>'
         +'<select class="tm-sel" data-tm-role="'+esc(r.email)+'" aria-label="ระดับของ '+esc(nm)+'">'+roleOpts(k,r.role)+'</select>'
         +'<button type="button" class="tm-del" data-tm-del="'+esc(r.email)+'" aria-label="เอา '+esc(nm)+' ออกจากทีม" title="เอาออกจากทีม">🗑</button></div>'; }).join('');
-    return '<div class="tm-note">รายชื่อนี้กำหนดว่า <b>ใครเห็นเมนู '+esc(t.ic+' '+t.t)+'</b> · ระดับ: '+legend+'</div>'
+    return '<div class="tm-note">'+(t.edit?('รายชื่อนี้กำหนดว่า <b>ใครแก้ไขบอร์ด '+esc(t.ic+' '+t.t)+' ได้</b> · ทุกคนที่ล็อกอินยังดูได้ · ระดับ: '+legend):('รายชื่อนี้กำหนดว่า <b>ใครเห็นเมนู '+esc(t.ic+' '+t.t)+'</b> · ระดับ: '+legend))+'</div>'
       +(t.note?'<div class="tm-note warn">⏳ ตอนนี้ คนที่เพิ่มใหม่จะ <b>เห็นเมนูได้ทันที</b> ส่วน <b>สิทธิ์แก้ไขข้อมูล</b> ยังเป็นตามรายชื่อเดิมของระบบ — จะผูกกับระดับในหน้านี้ในขั้นถัดไป</div>':'')
       +'<div class="tm-list" id="tm-list">'+(list||'<div class="tm-empty">ยังไม่มีสมาชิก</div>')+'</div>'
       +'<div class="tm-count">'+rows.length+' คน · หัวหน้า '+heads+' คน</div>'
       +'<div class="tm-add"><h4>＋ เพิ่มสมาชิก</h4><div class="tm-addrow"><input id="tm-em" type="email" placeholder="อีเมลที่ใช้ล็อกอิน" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="อีเมล">'
       +'<input id="tm-nick" type="text" placeholder="ชื่อเล่น" autocomplete="off" aria-label="ชื่อเล่น"><select id="tm-role" aria-label="ระดับ">'+roleOpts(k,'member')+'</select><button type="button" class="tm-btn p" id="tm-addbtn">เพิ่ม</button></div>'
-      +'<div class="tm-hint">บัญชีล็อกอินต้องถูกสร้างที่ Supabase (Authentication → Users) ก่อน — หน้านี้แค่กำหนดว่าใครเข้าเมนูไหน</div></div>';
+      +'<div class="tm-hint">บัญชีล็อกอินต้องถูกสร้างที่ Supabase (Authentication → Users) ก่อน — หน้านี้แค่กำหนดว่า'+(t.edit?'ใครแก้ไขบอร์ดนี้ได้':'ใครเข้าเมนูไหน')+'</div></div>';
   }
   function render(){ var b=$('tm-b'); if(b&&S.k) b.innerHTML=bodyHtml(S.k); }
   function closeSettings(){ var o=$('tm-ov'); if(o) o.remove(); S.k=''; document.removeEventListener('keydown',onKey,true); }
@@ -28286,7 +28380,7 @@ var CSMAIL=(function(){
   async function onClick(ev){ var k=S.k; if(!k) return; var el=ev.target.closest?ev.target.closest('[data-tm-del],#tm-addbtn'):null; if(!el) return;
     if(el.id==='tm-addbtn'){ addMember(); return; }
     var email=el.getAttribute('data-tm-del'); var r=(S.rows[k]||[]).filter(function(x){ return x.email===email; })[0]; var nm=(r&&(r.nick||nickOf(email)))||email;
-    var okc=true; try{ okc=await window.uiConfirm('เอา “'+nm+'” ออกจากทีม '+T[k].t+' ?\n(เขาจะไม่เห็นเมนูนี้อีก แต่ข้อมูลที่เคยทำไว้ยังอยู่)'); }catch(e){}
+    var okc=true; try{ okc=await window.uiConfirm('เอา “'+nm+'” ออกจากทีม '+T[k].t+' ?\n'+(T[k].edit?'(เขายังดูบอร์ดได้ แต่แก้ไขไม่ได้อีก · ข้อมูลที่เคยทำไว้ยังอยู่)':'(เขาจะไม่เห็นเมนูนี้อีก แต่ข้อมูลที่เคยทำไว้ยังอยู่)')); }catch(e){}
     if(!okc) return;
     try{ await dbDel(T[k].table,eqOf(k,email)); say('เอาออกจากทีมแล้ว','ok'); }catch(e){ say(errMsg(e),'err'); }
     await reload(); }
@@ -28322,7 +28416,7 @@ var CSMAIL=(function(){
     setInterval(function(){ var w=me(); if(w!==S.who||(!S.ready&&loggedIn()&&!S.loading)){ S.ready=false; load(); } },2500);
     document.addEventListener('visibilitychange',function(){ if(!document.hidden&&S.ready&&Date.now()-(S.at||0)>60000){ S.at=Date.now(); S.loading=false; load(); } });
     var bv=$('view-branding'); if(bv&&window.MutationObserver){ var raf=0; new MutationObserver(function(){ if(raf) return; raf=requestAnimationFrame(function(){ raf=0; try{ mountGears(); }catch(e){} }); }).observe(bv,{childList:true}); }
-    ['team','content'].forEach(function(v){ var tab=document.querySelector('#nav .tab[data-view="'+v+'"]'); if(tab) tab.addEventListener('click',function(){ setTimeout(mountGears,60); }); }); }
+    ['team','content','ecom'].forEach(function(v){ var tab=document.querySelector('#nav .tab[data-view="'+v+'"]'); if(tab) tab.addEventListener('click',function(){ setTimeout(mountGears,60); }); }); }
   window.__teams={S:S,T:T,NC:NC,load:load,apply:apply,openSettings:openSettings,close:closeSettings,loadCounts:loadCounts};
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(start,700); }); else setTimeout(start,700);
 })();
@@ -31276,6 +31370,7 @@ var CSMAIL=(function(){
      จนกว่าจะรัน SQL แอดมินระบบ) → ติดป้าย ⚠️ “เห็นรายชื่อไม่ครบ” แทนที่จะฟันธงผิด
    • การเขียน (NPD/Content/Branding/app_admins) พึ่ง RLS ของแต่ละตาราง: team_members/branding_members = หัวหน้าของทีมนั้น (หลัง SQL แอดมินระบบ: แอดมินระบบด้วย) · app_admins = แอดมินระบบ
      ถูกปฏิเสธ → แจ้งเป็นภาษาคน (ไม่พังหน้าจอ) · แก้สำเร็จ → โหลด window.__teams ใหม่ให้ทั้งเว็บเห็นตรงกัน
+   • E-Commerce Content (2026-11-17): ย้ายเป็นทีม 'ecom' ใน team_members แล้ว (แก้ในหน้านี้ได้ · ecom-team-2026-11-17.sql) — ที่เหลือฝังในโค้ด
    • เฟส 2 (ยังไม่ทำ): ย้ายรายชื่อที่ฝังในโค้ด (AREA_EDITORS ฯลฯ) ไปเป็นตาราง แล้วเปิดแก้ในหน้านี้ · เมนูเปิดทุกคนปรับเป็นรายคนได้
    • ทดสอบ: window.__perms = {S, open, close, evalFor, reload, tick, universe, MENUS, nickOf} · window.__permDb = {select,insert,update,del} แทนฐานข้อมูล (เหมือน __tmDb) · window.__permWho = อีเมลผู้ดูแทนที่ sbEmail (เฉพาะเทสต์) */
 (function(){
@@ -31287,6 +31382,7 @@ var CSMAIL=(function(){
   var TEAMS={
     npd:     {k:'npd',     t:'NPD Team',        ic:'🧪', table:'team_members',    roles:['head','member','viewer']},
     content: {k:'content', t:'Content Creator', ic:'✨', table:'team_members',    roles:['head','member','viewer']},
+    ecom:    {k:'ecom',    t:'E-Commerce Content', ic:'🛒', table:'team_members',    roles:['head','member']},   /*ecomteam-1117*/
     branding:{k:'branding',t:'Branding Team',   ic:'🏷️', table:'branding_members',roles:['head','member']}
   };
   var LV={edit:['✏️','แก้ไขได้','pm-l-e'],view:['👁','ดูได้','pm-l-v'],comment:['💬','คอมเมนต์ได้','pm-l-c'],none:['🚫','ไม่เห็นเมนู','pm-l-n'],lock:['🔒','เห็นเมนูแต่หน้าล็อก','pm-l-k']};
@@ -31299,7 +31395,7 @@ var CSMAIL=(function(){
     {k:'branding', ic:'🏷️',t:'Branding Team',      see:'who',ed:'who', src:'table',edit:'branding', gate:'เฉพาะสมาชิก Branding · หัวหน้าและสมาชิกแก้ได้ · หัวหน้าจัดการรายชื่อ'},
     {k:'team',     ic:'🧪',t:'NPD Team',           see:'who',ed:'who', src:'team', edit:'npd',     gate:''},
     {k:'content',  ic:'✨',t:'Content Creator',    see:'who',ed:'who', src:'team', edit:'content', gate:''},
-    {k:'ecom',     ic:'🛒',t:'E-Commerce Content', see:'all',ed:'who', src:'code', gate:'ทุกคนที่ล็อกอินดูได้ · แก้ได้เฉพาะทีม Content + Data Support'},
+    {k:'ecom',     ic:'🛒',t:'E-Commerce Content', see:'all',ed:'who', src:'team', edit:'ecom', gate:'ทุกคนที่ล็อกอินดูได้ · แก้ได้เฉพาะรายชื่อผู้แก้ E-Commerce (หัวหน้า/สมาชิก)'},
     {k:'kol',      ic:'⭐',t:'KOL & Affiliate',    see:'who',ed:'who', src:'table',go:'kol',   gate:'เฉพาะสมาชิก KOL · ทุกคนในรายชื่อสั่งงานได้ · วางแผน/Brief/ดูแลงาน/เงิน/แอดมิน แยกเป็นช่องสิทธิ์'},
     {k:'graphic',  ic:'🎨',t:'Graphic Team',       see:'all',ed:'all', src:'open', gate:'ทุกคนที่ล็อกอินเข้าและแก้บอร์ดได้'},
     {k:'sales',    ic:'🤝',t:'Sales Team',         see:'who',ed:'who', src:'table',go:'sales', gate:'เฉพาะสมาชิก Sales (ผู้ดูแล · หัวหน้า · เซลส์ · ผู้ดู) · ผู้ดูอ่านและคอมเมนต์ได้อย่างเดียว'},
@@ -31308,7 +31404,7 @@ var CSMAIL=(function(){
   ];
   function mdef(k){ for(var i=0;i<MENUS.length;i++) if(MENUS[i].k===k) return MENUS[i]; return null; }
   var S={ready:false,who:'',admin:false,adminDb:false,loaded:false,at:0,loadP:null,
-    rows:{npd:[],content:[],branding:[]},kol:[],cs:[],admins:[],src:{},cmp:{},nicks:{},
+    rows:{npd:[],content:[],ecom:[],branding:[]},kol:[],cs:[],admins:[],src:{},cmp:{},nicks:{},
     page:'sum',edit:'',va:'',exp:{},busy:false,dd:false,ddq:'',ddi:0,newRole:'member',prevFocus:null};
 
   /* ---------- ตัวช่วย ---------- */
@@ -31350,7 +31446,7 @@ var CSMAIL=(function(){
   }
   function adminEmails(){ var o=FALLBACK.slice(); S.admins.forEach(function(r){ var e=lc(r.email); if(e&&o.indexOf(e)<0) o.push(e); }); return o; }
   function snap(){ var st=function(k){ return !!(S.src[k]&&S.src[k].state==='ok'); };
-    return {c:consts(),rows:S.rows,kol:S.kol,cs:S.cs,cmp:S.cmp,db:{team:st('team'),branding:st('branding'),kol:st('kol'),cs:st('cs')}}; }
+    return {c:consts(),rows:S.rows,kol:S.kol,cs:S.cs,cmp:S.cmp,db:{team:st('team'),ecom:st('team')&&(S.rows.ecom||[]).some(function(r){ return r.role==='head'; }),branding:st('branding'),kol:st('kol'),cs:st('cs')}}; }
   function roleIn(list,em){ for(var i=0;i<list.length;i++){ if(lc(list[i].email)===em) return list[i].role||'member'; } return ''; }
   function rowIn(list,em){ for(var i=0;i<list.length;i++){ if(lc(list[i].email)===em) return list[i]; } return null; }
   function kolEff(m){ return {plan:!!(m.can_plan||m.can_manage),brief:!!(m.can_brief||m.can_manage||m.can_admin),manage:!!m.can_manage,money:!!(m.can_money||m.can_manage),admin:!!m.can_admin}; }
@@ -31362,7 +31458,8 @@ var CSMAIL=(function(){
     var gfx=C.graphic.indexOf(em)>=0, ds=C.ds.indexOf(em)>=0;
     var dbT=!!ctx.db.team;
     var rN=dbT?roleIn(ctx.rows.npd,em):'', rC=dbT?roleIn(ctx.rows.content,em):'', rB=ctx.db.branding?roleIn(ctx.rows.branding,em):'';
-    var ed={products:inl('products'),ecom:inl('ecom'),
+    var rE=ctx.db.ecom?roleIn(ctx.rows.ecom||[],em):'';
+    var ed={products:inl('products'),ecom:ctx.db.ecom?(rE==='head'||rE==='member'):inl('ecom'),
       content:dbT?(rC==='head'||rC==='member'):inl('content'),
       npd:dbT?(rN==='head'||rN==='member'):inl('npd_process')};
     var viewNpd=dbT?!!rN:(ed.npd||C.npdViewers.indexOf(em)>=0);
@@ -31384,7 +31481,7 @@ var CSMAIL=(function(){
       else set('content',false,'none','เฉพาะสมาชิกทีม Content — เมนูถูกซ่อน',{unc:!cm.content||!cm.npd}); }
     else if(gfx) set('content',true,'comment','หน้า Content ล็อก — คอมเมนต์ในการ์ดได้',{locked:true});
     else set('content',true,ed.content?'edit':(comment?'comment':'view'),ed.content?'อยู่ในรายชื่อแก้ Content (ฝังในโค้ด)':(comment?'ดูได้ · คอมเมนต์ในการ์ดได้':'ดูอย่างเดียว'));
-    set('ecom',true,ed.ecom?'edit':'view',ed.ecom?'อยู่ในรายชื่อผู้แก้ E-Commerce':'ดูอย่างเดียว');
+    set('ecom',true,ed.ecom?'edit':'view',ctx.db.ecom?(ed.ecom?(rE==='head'?'หัวหน้า — จัดการรายชื่อผู้แก้ได้':'สมาชิก (แก้ได้)'):'ดูอย่างเดียว'):(ed.ecom?'อยู่ในรายชื่อผู้แก้ E-Commerce (ฝังในโค้ด)':'ดูอย่างเดียว'));
     var kr=ctx.db.kol?rowIn(ctx.kol,em):null;
     if(kr){ var e=kolEff(kr), fl=[]; if(e.plan) fl.push('วางแผน'); if(e.brief) fl.push('Brief'); if(e.manage) fl.push('ดูแลงาน'); if(e.money) fl.push('เงิน'); if(e.admin) fl.push('แอดมิน');
       set('kol',true,(e.plan||e.brief||e.manage||e.admin)?'edit':'view','สั่งงานได้'+(fl.length?' · '+fl.join(' · '):' · ส่วนอื่นดูอย่างเดียว'),{kol:e}); }
@@ -31396,14 +31493,14 @@ var CSMAIL=(function(){
     set('game',true,'view','ใช้ได้ทุกคน'); set('fortune',true,'view','ใช้ได้ทุกคน');
     var unc=MENUS.filter(function(m){ return M[m.k].unc; }).map(function(m){ return m.k; });
     return {email:em,nick:nickOf(em),menus:M,order:MENUS.map(function(m){ return m.k; }),uncertain:unc,
-      flags:{npd:rN,content:rC,branding:rB,cs:sr?sr.role:'',kol:kr?kolEff(kr):null,graphic:gfx,ds:ds,canEdit:ed,canComment:!!comment,admin:adminEmails().indexOf(em)>=0}};
+      flags:{npd:rN,content:rC,ecom:rE,branding:rB,cs:sr?sr.role:'',kol:kr?kolEff(kr):null,graphic:gfx,ds:ds,canEdit:ed,canComment:!!comment,admin:adminEmails().indexOf(em)>=0}};
   }
 
   /* ---------- รายชื่อทุกคนที่รู้จัก ---------- */
   function universe(){ var seen={}, out=[];
     function add(e){ e=lc(e); if(!e||e.indexOf('@')<1||seen[e]) return; seen[e]=1; out.push(e); }
     try{ Object.keys(window.QT_EMAIL_MAP_PUB||{}).forEach(add); }catch(e){}
-    ['npd','content','branding'].forEach(function(k){ (S.rows[k]||[]).forEach(function(r){ add(r.email); }); });
+    ['npd','content','ecom','branding'].forEach(function(k){ (S.rows[k]||[]).forEach(function(r){ add(r.email); }); });
     S.kol.forEach(function(r){ add(r.email); }); S.cs.forEach(function(r){ add(r.email); }); S.admins.forEach(function(r){ add(r.email); });
     FALLBACK.forEach(add); var C=consts();
     ['products','npd_process','content','ecom'].forEach(function(a){ C.areas[a].forEach(add); }); C.graphic.forEach(add); C.ds.forEach(add); C.npdViewers.forEach(add);
@@ -31415,7 +31512,7 @@ var CSMAIL=(function(){
   async function doLoad(){
     var who=me(), res=await Promise.all([pull('app_admins'),pull('team_members'),pull('branding_members'),pull('kol_members'),pull('cs_members')]);
     if(me()!==who) return;
-    var A=res[0],T=res[1],B=res[2],K=res[3],C=res[4], rows={npd:[],content:[],branding:[]}, nicks={};
+    var A=res[0],T=res[1],B=res[2],K=res[3],C=res[4], rows={npd:[],content:[],ecom:[],branding:[]}, nicks={};
     var nk=function(r){ var e=lc(r.email); if(e&&r.nick&&!nicks[e]) nicks[e]=String(r.nick); };
     S.src={admins:stOf(A),team:stOf(T),branding:stOf(B),kol:stOf(K),cs:stOf(C)};
     S.admins=A.ok?A.rows.map(function(r){ nk(r); return {email:lc(r.email),nick:String(r.nick||''),added_by:String(r.added_by||''),added_at:r.added_at||''}; }):[];
@@ -31426,7 +31523,7 @@ var CSMAIL=(function(){
     S.rows=rows; S.nicks=nicks;
     var inT=!!rowIn(S.admins,who); S.adminDb=inT;
     var meIn=function(l){ return !!rowIn(l,who); };
-    S.cmp={npd:inT||meIn(rows.npd),content:inT||meIn(rows.content),branding:inT||meIn(rows.branding),kol:meIn(S.kol),cs:meIn(S.cs)};
+    S.cmp={npd:inT||meIn(rows.npd),content:inT||meIn(rows.content),ecom:true,branding:inT||meIn(rows.branding),kol:meIn(S.kol),cs:meIn(S.cs)};
     S.loaded=true; S.at=Date.now();
   }
   async function reload(){ while(S.loadP){ try{ await S.loadP; }catch(e){} }
@@ -31450,7 +31547,7 @@ var CSMAIL=(function(){
     var bell=$('nt-bell'); if(bell&&bell.parentNode===hr) hr.insertBefore(b,bell); else hr.appendChild(b); }
   function unmountBtn(){ var b=$('perm-open'); if(b) b.remove(); }
   function tick(){ var w=loggedIn()?me():''; if(w===S.who) return;
-    S.who=w; S.admin=false; S.adminDb=false; S.loaded=false; S.ready=false; S.rows={npd:[],content:[],branding:[]}; S.kol=[]; S.cs=[]; S.admins=[]; S.src={}; S.cmp={}; S.nicks={}; S.va=''; S.edit=''; S.page='sum';
+    S.who=w; S.admin=false; S.adminDb=false; S.loaded=false; S.ready=false; S.rows={npd:[],content:[],ecom:[],branding:[]}; S.kol=[]; S.cs=[]; S.admins=[]; S.src={}; S.cmp={}; S.nicks={}; S.va=''; S.edit=''; S.page='sum';
     applyVis(); if(w) checkAdmin(w); }
 
   /* ---------- หน้าต่างหลัก ---------- */
@@ -31495,10 +31592,12 @@ var CSMAIL=(function(){
     var keep={}, act=document.activeElement&&document.activeElement.id; ['pm-em','pm-nick','pm-aem','pm-anick'].forEach(function(i){ var e=$(i); if(e) keep[i]=e.value; });
     b.innerHTML=h; Object.keys(keep).forEach(function(i){ var e=$(i); if(e) e.value=keep[i]; }); if(act&&keep[act]!==undefined){ var fe=$(act); if(fe) try{ fe.focus(); }catch(x){} } }
   function srcState(k){ var s=S.src[k]; return s?s.state:''; }
-  function srcOf(m){ if(m.src==='team') return srcState('team')==='ok'?'table':'code'; return m.src; }
+  function ecomOn(){ return srcState('team')==='ok'&&(S.rows.ecom||[]).some(function(r){ return r.role==='head'; }); }
+  function srcOf(m){ if(m.src==='team'){ if(m.edit==='ecom') return ecomOn()?'table':'code'; return srcState('team')==='ok'?'table':'code'; } return m.src; }
   function badge(s){ var B={table:['🗄️','ตาราง','pm-b-t'],code:['🔒','ฝังในโค้ด','pm-b-c'],open:['🌐','ทุกคนที่ล็อกอิน','pm-b-o']}[s]; return '<span class="pm-bd '+B[2]+'" data-src="'+s+'">'+B[0]+' '+B[1]+'</span>'; }
   function gateOf(m){ if(m.k==='team') return srcState('team')==='ok'?'เฉพาะสมาชิกทีม NPD · หัวหน้าและสมาชิกแก้ได้ · “ดูอย่างเดียว” อ่านได้อย่างเดียว':'ยังไม่มีตารางทีม — ใช้รายชื่อที่ฝังในโค้ด (NPD Process)';
     if(m.k==='content') return srcState('team')==='ok'?'เฉพาะสมาชิกทีม Content · หัวหน้าและสมาชิกแก้ได้ · “ดูอย่างเดียว” (เช่นกราฟิก) ดูและคอมเมนต์ได้':'ยังไม่มีตารางทีม — ใช้รายชื่อแก้ Content ที่ฝังในโค้ด · บัญชีกราฟิกเข้าไม่ได้ (คอมเมนต์ได้)';
+    if(m.k==='ecom') return ecomOn()?'ทุกคนที่ล็อกอินดูได้ · แก้ได้เฉพาะรายชื่อผู้แก้ E-Commerce · หัวหน้าและแอดมินระบบปรับรายชื่อได้':'ยังไม่ได้ตั้งรายชื่อในตาราง — ใช้รายชื่อผู้แก้ที่ฝังในโค้ด (รัน SQL ecom-team เพื่อปรับเองได้)';
     return m.gate; }
   function chips(items,key){
     if(!items.length) return '<span class="pm-no">— ยังไม่มี —</span>';
@@ -31506,18 +31605,19 @@ var CSMAIL=(function(){
     if(items.length>12) h+='<button type="button" class="pm-more" data-pm="exp" data-key="'+esc(key)+'">'+(S.exp[key]?'ย่อ':'+'+(items.length-12)+' คน')+'</button>';
     return h; }
   function tagOf(k,ev){ var f=ev.flags; if(k==='team') return f.npd==='head'?'หัวหน้า':(f.npd==='viewer'?'ดูอย่างเดียว':''); if(k==='content') return f.content==='head'?'หัวหน้า':(f.content==='viewer'?'ดูอย่างเดียว':'');
-    if(k==='branding') return f.branding==='head'?'หัวหน้า':''; if(k==='sales') return f.cs==='admin'||f.cs==='approver'?CS_T[f.cs]:(f.cs==='viewer'?'ผู้ดู':''); if(k==='kol') return f.kol&&f.kol.admin?'แอดมิน':''; return ''; }
+    if(k==='branding') return f.branding==='head'?'หัวหน้า':''; if(k==='ecom') return f.ecom==='head'?'หัวหน้า':''; if(k==='sales') return f.cs==='admin'||f.cs==='approver'?CS_T[f.cs]:(f.cs==='viewer'?'ผู้ดู':''); if(k==='kol') return f.kol&&f.kol.admin?'แอดมิน':''; return ''; }
   function cardHtml(m,EV){
     var src=srcOf(m), h='<article class="pm-card" data-pm-menu="'+m.k+'"><div class="pm-ch"><span class="pm-ic" aria-hidden="true">'+m.ic+'</span><div class="pm-ct"><b>'+esc(m.t)+'</b><small>'+esc(gateOf(m))+'</small></div><div class="pm-bds">'+badge(src)+'</div></div>';
-    var see=[],ed=[],cm=[]; EV.forEach(function(ev){ var x=ev.menus[m.k]; if(x.see&&!x.locked) see.push({e:ev.email,tag:tagOf(m.k,ev)}); if(x.lv==='edit') ed.push({e:ev.email,tag:''}); if(x.lv==='comment') cm.push({e:ev.email,tag:''}); });
+    var see=[],ed=[],cm=[]; EV.forEach(function(ev){ var x=ev.menus[m.k]; if(x.see&&!x.locked) see.push({e:ev.email,tag:tagOf(m.k,ev)}); if(x.lv==='edit') ed.push({e:ev.email,tag:(m.k==='ecom'?tagOf(m.k,ev):'')}); if(x.lv==='comment') cm.push({e:ev.email,tag:''}); });
     var all='<span class="pm-chip pm-all">🌐 ทุกคนที่ล็อกอิน</span>';
     if(m.see==='all'&&m.ed!=='who') h+='<div class="pm-grp pm-g-see pm-one"><em>'+(m.ed==='all'?'เข้า/แก้ได้':'เข้าได้')+'</em><div class="pm-chips">'+all+(m.ed==='none'?'<span class="pm-no">· แก้ไขไม่ได้ (ดูอย่างเดียว)</span>':'')+'</div></div>';
     else{
       h+='<div class="pm-grp pm-g-see"><em>เข้าได้</em><div class="pm-chips">'+(m.see==='all'?all:chips(see,m.k+':see'))+'</div></div>';
       h+='<div class="pm-grp pm-g-ed"><em>แก้ไขได้</em><div class="pm-chips">'+(m.ed==='all'?all:(m.ed==='none'?'<span class="pm-no">— ไม่มี (ดูอย่างเดียว) —</span>':chips(ed,m.k+':ed')))+'</div></div>'; }
     if(cm.length) h+='<div class="pm-grp pm-g-cm"><em>💬 คอมเมนต์ได้</em><div class="pm-chips">'+chips(cm,m.k+':cm')+'</div></div>';
-    var notes='', SK={team:'team',content:'team',branding:'branding',kol:'kol',sales:'cs'}, CK={team:'npd',content:'content',branding:'branding',kol:'kol',sales:'cs'}, sk=SK[m.k], st=sk?srcState(sk):'';
+    var notes='', SK={team:'team',content:'team',ecom:'team',branding:'branding',kol:'kol',sales:'cs'}, CK={team:'npd',content:'content',ecom:'ecom',branding:'branding',kol:'kol',sales:'cs'}, sk=SK[m.k], st=sk?srcState(sk):'';
     if(src==='code'&&m.src!=='team') notes+='<div class="pm-note">🔒 ฝังอยู่ในโค้ด — แก้ผ่านผู้พัฒนา (เฟส 2)</div>';
+    else if(src==='code'&&m.edit==='ecom') notes+='<div class="pm-note">🔒 ยังไม่ได้ตั้งรายชื่อ E-Commerce ในตาราง — ตอนนี้ใช้รายชื่อที่ฝังในโค้ด · รัน SQL <b>ecom-team-2026-11-17</b> หนึ่งครั้ง แล้วปรับรายชื่อได้เองที่นี่</div>';
     else if(src==='code') notes+='<div class="pm-note">🔒 ยังไม่ได้รัน SQL ทีม — ใช้รายชื่อที่ฝังในโค้ด (แก้ผ่านผู้พัฒนา · เฟส 2)</div>';
     if(sk&&m.src==='table'&&st==='missing') notes+='<div class="pm-note pm-w">⚠️ ยังไม่มีตารางนี้ในฐานข้อมูล (ยังไม่ได้รัน SQL) — จึงไม่มีใครเห็นเมนูนี้</div>';
     else if(sk&&st==='err') notes+='<div class="pm-note pm-w">⚠️ โหลดรายชื่อไม่สำเร็จ: '+esc((S.src[sk]||{}).msg||'')+'</div>';
@@ -31541,6 +31641,7 @@ var CSMAIL=(function(){
     var h='<div class="pm-back"><button type="button" class="pm-btn" data-pm="back">← กลับสรุป</button><b>'+esc(t.ic+' '+t.t)+'</b><span class="pm-soft">'+rows.length+' คน · หัวหน้า '+heads+'</span></div>';
     if(st==='missing') h+='<div class="pm-note pm-w">⚠️ ยังไม่มีตาราง '+esc(t.table)+' ในฐานข้อมูล — แก้ที่นี่ไม่ได้ (ยังไม่ได้รัน SQL ทีม)</div>';
     else if(st==='err') h+='<div class="pm-note pm-w">⚠️ โหลดรายชื่อไม่สำเร็จ: '+esc((S.src[t.table==='branding_members'?'branding':'team']||{}).msg||'')+'</div>';
+    if(k==='ecom'&&st==='ok'&&!ecomOn()) h+='<div class="pm-note pm-w">⚠️ ยังไม่ได้รัน SQL <b>ecom-team-2026-11-17</b> — เพิ่ม/แก้รายชื่อ E-Commerce ที่นี่ยังไม่ได้ (ตอนนี้ใช้รายชื่อที่ฝังในโค้ด)</div>';
     if(S.cmp[k]===false&&st==='ok') h+='<div class="pm-note pm-w">⚠️ เห็นรายชื่อไม่ครบ — บัญชีนี้ไม่ได้อยู่ในทีมนี้ (จะครบเมื่อรัน SQL แอดมินระบบ) · การแก้ต้องเป็นหัวหน้าของทีม</div>';
     var me0=S.who;
     h+='<div class="pm-list" id="pm-list">'+(rows.map(function(r){ var nm=r.nick||nickOf(r.email), self=r.email===me0;
@@ -31549,7 +31650,7 @@ var CSMAIL=(function(){
         +'<div class="pm-rb"><button type="button" class="pm-ib" data-pm="va" data-email="'+esc(r.email)+'" aria-label="ดูมุมมองของ '+esc(nm)+'" title="ดูมุมมอง">👁️</button><button type="button" class="pm-ib pm-d" data-pm="del" data-k="'+k+'" data-email="'+esc(r.email)+'" aria-label="เอา '+esc(nm)+' ออก" title="เอาออก">🗑</button></div></div>'; }).join('')||'<div class="pm-empty">ยังไม่มีสมาชิก</div>')+'</div>';
     h+='<div class="pm-add"><h4>＋ เพิ่มสมาชิก</h4><div class="pm-addrow"><input id="pm-em" class="pm-in" type="email" placeholder="อีเมลที่ใช้ล็อกอิน" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="อีเมล" data-pm-enter="add"><input id="pm-nick" class="pm-in" type="text" placeholder="ชื่อเล่น" autocomplete="off" aria-label="ชื่อเล่น" data-pm-enter="add"></div>'
       +'<div class="pm-addrow">'+seg(t.roles,t.roles.indexOf(S.newRole)>=0?S.newRole:'member','data-pm="newrole"')+'<button type="button" class="pm-btn pm-p" id="pm-addbtn" data-pm="add" data-k="'+k+'">เพิ่ม</button></div>'
-      +'<div class="pm-hint">บัญชีล็อกอินต้องถูกสร้างที่ Supabase (Authentication → Users) ก่อน — หน้านี้แค่กำหนดว่าใครเข้าเมนูไหน</div></div>';
+      +'<div class="pm-hint">บัญชีล็อกอินต้องถูกสร้างที่ Supabase (Authentication → Users) ก่อน — หน้านี้แค่กำหนดว่า'+(k==='ecom'?'ใครแก้ไขบอร์ด E-Commerce ได้ (ทุกคนที่ล็อกอินดูได้)':'ใครเข้าเมนูไหน')+'</div></div>';
     return h; }
   function eqOf(k,email){ return k==='branding'?{email:email}:{team:k,email:email}; }
   async function afterWrite(){ await reload(); await refreshTeams(); render(); }
@@ -31561,7 +31662,7 @@ var CSMAIL=(function(){
     await guarded(async function(){ await dbUpd(t.table,{role:role},eqOf(k,email)); say('เปลี่ยนระดับแล้ว','ok'); }); }
   async function doDel(k,email){ var t=TEAMS[k]; if(!t) return; var r=rowIn(S.rows[k]||[],email), nm=(r&&(r.nick||nickOf(email)))||email;
     if(lastHead(k,email)){ say(HEADMSG,'err'); return; }
-    if(!(await ask('เอา “'+nm+'” ออกจากทีม '+t.t+' ?\n(เขาจะไม่เห็นเมนูนี้อีก แต่ข้อมูลที่เคยทำไว้ยังอยู่)','เอาออก'))) return;
+    if(!(await ask('เอา “'+nm+'” ออกจากทีม '+t.t+' ?\n'+(k==='ecom'?'(เขายังดูบอร์ดได้ แต่แก้ไขไม่ได้อีก · ข้อมูลที่เคยทำไว้ยังอยู่)':'(เขาจะไม่เห็นเมนูนี้อีก แต่ข้อมูลที่เคยทำไว้ยังอยู่)'),'เอาออก'))) return;
     await guarded(async function(){ await dbDel(t.table,eqOf(k,email)); say('เอาออกจากทีมแล้ว','ok'); }); }
   async function doAdd(k){ var t=TEAMS[k]; if(!t||S.busy) return; var em=lc(($('pm-em')||{}).value), nick=String(($('pm-nick')||{}).value||'').trim();
     var on=$('perm-ov').querySelector('.pm-add .pm-sg.pm-on'), role=on?on.getAttribute('data-r'):'member';
